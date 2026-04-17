@@ -1,0 +1,92 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "attune-rag"
+version = "0.1.0"
+description = "Lightweight, LLM-agnostic RAG pipeline with pluggable corpora. Works with Claude, OpenAI, Gemini, or any LLM."
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Patrick Roebuck", email = "admin@smartaimemory.com"}
+]
+keywords = [
+    "rag",
+    "retrieval-augmented-generation",
+    "llm",
+    "claude",
+    "openai",
+    "gemini",
+    "grounding",
+    "provenance",
+    "attune",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Text Processing :: Markup :: Markdown",
+]
+dependencies = [
+    "structlog>=24.0",
+    "jinja2>=3.1.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+attune-help = ["attune-help>=0.5.1,<0.6"]
+claude = ["anthropic>=0.40.0,<1.0"]
+openai = ["openai>=1.40.0,<2.0"]
+gemini = ["google-genai>=1.0,<2.0"]
+all = [
+    "attune-help>=0.5.1,<0.6",
+    "anthropic>=0.40.0,<1.0",
+    "openai>=1.40.0,<2.0",
+    "google-genai>=1.0,<2.0",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=4.0",
+    "ruff>=0.4.0",
+    "black>=24.0",
+    "build>=1.0",
+    "twine>=5.0",
+    "attune-help>=0.5.1,<0.6",
+    "anthropic>=0.40.0,<1.0",
+    "openai>=1.40.0,<2.0",
+    "google-genai>=1.0,<2.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Smart-AI-Memory/attune-rag"
+Repository = "https://github.com/Smart-AI-Memory/attune-rag"
+Documentation = "https://github.com/Smart-AI-Memory/attune-rag/blob/main/README.md"
+Changelog = "https://github.com/Smart-AI-Memory/attune-rag/blob/main/CHANGELOG.md"
+Issues = "https://github.com/Smart-AI-Memory/attune-rag/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "BLE", "UP"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
