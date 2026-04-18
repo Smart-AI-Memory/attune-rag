@@ -1,0 +1,142 @@
+# Golden queries for retrieval quality benchmarking.
+#
+# Each query asserts the RAG pipeline surfaces the *right*
+# template(s) from the attune-help corpus. Used by:
+#   - tests/golden/test_golden.py (regression gate)
+#   - src/attune_rag/benchmark.py (precision@1, recall@3)
+#
+# Difficulty legend:
+#   easy   — direct feature asks, one primary template target
+#   medium — synonyms / paraphrases
+#   hard   — ambiguous wording or where lesson-corpus entries
+#            compete with concept/quickstart entries
+#
+# expected_feature: canonical feature name (documents intent)
+# expected_in_top_3: template paths that SHOULD appear in the
+#     top 3 hits. At least one must be present for a pass.
+
+version: 1
+
+queries:
+  # -------- Easy: direct feature names --------
+
+  - id: gq-001
+    query: "how do I run a security audit"
+    expected_feature: security-audit
+    expected_in_top_3:
+      - quickstarts/run-security-audit.md
+      - concepts/tool-security-audit.md
+    difficulty: easy
+
+  - id: gq-002
+    query: "generate tests for my code"
+    expected_feature: smart-test
+    expected_in_top_3:
+      - quickstarts/generate-tests.md
+      - concepts/tool-smart-test.md
+    difficulty: easy
+
+  - id: gq-003
+    query: "fix failing tests"
+    expected_feature: fix-test
+    expected_in_top_3:
+      - concepts/tool-fix-test.md
+    difficulty: easy
+
+  - id: gq-004
+    query: "review code quality"
+    expected_feature: code-quality
+    expected_in_top_3:
+      - concepts/tool-code-quality.md
+    difficulty: easy
+
+  - id: gq-005
+    query: "deep review my PR"
+    expected_feature: deep-review
+    expected_in_top_3:
+      - references/tool-deep-review.md
+    difficulty: easy
+
+  # -------- Medium: synonyms / paraphrases --------
+
+  - id: gq-006
+    query: "predict bugs before they happen"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: medium
+
+  - id: gq-007
+    query: "refactor my code"
+    expected_feature: refactor-plan
+    expected_in_top_3:
+      - concepts/tool-refactor-plan.md
+      - references/tool-refactor-plan.md
+    difficulty: medium
+
+  - id: gq-008
+    query: "prepare a release"
+    expected_feature: release-prep
+    expected_in_top_3:
+      - concepts/tool-release-prep.md
+      - references/skill-release-prep.md
+    difficulty: medium
+
+  - id: gq-009
+    query: "audit documentation for staleness"
+    expected_feature: doc-audit
+    expected_in_top_3:
+      - references/tool-doc-audit.md
+    difficulty: medium
+
+  - id: gq-010
+    query: "plan a new feature"
+    expected_feature: planning
+    expected_in_top_3:
+      - concepts/tool-planning.md
+      - references/skill-planning.md
+      - quickstarts/skill-planning.md
+    difficulty: hard  # "plan" collides with refactor-plan; keyword retriever
+                      #  picks the wrong feature
+
+  # -------- Hard: ambiguous / keyword-clashing --------
+
+  - id: gq-011
+    query: "vulnerability scan"
+    expected_feature: security-audit
+    expected_in_top_3:
+      - quickstarts/run-security-audit.md
+      - concepts/tool-security-audit.md
+    difficulty: hard
+
+  - id: gq-012
+    query: "write documentation for my module"
+    expected_feature: doc-gen
+    expected_in_top_3:
+      - concepts/tool-doc-gen.md
+      - quickstarts/skill-doc-gen.md
+    difficulty: hard
+
+  - id: gq-013
+    query: "orchestrate documentation workflow"
+    expected_feature: doc-orchestrator
+    expected_in_top_3:
+      - references/tool-doc-orchestrator.md
+    difficulty: hard
+
+  - id: gq-014
+    query: "look for dangerous eval calls"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: hard
+
+  - id: gq-015
+    query: "sniff out hard-to-catch bugs"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: hard
