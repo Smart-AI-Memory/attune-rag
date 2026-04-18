@@ -66,6 +66,9 @@ dev = [
     "google-genai>=1.0,<2.0",
 ]
 
+[project.scripts]
+attune-rag = "attune_rag.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/Smart-AI-Memory/attune-rag"
 Repository = "https://github.com/Smart-AI-Memory/attune-rag"
