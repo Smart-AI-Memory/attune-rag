@@ -205,3 +205,149 @@ def test_retrievalhit_is_frozen(corpus: FakeCorpus) -> None:
     assert isinstance(hit, RetrievalHit)
     with pytest.raises(FrozenInstanceError):
         hit.score = 99.0  # type: ignore[misc]
+
+
+def test_category_weight_boosts_primary_over_lesson() -> None:
+    # Same summary/content in two categories; concepts should
+    # win because category weight 1.5 > 0.4.
+    primary = _entry(
+        path="concepts/tool-security-audit.md",
+        category="concepts",
+        summary="security audit",
+    )
+    lesson = _entry(
+        path="errors/tool-security-audit-flag.md",
+        category="errors",
+        summary="security audit",
+    )
+    corpus = FakeCorpus([primary, lesson])
+    hits = KeywordRetriever().retrieve("security audit", corpus)
+    assert hits[0].entry.path == "concepts/tool-security-audit.md"
+
+
+def test_category_weight_penalty_can_drop_below_min_score() -> None:
+    # errors entry scores base 3.0 (2 summary hits × 1.5) * 0.4
+    # = 1.2 < MIN_SCORE 2.0, so it is filtered entirely.
+    lesson = _entry(
+        path="errors/something.md",
+        category="errors",
+        summary="alpha beta",
+    )
+    corpus = FakeCorpus([lesson])
+    hits = KeywordRetriever().retrieve("alpha beta", corpus)
+    assert hits == []
+
+
+def test_category_weight_reason_includes_category_marker() -> None:
+    entry = _entry(
+        path="concepts/x.md",
+        category="concepts",
+        summary="alpha beta",
+    )
+    corpus = FakeCorpus([entry])
+    hits = KeywordRetriever().retrieve("alpha beta", corpus)
+    assert hits and "cat:concepts" in hits[0].match_reason
+
+
+def test_category_weight_reason_omitted_when_weight_is_one() -> None:
+    entry = _entry(
+        path="references/x.md",
+        category="references",
+        summary="alpha beta",
+    )
+    corpus = FakeCorpus([entry])
+    hits = KeywordRetriever().retrieve("alpha beta", corpus)
+    assert hits
+    assert "cat:" not in hits[0].match_reason
+
+
+def test_unknown_category_uses_default_weight() -> None:
+    entry = _entry(
+        path="nonstandard/x.md",
+        category="nonstandard",
+        summary="alpha beta gamma delta",
+    )
+    corpus = FakeCorpus([entry])
+    hits = KeywordRetriever().retrieve("alpha beta", corpus)
+    assert hits
+    # Unknown category uses DEFAULT_CATEGORY_WEIGHT (1.0)
+    # so the marker is omitted.
+    assert "cat:" not in hits[0].match_reason
+
+
+def test_path_hit_cap_limits_long_filenames() -> None:
+    # A long error-style filename has 5 query-matching tokens
+    # but should only contribute PATH_HIT_CAP (3) to the score.
+    long_path = _entry(
+        path="errors/alpha-beta-gamma-delta-epsilon.md",
+        category="errors",
+        summary="",
+    )
+    # Short feature-named concept with 1 summary hit only.
+    short_concept = _entry(
+        path="concepts/x.md",
+        category="concepts",
+        summary="alpha",
+    )
+    corpus = FakeCorpus([long_path, short_concept])
+
+    class NoCategoryBias(KeywordRetriever):
+        CATEGORY_WEIGHTS: dict[str, float] = {}
+        PATH_HIT_CAP = 3
+
+    class UncappedPath(KeywordRetriever):
+        CATEGORY_WEIGHTS: dict[str, float] = {}
+        PATH_HIT_CAP = 100
+
+    capped = NoCategoryBias().retrieve("alpha beta gamma delta epsilon", corpus)
+    uncapped = UncappedPath().retrieve("alpha beta gamma delta epsilon", corpus)
+
+    # Without the cap, the long path dominates (5 × 2.0 = 10).
+    assert uncapped[0].entry.path == "errors/alpha-beta-gamma-delta-epsilon.md"
+    # With the cap (3 hits max), base path score is 6.0 — still
+    # larger than short_concept's 1.5 but crucially doesn't scale
+    # with filename length.
+    top_capped_hits = capped[0].match_reason
+    assert "path:3" in top_capped_hits
+
+
+def test_stemming_matches_singular_and_plural() -> None:
+    primary = _entry(
+        path="concepts/bug.md",
+        category="concepts",
+        summary="catches bugs early",
+    )
+    corpus = FakeCorpus([primary])
+    # "bugs" (query) stems to "bug"; "bug" matches.
+    hits = KeywordRetriever().retrieve("catch bugs", corpus)
+    assert hits and hits[0].entry.path == "concepts/bug.md"
+
+
+def test_stemming_matches_ate_ator() -> None:
+    primary = _entry(
+        path="references/tool-doc-orchestrator.md",
+        category="references",
+        summary="orchestrator coordinates documentation workflows",
+    )
+    corpus = FakeCorpus([primary])
+    # "orchestrate" stems to "orchestr"; "orchestrator" also
+    # stems to "orchestr" via the "ator" suffix.
+    hits = KeywordRetriever().retrieve("orchestrate documentation", corpus)
+    assert hits and hits[0].entry.path == "references/tool-doc-orchestrator.md"
+
+
+def test_stemming_preserves_short_tokens() -> None:
+    # Tokens < 3+suffix_len chars must not be stemmed.
+    primary = _entry(
+        path="x.md",
+        category="concepts",
+        summary="is on it",
+    )
+    corpus = FakeCorpus([primary])
+    # "is" and "on" are stopwords, but even if they weren't
+    # they wouldn't stem below 3 chars.
+    from attune_rag.retrieval import _stem
+
+    assert _stem("is") == "is"
+    assert _stem("on") == "on"
+    assert _stem("bug") == "bug"

@@ -54,9 +54,37 @@ _STOPWORDS: frozenset[str] = frozenset(
 )
 
 
+_STEM_SUFFIXES: tuple[str, ...] = (
+    "ations",
+    "ation",
+    "ators",
+    "ator",
+    "ates",
+    "ate",
+    "ings",
+    "ing",
+    "ions",
+    "ion",
+    "ies",
+    "ers",
+    "ed",
+    "er",
+    "es",
+    "s",
+)
+_MIN_STEM_LEN: int = 3
+
+
+def _stem(token: str) -> str:
+    for suffix in _STEM_SUFFIXES:
+        if token.endswith(suffix) and len(token) - len(suffix) >= _MIN_STEM_LEN:
+            return token[: -len(suffix)]
+    return token
+
+
 def _tokenize(text: str) -> set[str]:
     lowered = _PUNCT_RE.sub(" ", text.lower())
-    return {tok for tok in lowered.split() if tok and tok not in _STOPWORDS}
+    return {_stem(tok) for tok in lowered.split() if tok and tok not in _STOPWORDS}
 
 
 @dataclass(frozen=True)
@@ -80,12 +108,44 @@ class RetrieverProtocol(Protocol):
     ) -> Iterable[RetrievalHit]: ...
 
 
+_DEFAULT_CATEGORY_WEIGHTS: dict[str, float] = {
+    # Primary, user-facing explanations — boost.
+    "concepts": 1.5,
+    "quickstarts": 1.5,
+    "tasks": 1.5,
+    # Reference and comparison material — neutral.
+    "references": 1.0,
+    "comparisons": 1.0,
+    # Incidental guidance — mild penalty.
+    "tips": 0.9,
+    "notes": 0.9,
+    "troubleshooting": 0.9,
+    # Lesson-style content that often collides with primary
+    # material on keyword overlap — strong penalty. These
+    # categories tend to have long, keyword-dense filenames
+    # (``errors/bug-predict-dangerous-eval-flags-*.md``) which
+    # inflate path-hit scores versus the short feature-named
+    # concept file they document.
+    "errors": 0.4,
+    "warnings": 0.4,
+    "faqs": 0.4,
+}
+
+
 class KeywordRetriever:
     """Token-overlap retriever with path / summary / content / related weights.
 
     Weights and the minimum score are class attributes so the
     benchmark (task 2.4) can sweep parameters without editing
     source.
+
+    ``CATEGORY_WEIGHTS`` applies a multiplier based on
+    ``entry.category`` (the top-level directory in DirectoryCorpus /
+    AttuneHelpCorpus). Tunes retrieval to prefer primary
+    documentation (``concepts/``, ``quickstarts/``) over lesson-
+    style material (``errors/``, ``warnings/``, ``faqs/``) when the
+    two compete on keyword overlap. Unlisted categories get
+    ``DEFAULT_CATEGORY_WEIGHT``.
     """
 
     PATH_WEIGHT: float = 2.0
@@ -94,6 +154,17 @@ class KeywordRetriever:
     RELATED_WEIGHT: float = 0.5
     MIN_SCORE: float = 2.0
     CONTENT_PREVIEW_CHARS: int = 500
+    CATEGORY_WEIGHTS: dict[str, float] = _DEFAULT_CATEGORY_WEIGHTS
+    DEFAULT_CATEGORY_WEIGHT: float = 1.0
+    # Path hits are capped so long keyword-dense filenames
+    # (common in ``errors/`` and ``warnings/``) don't dominate
+    # ranking. The first ``PATH_HIT_CAP`` overlaps cover the
+    # typical feature-name length; beyond that, path tokens are
+    # usually lesson-title noise rather than relevance signal.
+    PATH_HIT_CAP: int = 3
+
+    def _category_weight(self, entry: RetrievalEntry) -> float:
+        return self.CATEGORY_WEIGHTS.get(entry.category, self.DEFAULT_CATEGORY_WEIGHT)
 
     def _score_entry(
         self,
@@ -113,17 +184,20 @@ class KeywordRetriever:
                 continue
             related_summary_tokens |= _tokenize(related_entry.summary)
 
-        path_hits = len(query_tokens & path_tokens)
+        path_hits_raw = len(query_tokens & path_tokens)
+        path_hits = min(path_hits_raw, self.PATH_HIT_CAP)
         summary_hits = len(query_tokens & summary_tokens)
         content_hits = len(query_tokens & content_tokens)
         related_hits = len(query_tokens & related_summary_tokens)
 
-        score = (
+        base_score = (
             self.PATH_WEIGHT * path_hits
             + self.SUMMARY_WEIGHT * summary_hits
             + self.CONTENT_WEIGHT * content_hits
             + self.RELATED_WEIGHT * related_hits
         )
+        category_weight = self._category_weight(entry)
+        score = base_score * category_weight
 
         reasons: list[str] = []
         if path_hits:
@@ -134,6 +208,8 @@ class KeywordRetriever:
             reasons.append(f"content:{content_hits}")
         if related_hits:
             reasons.append(f"related:{related_hits}")
+        if category_weight != 1.0 and base_score > 0:
+            reasons.append(f"cat:{entry.category}×{category_weight:g}")
         match_reason = "+".join(reasons) if reasons else "no-match"
 
         return score, match_reason
