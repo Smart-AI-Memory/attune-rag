@@ -67,34 +67,30 @@ def test_generate_concatenates_multiple_text_blocks() -> None:
 
 
 def test_missing_sdk_raises_helpful_error() -> None:
-    """Uses sys.modules patching per CLAUDE.md MetaPathFinder lesson."""
+    """Simulate anthropic not being installed via sys.modules sentinel.
+
+    Setting ``sys.modules[name] = None`` causes Python's import
+    machinery to raise ImportError on the next import of ``name``.
+    Works across Python 3.10-3.13 (the deprecated MetaPathFinder
+    API stopped firing in 3.12+).
+    """
     saved: dict[str, object] = {}
+    # Purge real anthropic modules and the already-imported adapter
+    # so its lazy `from anthropic import ...` retries.
     for key in list(sys.modules):
-        if key == "anthropic" or key.startswith("anthropic."):
-            saved[key] = sys.modules.pop(key)
-    # Also purge the already-imported adapter so its lazy import retries.
-    for key in list(sys.modules):
-        if key == "attune_rag.providers.claude":
+        if key in {"anthropic", "attune_rag.providers.claude"} or key.startswith("anthropic."):
             saved[key] = sys.modules.pop(key)
 
-    class Blocker:
-        def find_module(self, name, path=None):  # noqa: ARG002
-            if name == "anthropic" or name.startswith("anthropic."):
-                return self
-            return None
+    # Sentinel: forces ImportError on next `import anthropic`
+    sys.modules["anthropic"] = None  # type: ignore[assignment]
 
-        def load_module(self, name):
-            raise ImportError(f"BLOCKED: {name}")
-
-    blocker = Blocker()
-    sys.meta_path.insert(0, blocker)
     try:
         from attune_rag.providers.claude import ClaudeProvider
 
         with pytest.raises(RuntimeError, match=r"\[claude\] extra"):
             ClaudeProvider()
     finally:
-        sys.meta_path.remove(blocker)
+        sys.modules.pop("anthropic", None)
         sys.modules.update(saved)
 
 

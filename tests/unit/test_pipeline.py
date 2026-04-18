@@ -113,36 +113,24 @@ def test_accepts_injected_retriever(corpus: FakeCorpus) -> None:
 
 def test_default_corpus_raises_when_attune_help_missing() -> None:
     """Verifies the helpful error when no corpus is passed and
-    attune-help is absent.
-
-    Uses the MetaPathFinder pattern from CLAUDE.md to simulate
-    attune-help being uninstalled without mutating the venv.
-    """
-    # Also purge any cached AttuneHelpCorpus module.
+    attune-help is absent. sys.modules sentinel works across
+    Python 3.10-3.13 (the deprecated MetaPathFinder find_module
+    API stopped firing in 3.12+)."""
     saved: dict[str, object] = {}
     for key in list(sys.modules):
-        if key == "attune_help" or key.startswith("attune_help."):
+        if key in {"attune_help", "attune_rag.corpus.attune_help"} or key.startswith(
+            "attune_help."
+        ):
             saved[key] = sys.modules.pop(key)
-        if key == "attune_rag.corpus.attune_help":
-            saved[key] = sys.modules.pop(key)
 
-    class Blocker:
-        def find_module(self, name, path=None):  # noqa: ARG002
-            if name == "attune_help" or name.startswith("attune_help."):
-                return self
-            return None
+    sys.modules["attune_help"] = None  # type: ignore[assignment]
 
-        def load_module(self, name):
-            raise ImportError(f"BLOCKED: {name}")
-
-    blocker = Blocker()
-    sys.meta_path.insert(0, blocker)
     try:
         pipeline = RagPipeline()
         with pytest.raises(RuntimeError, match=r"\[attune-help\]"):
             pipeline.run("any query")
     finally:
-        sys.meta_path.remove(blocker)
+        sys.modules.pop("attune_help", None)
         sys.modules.update(saved)
 
 

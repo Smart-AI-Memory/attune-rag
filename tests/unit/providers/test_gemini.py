@@ -40,31 +40,23 @@ def test_generate_respects_model_override() -> None:
 
 
 def test_missing_sdk_raises_helpful_error() -> None:
+    """sys.modules sentinel — works across Python 3.10-3.13."""
     saved: dict[str, object] = {}
     for key in list(sys.modules):
-        if key == "google.genai" or key.startswith("google.genai."):
+        if key in {"google.genai", "attune_rag.providers.gemini"} or key.startswith(
+            "google.genai."
+        ):
             saved[key] = sys.modules.pop(key)
-        if key == "attune_rag.providers.gemini":
-            saved[key] = sys.modules.pop(key)
 
-    class Blocker:
-        def find_module(self, name, path=None):  # noqa: ARG002
-            if name == "google.genai" or name.startswith("google.genai."):
-                return self
-            return None
+    sys.modules["google.genai"] = None  # type: ignore[assignment]
 
-        def load_module(self, name):
-            raise ImportError(f"BLOCKED: {name}")
-
-    blocker = Blocker()
-    sys.meta_path.insert(0, blocker)
     try:
         from attune_rag.providers.gemini import GeminiProvider
 
         with pytest.raises(RuntimeError, match=r"\[gemini\] extra"):
             GeminiProvider()
     finally:
-        sys.meta_path.remove(blocker)
+        sys.modules.pop("google.genai", None)
         sys.modules.update(saved)
 
 

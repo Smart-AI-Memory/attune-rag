@@ -70,31 +70,22 @@ def test_sidecars_deferred_to_v020() -> None:
     assert all(e.related == () for e in corpus.entries())
 
 
-def test_raises_helpful_error_when_attune_help_missing(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Simulates attune-help being absent by blocking its import."""
+def test_raises_helpful_error_when_attune_help_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """sys.modules sentinel — works across Python 3.10-3.13."""
     import sys
 
-    # Save and remove attune_help from sys.modules so import_module retries.
     saved = {
         k: v for k, v in sys.modules.items() if k == "attune_help" or k.startswith("attune_help.")
     }
     for key in saved:
         del sys.modules[key]
+    sys.modules["attune_help"] = None  # type: ignore[assignment]
 
-    class Blocker:
-        def find_module(self, name, path=None):  # noqa: D401, ARG002
-            if name == "attune_help" or name.startswith("attune_help."):
-                return self
-            return None
-
-        def load_module(self, name):  # noqa: ARG002
-            raise ImportError("BLOCKED for test")
-
-    blocker = Blocker()
-    sys.meta_path.insert(0, blocker)
     try:
         with pytest.raises(RuntimeError, match=r"\[attune-help\] extra"):
             AttuneHelpCorpus()
     finally:
-        sys.meta_path.remove(blocker)
+        sys.modules.pop("attune_help", None)
         sys.modules.update(saved)

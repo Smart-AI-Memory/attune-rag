@@ -41,31 +41,21 @@ def test_generate_respects_model_override() -> None:
 
 
 def test_missing_sdk_raises_helpful_error() -> None:
+    """sys.modules sentinel — works across Python 3.10-3.13."""
     saved: dict[str, object] = {}
     for key in list(sys.modules):
-        if key == "openai" or key.startswith("openai."):
-            saved[key] = sys.modules.pop(key)
-        if key == "attune_rag.providers.openai":
+        if key in {"openai", "attune_rag.providers.openai"} or key.startswith("openai."):
             saved[key] = sys.modules.pop(key)
 
-    class Blocker:
-        def find_module(self, name, path=None):  # noqa: ARG002
-            if name == "openai" or name.startswith("openai."):
-                return self
-            return None
+    sys.modules["openai"] = None  # type: ignore[assignment]
 
-        def load_module(self, name):
-            raise ImportError(f"BLOCKED: {name}")
-
-    blocker = Blocker()
-    sys.meta_path.insert(0, blocker)
     try:
         from attune_rag.providers.openai import OpenAIProvider
 
         with pytest.raises(RuntimeError, match=r"\[openai\] extra"):
             OpenAIProvider()
     finally:
-        sys.meta_path.remove(blocker)
+        sys.modules.pop("openai", None)
         sys.modules.update(saved)
 
 
