@@ -15,6 +15,7 @@ from .retrieval import KeywordRetriever, RetrieverProtocol
 
 if TYPE_CHECKING:
     from .corpus.base import CorpusProtocol
+    from .providers.base import LLMProvider
 
 logger = structlog.get_logger(__name__)
 

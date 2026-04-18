@@ -13,15 +13,8 @@ cleanly without any provider SDK.
 from __future__ import annotations
 
 from importlib import import_module
-from typing import TYPE_CHECKING
 
 from .base import LLMProvider
-
-if TYPE_CHECKING:
-    from .claude import ClaudeProvider
-    from .gemini import GeminiProvider
-    from .openai import OpenAIProvider
-
 
 _SDK_PROBES = {
     "claude": "anthropic",

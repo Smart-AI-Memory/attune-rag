@@ -87,9 +87,11 @@ def test_excerpt_newlines_collapsed() -> None:
 
 
 def test_citationrecord_is_frozen_and_hashable() -> None:
+    from dataclasses import FrozenInstanceError
+
     record = _record((_source("alpha.md"),))
     assert isinstance(record, CitationRecord)
-    with pytest.raises(Exception):
+    with pytest.raises(FrozenInstanceError):
         record.query = "tampered"  # type: ignore[misc]
     # tuple of frozen dataclasses is hashable
     hash((record.query, record.hits))

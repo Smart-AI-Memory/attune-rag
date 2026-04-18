@@ -7,7 +7,6 @@ don't depend on the optional [attune-help] extra.
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import replace
 
 import pytest
 
@@ -200,8 +199,9 @@ def test_punctuation_stripped(corpus: FakeCorpus) -> None:
 
 
 def test_retrievalhit_is_frozen(corpus: FakeCorpus) -> None:
+    from dataclasses import FrozenInstanceError
+
     hit = KeywordRetriever().retrieve("security audit", corpus)[0]
     assert isinstance(hit, RetrievalHit)
-    with pytest.raises(Exception):
-        replace  # silences unused import warning
+    with pytest.raises(FrozenInstanceError):
         hit.score = 99.0  # type: ignore[misc]

@@ -129,10 +129,12 @@ def test_version_changes_when_content_changes(tiny_corpus: Path) -> None:
 
 
 def test_retrievalentry_is_frozen_and_hashable(tiny_corpus: Path) -> None:
+    from dataclasses import FrozenInstanceError
+
     corpus = DirectoryCorpus(tiny_corpus)
     entry = next(iter(corpus.entries()))
     assert isinstance(entry, RetrievalEntry)
-    with pytest.raises(Exception):  # dataclasses.FrozenInstanceError
+    with pytest.raises(FrozenInstanceError):
         entry.path = "tampered"  # type: ignore[misc]
     # Related is tuple (hashable)
     hash((entry.path, entry.related))
