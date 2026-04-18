@@ -337,15 +337,8 @@ def test_stemming_matches_ate_ator() -> None:
 
 
 def test_stemming_preserves_short_tokens() -> None:
-    # Tokens < 3+suffix_len chars must not be stemmed.
-    primary = _entry(
-        path="x.md",
-        category="concepts",
-        summary="is on it",
-    )
-    corpus = FakeCorpus([primary])
-    # "is" and "on" are stopwords, but even if they weren't
-    # they wouldn't stem below 3 chars.
+    # Tokens whose stemmed length would fall below
+    # _MIN_STEM_LEN must be returned unchanged.
     from attune_rag.retrieval import _stem
 
     assert _stem("is") == "is"
