@@ -156,18 +156,27 @@ def test_k_propagated_to_retriever(corpus: FakeCorpus) -> None:
 
 def test_default_variant_is_citation(corpus: FakeCorpus) -> None:
     """Pin the default to `citation` — selected by A/B sweep on 2026-04-19
-    (46.7% → 6.7% hallucination rate)."""
+    (46.7% → 6.7% hallucination rate). Under 0.1.5 each passage is
+    wrapped in a bare <passage>...</passage> sentinel (for injection
+    defense) while the pre-0.1.5 `[P1] source: <path>` header stays
+    as the first line inside the tag (for citation-training fidelity)."""
     pipeline = RagPipeline(corpus=corpus)
     result = pipeline.run("security audit")
-    assert "[P1]" in result.augmented_prompt
-    assert "[P1]" in result.context
+    assert "<passage>" in result.context
+    assert "[P1] source:" in result.context
+    assert "<passage>" in result.augmented_prompt
+    # The regressed XML-attribute citation shape must stay gone.
+    assert 'id="P1"' not in result.augmented_prompt
 
 
 def test_baseline_variant_opt_in(corpus: FakeCorpus) -> None:
+    """The baseline variant uses <passage> sentinels around the
+    pre-0.1.5 [source: <path>] header (no P1 numbering)."""
     pipeline = RagPipeline(corpus=corpus)
     result = pipeline.run("security audit", prompt_variant="baseline")
-    assert "[P1]" not in result.augmented_prompt
+    assert "<passage>" in result.augmented_prompt
     assert "[source:" in result.augmented_prompt
+    assert "[P1]" not in result.augmented_prompt
 
 
 def test_run_and_generate_with_provider_instance(corpus: FakeCorpus) -> None:

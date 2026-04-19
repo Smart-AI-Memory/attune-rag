@@ -6,6 +6,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-04-19
+
+### Added (security)
+
+- **`<passage>...</passage>` sentinel wrapping around every
+  retrieved passage** produced by `join_context` and
+  `join_context_numbered`. Each prompt variant gained a
+  clear **injection-defense clause** telling the model
+  that content inside `<passage>` tags is documentation
+  data, never instructions — even when a passage body
+  contains adversarial text like "Ignore prior
+  instructions" or a literal `</passage>` attempt to
+  break out of the wrapping.
+  - Addresses a class of risk orthogonal to the v0.1.4
+    citation-forced faithfulness gains: **claim
+    hallucination** (the model making up facts) and
+    **prompt injection from retrieved content** (the
+    model executing instructions embedded in the corpus)
+    are separate threat models and need separate
+    mitigations. v0.1.4 addressed the first; 0.1.5
+    addresses the second.
+  - The inner passage format is intentionally unchanged
+    from v0.1.4 — each passage still begins with its
+    pre-sentinel `[source: <path>]` (baseline) or
+    `[P{n}] source: <path>` (citation-numbered) header
+    line. Experimenting with an XML-attribute form
+    (`<passage id="P1" source="path">` with `id` as the
+    citation anchor) regressed citation faithfulness
+    from 1.00 to 0.97 in an A/B sweep; the header-inside-
+    sentinel hybrid recovered it to 0.99.
+
+### Changed (A/B verification)
+
+A/B sweep confirmed the new sentinel format keeps all four
+prompt variants well above the pre-committed 0.85
+faithfulness gate:
+
+| variant | v0.1.4 | v0.1.5 | Δ faith | Δ hallu rate |
+|---|---|---|---|---|
+| baseline | 0.94 / 47% | 0.94 / 40% | flat | −7pp |
+| strict | 0.97 / 27% | 0.96 / 33% | −0.01 | +6pp |
+| **citation** | **1.00 / 6.7%** | **0.99 / 13.3%** | **−0.01** | **+6.7pp** |
+| anti_prior | 0.95 / 33% | 0.98 / 20% | +0.03 | −13pp |
+
+Citation remains the top variant and the pinned default.
+The +6.7pp bucket-level hallucination rate on citation
+corresponds to 2 extra queries with a single unsupported
+claim each (per-claim hallucination went from ~0.5% to
+~3.2%) — a real but small regression traded for real
+injection defense.
+
 ## [0.1.4] - 2026-04-19
 
 ### Changed (reliability + robustness)

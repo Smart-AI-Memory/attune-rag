@@ -28,8 +28,15 @@ def test_augmented_prompt_contains_both_sections() -> None:
 
 
 def test_augmented_prompt_has_injection_guard() -> None:
+    """Every prompt must reference the <passage> sentinel and
+    tell the model the tag content is data, not instructions."""
     out = build_augmented_prompt("q", "ctx")
-    assert "not as directives" in out or "as data" in out
+    normalized = " ".join(out.split())
+    assert "<passage>" in normalized or "<passage>" in out
+    assert "never instructions" in normalized
+    # Explicit mention of break-out attempts so a reviewer can
+    # confirm the clause covers adversarial content inside the tags.
+    assert "</passage>" in normalized or "break out" in normalized
 
 
 def test_augmented_prompt_rejects_empty_query() -> None:
@@ -54,14 +61,21 @@ def test_join_context_concatenates_hits() -> None:
     ctx = join_context(hits)
     assert "alpha content" in ctx
     assert "beta content" in ctx
+    # Hybrid format: <passage> sentinel wraps the pre-0.1.5
+    # [source: ...] header + body.
+    assert "<passage>" in ctx
     assert "[source: a.md]" in ctx
     assert "[source: b.md]" in ctx
+    # Every opener has a matching closer.
+    assert ctx.count("<passage>") == ctx.count("</passage>") == 2
 
 
 def test_join_context_preserves_source_boundaries() -> None:
     hits = [_hit("a.md", "one"), _hit("b.md", "two")]
     ctx = join_context(hits)
-    assert "---" in ctx
+    # Separator is now a blank line between self-delimiting XML
+    # passages (the old `---` rule is obsolete).
+    assert "</passage>\n\n<passage" in ctx
 
 
 def test_join_context_respects_max_chars() -> None:
@@ -69,6 +83,16 @@ def test_join_context_respects_max_chars() -> None:
     hits = [_hit("a.md", big), _hit("b.md", big), _hit("c.md", big)]
     ctx = join_context(hits, max_chars=5_000)
     assert len(ctx) <= 5_000
+
+
+def test_join_context_truncated_passage_stays_well_formed() -> None:
+    """A partial passage at the budget edge must still have its
+    closing </passage> tag — otherwise the wrapping is broken for
+    the injection-defense clause."""
+    big = "x" * 10_000
+    hits = [_hit("a.md", big), _hit("b.md", big)]
+    ctx = join_context(hits, max_chars=2_000)
+    assert ctx.count("<passage") == ctx.count("</passage>")
 
 
 def test_join_context_empty_hits_returns_empty() -> None:
@@ -100,6 +124,11 @@ def test_citation_variant_requires_markers() -> None:
     out = build_augmented_prompt("q", "ctx", variant="citation")
     assert "[P1]" in out
     assert "citation" in out.lower() or "cite" in out.lower()
+    # Hybrid format: citations reference the `[P1]` header that
+    # lives inside the <passage> sentinel, not an XML attribute.
+    # Explicit no-attribute assertion guards against a future
+    # refactor reintroducing the regressed `id="P1"` pattern.
+    assert 'id="P1"' not in out
 
 
 def test_anti_prior_variant_warns_about_training_data() -> None:
@@ -115,11 +144,29 @@ def test_unknown_variant_raises() -> None:
 def test_join_context_numbered_labels_passages() -> None:
     hits = [_hit("a.md", "alpha"), _hit("b.md", "beta"), _hit("c.md", "gamma")]
     ctx = join_context_numbered(hits)
+    # Hybrid format: bare <passage> sentinel, with the [P1] marker
+    # on the first inner line so the citation-variant model sees
+    # the exact training-pattern header it's anchored to.
     assert "[P1] source: a.md" in ctx
     assert "[P2] source: b.md" in ctx
     assert "[P3] source: c.md" in ctx
     assert "alpha" in ctx and "beta" in ctx and "gamma" in ctx
+    assert ctx.count("<passage>") == ctx.count("</passage>") == 3
+    # Explicitly assert the regressed XML-attribute shape is gone.
+    assert 'id="P1"' not in ctx
 
 
 def test_join_context_numbered_empty_returns_empty() -> None:
     assert join_context_numbered([]) == ""
+
+
+def test_every_variant_mentions_passage_sentinel() -> None:
+    """The injection-defense clause must appear in every
+    variant — regression guard against a future refactor that
+    drops it from one of the templates."""
+    for variant in ("baseline", "strict", "citation", "anti_prior"):
+        out = build_augmented_prompt("q", "ctx", variant=variant)
+        assert "<passage>" in out, f"variant {variant!r} missing sentinel reference"
+        assert (
+            "never instructions" in out
+        ), f"variant {variant!r} missing data-not-instructions clause"
