@@ -2,24 +2,30 @@
 
 Requires the ``attune-rag[attune-help]`` optional extra.
 
-v0.1.0 note on sidecars
------------------------
+Sidecar behavior
+----------------
 
-``attune-help`` ships ``summaries.json`` and
-``cross_links.json`` beside its templates, but the shapes
-do not match ``DirectoryCorpus``'s expectations:
+As of attune-rag 0.1.2 + attune-help 0.7.0:
 
-- ``summaries.json`` is keyed by feature name
-  (``"security-audit"``) rather than template path
-  (``"concepts/tool-security-audit.md"``).
-- ``cross_links.json`` uses a nested
-  ``{version, stats, links, tag_index, workflow_map}``
-  layout keyed by short IDs (``"com-auth-strategies"``).
+- ``summaries_by_path.json`` (path-keyed, keyword-rich,
+  polished) is the primary summary sidecar. This is what
+  ``DirectoryCorpus`` expects and what drives the summary
+  signal in keyword retrieval.
+- Legacy ``summaries.json`` (feature-keyed) is still
+  shipped by attune-help for backwards compatibility but
+  has a schema mismatch with ``DirectoryCorpus``, so it is
+  silently ignored by path-keyed consumers. Passing it
+  directly would produce zero summary coverage.
+- ``cross_links.json`` uses a nested layout incompatible
+  with ``DirectoryCorpus``'s expected ``{path: [paths]}``
+  map. Leave it unset for now; a schema adapter is a
+  future concern.
 
-v0.1.0 loads templates without sidecars. A schema adapter
-that surfaces attune-help's richer metadata as
-``RetrievalEntry.summary`` / ``related`` / ``metadata`` is
-a v0.2.0 concern (see spec Open Questions).
+For attune-help < 0.7.0 the summaries_by_path.json file
+doesn't exist. We still attempt to load it — the
+``_load_sidecar`` helper treats a missing file as an empty
+map, so older attune-help installs simply get no summary
+signal (same as before).
 """
 
 from __future__ import annotations
@@ -55,8 +61,14 @@ class AttuneHelpCorpus:
             )
 
         self._version = getattr(attune_help, "__version__", "unknown")
-        # v0.1.0: no sidecars (schema mismatch documented above).
-        self._inner = DirectoryCorpus(root=root)
+        # attune-help 0.7.0+ ships summaries_by_path.json; older
+        # versions don't have it. DirectoryCorpus._load_sidecar
+        # treats a missing file as an empty map, so this is safe
+        # to pass unconditionally.
+        self._inner = DirectoryCorpus(
+            root=root,
+            summaries_file="summaries_by_path.json",
+        )
 
     def entries(self) -> Iterable[RetrievalEntry]:
         return self._inner.entries()
