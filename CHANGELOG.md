@@ -6,6 +6,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-04-19
+
+### Changed (reliability + robustness)
+
+- **`FaithfulnessJudge` now sets a 60s request timeout** on
+  the default `AsyncAnthropic` client. A stalled network
+  no longer hangs the benchmark loop indefinitely. Override
+  via the new ``timeout=`` constructor kwarg.
+- **Per-query error handling in `bench_prompts`.** A single
+  transient failure (rate-limit 429, network blip,
+  malformed fixture entry) now records an `error` on the
+  `_QueryRun` and lets the sweep continue to the next
+  query. Errored runs are excluded from the means and
+  surfaced in a new `err` column in the printed table.
+  Before: one bad query killed the full ~10 min run with
+  no partial results.
+- **Tool-use payload is schema-validated** before the
+  judge computes a score. Non-list claim arrays or
+  non-string reasoning now raise a clear `RuntimeError`
+  naming the offending field rather than a cryptic
+  `TypeError` from `len()`. Non-string items inside the
+  claim lists are coerced to strings (occasional model
+  quirk) rather than failing.
+- **`FaithfulnessJudge.__init__` rejects ambiguous
+  config** — passing both `client=` and `api_key=` now
+  raises `ValueError` instead of silently ignoring one.
+
+### Changed (CLI robustness in `python -m attune_rag.benchmark`
+and `python -m attune_rag.eval.bench_prompts`)
+
+- **Path validation on `--queries` and `--output`**: null
+  bytes rejected, resolution errors reported clearly,
+  system directories (`/etc`, `/sys`, `/proc`, `/dev`,
+  `/bin`, `/sbin`, `/boot`) refused for writes on both
+  Linux and macOS (handles `/etc` → `/private/etc`
+  symlink).
+- **Clear error when the default golden fixture is
+  missing** — the `tests/golden/` directory is not
+  shipped in the wheel, so `pip install attune-rag` users
+  who run the benchmark with no `--queries` now get a
+  message explaining they must pass their own fixture,
+  not a cryptic `FileNotFoundError`.
+
+### Added
+
+- `test_eval_bench_prompts.py` — 21 new tests covering
+  `_aggregate` metric math (including the new
+  errored-run exclusion), `main()` argument + env
+  validation (missing key, bad path, unknown variant,
+  null byte, system-directory output), and the new
+  `_validate_read_path` / `_validate_write_path` guards.
+- 5 new tests in `test_eval_faithfulness.py` for
+  constructor validation, the missing `[claude]` extra
+  path, and tool-use payload schema violations.
+
+### Notes
+
+Every change in this release was surfaced by a
+three-pass deep review (security + quality + test gaps)
+on the v0.1.3 eval module. No behavioral regressions;
+all public APIs unchanged.
+
 ## [0.1.3] - 2026-04-19
 
 ### Added

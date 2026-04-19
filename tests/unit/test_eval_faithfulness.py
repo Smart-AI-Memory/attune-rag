@@ -183,3 +183,89 @@ def test_faithfulness_result_to_dict_roundtrips() -> None:
     assert d["unsupported_claims"] == ["b"]
     assert d["reasoning"] == "half"
     assert d["model"] == "claude-sonnet-4-6"
+
+
+# --- Constructor validation (added in 0.1.4) ---
+
+
+def test_constructor_rejects_client_and_api_key_together() -> None:
+    """Ambiguous: which config should the judge use?"""
+    import pytest as _pytest
+
+    from attune_rag.eval.faithfulness import FaithfulnessJudge
+
+    client = _FakeClient({"supported_claims": [], "unsupported_claims": [], "reasoning": ""})
+    with _pytest.raises(ValueError, match="not both"):
+        FaithfulnessJudge(client=client, api_key="sk-fake")  # pragma: allowlist secret
+
+
+def test_constructor_without_anthropic_raises_helpful_error() -> None:
+    """Simulate the [claude] extra being uninstalled."""
+    import sys
+
+    import pytest as _pytest
+
+    from attune_rag.eval.faithfulness import FaithfulnessJudge
+
+    # sys.modules sentinel pattern — see project CLAUDE.md lesson
+    # "MetaPathFinder find_module is dead in Python 3.12+".
+    saved = sys.modules.get("anthropic")
+    sys.modules["anthropic"] = None  # type: ignore[assignment]
+    try:
+        with _pytest.raises(RuntimeError, match=r"\[claude\] extra"):
+            FaithfulnessJudge()
+    finally:
+        if saved is not None:
+            sys.modules["anthropic"] = saved
+        else:
+            sys.modules.pop("anthropic", None)
+
+
+# --- Schema validation on tool-use payload (added in 0.1.4) ---
+
+
+@pytest.mark.asyncio
+async def test_score_raises_on_non_list_supported_claims() -> None:
+    """A future SDK shape change where supported_claims is not a
+    list must surface a clear error, not a cryptic TypeError from
+    ``len()``."""
+    judge, _ = _make_judge(
+        {
+            "supported_claims": "not a list",  # shape violation
+            "unsupported_claims": [],
+            "reasoning": "ok",
+        }
+    )
+    with pytest.raises(RuntimeError, match=r"supported_claims"):
+        await judge.score("q", "answer with a claim", "p")
+
+
+@pytest.mark.asyncio
+async def test_score_raises_on_non_string_reasoning() -> None:
+    judge, _ = _make_judge(
+        {
+            "supported_claims": [],
+            "unsupported_claims": [],
+            "reasoning": {"unexpected": "object"},
+        }
+    )
+    with pytest.raises(RuntimeError, match=r"reasoning"):
+        await judge.score("q", "answer", "p")
+
+
+@pytest.mark.asyncio
+async def test_score_coerces_non_string_claim_items_to_strings() -> None:
+    """Model occasionally emits non-string items in the claim lists
+    (e.g. numbers). The parser should coerce rather than crash, so
+    a benchmark doesn't abort on one weird query."""
+    judge, _ = _make_judge(
+        {
+            "supported_claims": [123, "a real claim"],
+            "unsupported_claims": [],
+            "reasoning": "ok",
+        }
+    )
+    result = await judge.score("q", "a", "p")
+    assert len(result.supported_claims) == 2
+    assert "123" in result.supported_claims
+    assert "a real claim" in result.supported_claims

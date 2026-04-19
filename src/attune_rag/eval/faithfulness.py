@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 
 
 DEFAULT_JUDGE_MODEL = "claude-sonnet-4-6"
+DEFAULT_JUDGE_TIMEOUT_SECONDS = 60.0
 
 
 _JUDGE_SYSTEM_PROMPT = """You are a strict faithfulness judge for a retrieval-augmented \
@@ -149,7 +150,31 @@ class FaithfulnessJudge:
         client: AsyncAnthropic | None = None,
         api_key: str | None = None,
         model: str = DEFAULT_JUDGE_MODEL,
+        timeout: float = DEFAULT_JUDGE_TIMEOUT_SECONDS,
     ) -> None:
+        """Construct a judge.
+
+        Args:
+            client: Injected ``AsyncAnthropic`` instance. When
+                passed, ``api_key`` and ``timeout`` are ignored —
+                the caller has full control of the client.
+            api_key: API key for the default client. Falls back to
+                ``ANTHROPIC_API_KEY`` in the environment when None.
+            model: Judge model name.
+            timeout: Per-request timeout in seconds for the
+                default client. Ignored when ``client`` is
+                injected. A stalled network must not burn the
+                benchmark loop's budget indefinitely, so the
+                default is finite.
+
+        Raises:
+            ValueError: If both ``client`` and ``api_key`` are
+                provided (ambiguous).
+            RuntimeError: If ``client`` is None and the ``[claude]``
+                extra is not installed.
+        """
+        if client is not None and api_key is not None:
+            raise ValueError("Pass either client or api_key, not both — they conflict.")
         if client is not None:
             self._client = client
         else:
@@ -160,7 +185,7 @@ class FaithfulnessJudge:
                     "FaithfulnessJudge requires the [claude] extra. "
                     "Install with: pip install 'attune-rag[claude]'"
                 ) from exc
-            self._client = AsyncAnthropic(api_key=api_key)
+            self._client = AsyncAnthropic(api_key=api_key, timeout=timeout)
         self._model = model
 
     @property
@@ -215,9 +240,7 @@ class FaithfulnessJudge:
         )
 
         payload = _extract_tool_input(response)
-        supported = list(payload.get("supported_claims", []))
-        unsupported = list(payload.get("unsupported_claims", []))
-        reasoning = str(payload.get("reasoning", "")).strip()
+        supported, unsupported, reasoning = _parse_judge_payload(payload)
 
         total = len(supported) + len(unsupported)
         # Refusal (zero claims) is a faithful outcome.
@@ -230,6 +253,37 @@ class FaithfulnessJudge:
             reasoning=reasoning,
             model=self._model,
         )
+
+
+def _parse_judge_payload(payload: dict[str, Any]) -> tuple[list[str], list[str], str]:
+    """Validate and extract fields from the judge's tool_use input.
+
+    ``tool_choice`` forces the schema, but a future SDK / API
+    change could still hand us an unexpected shape. Validate
+    each field explicitly so the error points at the schema
+    violation instead of surfacing as a cryptic ``TypeError``
+    on ``len()`` further down.
+    """
+
+    def _as_str_list(value: Any, field_name: str) -> list[str]:
+        if not isinstance(value, list):
+            raise RuntimeError(
+                f"FaithfulnessJudge: expected list for "
+                f"{field_name!r}, got {type(value).__name__}"
+            )
+        return [str(item) for item in value]
+
+    supported = _as_str_list(payload.get("supported_claims", []), "supported_claims")
+    unsupported = _as_str_list(payload.get("unsupported_claims", []), "unsupported_claims")
+
+    reasoning_raw = payload.get("reasoning", "")
+    if not isinstance(reasoning_raw, str):
+        raise RuntimeError(
+            f"FaithfulnessJudge: expected str for 'reasoning', "
+            f"got {type(reasoning_raw).__name__}"
+        )
+
+    return supported, unsupported, reasoning_raw.strip()
 
 
 def _extract_tool_input(response: Any) -> dict[str, Any]:
