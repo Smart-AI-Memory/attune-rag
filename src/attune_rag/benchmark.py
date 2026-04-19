@@ -1,13 +1,21 @@
-"""Retrieval-quality benchmark runner.
+"""Retrieval + (optional) faithfulness benchmark runner.
 
 Run via::
 
     python -m attune_rag.benchmark
     python -m attune_rag.benchmark --queries path/to/queries.yaml
     python -m attune_rag.benchmark --min-precision 0.70
+    python -m attune_rag.benchmark --with-faithfulness \\
+        --min-faithfulness 0.85
 
 Prints precision@1, recall@3, and mean latency. Exits 1 if
 precision@1 falls below ``--min-precision`` so CI can gate.
+
+With ``--with-faithfulness`` (opt-in — spends API tokens),
+also runs the default prompt variant through
+``run_and_generate`` + :class:`FaithfulnessJudge` and
+gates on the resulting mean faithfulness score. Requires
+``ANTHROPIC_API_KEY`` and the ``[claude]`` extra.
 
 Queries file format matches tests/golden/queries.yaml.
 """
@@ -15,6 +23,8 @@ Queries file format matches tests/golden/queries.yaml.
 from __future__ import annotations
 
 import argparse
+import asyncio
+import os
 import sys
 import time
 from pathlib import Path
@@ -133,10 +143,70 @@ def _print_summary(report: dict[str, Any], verbose: bool) -> None:
                 print(f"        actual:   {q['actual']}")
 
 
+async def _score_faithfulness(
+    queries: list[dict[str, Any]],
+    k: int,
+) -> dict[str, Any]:
+    """Run the default variant through run_and_generate + judge for each query.
+
+    Returns a dict with mean faithfulness plus per-query detail.
+    Spends API tokens (2 LLM calls per query). Respect the caller's
+    budget.
+    """
+    from . import RagPipeline
+    from .eval import FaithfulnessJudge
+
+    pipeline = RagPipeline()
+    judge = FaithfulnessJudge()
+
+    scores: list[float] = []
+    hallu = 0
+    refuse = 0
+    per_query: list[dict[str, Any]] = []
+
+    for entry in queries:
+        query = entry["query"]
+        print(f"  judging: {entry['id']} — {query!r}", file=sys.stderr)
+        answer, rag_result = await pipeline.run_and_generate(query, provider="claude", k=k)
+        verdict = await judge.score(query=query, answer=answer, passages=rag_result.context)
+        scores.append(verdict.score)
+        if verdict.total_claims == 0:
+            refuse += 1
+        if len(verdict.unsupported_claims) > 0:
+            hallu += 1
+        per_query.append(
+            {
+                "id": entry["id"],
+                "query": query,
+                "score": verdict.score,
+                "supported": len(verdict.supported_claims),
+                "unsupported": len(verdict.unsupported_claims),
+            }
+        )
+
+    n = len(scores)
+    return {
+        "mean_faithfulness": sum(scores) / n if n else 0.0,
+        "refusal_rate": refuse / n if n else 0.0,
+        "hallucination_rate": hallu / n if n else 0.0,
+        "per_query": per_query,
+    }
+
+
+def _print_faithfulness(fr: dict[str, Any]) -> None:
+    print()
+    print(f"Mean faithfulness:   {fr['mean_faithfulness']:.3f}")
+    print(f"Refusal rate:        {fr['refusal_rate']:.1%}")
+    print(f"Hallucination rate:  {fr['hallucination_rate']:.1%}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="attune-rag-benchmark",
-        description="Measure retrieval precision@1 / recall@k against a golden-query set.",
+        description=(
+            "Measure retrieval precision@1 / recall@k — optionally also "
+            "faithfulness — against a golden-query set."
+        ),
     )
     parser.add_argument(
         "--queries",
@@ -150,6 +220,24 @@ def main(argv: list[str] | None = None) -> int:
         type=float,
         default=0.70,
         help="Fail (exit 1) if precision@1 falls below this (default 0.70)",
+    )
+    parser.add_argument(
+        "--with-faithfulness",
+        action="store_true",
+        help=(
+            "Additionally run the default prompt variant through an LLM "
+            "judge. Requires ANTHROPIC_API_KEY. Spends API tokens — one "
+            "generator call + one judge call per query."
+        ),
+    )
+    parser.add_argument(
+        "--min-faithfulness",
+        type=float,
+        default=0.85,
+        help=(
+            "With --with-faithfulness: fail (exit 1) if mean faithfulness "
+            "falls below this (default 0.85)."
+        ),
     )
     parser.add_argument(
         "--verbose",
@@ -174,6 +262,30 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 1
+
+    if args.with_faithfulness:
+        if not os.environ.get("ANTHROPIC_API_KEY"):
+            print(
+                "error: --with-faithfulness requires ANTHROPIC_API_KEY.",
+                file=sys.stderr,
+            )
+            return 2
+        print("\nRunning faithfulness pass (default variant)...", file=sys.stderr)
+        fr = asyncio.run(_score_faithfulness(queries, k=args.k))
+        _print_faithfulness(fr)
+        if fr["mean_faithfulness"] < args.min_faithfulness:
+            print(
+                f"\nFAIL: mean_faithfulness {fr['mean_faithfulness']:.3f} "
+                f"< gate {args.min_faithfulness:.3f}",
+                file=sys.stderr,
+            )
+            return 1
+        print(
+            f"\nPASS: P@1 ≥ {args.min_precision:.2%} and "
+            f"faithfulness ≥ {args.min_faithfulness:.3f}."
+        )
+        return 0
+
     print(f"\nPASS: precision@1 meets gate ({args.min_precision:.2%}).")
     return 0
 

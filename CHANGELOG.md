@@ -6,6 +6,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-04-19
+
+### Added
+
+- **`attune_rag.eval.FaithfulnessJudge`** — LLM-as-judge
+  scorer for answer grounding. Uses Anthropic forced
+  tool-use for guaranteed-schema JSON output. Decomposes
+  each answer into atomic factual claims and scores
+  supported / unsupported against the retrieved passages.
+  Returns a 0-1 score plus per-claim verdicts. Requires
+  the `[claude]` extra.
+- **Three prompt variants** in `attune_rag.prompts`
+  alongside `baseline`: `strict`, `citation`,
+  `anti_prior`. Registry exposed as
+  `attune_rag.PROMPT_VARIANTS`. Select via
+  `RagPipeline.run(..., prompt_variant="...")`.
+- **A/B benchmark runner** at
+  `attune_rag.eval.bench_prompts`. Sweeps every variant
+  × the golden query set through retrieval + generation
+  + judging, prints a comparison table with P@1, R@k,
+  faithfulness, refusal rate, hallucination rate.
+- **`--with-faithfulness` / `--min-faithfulness` flags**
+  on `python -m attune_rag.benchmark`. Opt-in
+  faithfulness pass that runs the default variant
+  through the judge and gates CI on mean faithfulness.
+  Default off; retrieval-only mode stays offline and
+  free.
+- **`RagResult.context`** — the exact passage block
+  passed to the generator, preserved on the result so
+  downstream evaluators can score against identical
+  text (not the 200-char excerpts in
+  `CitedSource.excerpt`).
+
+### Changed
+
+- **Default prompt variant is now `citation`.** Selected
+  by A/B sweep on 2026-04-19 (decision doc:
+  [faithfulness-decision-2026-04-19.md](https://github.com/Smart-AI-Memory/attune-ai/blob/main/docs/rag/faithfulness-decision-2026-04-19.md)).
+  Hallucination rate on the golden set drops **46.7% →
+  6.7%** vs baseline while retrieval quality stays
+  identical. Mean faithfulness reaches **1.00**. Opt
+  back in to the old template with
+  `run(..., prompt_variant="baseline")` if your use
+  case needs prose-style answers without inline
+  citations.
+
+### Faithfulness quality
+
+| variant | P@1 | R@3 | faith | hallu. |
+|---|---|---|---|---|
+| baseline | 73.3% | 86.7% | 0.94 | 46.7% |
+| strict | 73.3% | 86.7% | 0.97 | 26.7% |
+| **citation** | 73.3% | 86.7% | **1.00** | **6.7%** |
+| anti_prior | 73.3% | 86.7% | 0.95 | 33.3% |
+
 ## [0.1.2] - 2026-04-18
 
 ### Changed

@@ -17,14 +17,14 @@ grounding-2026-04-17.md (v4.0).
 Subsequent tasks in the spec fill in each module.
 """
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 # NOTE: Imports are added incrementally as tasks 1.2-1.8
 # land. For task 1.1 (scaffold only) the public names
 # below resolve to minimal stubs so imports work for CI.
 from .corpus import CorpusProtocol, DirectoryCorpus, RetrievalEntry
 from .pipeline import RagPipeline, RagResult
-from .prompts import build_augmented_prompt
+from .prompts import PROMPT_VARIANTS, build_augmented_prompt
 from .provenance import CitationRecord, CitedSource, format_citations_markdown
 from .retrieval import KeywordRetriever, RetrievalHit, RetrieverProtocol
 
@@ -41,4 +41,5 @@ __all__ = [
     "RetrievalHit",
     "RetrieverProtocol",
     "build_augmented_prompt",
+    "PROMPT_VARIANTS",
 ]

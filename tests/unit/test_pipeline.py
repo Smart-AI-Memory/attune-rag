@@ -154,6 +154,22 @@ def test_k_propagated_to_retriever(corpus: FakeCorpus) -> None:
     assert len(result.citation.hits) <= 1
 
 
+def test_default_variant_is_citation(corpus: FakeCorpus) -> None:
+    """Pin the default to `citation` — selected by A/B sweep on 2026-04-19
+    (46.7% → 6.7% hallucination rate)."""
+    pipeline = RagPipeline(corpus=corpus)
+    result = pipeline.run("security audit")
+    assert "[P1]" in result.augmented_prompt
+    assert "[P1]" in result.context
+
+
+def test_baseline_variant_opt_in(corpus: FakeCorpus) -> None:
+    pipeline = RagPipeline(corpus=corpus)
+    result = pipeline.run("security audit", prompt_variant="baseline")
+    assert "[P1]" not in result.augmented_prompt
+    assert "[source:" in result.augmented_prompt
+
+
 def test_run_and_generate_with_provider_instance(corpus: FakeCorpus) -> None:
     """run_and_generate with an LLMProvider instance calls its generate()."""
     from unittest.mock import AsyncMock
