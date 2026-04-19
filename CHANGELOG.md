@@ -6,6 +6,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-04-18
+
+### Changed
+
+- **`AttuneHelpCorpus` now loads the path-keyed summary
+  sidecar shipped in attune-help 0.7.0+.** Previously the
+  adapter passed no sidecar to `DirectoryCorpus` because
+  attune-help's legacy `summaries.json` was feature-keyed
+  and silently ignored. The 0.7.0 release adds
+  `summaries_by_path.json` which attune-rag now reads by
+  default. Effect: summary signal reaches the retriever
+  for the first time, materially improving retrieval
+  quality for attune-help corpora.
+- **`attune-help` dep floor bumped** from `>=0.5.1,<0.6`
+  to `>=0.7.0,<0.8`. Users with older attune-help will
+  need to upgrade.
+
+### Retrieval quality
+
+See the post-upgrade benchmark in
+[attune-ai/docs/rag/embeddings-decision-2026-04-17.md](https://github.com/Smart-AI-Memory/attune-ai/blob/main/docs/rag/embeddings-decision-2026-04-17.md)
+for updated Precision@1 / Recall@3 numbers on the 15-query
+golden set.
+
 ## [0.1.1] - 2026-04-18
 
 ### Changed
