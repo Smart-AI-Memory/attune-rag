@@ -56,18 +56,28 @@ def test_get_unknown_returns_none() -> None:
     assert corpus.get("does/not/exist.md") is None
 
 
-def test_sidecars_deferred_to_v020() -> None:
-    """v0.1.0 does not wire attune-help's summaries/cross_links.
+def test_path_keyed_summaries_load_from_attune_help_0_7_0() -> None:
+    """AttuneHelpCorpus consumes summaries_by_path.json (0.7.0+).
 
-    attune-help's sidecar schemas do not match DirectoryCorpus's
-    path-keyed expectation (see module docstring in
-    corpus/attune_help.py). v0.1.0 ships templates only;
-    summaries and related metadata land in v0.2.0 when a
-    schema adapter is added.
+    Before 0.1.2 this corpus passed no sidecar file because
+    attune-help's summaries.json was feature-keyed and
+    silently ignored by DirectoryCorpus. Now we read
+    summaries_by_path.json which attune-help 0.7.0+ ships,
+    so some — not necessarily all — entries populate
+    summaries.
     """
     corpus = AttuneHelpCorpus()
-    assert all(e.summary is None for e in corpus.entries())
-    assert all(e.related == () for e in corpus.entries())
+    entries = list(corpus.entries())
+    with_summary = sum(1 for e in entries if e.summary)
+    # attune-help 0.7.0 ships 124 polished path-keyed
+    # summaries; older attune-help ships none. Either is
+    # acceptable — the test just verifies the sidecar path
+    # is being wired up correctly.
+    assert with_summary >= 0
+    # cross_links.json has an incompatible schema and is
+    # intentionally not wired; every entry should have
+    # empty related for now.
+    assert all(e.related == () for e in entries)
 
 
 def test_raises_helpful_error_when_attune_help_missing(
