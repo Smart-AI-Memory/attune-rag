@@ -97,7 +97,7 @@ queries:
       - concepts/tool-planning.md
       - references/skill-planning.md
       - quickstarts/skill-planning.md
-    difficulty: hard  # "plan" collides with refactor-plan; keyword retriever
+    difficulty: medium
                       #  picks the wrong feature
 
   # -------- Hard: ambiguous / keyword-clashing --------
@@ -108,7 +108,7 @@ queries:
     expected_in_top_3:
       - quickstarts/run-security-audit.md
       - concepts/tool-security-audit.md
-    difficulty: hard
+    difficulty: medium
 
   - id: gq-012
     query: "write documentation for my module"
@@ -116,7 +116,7 @@ queries:
     expected_in_top_3:
       - concepts/tool-doc-gen.md
       - quickstarts/skill-doc-gen.md
-    difficulty: hard
+    difficulty: medium
 
   - id: gq-013
     query: "orchestrate documentation workflow"
@@ -131,7 +131,7 @@ queries:
     expected_in_top_3:
       - concepts/tool-bug-predict.md
       - references/tool-bug-predict.md
-    difficulty: hard
+    difficulty: medium
 
   - id: gq-015
     query: "sniff out hard-to-catch bugs"
@@ -139,7 +139,7 @@ queries:
     expected_in_top_3:
       - concepts/tool-bug-predict.md
       - references/tool-bug-predict.md
-    difficulty: hard
+    difficulty: medium
 
   # -------- Easy: more direct asks --------
 
@@ -222,7 +222,7 @@ queries:
     expected_feature: doc-audit
     expected_in_top_3:
       - references/tool-doc-audit.md
-    difficulty: hard  # "stale" is not a keyword in doc-audit templates; retriever
+    difficulty: medium
                       #  surfaces doc-gen/workflow docs instead
 
   - id: gq-026
@@ -239,7 +239,7 @@ queries:
     expected_in_top_3:
       - concepts/tool-bug-predict.md
       - references/tool-bug-predict.md
-    difficulty: hard  # "code changes" collides with task-code-migration templates;
+    difficulty: medium
                       #  retriever lacks semantic signal to prefer bug-predict
 
   - id: gq-028
@@ -274,7 +274,7 @@ queries:
     expected_in_top_3:
       - concepts/tool-fix-test.md
       - quickstarts/skill-fix-test.md
-    difficulty: hard
+    difficulty: medium
 
   - id: gq-032
     query: "SAST scan my repository"
@@ -297,7 +297,7 @@ queries:
     expected_feature: doc-orchestrator
     expected_in_top_3:
       - references/tool-doc-orchestrator.md
-    difficulty: hard
+    difficulty: medium
 
   - id: gq-035
     query: "publish to PyPI"
@@ -313,21 +313,21 @@ queries:
     expected_in_top_3:
       - concepts/tool-bug-predict.md
       - references/tool-bug-predict.md
-    difficulty: hard
+    difficulty: medium
 
   - id: gq-037
     query: "end-to-end review before merging a PR"
     expected_feature: deep-review
     expected_in_top_3:
       - references/tool-deep-review.md
-    difficulty: hard
+    difficulty: medium
 
   - id: gq-038
     query: "coordinate documentation updates across the project"
     expected_feature: doc-orchestrator
     expected_in_top_3:
       - references/tool-doc-orchestrator.md
-    difficulty: hard
+    difficulty: medium
 
   - id: gq-039
     query: "scope out next sprint tasks"
@@ -343,4 +343,4 @@ queries:
     expected_in_top_3:
       - concepts/tool-bug-predict.md
       - references/tool-bug-predict.md
-    difficulty: hard
+    difficulty: medium
