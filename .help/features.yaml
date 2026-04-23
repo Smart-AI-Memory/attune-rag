@@ -1,0 +1,66 @@
+version: 1
+
+features:
+  pipeline:
+    description: Orchestrate retrieval, prompt assembly, and LLM generation in a single RagPipeline.run() call — returns RagResult with the answer and CitationRecord provenance
+    files:
+      - src/attune_rag/pipeline.py
+      - src/attune_rag/__init__.py
+    tags: [pipeline, orchestration, rag, result]
+
+  retrieval:
+    description: Keyword-based retrieval over a corpus — KeywordRetriever scores and ranks RetrievalEntry objects against a query using stemming and stopword filtering
+    files:
+      - src/attune_rag/retrieval.py
+    tags: [retrieval, keyword, scoring, ranking]
+
+  corpus:
+    description: Pluggable corpus loaders — CorpusProtocol defines the interface; DirectoryCorpus loads markdown from disk; AttuneHelpCorpus wraps the bundled attune-help templates
+    files:
+      - src/attune_rag/corpus/__init__.py
+      - src/attune_rag/corpus/base.py
+      - src/attune_rag/corpus/directory.py
+      - src/attune_rag/corpus/attune_help.py
+    tags: [corpus, loader, markdown, attune-help]
+
+  prompts:
+    description: Prompt assembly — build_augmented_prompt injects retrieved passages as grounding context; PROMPT_VARIANTS selects citation, grounded, or default prompt styles
+    files:
+      - src/attune_rag/prompts.py
+    tags: [prompts, templates, augmentation, citation]
+
+  provenance:
+    description: Citation tracking — CitationRecord and CitedSource capture which corpus entries grounded each answer; format_citations_markdown renders them for display
+    files:
+      - src/attune_rag/provenance.py
+    tags: [provenance, citations, traceability]
+
+  providers:
+    description: LLM provider adapters — LLMProvider protocol with claude, openai, and gemini implementations; each lazy-imports its SDK so core installs cleanly
+    files:
+      - src/attune_rag/providers/__init__.py
+      - src/attune_rag/providers/base.py
+      - src/attune_rag/providers/claude.py
+      - src/attune_rag/providers/openai.py
+      - src/attune_rag/providers/gemini.py
+    tags: [providers, llm, claude, openai, gemini]
+
+  eval:
+    description: Faithfulness evaluation — FaithfulnessJudge uses Claude tool-use to score whether answer claims are supported by retrieved passages; benchmark prompts for golden-set testing
+    files:
+      - src/attune_rag/eval/__init__.py
+      - src/attune_rag/eval/faithfulness.py
+      - src/attune_rag/eval/bench_prompts.py
+    tags: [eval, faithfulness, judge, hallucination, scoring]
+
+  benchmark:
+    description: Precision/recall/faithfulness benchmark runner — gates CI on configurable thresholds; supports custom query files and optional faithfulness scoring via --with-faithfulness
+    files:
+      - src/attune_rag/benchmark.py
+    tags: [benchmark, ci, precision, recall, quality]
+
+  cli:
+    description: Command-line interface — attune-rag query runs a RAG query and prints the grounded answer with citations; attune-rag corpus-info shows corpus statistics
+    files:
+      - src/attune_rag/cli.py
+    tags: [cli, query, corpus-info]
