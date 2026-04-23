@@ -140,3 +140,207 @@ queries:
       - concepts/tool-bug-predict.md
       - references/tool-bug-predict.md
     difficulty: hard
+
+  # -------- Easy: more direct asks --------
+
+  - id: gq-016
+    query: "find bugs in my code"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - quickstarts/skill-bug-predict.md
+    difficulty: easy
+
+  - id: gq-017
+    query: "create documentation for my code"
+    expected_feature: doc-gen
+    expected_in_top_3:
+      - concepts/tool-doc-gen.md
+      - quickstarts/skill-doc-gen.md
+    difficulty: easy
+
+  - id: gq-018
+    query: "check code quality"
+    expected_feature: code-quality
+    expected_in_top_3:
+      - concepts/tool-code-quality.md
+      - quickstarts/skill-code-quality.md
+    difficulty: easy
+
+  - id: gq-019
+    query: "create a release"
+    expected_feature: release-prep
+    expected_in_top_3:
+      - concepts/tool-release-prep.md
+      - references/skill-release-prep.md
+    difficulty: easy
+
+  - id: gq-020
+    query: "write unit tests"
+    expected_feature: smart-test
+    expected_in_top_3:
+      - concepts/tool-smart-test.md
+      - quickstarts/generate-tests.md
+    difficulty: easy
+
+  # -------- Medium: synonyms / paraphrases --------
+
+  - id: gq-021
+    query: "clean up technical debt"
+    expected_feature: refactor-plan
+    expected_in_top_3:
+      - concepts/tool-refactor-plan.md
+      - references/tool-refactor-plan.md
+    difficulty: medium
+
+  - id: gq-022
+    query: "add test coverage to my project"
+    expected_feature: smart-test
+    expected_in_top_3:
+      - concepts/tool-smart-test.md
+      - quickstarts/generate-tests.md
+    difficulty: medium
+
+  - id: gq-023
+    query: "check for security vulnerabilities"
+    expected_feature: security-audit
+    expected_in_top_3:
+      - concepts/tool-security-audit.md
+      - quickstarts/run-security-audit.md
+    difficulty: medium
+
+  - id: gq-024
+    query: "debug failing tests"
+    expected_feature: fix-test
+    expected_in_top_3:
+      - concepts/tool-fix-test.md
+      - references/skill-fix-test.md
+    difficulty: medium
+
+  - id: gq-025
+    query: "find stale documentation"
+    expected_feature: doc-audit
+    expected_in_top_3:
+      - references/tool-doc-audit.md
+    difficulty: hard  # "stale" is not a keyword in doc-audit templates; retriever
+                      #  surfaces doc-gen/workflow docs instead
+
+  - id: gq-026
+    query: "version bump and changelog"
+    expected_feature: release-prep
+    expected_in_top_3:
+      - concepts/tool-release-prep.md
+      - references/tool-release-prep.md
+    difficulty: medium
+
+  - id: gq-027
+    query: "spot risky code changes before merging"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: hard  # "code changes" collides with task-code-migration templates;
+                      #  retriever lacks semantic signal to prefer bug-predict
+
+  - id: gq-028
+    query: "architect a new feature"
+    expected_feature: planning
+    expected_in_top_3:
+      - concepts/tool-planning.md
+      - quickstarts/skill-planning.md
+    difficulty: medium
+
+  - id: gq-029
+    query: "improve code quality metrics"
+    expected_feature: code-quality
+    expected_in_top_3:
+      - concepts/tool-code-quality.md
+      - references/skill-code-quality.md
+    difficulty: medium
+
+  - id: gq-030
+    query: "reduce code complexity"
+    expected_feature: refactor-plan
+    expected_in_top_3:
+      - concepts/tool-refactor-plan.md
+      - references/skill-refactor-plan.md
+    difficulty: medium
+
+  # -------- Hard: ambiguous / keyword-clashing --------
+
+  - id: gq-031
+    query: "my CI pipeline keeps failing"
+    expected_feature: fix-test
+    expected_in_top_3:
+      - concepts/tool-fix-test.md
+      - quickstarts/skill-fix-test.md
+    difficulty: hard
+
+  - id: gq-032
+    query: "SAST scan my repository"
+    expected_feature: security-audit
+    expected_in_top_3:
+      - concepts/tool-security-audit.md
+      - quickstarts/run-security-audit.md
+    difficulty: medium
+
+  - id: gq-033
+    query: "add docstrings to all my functions"
+    expected_feature: doc-gen
+    expected_in_top_3:
+      - concepts/tool-doc-gen.md
+      - references/tool-doc-gen.md
+    difficulty: medium
+
+  - id: gq-034
+    query: "manage the documentation pipeline"
+    expected_feature: doc-orchestrator
+    expected_in_top_3:
+      - references/tool-doc-orchestrator.md
+    difficulty: hard
+
+  - id: gq-035
+    query: "publish to PyPI"
+    expected_feature: release-prep
+    expected_in_top_3:
+      - concepts/tool-release-prep.md
+      - references/tool-release-prep.md
+    difficulty: hard
+
+  - id: gq-036
+    query: "identify which files are most likely to break"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: hard
+
+  - id: gq-037
+    query: "end-to-end review before merging a PR"
+    expected_feature: deep-review
+    expected_in_top_3:
+      - references/tool-deep-review.md
+    difficulty: hard
+
+  - id: gq-038
+    query: "coordinate documentation updates across the project"
+    expected_feature: doc-orchestrator
+    expected_in_top_3:
+      - references/tool-doc-orchestrator.md
+    difficulty: hard
+
+  - id: gq-039
+    query: "scope out next sprint tasks"
+    expected_feature: planning
+    expected_in_top_3:
+      - concepts/tool-planning.md
+      - references/skill-planning.md
+    difficulty: medium
+
+  - id: gq-040
+    query: "find potential runtime errors before deployment"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: hard

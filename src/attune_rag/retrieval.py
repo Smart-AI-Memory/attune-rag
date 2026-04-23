@@ -112,7 +112,10 @@ _DEFAULT_CATEGORY_WEIGHTS: dict[str, float] = {
     # Primary, user-facing explanations — boost.
     "concepts": 1.5,
     "quickstarts": 1.5,
-    "tasks": 1.5,
+    # tasks/ gets a smaller boost so concepts/ wins when both match
+    # on keyword overlap (tasks templates have denser keyword coverage
+    # than concept docs, causing false positives on feature-name queries).
+    "tasks": 1.2,
     # Reference and comparison material — neutral.
     "references": 1.0,
     "comparisons": 1.0,

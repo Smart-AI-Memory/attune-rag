@@ -17,6 +17,8 @@ import asyncio
 import json
 import sys
 
+from pathlib import Path
+
 from .pipeline import RagPipeline
 from .providers import list_available
 
@@ -99,6 +101,36 @@ def _cmd_providers(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_dashboard_render(args: argparse.Namespace) -> int:
+    from .dashboard.refresh import build_snapshot
+    from .dashboard.render import render
+
+    out = Path(args.out).expanduser().resolve()
+    try:
+        snapshot = build_snapshot(corpus_package=args.corpus_package)
+        render(out, snapshot, title=args.title)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    print(f"Dashboard written to {out}")
+    if args.open:
+        import webbrowser
+        webbrowser.open(out.as_uri())
+    return 0
+
+
+def _cmd_dashboard_show(args: argparse.Namespace) -> int:
+    from .dashboard.show import main as _show
+
+    return _show(args.corpus_package)
+
+
+def _cmd_dashboard_refresh(args: argparse.Namespace) -> int:
+    from .dashboard.refresh import main as _refresh
+
+    return _refresh(args.corpus_package)
+
+
 def _print_citations(result) -> None:
     from .provenance import format_citations_markdown
 
@@ -137,6 +169,48 @@ def build_parser() -> argparse.ArgumentParser:
 
     provs = subs.add_parser("providers", help="List LLM providers whose extras are installed.")
     provs.set_defaults(func=_cmd_providers)
+
+    dash = subs.add_parser("dashboard", help="Render or refresh the attune-rag Cowork dashboard.")
+    dash_subs = dash.add_subparsers(dest="dashboard_cmd", required=True)
+
+    show_p = dash_subs.add_parser("show", help="Run benchmark and display dashboard in the terminal.")
+    show_p.add_argument(
+        "--corpus-package",
+        default="attune_help",
+        metavar="NAME",
+        help="Corpus package name (default: attune_help).",
+    )
+    show_p.set_defaults(func=_cmd_dashboard_show)
+
+    render_p = dash_subs.add_parser("render", help="Run benchmark, embed snapshot, write dashboard HTML.")
+    render_p.add_argument("--out", required=True, metavar="PATH", help="Destination file path.")
+    render_p.add_argument(
+        "--corpus-package",
+        default="attune_help",
+        metavar="NAME",
+        help="Corpus package name (default: attune_help).",
+    )
+    render_p.add_argument(
+        "--title",
+        default="attune-rag dashboard",
+        metavar="TEXT",
+        help="Dashboard title (default: 'attune-rag dashboard').",
+    )
+    render_p.add_argument(
+        "--open",
+        action="store_true",
+        help="Open the rendered file in the default browser.",
+    )
+    render_p.set_defaults(func=_cmd_dashboard_render)
+
+    refresh_p = dash_subs.add_parser("refresh", help="Emit a JSON snapshot to stdout.")
+    refresh_p.add_argument(
+        "--corpus-package",
+        default="attune_help",
+        metavar="NAME",
+        help="Corpus package name (default: attune_help).",
+    )
+    refresh_p.set_defaults(func=_cmd_dashboard_refresh)
 
     return parser
 
