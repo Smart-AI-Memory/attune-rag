@@ -19,7 +19,9 @@ from .retrieval import KeywordRetriever, RetrieverProtocol
 
 if TYPE_CHECKING:
     from .corpus.base import CorpusProtocol
+    from .expander import QueryExpander
     from .providers.base import LLMProvider
+    from .reranker import LLMReranker
 
 logger = structlog.get_logger(__name__)
 
@@ -70,9 +72,13 @@ class RagPipeline:
         self,
         corpus: CorpusProtocol | None = None,
         retriever: RetrieverProtocol | None = None,
+        expander: QueryExpander | None = None,
+        reranker: LLMReranker | None = None,
     ) -> None:
         self._corpus = corpus
         self.retriever = retriever or KeywordRetriever()
+        self.expander = expander
+        self.reranker = reranker
 
     @property
     def corpus(self) -> CorpusProtocol:
@@ -116,7 +122,23 @@ class RagPipeline:
         start = time.perf_counter()
         now = datetime.now(timezone.utc)
 
-        hits = list(self.retriever.retrieve(query, self.corpus, k=k))
+        # Query expansion: join original + alternative phrasings so the
+        # keyword retriever sees a richer token set without any changes to
+        # the retriever itself.  Original query is preserved for the prompt.
+        retrieval_query = query
+        if self.expander is not None:
+            expansions = self.expander.expand(query)
+            if expansions:
+                retrieval_query = " ".join([query, *expansions])
+
+        # Retrieve a wider candidate set when re-ranking is active so the
+        # reranker has meaningful material to work with.
+        retrieval_k = k * self.reranker.candidate_multiplier if self.reranker else k
+        hits = list(self.retriever.retrieve(retrieval_query, self.corpus, k=retrieval_k))
+
+        if self.reranker is not None and hits:
+            hits = self.reranker.rerank(query, hits)[:k]
+
         citation = build_citation_record(
             query=query,
             hits=hits,

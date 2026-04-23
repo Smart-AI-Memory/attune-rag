@@ -23,9 +23,11 @@ __version__ = "0.1.5"
 # land. For task 1.1 (scaffold only) the public names
 # below resolve to minimal stubs so imports work for CI.
 from .corpus import CorpusProtocol, DirectoryCorpus, RetrievalEntry
+from .expander import QueryExpander
 from .pipeline import RagPipeline, RagResult
 from .prompts import PROMPT_VARIANTS, build_augmented_prompt
 from .provenance import CitationRecord, CitedSource, format_citations_markdown
+from .reranker import LLMReranker
 from .retrieval import KeywordRetriever, RetrievalHit, RetrieverProtocol
 
 __all__ = [
@@ -42,4 +44,6 @@ __all__ = [
     "RetrieverProtocol",
     "build_augmented_prompt",
     "PROMPT_VARIANTS",
+    "QueryExpander",
+    "LLMReranker",
 ]
