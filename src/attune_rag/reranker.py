@@ -111,6 +111,6 @@ class LLMReranker:
                     reranked.append(hit)
             return reranked
 
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.debug("LLMReranker.rerank failed: %s", exc)
             return hits

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "attune-rag"
-version = "0.1.5"
+version = "0.1.6"
 description = "Lightweight, LLM-agnostic RAG pipeline with pluggable corpora. Works with Claude, OpenAI, Gemini, or any LLM."
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.10"
@@ -93,6 +93,11 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "BLE", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# Rich markup strings in dashboard and CLI help text can't be shortened cleanly
+"src/attune_rag/dashboard/*.py" = ["E501", "BLE001"]
+"src/attune_rag/cli.py" = ["E501"]
 
 [tool.black]
 line-length = 100

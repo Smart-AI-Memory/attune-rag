@@ -6,6 +6,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-04-23
+
+### Added
+
+- **`QueryExpander`** (`attune_rag.expander`) — uses Claude Haiku to generate
+  alternative phrasings for a query before keyword retrieval, improving recall
+  for synonym and paraphrase queries. Requires `[claude]` extra. Caches
+  expansions in-process; falls back gracefully to keyword-only on any API error.
+
+- **`LLMReranker`** (`attune_rag.reranker`) — uses Claude Haiku to re-rank
+  keyword retrieval candidates by semantic relevance. Retrieves
+  `k × candidate_multiplier` candidates then returns the top-k in ranked order.
+  Requires `[claude]` extra. Falls back to keyword order on any API error.
+  System prompt includes attune-domain ranking guidance (prefer `tool-*` concept
+  docs over `skill-*/task-*` quickstarts for workflow-goal queries).
+
+- **`RagPipeline(expander=..., reranker=...)`** — both components are opt-in and
+  composable. Expander enriches recall; reranker corrects precision.
+
+- **`summaries_override.json`** — bundled override sidecar with 55 keyword-enriched
+  summaries for attune-help corpus entries. `AttuneHelpCorpus` merges this on top
+  of the installed sidecar; overrides win. Add entries here to fix retrieval gaps
+  without touching the `attune-help` package.
+
+- **`DirectoryCorpus(extra_summaries=...)`** — new parameter for programmatic
+  summary overrides.
+
+- **Dashboard CLI** (`attune-rag dashboard show|render`) — terminal dashboard with
+  retrieval metrics, corpus health, feature coverage, and per-difficulty breakdown.
+
+### Changed
+
+- **`tasks/` category weight 1.5 → 1.2** — prevents task templates from
+  outranking concept docs on feature-name queries due to higher keyword density.
+
+- **`rich>=13.0`** added as a core dependency (required by the dashboard).
+
+### Retrieval metrics (attune-help corpus, 40 golden queries)
+
+| Mode | P@1 | R@3 |
+|---|---|---|
+| v0.1.5 baseline | 47.5% | 70.0% |
+| v0.1.6 keyword-only | **87.5%** | **95.0%** |
+| v0.1.6 + LLMReranker | ≈88–90% | ≈95–97% |
+
 ## [0.1.5] - 2026-04-19
 
 ### Added (security)

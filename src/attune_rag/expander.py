@@ -78,7 +78,7 @@ class QueryExpander:
             if not isinstance(expansions, list):
                 expansions = []
             expansions = [str(e) for e in expansions if e]
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             logger.debug("QueryExpander.expand failed: %s", exc)
             expansions = []
 

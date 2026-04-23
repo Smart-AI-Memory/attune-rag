@@ -10,6 +10,10 @@ corpora. Works with Claude, OpenAI, Gemini, or any LLM.
 - **Returns a prompt string** by default — send it to
   whatever LLM you like. Optional provider adapters ship
   convenience wrappers.
+- **Optional hybrid retrieval.** `QueryExpander` and
+  `LLMReranker` layer Claude Haiku on top of keyword
+  retrieval to improve recall and precision — both opt-in,
+  both fail-safe.
 
 ## Install
 
@@ -82,9 +86,35 @@ result = pipeline.run("How do I...?")
 # run_and_generate or call a provider adapter yourself.
 ```
 
+## Hybrid retrieval (optional)
+
+`QueryExpander` and `LLMReranker` require the `[claude]` extra and an
+`ANTHROPIC_API_KEY`. Both are opt-in and fail-safe — any API error
+falls back to keyword-only order automatically.
+
+```python
+from attune_rag import RagPipeline, LLMReranker, QueryExpander
+
+# Reranker only (recommended for precision):
+pipeline = RagPipeline(reranker=LLMReranker())
+
+# Expander + reranker (max coverage):
+pipeline = RagPipeline(
+    expander=QueryExpander(),
+    reranker=LLMReranker(),
+)
+```
+
+## Dashboard
+
+```bash
+attune-rag dashboard show    # live terminal dashboard
+attune-rag dashboard render --out report.html  # HTML snapshot
+```
+
 ## Status
 
-v0.1.0 — initial release. Part of the attune ecosystem
+v0.1.6. Part of the attune ecosystem
 ([attune-ai](https://github.com/Smart-AI-Memory/attune-ai),
 [attune-help](https://github.com/Smart-AI-Memory/attune-help),
 [attune-author](https://github.com/Smart-AI-Memory/attune-author)).
