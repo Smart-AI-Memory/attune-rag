@@ -30,6 +30,7 @@ signal (same as before).
 
 from __future__ import annotations
 
+import json
 from collections.abc import Iterable
 from importlib import import_module
 from importlib.resources import as_file, files
@@ -37,6 +38,8 @@ from pathlib import Path
 
 from .base import RetrievalEntry
 from .directory import DirectoryCorpus
+
+_OVERRIDES_PATH = Path(__file__).parent / "summaries_override.json"
 
 
 class AttuneHelpCorpus:
@@ -61,6 +64,12 @@ class AttuneHelpCorpus:
             )
 
         self._version = getattr(attune_help, "__version__", "unknown")
+        overrides: dict[str, str | None] = {}
+        if _OVERRIDES_PATH.is_file():
+            try:
+                overrides = json.loads(_OVERRIDES_PATH.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                pass
         # attune-help 0.7.0+ ships summaries_by_path.json; older
         # versions don't have it. DirectoryCorpus._load_sidecar
         # treats a missing file as an empty map, so this is safe
@@ -68,6 +77,7 @@ class AttuneHelpCorpus:
         self._inner = DirectoryCorpus(
             root=root,
             summaries_file="summaries_by_path.json",
+            extra_summaries=overrides,
         )
 
     def entries(self) -> Iterable[RetrievalEntry]:

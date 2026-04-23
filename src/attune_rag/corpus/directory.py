@@ -38,6 +38,7 @@ class DirectoryCorpus(CorpusProtocol):
         root: Path,
         summaries_file: str | None = None,
         cross_links_file: str | None = None,
+        extra_summaries: dict[str, str | None] | None = None,
         cache: bool = True,
         glob: str = DEFAULT_GLOB,
     ) -> None:
@@ -46,6 +47,7 @@ class DirectoryCorpus(CorpusProtocol):
             raise ValueError(f"DirectoryCorpus root is not a directory: {self._root}")
         self._summaries_file = summaries_file
         self._cross_links_file = cross_links_file
+        self._extra_summaries: dict[str, str | None] = extra_summaries or {}
         self._glob = glob
         self._cache = cache
         self._loaded: dict[str, RetrievalEntry] | None = None
@@ -79,7 +81,7 @@ class DirectoryCorpus(CorpusProtocol):
         return parts[0]
 
     def _build(self) -> dict[str, RetrievalEntry]:
-        summaries = self._load_sidecar(self._summaries_file)
+        summaries = {**self._load_sidecar(self._summaries_file), **self._extra_summaries}
         cross_links = self._load_sidecar(self._cross_links_file)
 
         entries: dict[str, RetrievalEntry] = {}
