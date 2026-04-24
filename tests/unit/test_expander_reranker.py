@@ -11,10 +11,10 @@ from attune_rag import LLMReranker, QueryExpander, RagPipeline, RetrievalEntry
 from attune_rag.corpus.base import CorpusProtocol
 from attune_rag.retrieval import RetrievalHit
 
-
 # ---------------------------------------------------------------------------
 # Shared fixtures
 # ---------------------------------------------------------------------------
+
 
 def _make_entry(path: str, summary: str = "", content: str = "content") -> RetrievalEntry:
     category = path.split("/")[0] if "/" in path else ""
@@ -55,6 +55,7 @@ class FakeCorpus(CorpusProtocol):
 # ---------------------------------------------------------------------------
 # QueryExpander tests
 # ---------------------------------------------------------------------------
+
 
 class TestQueryExpander:
     def _expander_with_mock(self, response_text: str) -> tuple[QueryExpander, MagicMock]:
@@ -111,12 +112,10 @@ class TestQueryExpander:
     def test_uses_prompt_caching_header(self):
         expander = QueryExpander(cache=False)
         mock_client = MagicMock()
-        mock_client.messages.create.return_value = _fake_response('[]')
+        mock_client.messages.create.return_value = _fake_response("[]")
         expander._client = mock_client
 
         expander.expand("test query")
-        call_kwargs = mock_client.messages.create.call_args
-        system_arg = call_kwargs.kwargs.get("system") or call_kwargs.args[0] if call_kwargs.args else None
         # system is passed as kwarg
         system = mock_client.messages.create.call_args.kwargs["system"]
         assert any(
@@ -135,6 +134,7 @@ class TestQueryExpander:
 # ---------------------------------------------------------------------------
 # LLMReranker tests
 # ---------------------------------------------------------------------------
+
 
 class TestLLMReranker:
     def _reranker_with_mock(self, response_text: str) -> tuple[LLMReranker, MagicMock]:
@@ -208,21 +208,24 @@ class TestLLMReranker:
 # Pipeline integration tests
 # ---------------------------------------------------------------------------
 
+
 class TestPipelineWithExpander:
     @pytest.fixture
     def corpus(self) -> FakeCorpus:
-        return FakeCorpus([
-            _make_entry(
-                "concepts/doc-orchestrator.md",
-                summary="Orchestrates documentation workflows",
-                content="Coordinates documentation generation pipeline.",
-            ),
-            _make_entry(
-                "concepts/workflow.md",
-                summary="General workflow automation",
-                content="Automates arbitrary workflows.",
-            ),
-        ])
+        return FakeCorpus(
+            [
+                _make_entry(
+                    "concepts/doc-orchestrator.md",
+                    summary="Orchestrates documentation workflows",
+                    content="Coordinates documentation generation pipeline.",
+                ),
+                _make_entry(
+                    "concepts/workflow.md",
+                    summary="General workflow automation",
+                    content="Automates arbitrary workflows.",
+                ),
+            ]
+        )
 
     def test_expander_joins_phrasings_into_retrieval_query(self, corpus: FakeCorpus):
         expander = QueryExpander(cache=False)
@@ -261,17 +264,25 @@ class TestPipelineWithExpander:
 class TestPipelineWithReranker:
     @pytest.fixture
     def corpus(self) -> FakeCorpus:
-        return FakeCorpus([
-            _make_entry("concepts/tool-release-prep.md",
-                        summary="Preflight checklist before publishing to PyPI.",
-                        content="Health security changelog check before release."),
-            _make_entry("concepts/task-package-publishing.md",
-                        summary="Publish a Python package to PyPI step by step.",
-                        content="Build upload twine PyPI publish package."),
-            _make_entry("concepts/tool-other.md",
-                        summary="Unrelated tool.",
-                        content="Completely unrelated content."),
-        ])
+        return FakeCorpus(
+            [
+                _make_entry(
+                    "concepts/tool-release-prep.md",
+                    summary="Preflight checklist before publishing to PyPI.",
+                    content="Health security changelog check before release.",
+                ),
+                _make_entry(
+                    "concepts/task-package-publishing.md",
+                    summary="Publish a Python package to PyPI step by step.",
+                    content="Build upload twine PyPI publish package.",
+                ),
+                _make_entry(
+                    "concepts/tool-other.md",
+                    summary="Unrelated tool.",
+                    content="Completely unrelated content.",
+                ),
+            ]
+        )
 
     def test_reranker_retrieves_wider_candidate_set(self, corpus: FakeCorpus):
         reranker = LLMReranker(candidate_multiplier=3)

@@ -58,11 +58,12 @@ wheels = [
 
 [[package]]
 name = "attune-rag"
-version = "0.1.5"
+version = "0.1.7"
 source = { editable = "." }
 dependencies = [
     { name = "jinja2" },
     { name = "pyyaml" },
+    { name = "rich" },
     { name = "structlog" },
 ]
 
@@ -104,9 +105,9 @@ requires-dist = [
     { name = "anthropic", marker = "extra == 'all'", specifier = ">=0.40.0,<1.0" },
     { name = "anthropic", marker = "extra == 'claude'", specifier = ">=0.40.0,<1.0" },
     { name = "anthropic", marker = "extra == 'dev'", specifier = ">=0.40.0,<1.0" },
-    { name = "attune-help", marker = "extra == 'all'", specifier = ">=0.7.0,<0.8" },
-    { name = "attune-help", marker = "extra == 'attune-help'", specifier = ">=0.7.0,<0.8" },
-    { name = "attune-help", marker = "extra == 'dev'", specifier = ">=0.7.0,<0.8" },
+    { name = "attune-help", marker = "extra == 'all'", specifier = ">=0.7.0,<0.10" },
+    { name = "attune-help", marker = "extra == 'attune-help'", specifier = ">=0.7.0,<0.10" },
+    { name = "attune-help", marker = "extra == 'dev'", specifier = ">=0.7.0,<0.10" },
     { name = "black", marker = "extra == 'dev'", specifier = ">=24.0" },
     { name = "build", marker = "extra == 'dev'", specifier = ">=1.0" },
     { name = "google-genai", marker = "extra == 'all'", specifier = ">=1.0,<2.0" },
@@ -120,6 +121,7 @@ requires-dist = [
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0" },
     { name = "pyyaml", specifier = ">=6.0" },
+    { name = "rich", specifier = ">=13.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4.0" },
     { name = "structlog", specifier = ">=24.0" },
     { name = "twine", marker = "extra == 'dev'", specifier = ">=5.0" },

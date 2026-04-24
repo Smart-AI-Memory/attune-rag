@@ -6,6 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-04-24
+
+### Changed
+
+- **Raise `attune-help` cap from `<0.8` to `<0.10`** so consumers
+  can co-install `attune-help` 0.9.0, which adds
+  `Feature.doc_paths` (list form) and a top-level `_docs:` bucket
+  to the manifest schema. No behavioural change in `attune-rag`
+  itself — this is a compatibility-only bump.
+
+  The 0.9.0 schema additions are backward compatible: legacy
+  manifests using `doc_path:` (scalar) continue to load via
+  dataclass coalescence. `attune-rag` does not read manifests
+  directly, so neither the sidecar loader nor any retrieval
+  path is affected.
+
 ## [0.1.6] - 2026-04-23
 
 ### Added
