@@ -17,7 +17,9 @@ grounding-2026-04-17.md (v4.0).
 Subsequent tasks in the spec fill in each module.
 """
 
-__version__ = "0.1.6"
+from __future__ import annotations
+
+__version__ = "0.1.7"
 
 # NOTE: Imports are added incrementally as tasks 1.2-1.8
 # land. For task 1.1 (scaffold only) the public names
