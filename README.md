@@ -112,6 +112,25 @@ attune-rag dashboard show    # live terminal dashboard
 attune-rag dashboard render --out report.html  # HTML snapshot
 ```
 
+## Roadmap — embeddings (next minor release)
+
+Keyword retrieval + optional Claude reranker currently carry
+attune-rag past 87% P@1 on the attune-help golden set. The
+remaining misses are queries with zero token overlap against
+their target doc (e.g. "vulnerability scan" →
+`tool-security-audit.md`). Closing that gap needs vector search.
+
+Next minor release will ship `attune-rag[embeddings]` using
+[`fastembed`](https://github.com/qdrant/fastembed) for local,
+CPU-only embeddings — no new network dependency, no API key
+required at retrieval time. Keyword retrieval stays the default;
+embeddings layer in opt-in, same shape as `QueryExpander` and
+`LLMReranker`.
+
+See
+[CHANGELOG.md](https://github.com/Smart-AI-Memory/attune-rag/blob/main/CHANGELOG.md)
+for the decision record and remaining-gap analysis.
+
 ## Status
 
 v0.1.6. Part of the attune ecosystem

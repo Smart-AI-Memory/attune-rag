@@ -43,9 +43,11 @@ class LLMReranker:
         model: str = "claude-haiku-4-5-20251001",
         api_key: str | None = None,
         candidate_multiplier: int = 3,
+        timeout: float = 60.0,
     ) -> None:
         self._model = model
         self._api_key = api_key
+        self._timeout = timeout
         self.candidate_multiplier = candidate_multiplier
         self._client = None
 
@@ -59,7 +61,7 @@ class LLMReranker:
                     "LLMReranker requires the [claude] extra. "
                     "Install with: pip install 'attune-rag[claude]'"
                 ) from exc
-            self._client = Anthropic(api_key=self._api_key)
+            self._client = Anthropic(api_key=self._api_key, timeout=self._timeout)
         return self._client
 
     def rerank(self, query: str, hits: list[RetrievalHit]) -> list[RetrievalHit]:
@@ -112,5 +114,5 @@ class LLMReranker:
             return reranked
 
         except Exception as exc:  # noqa: BLE001
-            logger.debug("LLMReranker.rerank failed: %s", exc)
+            logger.debug("LLMReranker.rerank failed: %s", exc, exc_info=True)
             return hits

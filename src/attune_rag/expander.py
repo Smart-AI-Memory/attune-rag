@@ -79,7 +79,7 @@ class QueryExpander:
                 expansions = []
             expansions = [str(e) for e in expansions if e]
         except Exception as exc:  # noqa: BLE001
-            logger.debug("QueryExpander.expand failed: %s", exc)
+            logger.debug("QueryExpander.expand failed: %s", exc, exc_info=True)
             expansions = []
 
         if self._cache is not None:

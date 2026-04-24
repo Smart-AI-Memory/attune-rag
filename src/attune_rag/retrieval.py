@@ -227,6 +227,8 @@ class KeywordRetriever:
             raise ValueError("query must be a non-empty string")
         if k < 1:
             raise ValueError("k must be >= 1")
+        if corpus is None:
+            raise ValueError("corpus must not be None")
 
         query_tokens = _tokenize(query)
         if not query_tokens:
