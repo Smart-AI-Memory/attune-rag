@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>__ATTUNE_TITLE__</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f5f5f7;color:#1d1d1f;font-size:14px;line-height:1.5}
+#app{max-width:920px;margin:0 auto;padding:36px 24px 72px}
+
+/* ── header ── */
+h1{font-size:28px;font-weight:700;letter-spacing:-.5px;margin-bottom:12px}
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.badge{background:#f0f0f5;border:1px solid #e0e0e8;border-radius:6px;padding:3px 10px;font-size:13px;color:#444;font-family:monospace}
+.badge.green{background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32}
+
+/* ── snapshot bar ── */
+#snap-bar{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e8e8ed;border-radius:10px;padding:11px 16px;margin-bottom:28px;font-size:13px;color:#555}
+.sdot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.sdot.ok{background:#27ae60}.sdot.warn{background:#f5a623}.sdot.err{background:#e74c3c}
+
+/* ── section headers ── */
+.sh{font-size:11px;font-weight:600;letter-spacing:1.2px;color:#86868b;text-transform:uppercase;margin:32px 0 16px;padding-bottom:8px;border-bottom:1px solid #e8e8ed}
+
+/* ── metric cards ── */
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.card{background:#fff;border:1px solid #e8e8ed;border-radius:12px;padding:18px 20px}
+.clabel{font-size:11px;font-weight:600;letter-spacing:.8px;color:#86868b;text-transform:uppercase;margin-bottom:6px}
+.cval{font-size:36px;font-weight:700;line-height:1;margin-bottom:4px}
+.csub{font-size:13px;color:#86868b}
+.orange{color:#f5a623}.green{color:#27ae60}.teal{color:#00897b}.black{color:#1d1d1f}
+
+/* ── coverage gap box ── */
+#gap-box{background:#fffcf0;border:1.5px solid #f5c518;border-radius:10px;padding:14px 18px;margin-bottom:4px;display:none}
+.gap-title{font-weight:700;color:#b8860b;margin-bottom:8px}
+.gap-item{margin-bottom:4px;font-size:13px}
+.gap-feat{font-weight:700;color:#333}
+.chip{display:inline-block;background:#e8e8f0;border-radius:4px;padding:1px 7px;font-size:12px;font-family:monospace;margin:0 2px;color:#555}
+
+/* ── chart cards ── */
+.cc{background:#fff;border:1px solid #e8e8ed;border-radius:12px;padding:20px 24px;margin-bottom:14px}
+.cc h3{font-size:16px;font-weight:600;margin-bottom:4px}
+.cc p{font-size:13px;color:#86868b;margin-bottom:16px}
+.chart-wrap{position:relative}
+
+/* ── per-query table ── */
+.tbl-wrap{background:#fff;border:1px solid #e8e8ed;border-radius:12px;overflow:hidden;max-height:440px;overflow-y:auto}
+table{width:100%;border-collapse:collapse}
+thead th{font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:#86868b;padding:10px 14px;text-align:left;border-bottom:1px solid #e8e8ed;background:#fff;position:sticky;top:0;z-index:1}
+tbody tr{border-bottom:1px solid #f2f2f5}
+tbody tr:last-child{border-bottom:none}
+tbody td{padding:10px 14px;vertical-align:top}
+.qnum{color:#86868b;font-size:13px}
+.qtext{font-size:14px;font-weight:500;margin-bottom:3px}
+.qexp{font-family:monospace;font-size:11px;color:#86868b}
+.fbadge{display:inline-block;background:#f0f0f8;border-radius:4px;padding:2px 8px;font-size:12px;font-family:monospace;color:#444}
+.dbadge{display:inline-block;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:500}
+.easy{background:#e8f5e9;color:#2e7d32}
+.medium{background:#fff8e1;color:#f57f17}
+.hard{background:#fce4ec;color:#c62828}
+.unknown{background:#f5f5f5;color:#757575}
+.hit-y{color:#27ae60;font-size:15px}
+.hit-n{color:#e74c3c;font-size:15px}
+td.ctr{text-align:center}
+
+/* ── footer ── */
+footer{text-align:center;margin-top:52px;font-size:12px;color:#86868b}
+footer code{font-family:monospace;color:#555}
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>__ATTUNE_TITLE__</h1>
+  <div class="badges" id="badges"></div>
+  <div id="snap-bar">
+    <div class="sdot ok" id="sdot"></div>
+    <span id="snap-text"></span>
+  </div>
+
+  <div class="sh">Health at a Glance</div>
+  <div class="cards" id="metric-cards"></div>
+  <div id="gap-box"></div>
+
+  <div class="sh">Retrieval Quality</div>
+  <div class="cc">
+    <h3>By difficulty</h3>
+    <p>top-1 and top-3 hit rate across the golden set</p>
+    <div class="chart-wrap" style="height:220px"><canvas id="c-diff"></canvas></div>
+  </div>
+  <div class="cc">
+    <h3>By feature (P@1)</h3>
+    <p>Per-feature precision at top-1, sorted worst-first</p>
+    <div class="chart-wrap" id="w-feat"><canvas id="c-feat"></canvas></div>
+  </div>
+
+  <div class="sh">Per-Query Results</div>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Query / Expected</th><th>Feature</th><th>Diff</th><th>Top-1</th><th>Top-3</th>
+        </tr>
+      </thead>
+      <tbody id="qtbody"></tbody>
+    </table>
+  </div>
+
+  <div class="sh">Corpus Freshness</div>
+  <div class="cc">
+    <h3>Templates per feature</h3>
+    <p>Stacked by kind — ideally every feature has something across multiple depths</p>
+    <div class="chart-wrap" id="w-stacked"><canvas id="c-stacked"></canvas></div>
+  </div>
+  <div class="cc">
+    <h3>Total templates by kind</h3>
+    <p id="p-kinds">Corpus-wide counts</p>
+    <div class="chart-wrap" id="w-kinds"><canvas id="c-kinds"></canvas></div>
+  </div>
+
+  <footer>
+    <p>Re-run <code>attune-rag dashboard render</code> to refresh.</p>
+  </footer>
+</div>
+
+<script>
+window.__SNAPSHOT__ = __ATTUNE_SNAPSHOT__;
+
+/* ── kind colour palette ── */
+const KC = {
+  comparisons:    '#78909c',
+  concepts:       '#5c6bc0',
+  errors:         '#ef5350',
+  faqs:           '#e91e63',
+  notes:          '#ab47bc',
+  quickstarts:    '#ff9800',
+  references:     '#00897b',
+  tasks:          '#43a047',
+  tips:           '#00acc1',
+  troubleshooting:'#7e57c2',
+  warnings:       '#ffa726',
+};
+function kc(k){ return KC[k] || '#90a4ae'; }
+
+/* ── chart registry ── */
+const CH = {};
+function mk(id){ if(CH[id]){ CH[id].destroy(); delete CH[id]; } }
+
+/* ── helpers ── */
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function pct(v){ return (v*100).toFixed(1)+'%'; }
+
+/* ── snap bar ── */
+function renderSnapBar(data){
+  const r = data.retrieval || {};
+  const ts = data.timestamp ? new Date(data.timestamp).toLocaleString() : null;
+  const hasError = !!r.error;
+  document.getElementById('sdot').className = 'sdot ' + (hasError ? 'warn' : 'ok');
+  document.getElementById('snap-text').textContent = hasError
+    ? 'Partial snapshot' + (ts ? ' — ' + ts : '') + ': ' + r.error
+    : 'Snapshot from ' + (ts || 'unknown');
+}
+
+/* ── badges ── */
+function renderBadges(r, f){
+  const pkg = Object.keys(f).find(k => k.endsWith('_version'))?.replace('_version','') || '';
+  const ver = pkg ? f[pkg+'_version'] : '?';
+  const items = [r.retriever||'?', 'corpus: '+(r.corpus||'?'), (pkg||'?')+' '+ver, 'k='+(r.k||'?')];
+  document.getElementById('badges').innerHTML = items
+    .map((b,i)=>`<span class="badge${i===2?' green':''}">${esc(b)}</span>`).join('');
+}
+
+/* ── metric cards ── */
+function gapCount(f){ return Object.values(f.per_feature||{}).filter(v=>v.total<4).length; }
+function renderCards(r, f){
+  const pkg = Object.keys(f).find(k=>k.endsWith('_version'))?.replace('_version','') || '';
+  const p1=r.precision_at_1||0, rk=r.recall_at_k||0, tot=r.total_queries||0, k=r.k||3;
+  const kTotal = Object.values(f.kind_totals||{}).reduce((a,b)=>a+b,0);
+  const gaps = gapCount(f);
+  function card(lbl, valHtml, sub){
+    return `<div class="card"><div class="clabel">${lbl}</div><div class="cval">${valHtml}</div><div class="csub">${sub}</div></div>`;
+  }
+  document.getElementById('metric-cards').innerHTML = [
+    card('P@1',          `<span class="${p1>=0.8?'green':'orange'}">${pct(p1)}</span>`, `${Math.round(p1*tot)} / ${tot} queries`),
+    card('R@'+k,         `<span class="green">${pct(rk)}</span>`, `recall at top-${k}`),
+    card('Mean Latency', `<span class="teal">${(r.mean_latency_ms||0).toFixed(1)} ms</span>`, `max ${(r.max_latency_ms||0).toFixed(1)} ms`),
+    card(pkg.toUpperCase()||'CORPUS', `<span class="black">${esc(f[pkg+'_version']||'?')}</span>`, `${f.summaries_by_path_keys||0} path-keyed summaries`),
+    card('Total Templates', `<span class="black">${kTotal}</span>`, `${(f.features||[]).length} features · ${(f.kinds||[]).length} kinds`),
+    card('Coverage Gaps', `<span class="${gaps?'orange':'green'}">${gaps}</span>`, 'features with &lt; 4 templates'),
+  ].join('');
+}
+
+/* ── coverage gaps ── */
+function renderGaps(f){
+  const box = document.getElementById('gap-box');
+  const gaps = Object.entries(f.per_feature||{}).filter(([,v])=>v.total<4);
+  if(!gaps.length){ box.style.display='none'; return; }
+  box.style.display='block';
+  let h=`<div class="gap-title">Coverage gaps — ${gaps.length} feature${gaps.length>1?'s':''} below 4 templates</div>`;
+  for(const [feat,info] of gaps){
+    const parts=Object.entries(info.by_kind||{}).filter(([,n])=>n>0)
+      .map(([k,n])=>`<span class="chip">${esc(k)}</span> ×${n}`).join(' ');
+    h+=`<div class="gap-item"><span class="gap-feat">${esc(feat)}</span> — ${info.total} template${info.total!==1?'s':''}: ${parts}</div>`;
+  }
+  box.innerHTML=h;
+}
+
+/* ── by-difficulty chart ── */
+function renderDiff(r){
+  mk('diff');
+  const pd=r.per_difficulty||{};
+  const diffs=['easy','medium','hard'].filter(d=>pd[d]);
+  const ctx=document.getElementById('c-diff').getContext('2d');
+  CH.diff=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:diffs.map(d=>`${d} (n=${pd[d].total})`),
+      datasets:[
+        {label:'Top-1 hit rate', data:diffs.map(d=>pd[d].total?pd[d].top1_hit/pd[d].total:0), backgroundColor:'#3d52d5'},
+        {label:'Top-3 hit rate', data:diffs.map(d=>pd[d].total?pd[d].topk_hit/pd[d].total:0), backgroundColor:'#b0bae8'},
+      ],
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'}},
+      scales:{
+        y:{min:0,max:1,ticks:{callback:v=>Math.round(v*100)+'%'},grid:{color:'#f0f0f5'}},
+        x:{grid:{display:false}},
+      },
+    },
+  });
+}
+
+/* ── by-feature chart ── */
+function renderFeat(r){
+  mk('feat');
+  const rows=Object.entries(r.per_feature||{})
+    .map(([feat,v])=>({feat,p1:v.total?v.top1_hit/v.total:0}))
+    .sort((a,b)=>a.p1-b.p1);
+  document.getElementById('w-feat').style.height=Math.max(220,rows.length*30+40)+'px';
+  const ctx=document.getElementById('c-feat').getContext('2d');
+  CH.feat=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:rows.map(e=>e.feat),
+      datasets:[{data:rows.map(e=>e.p1),backgroundColor:rows.map(e=>e.p1<0.5?'#ef5350':'#43a047')}],
+    },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{min:0,max:1,ticks:{callback:v=>Math.round(v*100)+'%'},grid:{color:'#f0f0f5'}},
+        y:{grid:{display:false}},
+      },
+    },
+  });
+}
+
+/* ── per-query table ── */
+function renderTable(r){
+  document.getElementById('qtbody').innerHTML=(r.per_query||[]).map((q,i)=>{
+    const diff=(q.difficulty||'unknown').toLowerCase();
+    const dc=['easy','medium','hard'].includes(diff)?diff:'unknown';
+    const exp=(q.expected||[]).map(p=>`<div class="qexp">${esc(p)}</div>`).join('');
+    const t1=q.top1_match?'<span class="hit-y">✓</span>':'<span class="hit-n">✕</span>';
+    const tk=q.topk_match?'<span class="hit-y">✓</span>':'<span class="hit-n">✕</span>';
+    return `<tr>
+      <td class="qnum">${i+1}</td>
+      <td><div class="qtext">${esc(q.query||'')}</div>${exp}</td>
+      <td><span class="fbadge">${esc(q.feature||'')}</span></td>
+      <td><span class="dbadge ${dc}">${esc(diff)}</span></td>
+      <td class="ctr">${t1}</td><td class="ctr">${tk}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ── stacked feature chart ── */
+function renderStacked(f){
+  mk('stacked');
+  const kinds=f.kinds||[];
+  const features=[...(f.features||[])].sort((a,b)=>((f.per_feature[b]||{}).total||0)-((f.per_feature[a]||{}).total||0));
+  document.getElementById('w-stacked').style.height=Math.max(220,features.length*30+60)+'px';
+  const ctx=document.getElementById('c-stacked').getContext('2d');
+  CH.stacked=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:features,
+      datasets:kinds.map(k=>({
+        label:k,
+        data:features.map(fn=>((f.per_feature[fn]||{}).by_kind||{})[k]||0),
+        backgroundColor:kc(k),
+      })),
+    },
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{padding:10,boxWidth:12,font:{size:11}}}},
+      scales:{x:{stacked:true,grid:{color:'#f0f0f5'}},y:{stacked:true,grid:{display:false}}},
+    },
+  });
+}
+
+/* ── total-by-kind chart ── */
+function renderKinds(f){
+  mk('kinds');
+  const kt=f.kind_totals||{};
+  const sorted=[...(f.kinds||Object.keys(kt))].sort((a,b)=>(kt[b]||0)-(kt[a]||0));
+  const pkg=Object.keys(f).find(k=>k.endsWith('_version'))?.replace('_version','')||'corpus';
+  document.getElementById('p-kinds').textContent=`Corpus-wide counts across ${pkg}'s ${sorted.length} kinds`;
+  document.getElementById('w-kinds').style.height=Math.max(220,sorted.length*30+40)+'px';
+  const ctx=document.getElementById('c-kinds').getContext('2d');
+  CH.kinds=new Chart(ctx,{
+    type:'bar',
+    data:{labels:sorted,datasets:[{data:sorted.map(k=>kt[k]||0),backgroundColor:sorted.map(k=>kc(k))}]},
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'#f0f0f5'}},y:{grid:{display:false}}},
+    },
+  });
+}
+
+/* ── boot ── */
+window.addEventListener('DOMContentLoaded', function(){
+  const data = window.__SNAPSHOT__ || {};
+  const r = data.retrieval || {};
+  const f = data.freshness || {};
+  renderSnapBar(data);
+  if(!r.error){
+    renderBadges(r, f);
+    renderCards(r, f);
+    renderGaps(f);
+    renderDiff(r);
+    renderFeat(r);
+    renderTable(r);
+    renderStacked(f);
+    renderKinds(f);
+  }
+});
+</script>
+</body>
+</html>
