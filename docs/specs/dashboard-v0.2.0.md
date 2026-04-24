@@ -1,9 +1,12 @@
 # Spec: Shipped Dashboard Template (attune-rag v0.2.0)
 
-Status: draft
-Target version: 0.2.0 (minor bump from 0.1.5)
+Status: shipped in 0.1.6 — implementation diverged from locked
+decisions; see "Implementation Note" below. Original spec body
+preserved as historical design context.
+Target version: 0.2.0 (originally planned; feature landed early in 0.1.6)
 Owner: Patrick
 Created: 2026-04-22
+Reconciled: 2026-04-24
 
 ---
 
@@ -43,6 +46,47 @@ not open questions — they define v0.2.0's shape.
    parameterizable (`--corpus-package`, default `attune_help`).
    Queries.yaml path, k, trials, and thresholds stay as
    sensible defaults inside the refresh implementation.
+
+---
+
+## Implementation Note (2026-04-24)
+
+The shipped implementation diverged from the locked scoping
+decisions above. Treat this section as the source of truth for
+what's actually in the package; the rest of this document
+captures the original design intent.
+
+**What shipped (as of 0.1.6):**
+
+- `dashboard render` bakes the snapshot itself at render time
+  rather than embedding a `--refresh-cmd` that the browser
+  invokes via MCP. The rendered HTML is fully self-contained
+  with its snapshot payload; no live refresh from the browser.
+- Two sentinels in the template: `__ATTUNE_SNAPSHOT__` and
+  `__ATTUNE_TITLE__` (the spec's `__REFRESH_CMD__` /
+  `__CORPUS_PACKAGE__` model was dropped).
+- `render(out, snapshot, title) -> Path` signature — takes a
+  prebuilt snapshot dict, not a refresh command string.
+- `dashboard render` gained an optional `--open` flag (opens
+  the file in the default browser). The spec listed this as an
+  open question; answered yes.
+- A third subcommand — `dashboard show` — was added for a Rich
+  terminal dashboard (not in original scope). It calls
+  `build_snapshot` directly and renders to the console with
+  Rich tables.
+- `dashboard refresh` still exists and still emits one JSON
+  object to stdout (the Snapshot Shape contract is preserved).
+
+**Why the divergence:**
+
+The MCP-refresh model required a live Cowork session to be
+useful. Baking the snapshot at render time makes the HTML
+portable (shareable, attachable to tickets, viewable offline)
+at the cost of staleness. Re-running `dashboard render`
+regenerates the file — simpler UX than an MCP round-trip.
+
+The path-validation, security, and snapshot-shape requirements
+from the original spec all carried through unchanged.
 
 ---
 
