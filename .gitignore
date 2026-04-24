@@ -44,3 +44,9 @@ htmlcov/
 
 # uv
 uv.lock.backup
+
+# Secrets / local scratch
+.env
+.env.*
+!.env.example
+.wtest
