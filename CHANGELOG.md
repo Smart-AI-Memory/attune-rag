@@ -6,6 +6,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-04-24
+
+### Changed
+
+- **`LLMReranker(timeout=60.0)`** — new parameter, passed through
+  to `Anthropic(...)` client init. Matches the `FaithfulnessJudge`
+  pattern and protects callers from hanging network calls during
+  re-ranking. Default 60 seconds; override if needed.
+
+- **Fail-safe fallback logging now includes tracebacks.**
+  `QueryExpander.expand()` and `LLMReranker.rerank()` already
+  degrade to keyword-only on any API or parse error. The debug
+  log line now carries `exc_info=True` so the full traceback is
+  available when diagnosing why a fallback triggered.
+
+- **`KeywordRetriever.retrieve()` now explicitly rejects a `None`
+  corpus** with a clear `ValueError`. `RagPipeline` already
+  guards this; the retriever is public, so the check hardens the
+  direct-use path.
+
+### Fixed
+
+- **`attune_rag.__version__`** now tracks `pyproject.toml` (was
+  stuck at `0.1.6` through the `0.1.7` release).
+
+### Added
+
+- **`from __future__ import annotations`** added to `__init__.py`
+  so forward references in re-exports stay safe if type hints
+  are refactored later.
+
+- **Dashboard source formalised in the git repository.** The
+  `attune_rag.dashboard` subpackage, its shipped template, and
+  the accompanying unit tests (`tests/unit/test_dashboard_*`)
+  have been tracked in git since this release. The code itself
+  has been on PyPI since 0.1.6 — this commit catches the
+  repository up to what the wheel has been shipping. Also
+  includes `docs/specs/dashboard-v0.2.0.md` with an
+  Implementation Note reconciling the locked spec against the
+  shipped design.
+
+### Docs
+
+- **Roadmap — embeddings** section added to README pointing at
+  the planned `attune-rag[embeddings]` extra using
+  [`fastembed`](https://github.com/qdrant/fastembed). The
+  decision record was already in this changelog; this makes it
+  visible to new readers at the top level.
+
 ## [0.1.7] - 2026-04-24
 
 ### Changed
