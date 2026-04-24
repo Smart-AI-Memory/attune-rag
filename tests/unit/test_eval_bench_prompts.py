@@ -15,11 +15,22 @@ these are pure-Python tests that never hit the network.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import pytest
 
 from attune_rag.eval import bench_prompts
+
+# The Unix-style _SYSTEM_DIRS list (/etc, /sys, /proc, /dev, /bin) is only
+# meaningful on POSIX. On Windows, a path like /etc/passwd resolves to
+# C:\etc\passwd, which isn't caught by the system-dir check. The validator
+# is designed to block obvious Unix footguns; Windows users simply aren't
+# exposed to the Unix paths it's guarding.
+_unix_only = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Unix-style system-dir guards don't apply on Windows",
+)
 
 # ---------- _aggregate ----------
 
@@ -137,6 +148,7 @@ def test_validate_write_path_accepts_tmp(tmp_path: Path) -> None:
     assert out == target.resolve()
 
 
+@_unix_only
 @pytest.mark.parametrize(
     "sysdir",
     ["/etc/passwd", "/sys/kernel/foo", "/proc/self/status", "/dev/null", "/bin/sh"],
@@ -203,6 +215,7 @@ def test_main_null_byte_in_queries_exits_2(
     assert rc == 2
 
 
+@_unix_only
 def test_main_output_path_refuses_system_dir(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
