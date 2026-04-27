@@ -153,6 +153,7 @@ class KeywordRetriever:
 
     PATH_WEIGHT: float = 2.0
     SUMMARY_WEIGHT: float = 1.5
+    ALIASES_WEIGHT: float = 1.5
     CONTENT_WEIGHT: float = 1.0
     RELATED_WEIGHT: float = 0.5
     MIN_SCORE: float = 2.0
@@ -187,15 +188,19 @@ class KeywordRetriever:
                 continue
             related_summary_tokens |= _tokenize(related_entry.summary)
 
+        aliases_tokens = _tokenize(" ".join(entry.aliases))
+
         path_hits_raw = len(query_tokens & path_tokens)
         path_hits = min(path_hits_raw, self.PATH_HIT_CAP)
         summary_hits = len(query_tokens & summary_tokens)
+        aliases_hits = len(query_tokens & aliases_tokens)
         content_hits = len(query_tokens & content_tokens)
         related_hits = len(query_tokens & related_summary_tokens)
 
         base_score = (
             self.PATH_WEIGHT * path_hits
             + self.SUMMARY_WEIGHT * summary_hits
+            + self.ALIASES_WEIGHT * aliases_hits
             + self.CONTENT_WEIGHT * content_hits
             + self.RELATED_WEIGHT * related_hits
         )
@@ -207,6 +212,8 @@ class KeywordRetriever:
             reasons.append(f"path:{path_hits}")
         if summary_hits:
             reasons.append(f"summary:{summary_hits}")
+        if aliases_hits:
+            reasons.append(f"aliases:{aliases_hits}")
         if content_hits:
             reasons.append(f"content:{content_hits}")
         if related_hits:

@@ -5,10 +5,26 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 from collections.abc import Iterable
 from pathlib import Path
 
 from .base import CorpusProtocol, RetrievalEntry
+
+_FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
+_ALIASES_RE = re.compile(r"^\s*aliases\s*:\s*\[([^\]]*)\]", re.MULTILINE)
+
+
+def _parse_aliases(content: str) -> tuple[str, ...]:
+    """Extract aliases list from YAML frontmatter, e.g. aliases: [foo, bar]."""
+    fm = _FRONTMATTER_RE.match(content)
+    if not fm:
+        return ()
+    m = _ALIASES_RE.search(fm.group(1))
+    if not m:
+        return ()
+    return tuple(a.strip().strip("'\"") for a in m.group(1).split(",") if a.strip())
+
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +119,7 @@ class DirectoryCorpus(CorpusProtocol):
                 content=content,
                 summary=summaries.get(key),
                 related=related,
+                aliases=_parse_aliases(content),
             )
             entries[key] = entry
         return entries

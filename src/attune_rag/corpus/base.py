@@ -16,6 +16,7 @@ class RetrievalEntry:
     content: str
     summary: str | None = None
     related: tuple[str, ...] = ()
+    aliases: tuple[str, ...] = ()
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

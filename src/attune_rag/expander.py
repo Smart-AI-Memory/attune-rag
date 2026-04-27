@@ -74,6 +74,9 @@ class QueryExpander:
                 messages=[{"role": "user", "content": query}],
             )
             raw = response.content[0].text.strip()
+            # Haiku 4.5 adds markdown fences despite the instruction — strip them.
+            if raw.startswith("```"):
+                raw = raw.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
             expansions = json.loads(raw)
             if not isinstance(expansions, list):
                 expansions = []
