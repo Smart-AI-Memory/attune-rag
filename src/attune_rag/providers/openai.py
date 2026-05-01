@@ -40,6 +40,9 @@ class OpenAIProvider:
         prompt: str,
         model: str | None = None,
         max_tokens: int = 2048,
+        cached_prefix: (
+            str | None
+        ) = None,  # noqa: ARG002 — protocol parity; OpenAI has no equivalent yet
     ) -> str:
         response = await self._client.chat.completions.create(
             model=model or self.DEFAULT_MODEL,

@@ -40,11 +40,26 @@ class ClaudeProvider:
         prompt: str,
         model: str | None = None,
         max_tokens: int = 2048,
+        cached_prefix: str | None = None,
     ) -> str:
+        if cached_prefix:
+            # Two-block message: stable context (cached) + dynamic tail
+            tail = prompt[len(cached_prefix) :]
+            content = [
+                {
+                    "type": "text",
+                    "text": cached_prefix,
+                    "cache_control": {"type": "ephemeral"},
+                },
+                {"type": "text", "text": tail},
+            ]
+        else:
+            content = prompt
+
         response = await self._client.messages.create(
             model=model or self.DEFAULT_MODEL,
             max_tokens=max_tokens,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role": "user", "content": content}],
         )
         chunks: list[str] = []
         for block in response.content:

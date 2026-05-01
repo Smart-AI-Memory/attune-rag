@@ -21,4 +21,14 @@ class LLMProvider(Protocol):
         prompt: str,
         model: str | None = None,
         max_tokens: int = 2048,
-    ) -> str: ...
+        cached_prefix: str | None = None,
+    ) -> str:
+        """Generate a response from ``prompt``.
+
+        ``cached_prefix`` is an optional stable prefix the
+        provider may flag for prompt caching when the
+        underlying API supports it. Providers that do not
+        support caching must accept the kwarg and ignore it
+        — the pipeline always passes it through.
+        """
+        ...

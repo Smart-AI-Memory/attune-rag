@@ -26,6 +26,18 @@ if TYPE_CHECKING:
 logger = structlog.get_logger(__name__)
 
 
+#: Splitter inserted before the per-call user request block in
+#: augmented prompts. Everything before this marker is stable
+#: across calls (system rules + retrieved passages) and is the
+#: candidate for Anthropic prompt caching.
+_CACHE_SPLIT = "\n### USER REQUEST\n"
+
+#: Minimum prefix length (chars) before we bother flagging the
+#: prompt for caching. Anthropic only caches blocks of at least
+#: ~1024 tokens; below that the cache_control marker is wasted.
+_MIN_CACHE_CHARS = 1024
+
+
 FALLBACK_PROMPT_TEMPLATE = """### USER REQUEST
 
 {query}
@@ -213,9 +225,17 @@ class RagPipeline:
             provider = get_provider(provider)
 
         rag_result = self.run(query, k=k, prompt_variant=prompt_variant)
+
+        prompt = rag_result.augmented_prompt
+        cached_prefix: str | None = None
+        split_idx = prompt.find(_CACHE_SPLIT)
+        if split_idx != -1 and split_idx >= _MIN_CACHE_CHARS:
+            cached_prefix = prompt[: split_idx + len(_CACHE_SPLIT)]
+
         response = await provider.generate(
-            rag_result.augmented_prompt,
+            prompt,
             model=model,
             max_tokens=max_tokens,
+            cached_prefix=cached_prefix,
         )
         return response, rag_result

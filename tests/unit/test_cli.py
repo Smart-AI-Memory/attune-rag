@@ -114,7 +114,9 @@ def test_query_with_provider_calls_llm(capsys: pytest.CaptureFixture[str]) -> No
     class FakeProvider:
         name = "fake"
 
-        async def generate(self, prompt, model=None, max_tokens=2048):  # noqa: ARG002
+        async def generate(
+            self, prompt, model=None, max_tokens=2048, cached_prefix=None
+        ):  # noqa: ARG002
             return "mocked llm response"
 
     with patch("attune_rag.providers.get_provider", return_value=FakeProvider()):
