@@ -131,9 +131,20 @@ See
 [CHANGELOG.md](https://github.com/Smart-AI-Memory/attune-rag/blob/main/CHANGELOG.md)
 for the decision record and remaining-gap analysis.
 
+## Prompt caching (Claude only)
+
+When using the Claude provider, `run_and_generate` automatically enables
+[Anthropic prompt caching](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)
+on the stable RAG context prefix (≥ 1 024 chars). This eliminates
+repeated token costs on the corpus portion of the prompt when the same
+context block is reused across calls.
+
+No configuration needed — the provider handles the `cache_control`
+header automatically.
+
 ## Status
 
-v0.1.6. Part of the attune ecosystem
+v0.1.10. Part of the attune ecosystem
 ([attune-ai](https://github.com/Smart-AI-Memory/attune-ai),
 [attune-help](https://github.com/Smart-AI-Memory/attune-help),
 [attune-author](https://github.com/Smart-AI-Memory/attune-author)).
