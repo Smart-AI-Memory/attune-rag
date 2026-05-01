@@ -40,6 +40,9 @@ class GeminiProvider:
         prompt: str,
         model: str | None = None,
         max_tokens: int = 2048,
+        cached_prefix: (
+            str | None
+        ) = None,  # noqa: ARG002 — protocol parity; Gemini caching not wired
     ) -> str:
         config: Any = {"max_output_tokens": max_tokens}
         response = await self._client.aio.models.generate_content(

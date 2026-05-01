@@ -204,6 +204,70 @@ def test_run_and_generate_with_provider_instance(corpus: FakeCorpus) -> None:
     assert "### CONTEXT" in passed_prompt
 
 
+def test_run_and_generate_passes_cached_prefix_when_long_enough() -> None:
+    """A retrieval result whose augmented prompt exceeds the
+    1024-char threshold must arrive at the provider with a
+    populated ``cached_prefix``, ending at the USER REQUEST
+    marker. This is what gives Anthropic something stable to
+    cache across calls.
+    """
+    from unittest.mock import AsyncMock
+
+    # Stuff the corpus with a single bulky entry so the
+    # rendered context comfortably exceeds 1024 chars.
+    bulky = "Security audit scans for vulnerabilities. " * 50
+    corpus = FakeCorpus(
+        [
+            RetrievalEntry(
+                path="concepts/security-audit.md",
+                category="concepts",
+                content=bulky,
+                summary="Run a security audit",
+            ),
+        ]
+    )
+    pipeline = RagPipeline(corpus=corpus)
+
+    class FakeProvider:
+        name = "fake"
+        generate = AsyncMock(return_value="LLM answer")
+
+    import asyncio
+
+    provider = FakeProvider()
+    asyncio.run(pipeline.run_and_generate("security audit", provider=provider))
+
+    kwargs = provider.generate.await_args.kwargs
+    assert "cached_prefix" in kwargs
+    cached_prefix = kwargs["cached_prefix"]
+    assert cached_prefix is not None
+    assert cached_prefix.endswith("\n### USER REQUEST\n")
+    assert len(cached_prefix) >= 1024
+
+
+def test_run_and_generate_omits_cached_prefix_when_too_short(
+    corpus: FakeCorpus,
+) -> None:
+    """Below the 1024-char threshold the cached_prefix must be
+    None — adding cache_control to a tiny block wastes the
+    marker without buying any future hit.
+    """
+    from unittest.mock import AsyncMock
+
+    pipeline = RagPipeline(corpus=corpus)
+
+    class FakeProvider:
+        name = "fake"
+        generate = AsyncMock(return_value="ok")
+
+    import asyncio
+
+    provider = FakeProvider()
+    asyncio.run(pipeline.run_and_generate("security audit", provider=provider))
+
+    assert provider.generate.await_args.kwargs.get("cached_prefix") is None
+
+
 def test_run_and_generate_with_provider_name(corpus: FakeCorpus) -> None:
     """A string provider name is dispatched via providers.get_provider."""
     from unittest.mock import AsyncMock, patch
