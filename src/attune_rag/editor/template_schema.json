@@ -45,6 +45,10 @@
       "type": "string",
       "description": "1-3 sentence summary used for retrieval boosting."
     },
+    "source": {
+      "type": "string",
+      "description": "Path or label identifying the source-of-truth content that produced this template. Used by the staleness/regen pipeline to detect when a template is out of date. Free-form; conventionally either a repo-relative path (e.g., 'plugin/skills/foo/SKILL.md') or a category (e.g., 'developer-guidance')."
+    },
     "hash": {
       "type": "string",
       "description": "Semantic hash managed by the staleness/regen pipeline. The editor does not compute this in v1."
