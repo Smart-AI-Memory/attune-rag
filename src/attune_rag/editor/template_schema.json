@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://attune.dev/schemas/template-frontmatter.json",
+  "title": "Attune Template Frontmatter",
+  "description": "Schema for the YAML frontmatter block of an Attune template. Unknown keys are preserved verbatim (additionalProperties: true) so new fields can be added without breaking older templates.",
+  "type": "object",
+  "required": ["type", "name"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": ["concept", "task", "reference", "guide"],
+      "description": "Template kind. Drives retrieval ranking and UI affordances."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable template name."
+    },
+    "tags": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true,
+      "description": "Free-form classification tags. Drawn from corpus vocabulary via autocomplete."
+    },
+    "aliases": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true,
+      "description": "Alternate names this template can be referred to by. Globally unique across the corpus."
+    },
+    "summary": {
+      "type": "string",
+      "description": "1-3 sentence summary used for retrieval boosting."
+    },
+    "hash": {
+      "type": "string",
+      "description": "Semantic hash managed by the staleness/regen pipeline. The editor does not compute this in v1."
+    }
+  },
+  "additionalProperties": true
+}

@@ -8,22 +8,39 @@ import logging
 import re
 from collections.abc import Iterable
 from pathlib import Path
+from typing import Any
 
-from .base import CorpusProtocol, RetrievalEntry
+import yaml
+
+from .base import AliasInfo, CorpusProtocol, DuplicateAliasError, RetrievalEntry
 
 _FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
-_ALIASES_RE = re.compile(r"^\s*aliases\s*:\s*\[([^\]]*)\]", re.MULTILINE)
 
 
-def _parse_aliases(content: str) -> tuple[str, ...]:
-    """Extract aliases list from YAML frontmatter, e.g. aliases: [foo, bar]."""
+def _parse_frontmatter(content: str) -> dict[str, Any]:
+    """Parse YAML frontmatter from a markdown file.
+
+    Returns an empty dict when there's no frontmatter or the YAML is
+    malformed. Malformed frontmatter is *tolerated* at corpus-load time
+    (logged, not raised) so a single broken template can't break the
+    whole corpus. The editor's lint pass surfaces parse errors per-file.
+    """
     fm = _FRONTMATTER_RE.match(content)
     if not fm:
+        return {}
+    try:
+        data = yaml.safe_load(fm.group(1))
+    except yaml.YAMLError as exc:
+        logger.warning("Failed to parse frontmatter: %s", exc)
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _aliases_from_frontmatter(fm: dict[str, Any]) -> tuple[str, ...]:
+    raw = fm.get("aliases")
+    if not isinstance(raw, list):
         return ()
-    m = _ALIASES_RE.search(fm.group(1))
-    if not m:
-        return ()
-    return tuple(a.strip().strip("'\"") for a in m.group(1).split(",") if a.strip())
+    return tuple(a for a in raw if isinstance(a, str) and a)
 
 
 logger = logging.getLogger(__name__)
@@ -47,6 +64,16 @@ class DirectoryCorpus(CorpusProtocol):
     Rejects files whose resolved paths escape ``root`` to
     prevent path-traversal when summaries/cross-links feed
     arbitrary paths.
+
+    Indexes:
+
+    - ``path_index`` — ``rel_path -> RetrievalEntry``, keyed by
+      corpus-relative posix path.
+    - ``alias_index`` — ``alias -> AliasInfo``, built from each
+      template's ``aliases`` frontmatter list. Aliases must be globally
+      unique across the corpus; duplicates raise
+      :class:`DuplicateAliasError` at load time so the editor can
+      surface the conflict before any retrieval happens.
     """
 
     def __init__(
@@ -67,6 +94,7 @@ class DirectoryCorpus(CorpusProtocol):
         self._glob = glob
         self._cache = cache
         self._loaded: dict[str, RetrievalEntry] | None = None
+        self._aliases: dict[str, AliasInfo] | None = None
 
     def _within_root(self, candidate: Path) -> bool:
         try:
@@ -96,11 +124,13 @@ class DirectoryCorpus(CorpusProtocol):
             return ""
         return parts[0]
 
-    def _build(self) -> dict[str, RetrievalEntry]:
+    def _build(self) -> tuple[dict[str, RetrievalEntry], dict[str, AliasInfo]]:
         summaries = {**self._load_sidecar(self._summaries_file), **self._extra_summaries}
         cross_links = self._load_sidecar(self._cross_links_file)
 
         entries: dict[str, RetrievalEntry] = {}
+        alias_index: dict[str, AliasInfo] = {}
+
         for md in sorted(self._root.glob(self._glob)):
             if not md.is_file():
                 continue
@@ -113,30 +143,63 @@ class DirectoryCorpus(CorpusProtocol):
             content = md.read_text(encoding="utf-8")
             related_raw = cross_links.get(key, ())
             related = tuple(r for r in related_raw if isinstance(r, str))
+            frontmatter = _parse_frontmatter(content)
+            aliases = _aliases_from_frontmatter(frontmatter)
+            fm_name = frontmatter.get("name")
+            template_name = fm_name if isinstance(fm_name, str) else relative.stem
+
+            for alias in aliases:
+                if alias in alias_index:
+                    raise DuplicateAliasError(
+                        alias=alias,
+                        first_path=alias_index[alias]["template_path"],
+                        second_path=key,
+                    )
+                alias_index[alias] = AliasInfo(
+                    alias=alias, template_path=key, template_name=template_name
+                )
+
             entry = RetrievalEntry(
                 path=key,
                 category=category,
                 content=content,
                 summary=summaries.get(key),
                 related=related,
-                aliases=_parse_aliases(content),
+                aliases=aliases,
+                metadata={"frontmatter": frontmatter},
             )
             entries[key] = entry
-        return entries
+        return entries, alias_index
 
     def _ensure_loaded(self) -> dict[str, RetrievalEntry]:
         if self._cache and self._loaded is not None:
             return self._loaded
-        built = self._build()
+        built_entries, built_aliases = self._build()
         if self._cache:
-            self._loaded = built
-        return built
+            self._loaded = built_entries
+        # Even without caching the entries themselves we keep the alias
+        # index in sync with the most recent build so alias_index reads
+        # are coherent with the entries the caller just observed.
+        self._aliases = built_aliases
+        return built_entries
 
     def entries(self) -> Iterable[RetrievalEntry]:
         return tuple(self._ensure_loaded().values())
 
     def get(self, path: str) -> RetrievalEntry | None:
         return self._ensure_loaded().get(path)
+
+    @property
+    def path_index(self) -> dict[str, RetrievalEntry]:
+        """``rel_path -> RetrievalEntry`` for every loaded template."""
+        return dict(self._ensure_loaded())
+
+    @property
+    def alias_index(self) -> dict[str, AliasInfo]:
+        """``alias -> AliasInfo`` for every alias declared in the corpus."""
+        self._ensure_loaded()
+        assert self._aliases is not None
+        return dict(self._aliases)
 
     @property
     def name(self) -> str:
