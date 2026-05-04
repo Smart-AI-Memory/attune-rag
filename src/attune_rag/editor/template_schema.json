@@ -8,8 +8,21 @@
   "properties": {
     "type": {
       "type": "string",
-      "enum": ["concept", "task", "reference", "guide"],
-      "description": "Template kind. Drives retrieval ranking and UI affordances."
+      "enum": [
+        "comparison",
+        "concept",
+        "error",
+        "faq",
+        "guide",
+        "note",
+        "quickstart",
+        "reference",
+        "task",
+        "tip",
+        "troubleshooting",
+        "warning"
+      ],
+      "description": "Template kind. Drives retrieval ranking and UI affordances. The enum mirrors the directory layout in attune-help/src/attune_help/templates/ — adding a new type here also implies adding the corresponding subdirectory in attune-help."
     },
     "name": {
       "type": "string",

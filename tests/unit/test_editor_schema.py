@@ -20,6 +20,46 @@ def test_schema_loads_as_resource() -> None:
     assert schema["additionalProperties"] is True
 
 
+def test_type_enum_covers_all_corpus_kinds() -> None:
+    """The enum mirrors the directory layout in attune-help.
+
+    If a real corpus introduces a new kind, both the schema enum and
+    the directory layout must be updated together. See the schema's
+    own ``description`` for the convention.
+    """
+    schema = load_schema()
+    enum = set(schema["properties"]["type"]["enum"])
+    expected = {
+        "comparison",
+        "concept",
+        "error",
+        "faq",
+        "guide",
+        "note",
+        "quickstart",
+        "reference",
+        "task",
+        "tip",
+        "troubleshooting",
+        "warning",
+    }
+    assert enum == expected, f"schema enum drift: missing={expected - enum} extra={enum - expected}"
+
+
+def test_quickstart_is_a_valid_type() -> None:
+    """Regression for the schema-vs-corpus drift fix.
+
+    Previously the schema only allowed concept/task/reference/guide,
+    which would have hard-blocked saves on any of the 484 templates
+    using the other 8 types. ``quickstart`` is the largest of those
+    (41 templates).
+    """
+    from attune_rag.editor._schema import parse_frontmatter
+
+    _, issues = parse_frontmatter("type: quickstart\nname: x\n")
+    assert not any(i.code == "bad-enum" for i in issues)
+
+
 def test_schema_is_cached() -> None:
     # load_schema is lru_cached; second call returns the same object.
     assert load_schema() is load_schema()
