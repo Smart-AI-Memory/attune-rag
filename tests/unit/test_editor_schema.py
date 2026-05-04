@@ -135,7 +135,7 @@ def test_bad_enum_value() -> None:
 UNKNOWN_KEY = """\
 type: reference
 name: API reference
-category: experimental
+experimental_marker: experimental
 custom_field: 42
 """
 
@@ -149,7 +149,7 @@ def test_unknown_keys_are_allowed() -> None:
     """
     data, issues = parse_frontmatter(UNKNOWN_KEY)
     assert issues == []
-    assert data["category"] == "experimental"
+    assert data["experimental_marker"] == "experimental"
     assert data["custom_field"] == 42
 
 

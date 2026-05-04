@@ -49,6 +49,21 @@
       "type": "string",
       "description": "Path or label identifying the source-of-truth content that produced this template. Used by the staleness/regen pipeline to detect when a template is out of date. Free-form; conventionally either a repo-relative path (e.g., 'plugin/skills/foo/SKILL.md') or a category (e.g., 'developer-guidance')."
     },
+    "confidence": {
+      "type": "string",
+      "enum": ["Verified", "Provisional"],
+      "description": "Author-asserted trust level for the template's content. 'Verified' means the content was reviewed against its source-of-truth; 'Provisional' means it was generated or drafted but not yet validated. Drives UI affordances (e.g., a badge in the editor and dashboard)."
+    },
+    "subtype": {
+      "type": "string",
+      "enum": ["procedural", "tabular"],
+      "description": "Optional structural sub-classification within a template type. 'procedural' = step-by-step body; 'tabular' = body is primarily a reference table. Used by the editor to pick a body-shape hint and by retrieval to bias result presentation."
+    },
+    "category": {
+      "type": "string",
+      "enum": ["skill", "task", "tool"],
+      "description": "Optional grouping that ties a reference template back to a corpus concept (a Claude Code skill, a developer task, or a tool/MCP). Used by the dashboard to filter the reference index."
+    },
     "hash": {
       "type": "string",
       "description": "Semantic hash managed by the staleness/regen pipeline. The editor does not compute this in v1."
