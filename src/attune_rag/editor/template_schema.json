@@ -66,7 +66,8 @@
     },
     "hash": {
       "type": "string",
-      "description": "Semantic hash managed by the staleness/regen pipeline. The editor does not compute this in v1."
+      "readOnly": true,
+      "description": "Semantic hash managed by the staleness/regen pipeline. Read-only in the editor — set by `attune-author regenerate` when re-rendering a template from sources. Manual edits would silently invalidate staleness detection."
     }
   },
   "additionalProperties": true
