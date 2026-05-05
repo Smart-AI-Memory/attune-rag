@@ -67,7 +67,32 @@
     "hash": {
       "type": "string",
       "readOnly": true,
-      "description": "Semantic hash managed by the staleness/regen pipeline. Read-only in the editor — set by `attune-author regenerate` when re-rendering a template from sources. Manual edits would silently invalidate staleness detection."
+      "description": "Semantic hash managed by the staleness/regen pipeline. Read-only in the editor — set by `attune-author regenerate` when re-rendering a template from sources. Manual edits would silently invalidate staleness detection. Some pipelines write `source_hash` instead; see below."
+    },
+    "source_hash": {
+      "type": "string",
+      "readOnly": true,
+      "description": "Canonical name attune-author writes when re-rendering a template from feature source files. Same role as `hash` — the staleness pipeline uses this to detect when the template is out of date. Read-only in the editor."
+    },
+    "feature": {
+      "type": "string",
+      "readOnly": true,
+      "description": "Name of the feature in `<help_dir>/features.yaml` that produced this template. Set by `attune-author generate` / `regenerate`; binds the template back to its source manifest."
+    },
+    "depth": {
+      "type": "string",
+      "readOnly": true,
+      "description": "Which generation depth produced this template (e.g., `concept`, `task`, `reference`). Set by attune-author."
+    },
+    "generated_at": {
+      "readOnly": true,
+      "description": "ISO 8601 timestamp recorded when attune-author last wrote this template. No `type` constraint because YAML auto-parses ISO datetime literals into native datetime objects, while string literals stay strings — the editor accepts either."
+    },
+    "status": {
+      "type": "string",
+      "readOnly": true,
+      "enum": ["generated", "manual", "stale", "verified"],
+      "description": "Lifecycle status. `generated` = fresh from author.generate; `manual` = hand-edited; `stale` = source has drifted; `verified` = reviewed. Managed by the staleness pipeline; do not edit by hand."
     }
   },
   "additionalProperties": true
