@@ -6,6 +6,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-05-05
+
+### Added
+
+- **`attune_rag.editor` submodule** — template-editor backend for
+  attune-gui. Provides:
+  - **Linting** (`lint_template`) — frontmatter validation against the
+    bundled JSON schema, plus body-level checks (broken aliases, unknown
+    tags, missing references).
+  - **Autocomplete** (`autocomplete_aliases`, `autocomplete_tags`) —
+    case-insensitive prefix lookups over a corpus's known aliases and
+    tags, with rich result records for the editor's command palette.
+  - **Rename refactoring** (`plan_rename`, `apply_rename`,
+    `RenameCollisionError`, `RenameError`) — preview + apply rename for
+    aliases, tags, and template paths. Atomic multi-file write with
+    in-memory snapshot rollback on partial failure.
+  - **Frontmatter schema** (`_schema.load_schema`) — single source of
+    truth for both server-side validation and the browser form. Covers
+    template type, name, tags, aliases, summary, source, confidence,
+    subtype, category, plus regen-pipeline read-only fields (hash,
+    source_hash, feature, depth, generated_at, status).
+- **`attune_rag.editor._rename._hunks`** — line-based hunk computation
+  used by the editor's per-hunk save flow.
+
 ## [0.1.8] - 2026-04-24
 
 ### Changed

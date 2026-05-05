@@ -19,7 +19,7 @@ Subsequent tasks in the spec fill in each module.
 
 from __future__ import annotations
 
-__version__ = "0.1.11"
+__version__ = "0.1.12"
 
 # NOTE: Imports are added incrementally as tasks 1.2-1.8
 # land. For task 1.1 (scaffold only) the public names
