@@ -105,6 +105,48 @@ pipeline = RagPipeline(
 )
 ```
 
+## Template editor primitives (`attune_rag.editor`)
+
+Headless toolkit for tools that need to validate, lint, and refactor a
+template corpus — used by the [`attune-gui`](https://pypi.org/project/attune-gui/)
+template editor and the [`attune-author`](https://pypi.org/project/attune-author/)
+`edit` CLI, but works standalone with any
+[`CorpusProtocol`](https://github.com/Smart-AI-Memory/attune-rag).
+
+| API | What it does |
+|-----|---------------|
+| `load_schema()` | Loads `template_schema.json` (the v1 frontmatter contract: required `type` enum + `name`; optional `tags`, `aliases`, `summary`, `source`, `hash`; `additionalProperties: true`). |
+| `parse_frontmatter(text)` / `validate_frontmatter(data)` | Split a template into frontmatter + body and report typed `FrontmatterIssue`s — used by linters and editors. |
+| `lint_template(text, rel_path, corpus)` | Returns `Diagnostic[]` for schema violations, broken `[[alias]]` references, and depth-marker sequence errors. 1-indexed line/col ranges. |
+| `autocomplete_tags(corpus, prefix, limit)` / `autocomplete_aliases(corpus, prefix, limit)` | Prefix-match completions ranked by frequency (tags) or lexical proximity (aliases). Sub-ms on 1k templates. |
+| `find_references(corpus, name, kind)` | Locate every alias/tag/path occurrence across body, frontmatter, and `cross_links.json`. |
+| `plan_rename(corpus, old, new, kind)` | Build a `RenamePlan` (one `FileEdit` per affected file with unified-diff hunks) for `kind="alias"` or `"tag"`. Raises `RenameCollisionError` on existing alias targets. |
+| `apply_rename(corpus, plan)` | Atomically apply the plan (tempfile-per-file + sequential rename + drift-detection rollback). Returns the list of affected paths. |
+
+Schema, lint, and rename are pure functions over `CorpusProtocol` — no I/O,
+no global state. All three pieces are tested as a unit and used live by the
+attune-gui editor's `/api/corpus/<id>/lint`, `/autocomplete`, and
+`/refactor/rename/{preview,apply}` routes.
+
+```python
+from attune_rag import DirectoryCorpus
+from attune_rag.editor import lint_template, plan_rename, apply_rename
+
+corpus = DirectoryCorpus(Path("./templates")).load()
+
+# Validate a template before saving
+diagnostics = lint_template(
+    text=Path("./templates/concepts/foo.md").read_text(),
+    rel_path="concepts/foo.md",
+    corpus=corpus,
+)
+
+# Rename an alias across the whole corpus
+plan = plan_rename(corpus, old="oldname", new="newname", kind="alias")
+print(f"Affects {len(plan.edits)} files")
+affected = apply_rename(corpus, plan)
+```
+
 ## Dashboard
 
 ```bash
