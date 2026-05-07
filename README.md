@@ -1,7 +1,7 @@
 # attune-rag
 
 Lightweight, LLM-agnostic RAG pipeline with pluggable
-corpora. Works with Claude, OpenAI, Gemini, or any LLM.
+corpora. Works with Claude, Gemini, or any LLM.
 
 - **No LLM SDK at install time.** All provider deps are
   optional extras.
@@ -21,7 +21,6 @@ corpora. Works with Claude, OpenAI, Gemini, or any LLM.
 pip install attune-rag                     # core only
 pip install 'attune-rag[attune-help]'      # + bundled help corpus
 pip install 'attune-rag[claude]'           # + Claude adapter
-pip install 'attune-rag[openai]'           # + OpenAI adapter
 pip install 'attune-rag[gemini]'           # + Gemini adapter
 pip install 'attune-rag[all]'              # everything
 ```
@@ -46,18 +45,6 @@ async def main():
     print("\nSources:", [h.entry.path for h in result.citation.hits])
 
 asyncio.run(main())
-```
-
-## Quick start — OpenAI
-
-```bash
-pip install 'attune-rag[attune-help,openai]'
-```
-
-```python
-response, result = await pipeline.run_and_generate(
-    "...", provider="openai", model="gpt-4o",
-)
 ```
 
 ## Quick start — Gemini

@@ -3,7 +3,6 @@
 Each adapter is behind a pip extra:
 
 - attune-rag[claude]  -> ClaudeProvider
-- attune-rag[openai]  -> OpenAIProvider
 - attune-rag[gemini]  -> GeminiProvider
 
 Adapters lazy-import their SDKs so attune-rag installs
@@ -18,7 +17,6 @@ from .base import LLMProvider
 
 _SDK_PROBES = {
     "claude": "anthropic",
-    "openai": "openai",
     "gemini": "google.genai",
 }
 
@@ -51,10 +49,6 @@ def get_provider(name: str, **kwargs) -> LLMProvider:
         from .claude import ClaudeProvider
 
         return ClaudeProvider(**kwargs)
-    if name == "openai":
-        from .openai import OpenAIProvider
-
-        return OpenAIProvider(**kwargs)
     if name == "gemini":
         from .gemini import GeminiProvider
 

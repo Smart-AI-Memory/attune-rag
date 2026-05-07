@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "attune-rag"
 version = "0.1.12"
-description = "Lightweight, LLM-agnostic RAG pipeline with pluggable corpora. Works with Claude, OpenAI, Gemini, or any LLM."
+description = "Lightweight, LLM-agnostic RAG pipeline with pluggable corpora. Works with Claude, Gemini, or any LLM."
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.10"
 license = {file = "LICENSE"}
@@ -17,7 +17,6 @@ keywords = [
     "retrieval-augmented-generation",
     "llm",
     "claude",
-    "openai",
     "gemini",
     "grounding",
     "provenance",
@@ -46,12 +45,10 @@ dependencies = [
 [project.optional-dependencies]
 attune-help = ["attune-help>=0.10.0,<0.11"]
 claude = ["anthropic>=0.40.0,<1.0"]
-openai = ["openai>=1.40.0,<2.0"]
 gemini = ["google-genai>=1.0,<2.0"]
 all = [
     "attune-help>=0.10.0,<0.11",
     "anthropic>=0.40.0,<1.0",
-    "openai>=1.40.0,<2.0",
     "google-genai>=1.0,<2.0",
 ]
 dev = [
@@ -64,7 +61,6 @@ dev = [
     "twine>=5.0",
     "attune-help>=0.10.0,<0.11",
     "anthropic>=0.40.0,<1.0",
-    "openai>=1.40.0,<2.0",
     "google-genai>=1.0,<2.0",
 ]
 
