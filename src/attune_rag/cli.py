@@ -92,7 +92,7 @@ def _cmd_providers(args: argparse.Namespace) -> int:
     available = list_available()
     if not available:
         print("No provider extras installed.")
-        print("Install one: pip install 'attune-rag[claude]' (or openai, gemini).")
+        print("Install one: pip install 'attune-rag[claude]' (or gemini).")
         return 0
     print("Available providers:")
     for name in available:
@@ -114,6 +114,7 @@ def _cmd_dashboard_render(args: argparse.Namespace) -> int:
     print(f"Dashboard written to {out}")
     if args.open:
         import webbrowser
+
         webbrowser.open(out.as_uri())
     return 0
 
@@ -148,7 +149,7 @@ def build_parser() -> argparse.ArgumentParser:
     query.add_argument("-k", type=int, default=3, help="Max hits to return (default 3).")
     query.add_argument(
         "--provider",
-        choices=["claude", "openai", "gemini"],
+        choices=["claude", "gemini"],
         help="If set, call the named LLM and print its response.",
     )
     query.add_argument(
@@ -172,7 +173,9 @@ def build_parser() -> argparse.ArgumentParser:
     dash = subs.add_parser("dashboard", help="Render or refresh the attune-rag Cowork dashboard.")
     dash_subs = dash.add_subparsers(dest="dashboard_cmd", required=True)
 
-    show_p = dash_subs.add_parser("show", help="Run benchmark and display dashboard in the terminal.")
+    show_p = dash_subs.add_parser(
+        "show", help="Run benchmark and display dashboard in the terminal."
+    )
     show_p.add_argument(
         "--corpus-package",
         default="attune_help",
@@ -181,7 +184,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     show_p.set_defaults(func=_cmd_dashboard_show)
 
-    render_p = dash_subs.add_parser("render", help="Run benchmark, embed snapshot, write dashboard HTML.")
+    render_p = dash_subs.add_parser(
+        "render", help="Run benchmark, embed snapshot, write dashboard HTML."
+    )
     render_p.add_argument("--out", required=True, metavar="PATH", help="Destination file path.")
     render_p.add_argument(
         "--corpus-package",

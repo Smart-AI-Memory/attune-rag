@@ -9,7 +9,7 @@ from typing import Protocol, runtime_checkable
 class LLMProvider(Protocol):
     """An async LLM provider that consumes a prompt and returns text.
 
-    Implementations live in ``attune_rag.providers.{claude,openai,gemini}``
+    Implementations live in ``attune_rag.providers.{claude,gemini}``
     behind optional extras. Each lazy-imports its SDK so core
     attune-rag installs cleanly without any provider deps.
     """

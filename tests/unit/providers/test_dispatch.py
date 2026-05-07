@@ -13,7 +13,7 @@ def test_list_available_returns_installed_providers() -> None:
     # rather than a specific list.
     assert isinstance(available, list)
     for name in available:
-        assert name in {"claude", "openai", "gemini"}
+        assert name in {"claude", "gemini"}
 
 
 def test_get_provider_rejects_unknown_name() -> None:

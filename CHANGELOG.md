@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- **OpenAI provider** (`attune_rag.providers.openai.OpenAIProvider`) and
+  the `[openai]` install extra. Use `[claude]` or `[gemini]` instead.
+  No external consumer of attune-rag was importing `OpenAIProvider`;
+  the provider is fully removable without callsite migrations.
+
 ## [0.1.12] - 2026-05-05
 
 ### Added

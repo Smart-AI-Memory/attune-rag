@@ -209,9 +209,9 @@ class RagPipeline:
         """Retrieve, build the augmented prompt, and call an LLM.
 
         ``provider`` may be an ``LLMProvider`` instance or a name
-        string (``"claude"``, ``"openai"``, ``"gemini"``). In the
-        string case, the matching provider is constructed with
-        default credentials (from env vars).
+        string (``"claude"``, ``"gemini"``). In the string case,
+        the matching provider is constructed with default
+        credentials (from env vars).
 
         ``prompt_variant`` selects the prompt template. See
         :mod:`attune_rag.prompts`.
