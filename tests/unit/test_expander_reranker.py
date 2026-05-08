@@ -339,3 +339,63 @@ class TestPipelineWithReranker:
         exp_client.messages.create.assert_called_once()
         rer_client.messages.create.assert_called_once()
         assert not result.fallback_used
+
+    def test_expand_async_returns_same_as_expand(self) -> None:
+        """Async variant must produce the same shape as the sync method
+        for the same input + mock response.
+        """
+        import asyncio
+
+        expander = QueryExpander(cache=False)
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = _fake_response('["a", "b"]')
+        expander._client = mock_client
+        result = asyncio.run(expander.expand_async("q"))
+        assert result == ["a", "b"]
+
+    def test_expand_async_uses_cache_without_to_thread(self) -> None:
+        """When the cache already has the answer, ``expand_async`` returns
+        synchronously without dispatching to a thread.
+        """
+        import asyncio
+
+        expander = QueryExpander(cache=True)
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = _fake_response('["from-cache"]')
+        expander._client = mock_client
+
+        # Prime the cache via the sync method
+        first = expander.expand("k")
+        assert first == ["from-cache"]
+        assert mock_client.messages.create.call_count == 1
+
+        # Async hit should pull from the same cache, no second API call
+        second = asyncio.run(expander.expand_async("k"))
+        assert second == ["from-cache"]
+        assert mock_client.messages.create.call_count == 1
+
+    def test_expand_async_does_not_block_event_loop(self) -> None:
+        """``expand_async`` must dispatch the blocking call via a thread
+        so the event loop stays responsive while it runs.
+        """
+        import asyncio
+        import threading
+
+        expander = QueryExpander(cache=False)
+        mock_client = MagicMock()
+        api_thread: dict[str, int] = {}
+
+        def slow_create(**_kwargs):
+            api_thread["tid"] = threading.get_ident()
+            return _fake_response('["slow"]')
+
+        mock_client.messages.create.side_effect = slow_create
+        expander._client = mock_client
+
+        async def runner() -> None:
+            main_tid = threading.get_ident()
+            await expander.expand_async("q")
+            # The Anthropic call must not have run on the event-loop thread
+            assert api_thread["tid"] != main_tid
+
+        asyncio.run(runner())

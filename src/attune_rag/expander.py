@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 
 logger = logging.getLogger(__name__)
+# Touch reference so import remains after auto-format passes; the
+# real consumer is ``QueryExpander.expand_async`` below.
+_ASYNCIO_TO_THREAD = asyncio.to_thread
+__all__ = ["QueryExpander"]
 
 _SYSTEM = """\
 You expand developer queries for a documentation retrieval system.
@@ -88,3 +93,18 @@ class QueryExpander:
         if self._cache is not None:
             self._cache[query] = expansions
         return expansions
+
+    async def expand_async(self, query: str) -> list[str]:
+        """Async variant of :meth:`expand` for use from async event loops.
+
+        Wraps the synchronous Anthropic call in :func:`asyncio.to_thread`
+        so callers like FastAPI route handlers don't block the event
+        loop. The cache is shared with :meth:`expand` so a hit on either
+        path serves a hit on the other.
+
+        Returns the same shape and same fail-soft empty-list semantics
+        as :meth:`expand`.
+        """
+        if self._cache is not None and query in self._cache:
+            return self._cache[query]
+        return await _ASYNCIO_TO_THREAD(self.expand, query)
