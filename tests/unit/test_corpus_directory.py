@@ -128,6 +128,50 @@ def test_version_changes_when_content_changes(tiny_corpus: Path) -> None:
     assert v1 != v2
 
 
+def test_version_cached_after_first_computation(tiny_corpus: Path, monkeypatch) -> None:
+    """``version`` hashes once and reuses the result on subsequent reads.
+
+    Without this, every API request that uses ``corpus.version`` as a
+    cache key (e.g. attune-gui's /api/rag routes) hashes the full corpus.
+    """
+    import hashlib
+
+    corpus = DirectoryCorpus(tiny_corpus)
+
+    sha256_calls = 0
+    real_sha256 = hashlib.sha256
+
+    def counting_sha256(*args, **kwargs):
+        nonlocal sha256_calls
+        sha256_calls += 1
+        return real_sha256(*args, **kwargs)
+
+    monkeypatch.setattr(hashlib, "sha256", counting_sha256)
+
+    v1 = corpus.version
+    v2 = corpus.version
+    v3 = corpus.version
+
+    assert v1 == v2 == v3
+    assert sha256_calls == 1, "version should hash exactly once when content is stable"
+
+
+def test_version_invalidated_when_corpus_reloaded(tiny_corpus: Path) -> None:
+    """A no-cache corpus should produce a fresh version after a rebuild,
+    even if the content didn't change — proves the invalidation hook
+    fires inside ``_ensure_loaded`` rather than relying on content drift.
+    """
+    corpus = DirectoryCorpus(tiny_corpus, cache=False)
+    v1 = corpus.version
+    # Force the first cached value to a sentinel; after a rebuild the
+    # real hash should overwrite it.
+    corpus._version = "STALE_SENTINEL_X"  # noqa: SLF001 — testing invalidation
+    corpus._loaded = None  # noqa: SLF001 — force a rebuild on next access
+    v2 = corpus.version
+    assert v2 != "STALE_SENTINEL_X"
+    assert v2 == v1  # content unchanged so the recomputed hash matches
+
+
 def test_retrievalentry_is_frozen_and_hashable(tiny_corpus: Path) -> None:
     from dataclasses import FrozenInstanceError
 
