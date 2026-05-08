@@ -344,3 +344,92 @@ def test_stemming_preserves_short_tokens() -> None:
     assert _stem("is") == "is"
     assert _stem("on") == "on"
     assert _stem("bug") == "bug"
+
+
+# ---------------------------------------------------------------------------
+# Per-entry token cache (precomputation on first use, reused on subsequent)
+# ---------------------------------------------------------------------------
+
+
+def test_entry_field_tokens_cached_after_first_call() -> None:
+    """``_entry_field_tokens`` must populate ``_tokens_cache`` and reuse it."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    entry = _entry(
+        path="concepts/example.md",
+        category="concepts",
+        summary="explains the example flow",
+        content="example flow content",
+    )
+    retriever = KeywordRetriever()
+
+    first = retriever._entry_field_tokens(entry)
+    second = retriever._entry_field_tokens(entry)
+
+    # Same dict instance returned on both calls — no recomputation
+    assert first is second
+    # Cache is keyed by ("field_tokens", CONTENT_PREVIEW_CHARS)
+    assert ("field_tokens", retriever.CONTENT_PREVIEW_CHARS) in entry._tokens_cache
+
+
+def test_entry_field_tokens_recomputed_when_preview_size_differs() -> None:
+    """A retriever with a different ``CONTENT_PREVIEW_CHARS`` keys its
+    own cache slot, so the two don't collide.
+    """
+    from attune_rag.retrieval import KeywordRetriever
+
+    class WidePreview(KeywordRetriever):
+        CONTENT_PREVIEW_CHARS = 200  # narrower than the 500 default
+
+    entry = _entry(
+        path="concepts/example.md",
+        category="concepts",
+        summary="example",
+        content="long content " * 100,
+    )
+
+    default = KeywordRetriever()._entry_field_tokens(entry)
+    narrow = WidePreview()._entry_field_tokens(entry)
+
+    assert default is not narrow
+    assert ("field_tokens", 500) in entry._tokens_cache
+    assert ("field_tokens", 200) in entry._tokens_cache
+
+
+def test_score_entry_does_not_re_tokenize_on_repeat_calls() -> None:
+    """The hot path: scoring the same entry against multiple queries
+    should tokenize the entry once. Patches ``_tokenize`` to count.
+    """
+    from attune_rag import retrieval as rmod
+    from attune_rag.retrieval import KeywordRetriever
+
+    real_tokenize = rmod._tokenize
+    calls = 0
+
+    def counting(text):
+        nonlocal calls
+        calls += 1
+        return real_tokenize(text)
+
+    entry = _entry(
+        path="concepts/example.md",
+        category="concepts",
+        summary="explains the example flow",
+        content="example flow content",
+    )
+    corpus = FakeCorpus([entry])
+    retriever = KeywordRetriever()
+
+    # Prime the cache by calling once with one query
+    rmod._tokenize = counting
+    try:
+        retriever._score_entry({"example"}, entry, corpus)
+        first_pass = calls
+        # Subsequent scorings of the SAME entry against different queries
+        # must not re-tokenize the entry's fields.
+        retriever._score_entry({"flow"}, entry, corpus)
+        retriever._score_entry({"content"}, entry, corpus)
+    finally:
+        rmod._tokenize = real_tokenize
+
+    assert calls == first_pass, "field tokens must not be recomputed across queries"
