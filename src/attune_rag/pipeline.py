@@ -108,7 +108,7 @@ class RagPipeline:
                 "Either pass a corpus= (e.g. DirectoryCorpus) or install "
                 "'attune-rag[attune-help]'."
             ) from exc
-        return AttuneHelpCorpus()
+        return AttuneHelpCorpus.from_attune_help()
 
     def run(
         self,
