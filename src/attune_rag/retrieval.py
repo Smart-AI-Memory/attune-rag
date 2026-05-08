@@ -170,25 +170,61 @@ class KeywordRetriever:
     def _category_weight(self, entry: RetrievalEntry) -> float:
         return self.CATEGORY_WEIGHTS.get(entry.category, self.DEFAULT_CATEGORY_WEIGHT)
 
+    def _entry_field_tokens(self, entry: RetrievalEntry) -> dict[str, set[str]]:
+        """Memoized tokens for the entry's own fields (path/summary/content/aliases).
+
+        Stored on the entry itself via the ``_tokens_cache`` sidecar so
+        the keyword retriever stops re-tokenizing on every query — the
+        review's primary perf concern. Keyed by ``CONTENT_PREVIEW_CHARS``
+        so a retriever subclass with a different preview size sees
+        independent cache entries instead of stale ones.
+        """
+        cache_key = ("field_tokens", self.CONTENT_PREVIEW_CHARS)
+        cached = entry._tokens_cache.get(cache_key)
+        if cached is not None:
+            return cached
+        tokens = {
+            "path": _tokenize(entry.path),
+            "summary": _tokenize(entry.summary or ""),
+            "content_preview": _tokenize(entry.content[: self.CONTENT_PREVIEW_CHARS]),
+            "aliases": _tokenize(" ".join(entry.aliases)),
+        }
+        entry._tokens_cache[cache_key] = tokens
+        return tokens
+
+    def _related_summary_tokens(self, entry: RetrievalEntry, corpus: CorpusProtocol) -> set[str]:
+        """Memoized union of related-entry summary tokens.
+
+        Cached on the entry under a key that includes the corpus name so
+        the same entry surfaced across different corpora gets independent
+        caches. When a corpus rebuilds, fresh entries are created and
+        the cache is naturally empty.
+        """
+        cache_key = ("related_tokens", corpus.name)
+        cached = entry._tokens_cache.get(cache_key)
+        if cached is not None:
+            return cached
+        related_tokens: set[str] = set()
+        for related_path in entry.related:
+            related_entry = corpus.get(related_path)
+            if related_entry is None or not related_entry.summary:
+                continue
+            related_tokens |= _tokenize(related_entry.summary)
+        entry._tokens_cache[cache_key] = related_tokens
+        return related_tokens
+
     def _score_entry(
         self,
         query_tokens: set[str],
         entry: RetrievalEntry,
         corpus: CorpusProtocol,
     ) -> tuple[float, str]:
-        path_tokens = _tokenize(entry.path)
-        summary_tokens = _tokenize(entry.summary or "")
-        content_preview = entry.content[: self.CONTENT_PREVIEW_CHARS]
-        content_tokens = _tokenize(content_preview)
-
-        related_summary_tokens: set[str] = set()
-        for related_path in entry.related:
-            related_entry = corpus.get(related_path)
-            if related_entry is None or not related_entry.summary:
-                continue
-            related_summary_tokens |= _tokenize(related_entry.summary)
-
-        aliases_tokens = _tokenize(" ".join(entry.aliases))
+        field_tokens = self._entry_field_tokens(entry)
+        path_tokens = field_tokens["path"]
+        summary_tokens = field_tokens["summary"]
+        content_tokens = field_tokens["content_preview"]
+        aliases_tokens = field_tokens["aliases"]
+        related_summary_tokens = self._related_summary_tokens(entry, corpus)
 
         path_hits_raw = len(query_tokens & path_tokens)
         path_hits = min(path_hits_raw, self.PATH_HIT_CAP)

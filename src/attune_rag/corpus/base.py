@@ -9,7 +9,18 @@ from typing import Any, Protocol, TypedDict, runtime_checkable
 
 @dataclass(frozen=True)
 class RetrievalEntry:
-    """A single corpus entry. Task 1.1 shape; task 1.2 wires loaders."""
+    """A single corpus entry. Task 1.1 shape; task 1.2 wires loaders.
+
+    The ``_tokens_cache`` field is a per-instance mutable cache used by
+    :mod:`attune_rag.retrieval` to memoize tokenized representations
+    (path / summary / content-preview / aliases) so the keyword
+    retriever doesn't re-tokenize on every query. ``frozen=True``
+    prevents the field itself from being reassigned but doesn't stop
+    callers from mutating its contents — exactly what we want for a
+    write-once-on-first-access cache. Excluded from hash, equality,
+    and repr so two entries with the same content compare equal even
+    if one has cached tokens and the other hasn't.
+    """
 
     path: str
     category: str
@@ -18,6 +29,12 @@ class RetrievalEntry:
     related: tuple[str, ...] = ()
     aliases: tuple[str, ...] = ()
     metadata: dict[str, Any] = field(default_factory=dict)
+    _tokens_cache: dict[Any, Any] = field(
+        default_factory=dict,
+        compare=False,
+        hash=False,
+        repr=False,
+    )
 
 
 class AliasInfo(TypedDict):
