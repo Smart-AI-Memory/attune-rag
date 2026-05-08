@@ -14,7 +14,7 @@ from .prompts import (
     join_context,
     join_context_numbered,
 )
-from .provenance import CitationRecord, build_citation_record
+from .provenance import CitationRecord, ClaimCitation, build_citation_record
 from .retrieval import KeywordRetriever, RetrieverProtocol
 
 if TYPE_CHECKING:
@@ -60,6 +60,14 @@ class RagResult:
     (e.g. faithfulness judges) can score answers against
     the exact same text the generator saw. Empty string
     when ``fallback_used`` is True.
+
+    ``claim_citations`` is populated only on the native-citations
+    code path (when ``run_and_generate`` is called with
+    ``use_native_citations=True`` and the provider supports it).
+    On the legacy ``[P{n}]``-marker path it remains an empty
+    tuple. ``used_native_citations`` records which path actually
+    ran so callers can render output appropriately even when the
+    requested path was unavailable (e.g. provider fallback).
     """
 
     augmented_prompt: str
@@ -68,6 +76,8 @@ class RagResult:
     fallback_used: bool
     elapsed_ms: float
     context: str = ""
+    claim_citations: tuple[ClaimCitation, ...] = ()
+    used_native_citations: bool = False
 
 
 class RagPipeline:
@@ -110,6 +120,24 @@ class RagPipeline:
             ) from exc
         return AttuneHelpCorpus.from_attune_help()
 
+    def _retrieve(self, query: str, k: int) -> list:
+        """Run retrieval (with optional expansion + reranking).
+
+        Extracted from :meth:`run` so :meth:`run_and_generate`
+        can access the actual hit objects (with full content) on
+        the native-citations path. Pure helper — no side effects.
+        """
+        retrieval_query = query
+        if self.expander is not None:
+            expansions = self.expander.expand(query)
+            if expansions:
+                retrieval_query = " ".join([query, *expansions])
+        retrieval_k = k * self.reranker.candidate_multiplier if self.reranker else k
+        hits = list(self.retriever.retrieve(retrieval_query, self.corpus, k=retrieval_k))
+        if self.reranker is not None and hits:
+            hits = self.reranker.rerank(query, hits)[:k]
+        return hits
+
     def run(
         self,
         query: str,
@@ -134,22 +162,7 @@ class RagPipeline:
         start = time.perf_counter()
         now = datetime.now(timezone.utc)
 
-        # Query expansion: join original + alternative phrasings so the
-        # keyword retriever sees a richer token set without any changes to
-        # the retriever itself.  Original query is preserved for the prompt.
-        retrieval_query = query
-        if self.expander is not None:
-            expansions = self.expander.expand(query)
-            if expansions:
-                retrieval_query = " ".join([query, *expansions])
-
-        # Retrieve a wider candidate set when re-ranking is active so the
-        # reranker has meaningful material to work with.
-        retrieval_k = k * self.reranker.candidate_multiplier if self.reranker else k
-        hits = list(self.retriever.retrieve(retrieval_query, self.corpus, k=retrieval_k))
-
-        if self.reranker is not None and hits:
-            hits = self.reranker.rerank(query, hits)[:k]
+        hits = self._retrieve(query, k)
 
         citation = build_citation_record(
             query=query,
@@ -205,6 +218,7 @@ class RagPipeline:
         model: str | None = None,
         max_tokens: int = 2048,
         prompt_variant: str = "citation",
+        use_native_citations: bool = False,
     ) -> tuple[str, RagResult]:
         """Retrieve, build the augmented prompt, and call an LLM.
 
@@ -216,26 +230,187 @@ class RagPipeline:
         ``prompt_variant`` selects the prompt template. See
         :mod:`attune_rag.prompts`.
 
-        Returns ``(response_text, rag_result)``. Callers render
-        citations with ``format_citations_markdown`` as needed.
+        ``use_native_citations`` opts into the Anthropic Citations
+        API path: each retrieved hit becomes a ``custom_content``
+        document block, and the model emits claim-level citations
+        attached to its response text. The returned ``RagResult``
+        carries ``claim_citations`` (and ``used_native_citations``)
+        so callers can render with
+        :func:`provenance.format_claim_citations_markdown`.
+
+        Behavior matrix:
+
+        - ``use_native_citations=False`` → existing prompt-assembly
+          path. Returned ``RagResult.claim_citations == ()``.
+        - ``use_native_citations=True`` and provider supports it
+          and hits exist → native citations path.
+        - ``use_native_citations=True`` and provider supports it
+          but hits are empty → fallback prompt (no docs to cite);
+          ``used_native_citations=False`` because the citations
+          API was never called.
+        - ``use_native_citations=True`` and provider does NOT
+          support native citations → log warning, run existing
+          prompt-assembly path; ``used_native_citations=False``.
+
+        Returns ``(response_text, rag_result)``.
         """
         if isinstance(provider, str):
             from .providers import get_provider
 
             provider = get_provider(provider)
 
-        rag_result = self.run(query, k=k, prompt_variant=prompt_variant)
+        if use_native_citations and not getattr(provider, "supports_native_citations", False):
+            logger.warning(
+                "rag.native_citations_unsupported",
+                provider=getattr(provider, "name", type(provider).__name__),
+                fallback="prompt_assembly",
+            )
+            use_native_citations = False
 
-        prompt = rag_result.augmented_prompt
-        cached_prefix: str | None = None
-        split_idx = prompt.find(_CACHE_SPLIT)
-        if split_idx != -1 and split_idx >= _MIN_CACHE_CHARS:
-            cached_prefix = prompt[: split_idx + len(_CACHE_SPLIT)]
+        if not use_native_citations:
+            rag_result = self.run(query, k=k, prompt_variant=prompt_variant)
+            prompt = rag_result.augmented_prompt
+            cached_prefix: str | None = None
+            split_idx = prompt.find(_CACHE_SPLIT)
+            if split_idx != -1 and split_idx >= _MIN_CACHE_CHARS:
+                cached_prefix = prompt[: split_idx + len(_CACHE_SPLIT)]
+            response = await provider.generate(
+                prompt,
+                model=model,
+                max_tokens=max_tokens,
+                cached_prefix=cached_prefix,
+            )
+            return response, rag_result
 
-        response = await provider.generate(
-            prompt,
+        # Native citations path. We need the actual hit objects (full
+        # content) to build the document payload, so we run retrieval
+        # here instead of calling self.run().
+        return await self._run_native_citations(
+            query=query,
+            provider=provider,
+            k=k,
             model=model,
             max_tokens=max_tokens,
-            cached_prefix=cached_prefix,
+            prompt_variant=prompt_variant,
         )
-        return response, rag_result
+
+    async def _run_native_citations(
+        self,
+        query: str,
+        provider: LLMProvider,
+        k: int,
+        model: str | None,
+        max_tokens: int,
+        prompt_variant: str,
+    ) -> tuple[str, RagResult]:
+        """Native citations path. Internal — see
+        :meth:`run_and_generate` for the public entry point.
+
+        Retrieval is run identically to :meth:`run`. When hits
+        exist we send them as ``CitationDocument``s through the
+        provider's citations API; the response is parsed back
+        into ``claim_citations`` on the returned ``RagResult``.
+        When hits are empty we delegate to :meth:`run` for the
+        fallback prompt and a plain ``provider.generate`` call —
+        ``used_native_citations`` stays ``False`` because the
+        citations API was never engaged.
+        """
+        from .providers.base import CitationDocument
+
+        start = time.perf_counter()
+        now = datetime.now(timezone.utc)
+        hits = self._retrieve(query, k)
+        citation = build_citation_record(
+            query=query,
+            hits=hits,
+            retriever_name=type(self.retriever).__name__,
+            retrieved_at=now,
+        )
+
+        if not hits:
+            # No documents to cite — fall back to the legacy fallback
+            # prompt path. Note: we still report use_native_citations=False
+            # because no citations call was made.
+            augmented_prompt = FALLBACK_PROMPT_TEMPLATE.format(query=query.strip())
+            response = await provider.generate(
+                augmented_prompt,
+                model=model,
+                max_tokens=max_tokens,
+                cached_prefix=None,
+            )
+            elapsed_ms = (time.perf_counter() - start) * 1000.0
+            logger.info(
+                "rag.run",
+                query=query,
+                hit_count=0,
+                fallback_used=True,
+                confidence=0.0,
+                elapsed_ms=round(elapsed_ms, 2),
+                corpus=self.corpus.name,
+                retriever=type(self.retriever).__name__,
+                prompt_variant=prompt_variant,
+                native_citations_requested=True,
+                native_citations_used=False,
+            )
+            rag_result = RagResult(
+                augmented_prompt=augmented_prompt,
+                citation=citation,
+                confidence=0.0,
+                fallback_used=True,
+                elapsed_ms=elapsed_ms,
+                context="",
+                claim_citations=(),
+                used_native_citations=False,
+            )
+            return response, rag_result
+
+        documents = [CitationDocument(title=h.entry.path, text=h.entry.content) for h in hits]
+        # Render context too, for parity with the legacy path so callers
+        # that inspect rag_result.context for evals see the same input.
+        if prompt_variant == "citation":
+            context = join_context_numbered(hits)
+        else:
+            context = join_context(hits)
+
+        cited = await provider.generate_with_citations(
+            documents=documents,
+            query=query,
+            model=model,
+            max_tokens=max_tokens,
+        )
+
+        top_score = hits[0].score
+        min_score = getattr(self.retriever, "MIN_SCORE", 1.0) or 1.0
+        confidence = min(top_score / (min_score * 2), 1.0)
+        elapsed_ms = (time.perf_counter() - start) * 1000.0
+
+        logger.info(
+            "rag.run",
+            query=query,
+            hit_count=len(hits),
+            fallback_used=False,
+            confidence=round(confidence, 3),
+            elapsed_ms=round(elapsed_ms, 2),
+            corpus=self.corpus.name,
+            retriever=type(self.retriever).__name__,
+            prompt_variant=prompt_variant,
+            native_citations_requested=True,
+            native_citations_used=True,
+            claim_citation_count=len(cited.claim_citations),
+        )
+
+        # augmented_prompt is empty on this path: the model didn't see a
+        # rendered numbered-passage prompt; documents went over the wire
+        # as structured blocks. We surface this as an empty string rather
+        # than fabricating a prompt that wasn't actually sent.
+        rag_result = RagResult(
+            augmented_prompt="",
+            citation=citation,
+            confidence=confidence,
+            fallback_used=False,
+            elapsed_ms=elapsed_ms,
+            context=context,
+            claim_citations=cited.claim_citations,
+            used_native_citations=True,
+        )
+        return cited.text, rag_result

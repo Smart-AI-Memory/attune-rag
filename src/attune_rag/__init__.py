@@ -19,7 +19,7 @@ Subsequent tasks in the spec fill in each module.
 
 from __future__ import annotations
 
-__version__ = "0.1.12"
+__version__ = "0.1.13"
 
 # NOTE: Imports are added incrementally as tasks 1.2-1.8
 # land. For task 1.1 (scaffold only) the public names
@@ -28,7 +28,13 @@ from .corpus import CorpusProtocol, DirectoryCorpus, RetrievalEntry
 from .expander import QueryExpander
 from .pipeline import RagPipeline, RagResult
 from .prompts import PROMPT_VARIANTS, build_augmented_prompt
-from .provenance import CitationRecord, CitedSource, format_citations_markdown
+from .provenance import (
+    CitationRecord,
+    CitedSource,
+    ClaimCitation,
+    format_citations_markdown,
+    format_claim_citations_markdown,
+)
 from .reranker import LLMReranker
 from .retrieval import KeywordRetriever, RetrievalHit, RetrieverProtocol
 
@@ -37,7 +43,9 @@ __all__ = [
     "RagResult",
     "CitationRecord",
     "CitedSource",
+    "ClaimCitation",
     "format_citations_markdown",
+    "format_claim_citations_markdown",
     "CorpusProtocol",
     "RetrievalEntry",
     "DirectoryCorpus",

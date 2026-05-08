@@ -6,6 +6,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.13] - 2026-05-08
+
+### Added
+
+- **Native Anthropic Citations API** (opt-in). New
+  `use_native_citations` kwarg on `RagPipeline.run_and_generate` —
+  when True (and the provider supports it), retrieved hits are
+  sent as `custom_content` document blocks and the model emits
+  claim-level citations attached to its response text. Falls
+  back to the legacy `[P{n}]`-marker path on providers without
+  support (Gemini) and on empty-hit retrievals.
+  - New types: `attune_rag.ClaimCitation` (response-span +
+    document-index + cited-text); `attune_rag.providers.base.
+    CitationDocument`, `CitedResponse`.
+  - New helper: `attune_rag.format_claim_citations_markdown`
+    renders response text with footnote-style claim
+    attribution.
+  - New protocol surface: `LLMProvider.supports_native_citations`
+    flag and `LLMProvider.generate_with_citations`.
+    `ClaudeProvider` implements both. `GeminiProvider` declares
+    the flag = False; pipeline detects this and falls back.
+  - `RagResult` gains `claim_citations: tuple[ClaimCitation, ...]`
+    and `used_native_citations: bool` (both default empty/False
+    so all existing callers are unaffected).
+- **`attune-rag query --native-citations`** CLI flag — opt into
+  the native path from the command line. Renders the response
+  with footnote citations when active.
+- **`attune-rag-benchmark --native-citations`** flag (with
+  `--with-faithfulness`) — runs a side-by-side faithfulness
+  pass on both paths and prints a comparison table including
+  hallucination rate, citation emit rate, and p95 latency.
+- **Docs:** `docs/rag/native-citations.md` design note covering
+  when to use which path, fallback behavior, open verification
+  gates (V2 cache_control, V3 doc-count ceiling), and rollback.
+
 ### Removed
 
 - **OpenAI provider** (`attune_rag.providers.openai.OpenAIProvider`) and

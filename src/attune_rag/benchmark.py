@@ -146,12 +146,18 @@ def _print_summary(report: dict[str, Any], verbose: bool) -> None:
 async def _score_faithfulness(
     queries: list[dict[str, Any]],
     k: int,
+    use_native_citations: bool = False,
 ) -> dict[str, Any]:
     """Run the default variant through run_and_generate + judge for each query.
 
-    Returns a dict with mean faithfulness plus per-query detail.
-    Spends API tokens (2 LLM calls per query). Respect the caller's
-    budget.
+    Returns a dict with mean faithfulness, claim-citations stats,
+    and p95 latency plus per-query detail. Spends API tokens (2
+    LLM calls per query). Respect the caller's budget.
+
+    ``use_native_citations`` toggles the Anthropic Citations API
+    path. When True, ``citation_emit_rate`` is the fraction of
+    queries the model returned at least one ``ClaimCitation`` for;
+    when False it is always 0.0.
     """
     from . import RagPipeline
     from .eval import FaithfulnessJudge
@@ -160,20 +166,31 @@ async def _score_faithfulness(
     judge = FaithfulnessJudge()
 
     scores: list[float] = []
+    latencies: list[float] = []
     hallu = 0
     refuse = 0
+    cited = 0
     per_query: list[dict[str, Any]] = []
 
     for entry in queries:
         query = entry["query"]
         print(f"  judging: {entry['id']} — {query!r}", file=sys.stderr)
-        answer, rag_result = await pipeline.run_and_generate(query, provider="claude", k=k)
+        t0 = time.perf_counter()
+        answer, rag_result = await pipeline.run_and_generate(
+            query,
+            provider="claude",
+            k=k,
+            use_native_citations=use_native_citations,
+        )
+        latencies.append((time.perf_counter() - t0) * 1000.0)
         verdict = await judge.score(query=query, answer=answer, passages=rag_result.context)
         scores.append(verdict.score)
         if verdict.total_claims == 0:
             refuse += 1
         if len(verdict.unsupported_claims) > 0:
             hallu += 1
+        if rag_result.used_native_citations and rag_result.claim_citations:
+            cited += 1
         per_query.append(
             {
                 "id": entry["id"],
@@ -181,6 +198,8 @@ async def _score_faithfulness(
                 "score": verdict.score,
                 "supported": len(verdict.supported_claims),
                 "unsupported": len(verdict.unsupported_claims),
+                "claim_citation_count": len(rag_result.claim_citations),
+                "used_native_citations": rag_result.used_native_citations,
             }
         )
 
@@ -189,15 +208,59 @@ async def _score_faithfulness(
         "mean_faithfulness": sum(scores) / n if n else 0.0,
         "refusal_rate": refuse / n if n else 0.0,
         "hallucination_rate": hallu / n if n else 0.0,
+        "citation_emit_rate": cited / n if n else 0.0,
+        "p95_latency_ms": _percentile(latencies, 0.95),
+        "mean_latency_ms": sum(latencies) / n if n else 0.0,
         "per_query": per_query,
     }
 
 
-def _print_faithfulness(fr: dict[str, Any]) -> None:
+def _percentile(values: list[float], pct: float) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    idx = int(round((len(ordered) - 1) * pct))
+    return ordered[idx]
+
+
+def _print_faithfulness(
+    fr: dict[str, Any],
+    label: str = "",
+) -> None:
+    suffix = f" ({label})" if label else ""
     print()
-    print(f"Mean faithfulness:   {fr['mean_faithfulness']:.3f}")
-    print(f"Refusal rate:        {fr['refusal_rate']:.1%}")
-    print(f"Hallucination rate:  {fr['hallucination_rate']:.1%}")
+    print(f"Mean faithfulness{suffix}:   {fr['mean_faithfulness']:.3f}")
+    print(f"Refusal rate{suffix}:        {fr['refusal_rate']:.1%}")
+    print(f"Hallucination rate{suffix}:  {fr['hallucination_rate']:.1%}")
+    print(f"Citation emit rate{suffix}:  {fr['citation_emit_rate']:.1%}")
+    print(f"Mean latency{suffix}:        {fr['mean_latency_ms']:.0f} ms")
+    print(f"p95 latency{suffix}:         {fr['p95_latency_ms']:.0f} ms")
+
+
+def _print_side_by_side(
+    legacy: dict[str, Any],
+    native: dict[str, Any],
+) -> None:
+    """Side-by-side comparison table for the two paths."""
+    print()
+    print(f"{'Metric':<24}  {'Legacy [P{n}]':>14}  {'Native cites':>14}  {'Δ':>10}")
+    print(f"{'-' * 24}  {'-' * 14}  {'-' * 14}  {'-' * 10}")
+
+    def row(name: str, key: str, fmt: str = ".3f", *, percent: bool = False) -> None:
+        a = legacy[key]
+        b = native[key]
+        d = b - a
+        if percent:
+            print(f"{name:<24}  {a:>14.1%}  {b:>14.1%}  {d:>+10.1%}")
+        else:
+            print(f"{name:<24}  {a:>14{fmt}}  {b:>14{fmt}}  {d:>+10{fmt}}")
+
+    row("Mean faithfulness", "mean_faithfulness")
+    row("Refusal rate", "refusal_rate", percent=True)
+    row("Hallucination rate", "hallucination_rate", percent=True)
+    row("Citation emit rate", "citation_emit_rate", percent=True)
+    row("Mean latency (ms)", "mean_latency_ms", ".0f")
+    row("p95 latency (ms)", "p95_latency_ms", ".0f")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -240,6 +303,16 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--native-citations",
+        action="store_true",
+        help=(
+            "With --with-faithfulness: ALSO run a side-by-side pass "
+            "using the Anthropic Citations API and print a "
+            "comparison table. Doubles API spend. Requires the "
+            "Claude provider; assumes the same model on both paths."
+        ),
+    )
+    parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
@@ -257,8 +330,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if report["precision_at_1"] < args.min_precision:
         print(
-            f"\nFAIL: precision@1 {report['precision_at_1']:.2%} "
-            f"< gate {args.min_precision:.2%}",
+            f"\nFAIL: precision@1 {report['precision_at_1']:.2%} < gate {args.min_precision:.2%}",
             file=sys.stderr,
         )
         return 1
@@ -270,19 +342,30 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 2
-        print("\nRunning faithfulness pass (default variant)...", file=sys.stderr)
-        fr = asyncio.run(_score_faithfulness(queries, k=args.k))
-        _print_faithfulness(fr)
-        if fr["mean_faithfulness"] < args.min_faithfulness:
+        print("\nRunning faithfulness pass (legacy [P{n}] path)...", file=sys.stderr)
+        legacy = asyncio.run(_score_faithfulness(queries, k=args.k, use_native_citations=False))
+        _print_faithfulness(legacy, label="legacy")
+
+        if args.native_citations:
             print(
-                f"\nFAIL: mean_faithfulness {fr['mean_faithfulness']:.3f} "
+                "\nRunning faithfulness pass (native citations path)...",
+                file=sys.stderr,
+            )
+            native = asyncio.run(_score_faithfulness(queries, k=args.k, use_native_citations=True))
+            _print_faithfulness(native, label="native")
+            _print_side_by_side(legacy, native)
+
+        if legacy["mean_faithfulness"] < args.min_faithfulness:
+            print(
+                f"\nFAIL: legacy mean_faithfulness "
+                f"{legacy['mean_faithfulness']:.3f} "
                 f"< gate {args.min_faithfulness:.3f}",
                 file=sys.stderr,
             )
             return 1
         print(
             f"\nPASS: P@1 ≥ {args.min_precision:.2%} and "
-            f"faithfulness ≥ {args.min_faithfulness:.3f}."
+            f"legacy faithfulness ≥ {args.min_faithfulness:.3f}."
         )
         return 0
 
