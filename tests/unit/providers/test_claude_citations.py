@@ -92,6 +92,36 @@ def test_documents_payload_shape_one_block_per_doc() -> None:
         assert payload[i]["source"]["content"] == [{"type": "text", "text": text}]
 
 
+def test_documents_payload_first_block_carries_cache_control() -> None:
+    """``cache_control: ephemeral`` is attached to the FIRST document
+    only — that one marker covers the whole document prefix per
+    Anthropic's caching semantics (verified by the V2 probe on
+    2026-05-08). Subsequent documents in the same request stay
+    plain so the wire payload doesn't bloat.
+    """
+    docs = _docs(
+        ("concepts/a.md", "alpha"),
+        ("concepts/b.md", "beta"),
+        ("concepts/c.md", "gamma"),
+    )
+    payload = ClaudeProvider._build_documents_payload(docs)
+    assert payload[0].get("cache_control") == {"type": "ephemeral"}
+    for i in range(1, len(payload)):
+        assert "cache_control" not in payload[i], (
+            f"document at index {i} unexpectedly carries cache_control; "
+            "only the first document should be marked"
+        )
+
+
+def test_documents_payload_single_doc_still_carries_cache_control() -> None:
+    """Even with a single document the cache marker is set — that
+    single block IS the prefix, and a future second call with the
+    same content should hit the cache."""
+    docs = _docs(("concepts/only.md", "body"))
+    payload = ClaudeProvider._build_documents_payload(docs)
+    assert payload[0]["cache_control"] == {"type": "ephemeral"}
+
+
 def test_generate_with_citations_appends_query_as_trailing_text() -> None:
     response = _fake_response_from_fixture()
     provider, client = _provider(response)

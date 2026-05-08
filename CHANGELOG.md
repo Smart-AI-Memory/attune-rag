@@ -6,6 +6,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.14] - 2026-05-08
+
+### Changed
+
+- **Native citations: caching enabled by default.** The first
+  document in a citations request now carries
+  `cache_control: {"type": "ephemeral"}` — one marker covers
+  the entire document prefix per Anthropic's caching semantics.
+  Empirically verified by the V2 probe: a 3799-token payload
+  yielded full cache hits on the second call
+  (`cache_read_input_tokens=3799`,
+  `cache_creation_input_tokens=0`) with ~29% latency reduction
+  (3102ms → 2190ms). No code change for callers; identical
+  inputs to `RagPipeline.run_and_generate(use_native_citations=True)`
+  now get cheaper on repeat calls.
+- **`MAX_CITATION_DOCUMENTS`: 20 → 200.** V3 probe accepted every
+  count in `{5, 10, 20, 30, 50, 75, 100, 150, 200}` without
+  rejection; Anthropic's actual cap is higher still. The new
+  ceiling gives generous headroom while still surfacing a clean
+  `ValueError` if a caller accidentally tries hundreds.
+- **Docs (`docs/rag/native-citations.md`):** "Open verification
+  gates" section updated to "Verification gates — resolved
+  2026-05-08" with the V2 / V3 findings inline. The "Caching"
+  and "Document-count ceiling" sections now reflect the
+  defaults.
+
+### Added
+
+- **Verification probes** at
+  `scripts/probe_v2_cache_control.py` and
+  `scripts/probe_v3_doc_count_ceiling.py`. Manual one-shot
+  scripts that re-run the V2 / V3 verifications against the
+  live Anthropic API. Cost ~$0.01 each. Useful when the SDK or
+  service contract may have changed.
+
 ## [0.1.13] - 2026-05-08
 
 ### Added

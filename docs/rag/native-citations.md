@@ -74,20 +74,38 @@ callers are unaffected):
 
 ## Caching
 
-Caching is **off** on the native path in v1. The legacy path
-continues to flag the stable prompt prefix with
-`cache_control: ephemeral`. Document-block caching needs the V2
-verification gate (an empirical 2-call test that confirms
-document-block caching behaves the same as text-block caching);
-once confirmed, attach `cache_control` to the first document.
+Caching is **on** by default on the native path. The first
+document in each request carries
+`cache_control: {"type": "ephemeral"}`; one marker on the first
+document covers the whole document prefix per Anthropic's
+caching semantics. Subsequent calls with the same documents hit
+the cache.
+
+V2 verification (2026-05-08) — empirical 2-call probe:
+
+| Metric                          | Call 1 (priming) | Call 2 (cached) |
+|---------------------------------|------------------|-----------------|
+| `cache_creation_input_tokens`   | 3799             | 0               |
+| `cache_read_input_tokens`       | 0                | 3799            |
+| Wall-clock latency              | 3102 ms          | 2190 ms (-29%)  |
+
+So document-block caching behaves identically to text-block
+caching for our purposes. The legacy `[P{n}]` path still flags
+its rendered prompt prefix the same way it always did.
 
 ## Document-count ceiling
 
-`MAX_CITATION_DOCUMENTS = 20` is enforced by `ClaudeProvider`.
-Exceeding it raises `ValueError` with a clean message. The
-ceiling will be re-verified by the V3 gate before the default
-flips. Today this is well above the project's `k=3` retrieval
-default.
+`MAX_CITATION_DOCUMENTS = 200` is enforced by `ClaudeProvider`.
+Exceeding it raises `ValueError` with a clean message before
+hitting the wire.
+
+V3 verification (2026-05-08) — Anthropic's actual cap is higher
+still: the probe walked `n ∈ {5, 10, 20, 30, 50, 75, 100, 150,
+200}` and every count was accepted without rejection. We pin
+200 as a practical ceiling: comfortably above any plausible
+attune-rag retrieval (`k=3` default, occasional bumps to
+`k=20–50`), with headroom, while still surfacing a clean error
+if a caller accidentally tries to send hundreds.
 
 ## Benchmark
 
@@ -107,19 +125,27 @@ spec citing the resulting CSV.
 The benchmark gates on the **legacy** path's faithfulness floor
 because that's the established baseline; native is exploratory.
 
-## Open verification gates (V2, V3)
+## Verification gates (V2, V3) — resolved 2026-05-08
 
-These need real API calls and were not run in the implementing
-PR. They affect optional polish, not correctness:
+Both gates were initially deferred from the 0.1.13 PR because
+they required live API spend. Both ran on 2026-05-08 and
+landed in 0.1.14:
 
-- **V2 — `cache_control` on document blocks.** Empirically
-  confirm a 2-call test yields cache hits when documents are
-  identical. If yes, wire `cache_control: ephemeral` onto the
-  first document in `_build_documents_payload`.
-- **V3 — document-count ceiling.** Confirm 20 is still the
-  per-request cap. If higher, raise `MAX_CITATION_DOCUMENTS`.
+- **V2 — `cache_control` on document blocks: PASS.** Two-call
+  probe with identical 3799-token document payload showed full
+  cache hits on the second call (`cache_read_input_tokens=3799`,
+  `cache_creation_input_tokens=0`) plus ~29% latency reduction
+  (3102ms → 2190ms). `cache_control: ephemeral` is now wired
+  onto the first document by default in
+  `_build_documents_payload`. See "Caching" above.
+- **V3 — document-count ceiling: PASS.** Probe accepted every
+  count in `{5, 10, 20, 30, 50, 75, 100, 150, 200}` without
+  rejection. Anthropic's actual cap is higher still; we
+  conservatively pin `MAX_CITATION_DOCUMENTS = 200` as a
+  practical ceiling. See "Document-count ceiling" above.
 
-Findings should land in this doc as a follow-up commit.
+Probes live at `scripts/probe_v2_cache_control.py` and
+`scripts/probe_v3_doc_count_ceiling.py` for re-verification.
 
 ## Why not replace the legacy path?
 

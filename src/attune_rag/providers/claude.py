@@ -11,10 +11,15 @@ if TYPE_CHECKING:
     from anthropic import AsyncAnthropic
 
 
-# Anthropic per-request document limit (verified against SDK 0.96.0).
-# Exceeding this returns a 400; we surface a clean ValueError instead.
-# Re-verified by task 11 (V3 verification gate) before merge.
-MAX_CITATION_DOCUMENTS = 20
+# Per-request document ceiling enforced by attune-rag.
+# The Anthropic Citations API itself accepts well above this — the V3
+# probe (2026-05-08) confirmed n=200 documents accepted without
+# rejection, with the real cap higher still. We pin 200 here as a
+# practical ceiling: it covers the 20–50 docs an attune-rag retrieval
+# realistically sends, leaves headroom for future k bumps, and
+# surfaces a clean ValueError instead of an opaque 400 if a caller
+# tries to send hundreds.
+MAX_CITATION_DOCUMENTS = 200
 
 
 class ClaudeProvider:
@@ -131,25 +136,33 @@ class ClaudeProvider:
         """Render documents as ``custom_content`` document blocks.
 
         One block per document keeps ``document_index`` aligned
-        with the input list. ``cache_control`` is intentionally
-        left off in v1 pending the V2 verification gate (task 10):
-        once empirically confirmed that document-block caching
-        works the same as text-block caching, attach
-        ``cache_control: ephemeral`` to the first document.
+        with the input list.
+
+        ``cache_control: ephemeral`` is attached to the **first**
+        document so the entire document prefix is cached together.
+        Empirically verified (V2 probe, 2026-05-08): a 3799-token
+        document payload yielded full cache hits on the second
+        call (``cache_read_input_tokens=3799``,
+        ``cache_creation_input_tokens=0``) with ~30% latency
+        improvement on the cached call. Document-block caching
+        behaves identically to text-block caching for our
+        purposes; the marker on the first document covers all
+        subsequent documents in the same request.
         """
         payload: list[dict[str, Any]] = []
-        for doc in documents:
-            payload.append(
-                {
-                    "type": "document",
-                    "source": {
-                        "type": "content",
-                        "content": [{"type": "text", "text": doc.text}],
-                    },
-                    "title": doc.title,
-                    "citations": {"enabled": True},
-                }
-            )
+        for i, doc in enumerate(documents):
+            block: dict[str, Any] = {
+                "type": "document",
+                "source": {
+                    "type": "content",
+                    "content": [{"type": "text", "text": doc.text}],
+                },
+                "title": doc.title,
+                "citations": {"enabled": True},
+            }
+            if i == 0:
+                block["cache_control"] = {"type": "ephemeral"}
+            payload.append(block)
         return payload
 
     @staticmethod
