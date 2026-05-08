@@ -95,6 +95,10 @@ class DirectoryCorpus(CorpusProtocol):
         self._cache = cache
         self._loaded: dict[str, RetrievalEntry] | None = None
         self._aliases: dict[str, AliasInfo] | None = None
+        # Cached SHA-256 fingerprint of the loaded corpus. Invalidated
+        # whenever ``_loaded`` is cleared or rebuilt so it always reflects
+        # the entries currently in memory.
+        self._version: str | None = None
 
     def _within_root(self, candidate: Path) -> bool:
         try:
@@ -181,6 +185,10 @@ class DirectoryCorpus(CorpusProtocol):
         # index in sync with the most recent build so alias_index reads
         # are coherent with the entries the caller just observed.
         self._aliases = built_aliases
+        # Any rebuild invalidates the version fingerprint — even when
+        # caching is off, the previous cached hash no longer matches
+        # the entries we just produced.
+        self._version = None
         return built_entries
 
     def entries(self) -> Iterable[RetrievalEntry]:
@@ -207,7 +215,17 @@ class DirectoryCorpus(CorpusProtocol):
 
     @property
     def version(self) -> str:
+        """Stable SHA-256 fingerprint of the loaded corpus.
+
+        Cached after the first computation and invalidated whenever
+        ``_ensure_loaded`` rebuilds. The previous implementation hashed
+        the entire corpus on every call, which made this property an
+        unwitting hot path for any consumer using ``version`` as a cache
+        key (every API request in attune-gui's RAG route, for example).
+        """
         entries = self._ensure_loaded()
+        if self._version is not None:
+            return self._version
         hasher = hashlib.sha256()
         for key in sorted(entries):
             entry = entries[key]
@@ -215,4 +233,5 @@ class DirectoryCorpus(CorpusProtocol):
             hasher.update(b"\0")
             hasher.update(entry.content.encode("utf-8"))
             hasher.update(b"\0\0")
-        return hasher.hexdigest()[:16]
+        self._version = hasher.hexdigest()[:16]
+        return self._version
