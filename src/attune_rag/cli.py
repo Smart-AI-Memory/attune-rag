@@ -31,11 +31,17 @@ def _cmd_query(args: argparse.Namespace) -> int:
                 provider=args.provider,
                 k=args.k,
                 model=args.model,
+                use_native_citations=args.native_citations,
             )
         )
-        print(response)
-        print()
-        _print_citations(result)
+        if result.used_native_citations:
+            from .provenance import format_claim_citations_markdown
+
+            print(format_claim_citations_markdown(response, result.claim_citations))
+        else:
+            print(response)
+            print()
+            _print_citations(result)
         return 0
 
     result = pipeline.run(args.query, k=args.k)
@@ -161,6 +167,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--json",
         action="store_true",
         help="Emit hits as JSON instead of the human-readable format.",
+    )
+    query.add_argument(
+        "--native-citations",
+        action="store_true",
+        help=(
+            "Use the Anthropic Citations API for claim-level "
+            "attribution (Claude provider only). Falls back to "
+            "the prompt-assembly path on providers that don't "
+            "support it."
+        ),
     )
     query.set_defaults(func=_cmd_query)
 

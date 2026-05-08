@@ -1,0 +1,40 @@
+{
+  "_comment": "Recorded-fixture mirroring the shape of an Anthropic Messages response with native citations enabled. Mirrors anthropic SDK 0.96.0 types: TextBlock with citations, CitationContentBlockLocation. Used by tests/unit/providers/test_claude_citations.py to lock the parser against the real shape.",
+  "content": [
+    {
+      "type": "text",
+      "text": "The security audit pipeline runs ruff and bandit in sequence",
+      "citations": [
+        {
+          "type": "content_block_location",
+          "cited_text": "ruff and bandit run in sequence as the security audit pipeline.",
+          "document_index": 0,
+          "document_title": "concepts/tool-security-audit.md",
+          "start_block_index": 0,
+          "end_block_index": 1,
+          "file_id": null
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": ", failing on any HIGH-severity finding.",
+      "citations": [
+        {
+          "type": "content_block_location",
+          "cited_text": "any HIGH-severity finding is a failure.",
+          "document_index": 0,
+          "document_title": "concepts/tool-security-audit.md",
+          "start_block_index": 0,
+          "end_block_index": 1,
+          "file_id": null
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "text": " It also surfaces remediation guidance.",
+      "citations": []
+    }
+  ]
+}
