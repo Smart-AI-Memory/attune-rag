@@ -32,38 +32,47 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterable
-from importlib import import_module
-from importlib.resources import as_file, files
+from dataclasses import dataclass
 from pathlib import Path
 
 from .base import RetrievalEntry
 from .directory import DirectoryCorpus
+from .help_adapter import HelpCorpusAdapter
 
 _OVERRIDES_PATH = Path(__file__).parent / "summaries_override.json"
 
 
+@dataclass(frozen=True)
+class _BundledAdapter:
+    """Default :class:`HelpCorpusAdapter` for the bundled attune-help.
+
+    Module-level so it doesn't fall foul of Python's class-body scoping
+    rules (a class declared inside a function can't reference the
+    function's locals).
+    """
+
+    templates_root: Path
+    version: str
+
+
 class AttuneHelpCorpus:
-    """Loads the bundled ``attune_help`` templates as a corpus."""
+    """Loads an attune-help-shaped corpus of templates.
 
-    def __init__(self) -> None:
-        try:
-            attune_help = import_module("attune_help")
-        except ImportError as exc:
-            raise RuntimeError(
-                "AttuneHelpCorpus requires the [attune-help] extra. "
-                "Install with: pip install 'attune-rag[attune-help]'"
-            ) from exc
+    Takes a :class:`HelpCorpusAdapter` so attune-rag never imports
+    attune-help at module level. Use :meth:`from_attune_help` for the
+    common case where you have attune-help installed and want the
+    bundled templates without writing your own adapter.
+    """
 
-        templates = files("attune_help").joinpath("templates")
-        with as_file(templates) as templates_path:
-            root = Path(templates_path)
-        if not root.is_dir():
+    def __init__(self, adapter: HelpCorpusAdapter) -> None:
+        if not adapter.templates_root.is_dir():
             raise RuntimeError(
-                f"attune_help templates directory not found at {root}. "
-                "The attune-help package layout may have changed."
+                f"templates_root is not a directory: {adapter.templates_root}. "
+                "The corpus adapter may be misconfigured or the package "
+                "layout may have changed."
             )
 
-        self._version = getattr(attune_help, "__version__", "unknown")
+        self._version = adapter.version
         overrides: dict[str, str | None] = {}
         if _OVERRIDES_PATH.is_file():
             try:
@@ -75,10 +84,40 @@ class AttuneHelpCorpus:
         # treats a missing file as an empty map, so this is safe
         # to pass unconditionally.
         self._inner = DirectoryCorpus(
-            root=root,
+            root=adapter.templates_root,
             summaries_file="summaries_by_path.json",
             extra_summaries=overrides,
         )
+
+    @classmethod
+    def from_attune_help(cls) -> AttuneHelpCorpus:
+        """Construct using the bundled attune-help package as adapter.
+
+        Localizes the dynamic import to one factory call instead of the
+        module body. Static analyzers see the rag→help boundary as a
+        runtime-only dependency in this single function. Callers that
+        want to avoid the implicit dep entirely (testing, alternate
+        corpora) should construct the adapter themselves and pass it
+        to ``__init__``.
+        """
+        from importlib import import_module
+        from importlib.resources import as_file, files
+
+        try:
+            attune_help = import_module("attune_help")
+        except ImportError as exc:
+            raise RuntimeError(
+                "AttuneHelpCorpus.from_attune_help() requires the "
+                "[attune-help] extra. Install with: "
+                "pip install 'attune-rag[attune-help]'"
+            ) from exc
+
+        templates = files("attune_help").joinpath("templates")
+        with as_file(templates) as templates_path:
+            root = Path(templates_path)
+
+        version = getattr(attune_help, "__version__", "unknown")
+        return cls(_BundledAdapter(templates_root=root, version=version))
 
     def entries(self) -> Iterable[RetrievalEntry]:
         return self._inner.entries()

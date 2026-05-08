@@ -14,7 +14,7 @@ from attune_rag.corpus.attune_help import AttuneHelpCorpus  # noqa: E402
 
 
 def test_loads_bundled_corpus() -> None:
-    corpus = AttuneHelpCorpus()
+    corpus = AttuneHelpCorpus.from_attune_help()
     entries = list(corpus.entries())
     # attune-help v0.5.x ships >=500 templates; assert a floor
     # that still catches regressions without being brittle.
@@ -22,7 +22,7 @@ def test_loads_bundled_corpus() -> None:
 
 
 def test_has_expected_categories() -> None:
-    corpus = AttuneHelpCorpus()
+    corpus = AttuneHelpCorpus.from_attune_help()
     categories = {e.category for e in corpus.entries()}
     expected = {
         "concepts",
@@ -38,13 +38,13 @@ def test_has_expected_categories() -> None:
 def test_name_and_version() -> None:
     import attune_help
 
-    corpus = AttuneHelpCorpus()
+    corpus = AttuneHelpCorpus.from_attune_help()
     assert corpus.name == "attune-help"
     assert corpus.version == attune_help.__version__
 
 
 def test_get_returns_by_path() -> None:
-    corpus = AttuneHelpCorpus()
+    corpus = AttuneHelpCorpus.from_attune_help()
     some = next(iter(corpus.entries()))
     fetched = corpus.get(some.path)
     assert fetched is not None
@@ -52,7 +52,7 @@ def test_get_returns_by_path() -> None:
 
 
 def test_get_unknown_returns_none() -> None:
-    corpus = AttuneHelpCorpus()
+    corpus = AttuneHelpCorpus.from_attune_help()
     assert corpus.get("does/not/exist.md") is None
 
 
@@ -66,7 +66,7 @@ def test_path_keyed_summaries_load_from_attune_help_0_7_0() -> None:
     so some — not necessarily all — entries populate
     summaries.
     """
-    corpus = AttuneHelpCorpus()
+    corpus = AttuneHelpCorpus.from_attune_help()
     entries = list(corpus.entries())
     with_summary = sum(1 for e in entries if e.summary)
     # attune-help 0.7.0 ships 124 polished path-keyed
@@ -95,7 +95,45 @@ def test_raises_helpful_error_when_attune_help_missing(
 
     try:
         with pytest.raises(RuntimeError, match=r"\[attune-help\] extra"):
-            AttuneHelpCorpus()
+            AttuneHelpCorpus.from_attune_help()
     finally:
         sys.modules.pop("attune_help", None)
         sys.modules.update(saved)
+
+
+# ---------------------------------------------------------------------------
+# HelpCorpusAdapter — protocol path (no attune-help required)
+# ---------------------------------------------------------------------------
+
+
+def test_corpus_works_with_injected_adapter(tmp_path) -> None:
+    """The protocol path lets callers wire any directory of templates
+    in without ever importing attune-help. Doubles as a contract test
+    for the HelpCorpusAdapter shape.
+    """
+    from attune_rag.corpus.attune_help import _BundledAdapter
+
+    # Minimal templates dir
+    (tmp_path / "concepts").mkdir()
+    (tmp_path / "concepts" / "alpha.md").write_text("# alpha\nbody\n")
+
+    adapter = _BundledAdapter(templates_root=tmp_path, version="test-v1")
+    corpus = AttuneHelpCorpus(adapter=adapter)
+    entries = list(corpus.entries())
+
+    assert len(entries) == 1
+    assert entries[0].path == "concepts/alpha.md"
+    assert corpus.version == "test-v1"
+
+
+def test_invalid_templates_root_raises() -> None:
+    """Adapter pointing at a non-directory must fail loudly at construction."""
+    from pathlib import Path as _P
+
+    from attune_rag.corpus.attune_help import _BundledAdapter
+
+    bad_adapter = _BundledAdapter(
+        templates_root=_P("/this/path/does/not/exist"), version="x"
+    )
+    with pytest.raises(RuntimeError, match="templates_root is not a directory"):
+        AttuneHelpCorpus(adapter=bad_adapter)
