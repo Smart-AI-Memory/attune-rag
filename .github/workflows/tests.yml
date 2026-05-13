@@ -36,5 +36,28 @@ jobs:
       - name: Run ruff
         run: python -m ruff check src/ tests/
 
-      - name: Run tests
-        run: python -m pytest tests/ -v --tb=short
+      - name: Guard — ANTHROPIC_API_KEY must NOT be set for default suite
+        run: |
+          if [ -n "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "::error::ANTHROPIC_API_KEY is set in the default test environment."
+            echo "This can cause non-'live'-marked tests to leak real API calls."
+            echo "Either unset the key, or mark the test with @pytest.mark.live."
+            exit 1
+          fi
+        shell: bash
+
+      - name: Run tests (with coverage on ubuntu x py3.11)
+        run: |
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ] && [ "${{ matrix.python-version }}" = "3.11" ]; then
+            python -m pytest tests/ -v --tb=short --cov --cov-report=term-missing --cov-report=xml
+          else
+            python -m pytest tests/ -v --tb=short
+          fi
+        shell: bash
+
+      - name: Upload coverage artifact
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-attune-rag
+          path: coverage.xml
