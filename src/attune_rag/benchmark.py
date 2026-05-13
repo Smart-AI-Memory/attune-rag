@@ -35,6 +35,23 @@ def _default_queries_path() -> Path:
     return Path(__file__).resolve().parent.parent.parent / "tests" / "golden" / "queries.yaml"
 
 
+def _env_bool(name: str) -> bool:
+    """Parse an env var as a boolean ("1"/"true"/"yes" → True)."""
+    raw = os.environ.get(name, "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
+
+
+def _env_int(name: str) -> int | None:
+    """Parse an env var as int or return None when unset/malformed."""
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        return None
+
+
 def _load_queries(path: Path) -> list[dict[str, Any]]:
     import yaml
 
@@ -147,6 +164,9 @@ async def _score_faithfulness(
     queries: list[dict[str, Any]],
     k: int,
     use_native_citations: bool = False,
+    *,
+    use_thinking: bool = False,
+    thinking_budget_tokens: int | None = None,
 ) -> dict[str, Any]:
     """Run the default variant through run_and_generate + judge for each query.
 
@@ -158,12 +178,20 @@ async def _score_faithfulness(
     path. When True, ``citation_emit_rate`` is the fraction of
     queries the model returned at least one ``ClaimCitation`` for;
     when False it is always 0.0.
+
+    ``use_thinking`` opts the judge into Anthropic extended
+    thinking. ``thinking_budget_tokens`` overrides the judge's
+    default ceiling when set.
     """
     from . import RagPipeline
     from .eval import FaithfulnessJudge
 
     pipeline = RagPipeline()
     judge = FaithfulnessJudge()
+
+    score_kwargs: dict[str, Any] = {"use_thinking": use_thinking}
+    if thinking_budget_tokens is not None:
+        score_kwargs["thinking_budget_tokens"] = thinking_budget_tokens
 
     scores: list[float] = []
     latencies: list[float] = []
@@ -183,7 +211,12 @@ async def _score_faithfulness(
             use_native_citations=use_native_citations,
         )
         latencies.append((time.perf_counter() - t0) * 1000.0)
-        verdict = await judge.score(query=query, answer=answer, passages=rag_result.context)
+        verdict = await judge.score(
+            query=query,
+            answer=answer,
+            passages=rag_result.context,
+            **score_kwargs,
+        )
         scores.append(verdict.score)
         if verdict.total_claims == 0:
             refuse += 1
@@ -200,6 +233,7 @@ async def _score_faithfulness(
                 "unsupported": len(verdict.unsupported_claims),
                 "claim_citation_count": len(rag_result.claim_citations),
                 "used_native_citations": rag_result.used_native_citations,
+                "thinking_used": verdict.thinking_used,
             }
         )
 
@@ -313,6 +347,28 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--thinking",
+        action="store_true",
+        default=_env_bool("ATTUNE_RAG_FAITHFULNESS_THINKING"),
+        help=(
+            "With --with-faithfulness: enable Anthropic extended "
+            'thinking on the judge. Forces tool_choice="auto" '
+            "and adds a thinking block. Env default: "
+            "ATTUNE_RAG_FAITHFULNESS_THINKING."
+        ),
+    )
+    parser.add_argument(
+        "--thinking-budget",
+        type=int,
+        default=_env_int("ATTUNE_RAG_FAITHFULNESS_THINKING_BUDGET"),
+        help=(
+            "Ceiling for thinking tokens (only when --thinking). "
+            "Billing is per emitted token, not the budget. Env: "
+            "ATTUNE_RAG_FAITHFULNESS_THINKING_BUDGET. Default: "
+            "32768 (set in the judge)."
+        ),
+    )
+    parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
@@ -343,7 +399,15 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 2
         print("\nRunning faithfulness pass (legacy [P{n}] path)...", file=sys.stderr)
-        legacy = asyncio.run(_score_faithfulness(queries, k=args.k, use_native_citations=False))
+        legacy = asyncio.run(
+            _score_faithfulness(
+                queries,
+                k=args.k,
+                use_native_citations=False,
+                use_thinking=args.thinking,
+                thinking_budget_tokens=args.thinking_budget,
+            )
+        )
         _print_faithfulness(legacy, label="legacy")
 
         if args.native_citations:
@@ -351,7 +415,15 @@ def main(argv: list[str] | None = None) -> int:
                 "\nRunning faithfulness pass (native citations path)...",
                 file=sys.stderr,
             )
-            native = asyncio.run(_score_faithfulness(queries, k=args.k, use_native_citations=True))
+            native = asyncio.run(
+                _score_faithfulness(
+                    queries,
+                    k=args.k,
+                    use_native_citations=True,
+                    use_thinking=args.thinking,
+                    thinking_budget_tokens=args.thinking_budget,
+                )
+            )
             _print_faithfulness(native, label="native")
             _print_side_by_side(legacy, native)
 

@@ -18,10 +18,17 @@ The judge:
 Implemented via Anthropic tool-use with ``tool_choice``
 forced to the ``report_faithfulness`` tool, so the judge's
 output is always valid JSON matching a declared schema.
+
+Extended thinking is available via ``use_thinking=True`` on
+``score``. Thinking-mode forces ``tool_choice="auto"`` (an
+Anthropic constraint on Claude 4 models), so the response
+parser also handles the rare case where the model declines
+the tool and emits a text block of JSON instead.
 """
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -31,6 +38,7 @@ if TYPE_CHECKING:
 
 DEFAULT_JUDGE_MODEL = "claude-sonnet-4-6"
 DEFAULT_JUDGE_TIMEOUT_SECONDS = 60.0
+DEFAULT_THINKING_BUDGET_TOKENS = 32768
 
 
 _JUDGE_SYSTEM_PROMPT = """You are a strict faithfulness judge for a retrieval-augmented \
@@ -121,6 +129,7 @@ class FaithfulnessResult:
     unsupported_claims: list[str]
     reasoning: str
     model: str
+    thinking_used: bool = False
 
     @property
     def total_claims(self) -> int:
@@ -134,6 +143,7 @@ class FaithfulnessResult:
             "unsupported_claims": list(self.unsupported_claims),
             "reasoning": self.reasoning,
             "model": self.model,
+            "thinking_used": self.thinking_used,
         }
 
 
@@ -198,6 +208,9 @@ class FaithfulnessJudge:
         answer: str,
         passages: str | list[str],
         max_tokens: int = 2048,
+        *,
+        use_thinking: bool = False,
+        thinking_budget_tokens: int = DEFAULT_THINKING_BUDGET_TOKENS,
     ) -> FaithfulnessResult:
         """Score ``answer`` for faithfulness against ``passages``.
 
@@ -208,6 +221,14 @@ class FaithfulnessJudge:
                 pre-joined string or a list of passage
                 strings (will be joined with separators).
             max_tokens: Budget for the judge's reply.
+            use_thinking: Opt into Anthropic extended thinking
+                for this call. Forces ``tool_choice="auto"``
+                (Anthropic constraint); parser handles both
+                tool_use and text-block fallback shapes.
+            thinking_budget_tokens: Ceiling for thinking
+                tokens. Ignored when ``use_thinking=False``.
+                Billing is per emitted token, not the budget,
+                so a generous ceiling is free insurance.
         """
         if not answer or not answer.strip():
             return FaithfulnessResult(
@@ -216,6 +237,7 @@ class FaithfulnessJudge:
                 unsupported_claims=[],
                 reasoning="Answer was empty; nothing to evaluate.",
                 model=self._model,
+                thinking_used=False,
             )
 
         joined = (
@@ -230,16 +252,31 @@ class FaithfulnessJudge:
             answer=answer.strip(),
         )
 
-        response = await self._client.messages.create(
-            model=self._model,
-            max_tokens=max_tokens,
-            system=_JUDGE_SYSTEM_PROMPT,
-            tools=[_JUDGE_TOOL],
-            tool_choice={"type": "tool", "name": "report_faithfulness"},
-            messages=[{"role": "user", "content": user_message}],
-        )
+        request_kwargs: dict[str, Any] = {
+            "model": self._model,
+            "max_tokens": max_tokens,
+            "system": _JUDGE_SYSTEM_PROMPT,
+            "tools": [_JUDGE_TOOL],
+            "messages": [{"role": "user", "content": user_message}],
+        }
+        if use_thinking:
+            # Anthropic constraint on Claude 4: thinking + tools
+            # requires tool_choice in {"auto", "none"}. Forced
+            # tool_choice is incompatible.
+            request_kwargs["thinking"] = {
+                "type": "enabled",
+                "budget_tokens": thinking_budget_tokens,
+            }
+            request_kwargs["tool_choice"] = {"type": "auto"}
+        else:
+            request_kwargs["tool_choice"] = {
+                "type": "tool",
+                "name": "report_faithfulness",
+            }
 
-        payload = _extract_tool_input(response)
+        response = await self._client.messages.create(**request_kwargs)
+
+        payload = _extract_judge_payload(response)
         supported, unsupported, reasoning = _parse_judge_payload(payload)
 
         total = len(supported) + len(unsupported)
@@ -252,6 +289,7 @@ class FaithfulnessJudge:
             unsupported_claims=unsupported,
             reasoning=reasoning,
             model=self._model,
+            thinking_used=use_thinking,
         )
 
 
@@ -286,14 +324,68 @@ def _parse_judge_payload(payload: dict[str, Any]) -> tuple[list[str], list[str],
     return supported, unsupported, reasoning_raw.strip()
 
 
-def _extract_tool_input(response: Any) -> dict[str, Any]:
-    """Pull the forced tool-use block out of an Anthropic response."""
+def _strip_code_fences(text: str) -> str:
+    """Strip a leading ```json (or ```) fence and trailing ``` if present.
+
+    Thinking-mode responses occasionally wrap the JSON payload
+    in a fenced code block. Stripping is conservative — only
+    when both opening and closing fences are detected.
+    """
+    stripped = text.strip()
+    if not stripped.startswith("```"):
+        return stripped
+    lines = stripped.splitlines()
+    if len(lines) < 2 or not lines[-1].rstrip().endswith("```"):
+        return stripped
+    # Drop first line (```json or ```) and last line (```).
+    return "\n".join(lines[1:-1]).strip()
+
+
+def _extract_judge_payload(response: Any) -> dict[str, Any]:
+    """Pull the structured judge payload from an Anthropic response.
+
+    Walks ``response.content`` block by block:
+
+    1. ``tool_use`` block → return its ``input`` dict (the
+       schema-guaranteed happy path; identical to pre-thinking
+       behavior).
+    2. ``text`` block (only if no ``tool_use`` was found) →
+       JSON-parse the text. Covers the rare "thinking-enabled
+       model declined to call the tool" case.
+    3. ``thinking`` blocks are skipped — they carry reasoning,
+       not the verdict.
+
+    Raises ``RuntimeError`` with a diagnostic snippet when
+    neither path yields a dict.
+    """
+    text_block_payload: str | None = None
     for block in getattr(response, "content", []) or []:
-        if getattr(block, "type", None) == "tool_use":
+        btype = getattr(block, "type", None)
+        if btype == "tool_use":
             data = getattr(block, "input", None)
             if isinstance(data, dict):
                 return data
+        elif btype == "text" and text_block_payload is None:
+            text_block_payload = getattr(block, "text", None)
+        # thinking blocks: skip
+
+    if text_block_payload:
+        try:
+            parsed = json.loads(_strip_code_fences(text_block_payload))
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                "FaithfulnessJudge: model declined tool_use and returned "
+                "unparseable text. First 200 chars: "
+                f"{text_block_payload[:200]!r}"
+            ) from exc
+        if isinstance(parsed, dict):
+            return parsed
+        raise RuntimeError(
+            "FaithfulnessJudge: text-block JSON was not an object "
+            f"(got {type(parsed).__name__})."
+        )
+
     raise RuntimeError(
-        "FaithfulnessJudge: Claude did not emit a tool_use block for "
-        "report_faithfulness. Check API version or tool_choice support."
+        "FaithfulnessJudge: response contained no tool_use or text block. "
+        "Check API version or tool_choice support."
     )

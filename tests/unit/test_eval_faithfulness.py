@@ -164,7 +164,7 @@ async def test_missing_tool_use_block_raises() -> None:
         messages = _BadMessages()
 
     judge = FaithfulnessJudge(client=_BadClient())
-    with pytest.raises(RuntimeError, match="did not emit a tool_use block"):
+    with pytest.raises(RuntimeError, match="no tool_use or text block"):
         await judge.score("q", "nonempty answer", "p")
 
 
@@ -269,3 +269,209 @@ async def test_score_coerces_non_string_claim_items_to_strings() -> None:
     assert len(result.supported_claims) == 2
     assert "123" in result.supported_claims
     assert "a real claim" in result.supported_claims
+
+
+# --- Parser fallback paths (added for extended thinking support) ---
+
+
+@dataclass
+class _FakeTextBlock:
+    type: str
+    text: str
+
+
+@dataclass
+class _FakeThinkingBlock:
+    type: str
+    thinking: str
+
+
+class _ScriptedMessages:
+    """Like _FakeMessages but returns a pre-built content list."""
+
+    def __init__(self, content_blocks: list[Any]) -> None:
+        self._content = content_blocks
+        self.last_call: dict[str, Any] | None = None
+
+    async def create(self, **kwargs: Any) -> _FakeResponse:
+        self.last_call = kwargs
+        return _FakeResponse(content=list(self._content))
+
+
+class _ScriptedClient:
+    def __init__(self, content_blocks: list[Any]) -> None:
+        self.messages = _ScriptedMessages(content_blocks)
+
+
+@pytest.mark.asyncio
+async def test_parser_falls_back_to_text_block_when_no_tool_use() -> None:
+    """When the model declines to call the tool, parser reads JSON
+    from a text block instead."""
+    payload = {
+        "supported_claims": ["a", "b"],
+        "unsupported_claims": ["c"],
+        "reasoning": "two of three supported",
+    }
+    import json as _json
+
+    client = _ScriptedClient([_FakeTextBlock(type="text", text=_json.dumps(payload))])
+    judge = FaithfulnessJudge(client=client)
+    result = await judge.score("q", "answer", "p")
+    assert result.score == pytest.approx(2 / 3)
+    assert "two of three" in result.reasoning
+
+
+@pytest.mark.asyncio
+async def test_parser_strips_json_code_fences() -> None:
+    """Thinking-mode responses sometimes wrap JSON in ```json fences."""
+    fenced = (
+        "```json\n"
+        + '{"supported_claims": ["a"], "unsupported_claims": [], "reasoning": "ok"}'
+        + "\n```"
+    )
+    client = _ScriptedClient([_FakeTextBlock(type="text", text=fenced)])
+    judge = FaithfulnessJudge(client=client)
+    result = await judge.score("q", "a", "p")
+    assert result.score == 1.0
+
+
+@pytest.mark.asyncio
+async def test_parser_raises_on_unparseable_text_block() -> None:
+    client = _ScriptedClient([_FakeTextBlock(type="text", text="not json at all, just prose")])
+    judge = FaithfulnessJudge(client=client)
+    with pytest.raises(RuntimeError, match="unparseable text"):
+        await judge.score("q", "a", "p")
+
+
+@pytest.mark.asyncio
+async def test_parser_raises_when_text_json_not_object() -> None:
+    """Text block parses to a JSON array, not an object."""
+    client = _ScriptedClient([_FakeTextBlock(type="text", text='["a", "b"]')])
+    judge = FaithfulnessJudge(client=client)
+    with pytest.raises(RuntimeError, match="not an object"):
+        await judge.score("q", "a", "p")
+
+
+@pytest.mark.asyncio
+async def test_parser_skips_thinking_blocks() -> None:
+    """thinking blocks must be ignored even when present."""
+    payload = {
+        "supported_claims": ["claim"],
+        "unsupported_claims": [],
+        "reasoning": "ok",
+    }
+    client = _ScriptedClient(
+        [
+            _FakeThinkingBlock(type="thinking", thinking="long reasoning..."),
+            _FakeToolUseBlock(type="tool_use", input=payload),
+        ]
+    )
+    judge = FaithfulnessJudge(client=client)
+    result = await judge.score("q", "a", "p")
+    assert result.score == 1.0
+    assert result.supported_claims == ["claim"]
+
+
+@pytest.mark.asyncio
+async def test_parser_prefers_tool_use_over_text_block() -> None:
+    """When both block types appear, tool_use wins (schema-guaranteed)."""
+    tool_payload = {
+        "supported_claims": ["from_tool"],
+        "unsupported_claims": [],
+        "reasoning": "tool",
+    }
+    text_payload = (
+        '{"supported_claims": ["from_text"], "unsupported_claims": [], "reasoning": "text"}'
+    )
+    client = _ScriptedClient(
+        [
+            _FakeTextBlock(type="text", text=text_payload),
+            _FakeToolUseBlock(type="tool_use", input=tool_payload),
+        ]
+    )
+    judge = FaithfulnessJudge(client=client)
+    result = await judge.score("q", "a", "p")
+    assert result.supported_claims == ["from_tool"]
+
+
+# --- Extended thinking on score() (added in 0.1.15) ---
+
+
+@pytest.mark.asyncio
+async def test_score_without_thinking_omits_thinking_block() -> None:
+    """Back-compat: default call shape must not include `thinking` and
+    must keep tool_choice forced to the report tool."""
+    judge, client = _make_judge(
+        {"supported_claims": ["a"], "unsupported_claims": [], "reasoning": "ok"}
+    )
+    await judge.score("q", "a", "p")
+    sent = client.messages.last_call
+    assert sent is not None
+    assert "thinking" not in sent
+    assert sent["tool_choice"] == {"type": "tool", "name": "report_faithfulness"}
+
+
+@pytest.mark.asyncio
+async def test_score_with_thinking_sends_thinking_block_and_auto_tool_choice() -> None:
+    judge, client = _make_judge(
+        {"supported_claims": ["a"], "unsupported_claims": [], "reasoning": "ok"}
+    )
+    await judge.score("q", "a", "p", use_thinking=True)
+    sent = client.messages.last_call
+    assert sent is not None
+    assert sent["thinking"] == {"type": "enabled", "budget_tokens": 32768}
+    # Anthropic constraint: thinking + tools requires tool_choice in
+    # {"auto", "none"}.
+    assert sent["tool_choice"] == {"type": "auto"}
+
+
+@pytest.mark.asyncio
+async def test_score_with_thinking_custom_budget_flows_through() -> None:
+    judge, client = _make_judge(
+        {"supported_claims": ["a"], "unsupported_claims": [], "reasoning": "ok"}
+    )
+    await judge.score("q", "a", "p", use_thinking=True, thinking_budget_tokens=65536)
+    sent = client.messages.last_call
+    assert sent is not None
+    assert sent["thinking"]["budget_tokens"] == 65536
+
+
+@pytest.mark.asyncio
+async def test_score_with_thinking_sets_result_field() -> None:
+    judge, _ = _make_judge({"supported_claims": ["a"], "unsupported_claims": [], "reasoning": "ok"})
+    result = await judge.score("q", "a", "p", use_thinking=True)
+    assert result.thinking_used is True
+
+
+@pytest.mark.asyncio
+async def test_score_without_thinking_thinking_used_is_false() -> None:
+    judge, _ = _make_judge({"supported_claims": ["a"], "unsupported_claims": [], "reasoning": "ok"})
+    result = await judge.score("q", "a", "p")
+    assert result.thinking_used is False
+
+
+def test_to_dict_includes_thinking_used() -> None:
+    r = FaithfulnessResult(
+        score=1.0,
+        supported_claims=["a"],
+        unsupported_claims=[],
+        reasoning="ok",
+        model="claude-sonnet-4-6",
+        thinking_used=True,
+    )
+    d = r.to_dict()
+    assert d["thinking_used"] is True
+
+
+def test_to_dict_thinking_used_defaults_false() -> None:
+    """Existing callers constructing FaithfulnessResult without the
+    new field get thinking_used=False in to_dict()."""
+    r = FaithfulnessResult(
+        score=1.0,
+        supported_claims=[],
+        unsupported_claims=[],
+        reasoning="ok",
+        model="claude-sonnet-4-6",
+    )
+    d = r.to_dict()
+    assert d["thinking_used"] is False
