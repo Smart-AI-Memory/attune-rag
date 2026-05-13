@@ -19,20 +19,14 @@ pytest tests/unit/
 pytest tests/golden/
 ```
 
-## LLM mocking standard
+## LLM mocking standard, `live` marker, CI guard, cost policy
 
-attune-rag itself is LLM-agnostic — the heavy lifting happens in
-attune-author, which is the **reference layer** for LLM mocking
-patterns. Cross-layer integration tests follow:
+See **`testing-conventions.md`** in the attune workspace umbrella —
+the canonical reference (mocking pattern, `live` marker semantics, CI
+guard expectation, cost & quota policy). Applies to all four layers.
 
-- Strip `ANTHROPIC_API_KEY` via an autouse fixture so a misconfigured
-  test never reaches the network.
-- Patch `anthropic.Anthropic` at import time, not at call site.
-- Reset module-level singletons (e.g. `_RagPipeline`) between tests.
-
-See `attune-author/tests/conftest.py` (`_lenient_polish_by_default`,
-`_reset_rag_pipeline`). Pass 2 of the test-strategy spec will formalize
-this into a shared `docs/testing-conventions.md`.
+attune-rag itself is LLM-agnostic. The `live` marker is registered in
+`pyproject.toml` so any future opt-in tests have a consistent home.
 
 ## Public API contract tests
 
