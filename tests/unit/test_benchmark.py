@@ -69,7 +69,9 @@ class _FakePipeline:
 def test_default_queries_path_resolves_inside_repo() -> None:
     path = _default_queries_path()
     assert path.name == "queries.yaml"
-    assert "tests/golden" in str(path)
+    # Path-component check (OS-independent — Windows uses backslashes).
+    assert path.parent.name == "golden"
+    assert path.parent.parent.name == "tests"
 
 
 # ---------------------------------------------------------------------------
