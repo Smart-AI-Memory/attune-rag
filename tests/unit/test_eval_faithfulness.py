@@ -426,6 +426,44 @@ async def test_score_with_thinking_sends_thinking_block_and_auto_tool_choice() -
 
 
 @pytest.mark.asyncio
+async def test_score_with_thinking_bumps_max_tokens_above_budget() -> None:
+    """Anthropic constraint: max_tokens must exceed thinking
+    budget_tokens, since it caps the combined output in thinking
+    mode. The library adds thinking_budget on top of the caller's
+    max_tokens so the caller's value keeps its original meaning."""
+    judge, client = _make_judge(
+        {"supported_claims": ["a"], "unsupported_claims": [], "reasoning": "ok"}
+    )
+    await judge.score(
+        "q",
+        "a",
+        "p",
+        max_tokens=2048,
+        use_thinking=True,
+        thinking_budget_tokens=32768,
+    )
+    sent = client.messages.last_call
+    assert sent is not None
+    # 2048 (caller's reply budget) + 32768 (thinking budget) = 34816.
+    assert sent["max_tokens"] == 34816
+    # And max_tokens must strictly exceed thinking budget per the
+    # API constraint.
+    assert sent["max_tokens"] > sent["thinking"]["budget_tokens"]
+
+
+@pytest.mark.asyncio
+async def test_score_without_thinking_passes_max_tokens_unchanged() -> None:
+    """Back-compat: in non-thinking mode max_tokens is sent verbatim."""
+    judge, client = _make_judge(
+        {"supported_claims": ["a"], "unsupported_claims": [], "reasoning": "ok"}
+    )
+    await judge.score("q", "a", "p", max_tokens=2048)
+    sent = client.messages.last_call
+    assert sent is not None
+    assert sent["max_tokens"] == 2048
+
+
+@pytest.mark.asyncio
 async def test_score_with_thinking_custom_budget_flows_through() -> None:
     judge, client = _make_judge(
         {"supported_claims": ["a"], "unsupported_claims": [], "reasoning": "ok"}

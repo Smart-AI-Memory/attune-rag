@@ -220,7 +220,13 @@ class FaithfulnessJudge:
             passages: Retrieved context — either a single
                 pre-joined string or a list of passage
                 strings (will be joined with separators).
-            max_tokens: Budget for the judge's reply.
+            max_tokens: Budget for the judge's *reply* (the verdict
+                tokens, not counting thinking). In thinking mode the
+                API ``max_tokens`` field caps the combined thinking +
+                response output and must exceed
+                ``thinking_budget_tokens``, so we send
+                ``max_tokens + thinking_budget_tokens`` to the API
+                while the caller keeps the original semantic meaning.
             use_thinking: Opt into Anthropic extended thinking
                 for this call. Forces ``tool_choice="auto"``
                 (Anthropic constraint); parser handles both
@@ -252,9 +258,20 @@ class FaithfulnessJudge:
             answer=answer.strip(),
         )
 
+        if use_thinking:
+            # Anthropic API constraint: max_tokens must be strictly
+            # greater than thinking.budget_tokens, because max_tokens
+            # caps the combined thinking + response output in
+            # extended-thinking mode. Caller's ``max_tokens`` keeps its
+            # original meaning (budget for the judge's reply); we add
+            # thinking_budget on top before sending.
+            effective_max_tokens = max_tokens + thinking_budget_tokens
+        else:
+            effective_max_tokens = max_tokens
+
         request_kwargs: dict[str, Any] = {
             "model": self._model,
-            "max_tokens": max_tokens,
+            "max_tokens": effective_max_tokens,
             "system": _JUDGE_SYSTEM_PROMPT,
             "tools": [_JUDGE_TOOL],
             "messages": [{"role": "user", "content": user_message}],
