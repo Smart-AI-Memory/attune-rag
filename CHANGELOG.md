@@ -40,6 +40,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   text or retrieved passages, so the kit surfaces the judge's
   claim lists as a proxy; a follow-up will enrich the JSON.
 
+- **Ground-truth validation of the v0.1.15 calibration.**
+  Patrick labeled the 8-query kit interactively under a strict
+  lens; results are committed at
+  `artifacts/calibration/ground-truth-2026-05-15.md` and
+  written into the calibration doc. Outcome: among the 5
+  high-shift queries, **off-closer 3, on-closer 2, tied 0**
+  (3 controls were tied). Also surfaced a phantom-claim
+  pattern in judge-on (paraphrases the answer into more
+  specific claims, then flags its own paraphrases). Decision
+  Option B (keep `--thinking` opt-in) is now empirically
+  backed rather than absence-of-evidence-based.
+
 ## [0.1.16] - 2026-05-15
 
 ### Added
