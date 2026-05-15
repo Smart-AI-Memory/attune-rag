@@ -1,38 +1,28 @@
 ---
-type: concept
 feature: benchmark
 depth: concept
-generated_at: 2026-04-23T03:36:31.981734+00:00
-source_hash: efe3184170bbd1e763131bf4307b2835dc8fb12752af2f0f8b5cb67b4d27ad03
+generated_at: 2026-05-15T13:03:36.549184+00:00
+source_hash: fa744d71791100502f1e27d84431e0d8aa1381376327b87453c04f3f56c22384
 status: generated
 ---
 
 # Benchmark
 
-## What it is
-
-The benchmark module is a quality gate system that measures retrieval accuracy and optionally evaluates answer faithfulness against ground truth data.
-
 ## How it works
 
-The benchmark runner evaluates your RAG system on three dimensions:
+Precision/recall/faithfulness benchmark runner — gates CI on configurable thresholds; supports custom query files and optional faithfulness scoring via --with-faithfulness.
 
-- **Precision** — how many retrieved documents are relevant
-- **Recall** — how many relevant documents were retrieved
-- **Faithfulness** — how well generated answers align with source material (optional)
+The main entry points are:
 
-You configure pass/fail thresholds for each metric. If any threshold isn't met, the benchmark fails and can block CI deployment.
+- **`main()`** — core function
 
-The runner accepts custom query files containing test questions and expected results. When you enable faithfulness scoring with `--with-faithfulness`, the system evaluates not just retrieval quality but also whether generated answers stay true to the retrieved content.
+## What connects to it
 
-## Entry point
+This feature relates to: benchmark, ci, precision, recall, quality.
 
-The `main()` function in `src/attune_rag/benchmark.py` orchestrates the entire benchmark process, returning 0 on success or a non-zero exit code when thresholds aren't met.
+Other parts of the codebase call into
+benchmark through these functions:
 
-## Integration points
-
-Other systems interact with the benchmark through:
-
-- **CI pipelines** — call `main()` to gate deployments on quality metrics
-- **Custom query sets** — provide domain-specific test cases through file input
-- **Threshold configuration** — set precision/recall/faithfulness requirements per environment
+| Function | Purpose | File |
+|----------|---------|------|
+| `main()` | — | `src/attune_rag/benchmark.py` |
