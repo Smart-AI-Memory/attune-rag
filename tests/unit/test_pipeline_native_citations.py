@@ -374,3 +374,76 @@ def test_native_path_documents_carry_full_content_not_truncated_excerpt(
     )
     sent = provider.citations_calls[0]["documents"]
     assert any("UNIQUE_TAIL_MARKER" in d.text for d in sent)
+
+
+# --- Issue #14: cache_control + citations on the same request --------------
+
+
+def test_pipeline_request_carries_both_cache_control_and_citations(
+    corpus: FakeCorpus,
+) -> None:
+    """End-to-end: pipeline → real ClaudeProvider → mocked SDK client.
+
+    Cache_control and the Citations API are independent cost-perf
+    levers; existing tests cover each at the helper level
+    (``_build_documents_payload``) but nothing asserts they BOTH
+    survive to the actual ``messages.create`` payload on a single
+    request driven through the pipeline. A regression in either
+    (e.g., a refactor that swaps payload builders, or a flag that
+    silently disables one) would otherwise pass green.
+    """
+    import json
+    from pathlib import Path
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock, MagicMock
+
+    from attune_rag.providers.claude import ClaudeProvider
+
+    fixture_path = Path(__file__).resolve().parents[1] / "golden" / "citations_response.json"
+    raw = json.loads(fixture_path.read_text())
+    blocks = []
+    for block in raw["content"]:
+        cites = [SimpleNamespace(**c) for c in (block.get("citations") or [])]
+        blocks.append(
+            SimpleNamespace(
+                type=block["type"],
+                text=block.get("text", ""),
+                citations=cites or None,
+            )
+        )
+    response_obj = SimpleNamespace(content=blocks)
+
+    client = MagicMock()
+    client.messages.create = AsyncMock(return_value=response_obj)
+    provider = ClaudeProvider(client=client)
+
+    pipeline = RagPipeline(corpus=corpus)
+    asyncio.run(
+        pipeline.run_and_generate(
+            "security audit",
+            provider=provider,
+            use_native_citations=True,
+        )
+    )
+
+    sent_messages = client.messages.create.await_args.kwargs["messages"]
+    assert len(sent_messages) == 1
+    content = sent_messages[0]["content"]
+    doc_blocks = [b for b in content if b.get("type") == "document"]
+    assert doc_blocks, "pipeline did not send any document blocks"
+
+    # Citations API enabled on every document block.
+    for i, block in enumerate(doc_blocks):
+        assert block.get("citations") == {"enabled": True}, (
+            f"document block {i} missing citations:enabled — " f"got {block.get('citations')!r}"
+        )
+
+    # cache_control on at least one document block (the provider's
+    # current strategy is first-block-only, but the assertion is
+    # deliberately broader so a future change to mark every block
+    # — or any subset — does not break this test).
+    cached = [b for b in doc_blocks if b.get("cache_control") == {"type": "ephemeral"}]
+    assert cached, (
+        "no document block carries cache_control={'type':'ephemeral'} — "
+        "prompt caching has silently regressed on the citations path"
+    )
