@@ -268,3 +268,198 @@ def test_main_with_faithfulness_requires_api_key(
         )
     assert rc == 2
     assert "ANTHROPIC_API_KEY" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------
+# --compare-thinking + --json validation
+# ---------------------------------------------------------------------------
+
+
+def test_main_compare_thinking_requires_with_faithfulness(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    p = _write_queries(
+        tmp_path / "q.yaml",
+        [{"id": "q1", "query": "auth", "expected_in_top_3": ["a.md"]}],
+    )
+    pipeline = _FakePipeline({"auth": ["a.md"]})
+    with patch("attune_rag.RagPipeline", return_value=pipeline):
+        rc = main(["--queries", str(p), "--compare-thinking"])
+    assert rc == 2
+    assert "--compare-thinking requires --with-faithfulness" in capsys.readouterr().err
+
+
+def test_main_compare_thinking_rejects_explicit_thinking(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """--compare-thinking already runs both sides; --thinking is ambiguous."""
+    p = _write_queries(
+        tmp_path / "q.yaml",
+        [{"id": "q1", "query": "auth", "expected_in_top_3": ["a.md"]}],
+    )
+    monkeypatch.delenv("ATTUNE_RAG_FAITHFULNESS_THINKING", raising=False)
+    pipeline = _FakePipeline({"auth": ["a.md"]})
+    with patch("attune_rag.RagPipeline", return_value=pipeline):
+        rc = main(
+            [
+                "--queries",
+                str(p),
+                "--with-faithfulness",
+                "--compare-thinking",
+                "--thinking",
+            ]
+        )
+    assert rc == 2
+    assert "redundant" in capsys.readouterr().err
+
+
+def test_main_compare_thinking_rejects_native_citations(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """4-way comparison would be too expensive; force separate runs."""
+    p = _write_queries(
+        tmp_path / "q.yaml",
+        [{"id": "q1", "query": "auth", "expected_in_top_3": ["a.md"]}],
+    )
+    pipeline = _FakePipeline({"auth": ["a.md"]})
+    with patch("attune_rag.RagPipeline", return_value=pipeline):
+        rc = main(
+            [
+                "--queries",
+                str(p),
+                "--with-faithfulness",
+                "--compare-thinking",
+                "--native-citations",
+            ]
+        )
+    assert rc == 2
+    assert "cannot" in capsys.readouterr().err
+
+
+def test_main_json_requires_with_faithfulness(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    p = _write_queries(
+        tmp_path / "q.yaml",
+        [{"id": "q1", "query": "auth", "expected_in_top_3": ["a.md"]}],
+    )
+    pipeline = _FakePipeline({"auth": ["a.md"]})
+    with patch("attune_rag.RagPipeline", return_value=pipeline):
+        rc = main(["--queries", str(p), "--json", str(tmp_path / "out.json")])
+    assert rc == 2
+    assert "--json requires --with-faithfulness" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------
+# Print + dump helpers
+# ---------------------------------------------------------------------------
+
+
+def _faithfulness_report(
+    *,
+    mean: float = 1.0,
+    refusal: float = 0.0,
+    hallu: float = 0.0,
+    cite: float = 0.0,
+    mean_lat: float = 100.0,
+    p95_lat: float = 200.0,
+    per_query: list[dict] | None = None,
+) -> dict:
+    """Build a faithfulness-report dict with the shape _score_faithfulness emits."""
+    return {
+        "mean_faithfulness": mean,
+        "refusal_rate": refusal,
+        "hallucination_rate": hallu,
+        "citation_emit_rate": cite,
+        "mean_latency_ms": mean_lat,
+        "p95_latency_ms": p95_lat,
+        "per_query": per_query or [],
+    }
+
+
+def _per_query(
+    qid: str,
+    *,
+    score: float = 1.0,
+    supported: int = 1,
+    unsupported: int = 0,
+    reasoning: str = "",
+) -> dict:
+    return {
+        "id": qid,
+        "query": f"q for {qid}",
+        "score": score,
+        "supported": supported,
+        "unsupported": unsupported,
+        "supported_claims": [f"s{i}" for i in range(supported)],
+        "unsupported_claims": [f"u{i}" for i in range(unsupported)],
+        "reasoning": reasoning,
+        "latency_ms": 100.0,
+        "claim_citation_count": 0,
+        "used_native_citations": False,
+        "thinking_used": False,
+    }
+
+
+def test_print_side_by_side_with_custom_labels(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from attune_rag.benchmark import _print_side_by_side
+
+    a = _faithfulness_report(mean=0.80)
+    b = _faithfulness_report(mean=0.95)
+    _print_side_by_side(a, b, a_label="off", b_label="on")
+    out = capsys.readouterr().out
+    assert "off" in out and "on" in out
+    assert "0.800" in out and "0.950" in out
+    assert "+0.150" in out
+
+
+def test_print_per_query_compare_counts_verdict_shifts(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from attune_rag.benchmark import _print_per_query_compare
+
+    a = _faithfulness_report(
+        per_query=[
+            _per_query("q1", score=1.0, supported=2, unsupported=0),
+            _per_query("q2", score=0.5, supported=1, unsupported=1),
+            _per_query("q3", score=1.0, supported=1, unsupported=0),
+        ]
+    )
+    b = _faithfulness_report(
+        per_query=[
+            _per_query("q1", score=1.0, supported=2, unsupported=0),  # same
+            _per_query("q2", score=1.0, supported=2, unsupported=0),  # shifted
+            _per_query("q3", score=0.5, supported=1, unsupported=1),  # shifted
+        ]
+    )
+    _print_per_query_compare(a, b, a_label="off", b_label="on")
+    out = capsys.readouterr().out
+    assert "Verdict-shift rate: 2/3" in out
+
+
+def test_print_per_query_compare_handles_no_overlap(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Guard: returns silently if A and B share no query IDs."""
+    from attune_rag.benchmark import _print_per_query_compare
+
+    a = _faithfulness_report(per_query=[_per_query("q1")])
+    b = _faithfulness_report(per_query=[_per_query("q2")])
+    _print_per_query_compare(a, b, a_label="off", b_label="on")
+    assert capsys.readouterr().out == ""
+
+
+def test_dump_json_writes_indented_payload(tmp_path: Path) -> None:
+    import json
+
+    from attune_rag.benchmark import _dump_json
+
+    out = tmp_path / "subdir" / "report.json"
+    _dump_json(out, {"x": 1, "y": [2, 3]})
+    assert out.is_file()
+    loaded = json.loads(out.read_text(encoding="utf-8"))
+    assert loaded == {"x": 1, "y": [2, 3]}

@@ -7,6 +7,8 @@ Run via::
     python -m attune_rag.benchmark --min-precision 0.70
     python -m attune_rag.benchmark --with-faithfulness \\
         --min-faithfulness 0.85
+    python -m attune_rag.benchmark --with-faithfulness \\
+        --compare-thinking --json out.json
 
 Prints precision@1, recall@3, and mean latency. Exits 1 if
 precision@1 falls below ``--min-precision`` so CI can gate.
@@ -16,6 +18,12 @@ also runs the default prompt variant through
 ``run_and_generate`` + :class:`FaithfulnessJudge` and
 gates on the resulting mean faithfulness score. Requires
 ``ANTHROPIC_API_KEY`` and the ``[claude]`` extra.
+
+With ``--compare-thinking``, runs the judge twice (thinking
+off, thinking on) and prints a side-by-side comparison so the
+extended-thinking knob can be calibrated against real data.
+Use with ``--json PATH`` to also dump the full per-query
+verdict records (reasoning + claim text) for offline analysis.
 
 Queries file format matches tests/golden/queries.yaml.
 """
@@ -231,6 +239,10 @@ async def _score_faithfulness(
                 "score": verdict.score,
                 "supported": len(verdict.supported_claims),
                 "unsupported": len(verdict.unsupported_claims),
+                "supported_claims": list(verdict.supported_claims),
+                "unsupported_claims": list(verdict.unsupported_claims),
+                "reasoning": verdict.reasoning,
+                "latency_ms": latencies[-1],
                 "claim_citation_count": len(rag_result.claim_citations),
                 "used_native_citations": rag_result.used_native_citations,
                 "thinking_used": verdict.thinking_used,
@@ -272,17 +284,20 @@ def _print_faithfulness(
 
 
 def _print_side_by_side(
-    legacy: dict[str, Any],
-    native: dict[str, Any],
+    a_report: dict[str, Any],
+    b_report: dict[str, Any],
+    *,
+    a_label: str = "Legacy [P{n}]",
+    b_label: str = "Native cites",
 ) -> None:
-    """Side-by-side comparison table for the two paths."""
+    """Side-by-side comparison table for two faithfulness passes."""
     print()
-    print(f"{'Metric':<24}  {'Legacy [P{n}]':>14}  {'Native cites':>14}  {'Δ':>10}")
+    print(f"{'Metric':<24}  {a_label:>14}  {b_label:>14}  {'Δ':>10}")
     print(f"{'-' * 24}  {'-' * 14}  {'-' * 14}  {'-' * 10}")
 
     def row(name: str, key: str, fmt: str = ".3f", *, percent: bool = False) -> None:
-        a = legacy[key]
-        b = native[key]
+        a = a_report[key]
+        b = b_report[key]
         d = b - a
         if percent:
             print(f"{name:<24}  {a:>14.1%}  {b:>14.1%}  {d:>+10.1%}")
@@ -295,6 +310,62 @@ def _print_side_by_side(
     row("Citation emit rate", "citation_emit_rate", percent=True)
     row("Mean latency (ms)", "mean_latency_ms", ".0f")
     row("p95 latency (ms)", "p95_latency_ms", ".0f")
+
+
+def _print_per_query_compare(
+    a_report: dict[str, Any],
+    b_report: dict[str, Any],
+    *,
+    a_label: str,
+    b_label: str,
+) -> None:
+    """Per-query verdict diff: where do A and B disagree?"""
+    by_id_a = {q["id"]: q for q in a_report["per_query"]}
+    by_id_b = {q["id"]: q for q in b_report["per_query"]}
+    common = [qid for qid in by_id_a if qid in by_id_b]
+    if not common:
+        return
+
+    print()
+    print(f"Per-query verdict comparison ({a_label} vs {b_label}):")
+    print(f"  {'id':<18}  {'score Δ':>8}  {'claims A→B':>14}  " f"{'verdict shift':<24}")
+    n_changed = 0
+    for qid in common:
+        qa = by_id_a[qid]
+        qb = by_id_b[qid]
+        delta = qb["score"] - qa["score"]
+        claims_a = qa["supported"] + qa["unsupported"]
+        claims_b = qb["supported"] + qb["unsupported"]
+        shift_bits: list[str] = []
+        if abs(delta) >= 0.001:
+            shift_bits.append("score")
+        if claims_a != claims_b:
+            shift_bits.append("count")
+        if (qa["supported"], qa["unsupported"]) != (
+            qb["supported"],
+            qb["unsupported"],
+        ):
+            shift_bits.append("partition")
+        shift = ",".join(shift_bits) or "—"
+        if shift_bits:
+            n_changed += 1
+        print(f"  {qid:<18}  {delta:>+8.3f}  " f"{claims_a:>5} → {claims_b:<6}  {shift:<24}")
+    pct = n_changed / len(common) if common else 0.0
+    print(f"\nVerdict-shift rate: {n_changed}/{len(common)} = {pct:.1%}")
+
+
+def _dump_json(
+    path: Path,
+    payload: dict[str, Any],
+) -> None:
+    import json
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
+    print(f"\nWrote per-query JSON: {path}", file=sys.stderr)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -369,12 +440,63 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--compare-thinking",
+        action="store_true",
+        help=(
+            "With --with-faithfulness: run two passes (thinking off, "
+            "thinking on at --thinking-budget) and print a side-by-side "
+            "comparison. Doubles API spend on the faithfulness step "
+            "(thinking pass burns extra tokens on top). Mutually "
+            "exclusive with --thinking and --native-citations."
+        ),
+    )
+    parser.add_argument(
+        "--json",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help=(
+            "With --with-faithfulness: dump the full structured "
+            "faithfulness report (per-query verdicts incl. reasoning "
+            "and claim text) to PATH as JSON. Useful for offline "
+            "calibration analysis."
+        ),
+    )
+    parser.add_argument(
         "--verbose",
         "-v",
         action="store_true",
         help="Print per-query detail including misses",
     )
     args = parser.parse_args(argv)
+
+    if args.compare_thinking and args.thinking:
+        print(
+            "error: --compare-thinking already runs both thinking "
+            "modes; --thinking is redundant. Drop one.",
+            file=sys.stderr,
+        )
+        return 2
+    if args.compare_thinking and args.native_citations:
+        print(
+            "error: --compare-thinking and --native-citations cannot "
+            "be combined (would require 4 faithfulness passes). Run "
+            "them in separate invocations.",
+            file=sys.stderr,
+        )
+        return 2
+    if args.compare_thinking and not args.with_faithfulness:
+        print(
+            "error: --compare-thinking requires --with-faithfulness.",
+            file=sys.stderr,
+        )
+        return 2
+    if args.json is not None and not args.with_faithfulness:
+        print(
+            "error: --json requires --with-faithfulness (nothing to " "dump otherwise).",
+            file=sys.stderr,
+        )
+        return 2
 
     if not args.queries.is_file():
         print(f"Queries file not found: {args.queries}", file=sys.stderr)
@@ -398,46 +520,108 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 2
-        print("\nRunning faithfulness pass (legacy [P{n}] path)...", file=sys.stderr)
-        legacy = asyncio.run(
-            _score_faithfulness(
-                queries,
-                k=args.k,
-                use_native_citations=False,
-                use_thinking=args.thinking,
-                thinking_budget_tokens=args.thinking_budget,
-            )
-        )
-        _print_faithfulness(legacy, label="legacy")
 
-        if args.native_citations:
+        json_payload: dict[str, Any] = {
+            "retrieval": report,
+            "queries_path": str(args.queries),
+        }
+
+        if args.compare_thinking:
             print(
-                "\nRunning faithfulness pass (native citations path)...",
+                "\nRunning faithfulness pass A (thinking OFF)...",
                 file=sys.stderr,
             )
-            native = asyncio.run(
+            pass_a = asyncio.run(
                 _score_faithfulness(
                     queries,
                     k=args.k,
-                    use_native_citations=True,
+                    use_native_citations=False,
+                    use_thinking=False,
+                )
+            )
+            _print_faithfulness(pass_a, label="thinking off")
+            print(
+                "\nRunning faithfulness pass B (thinking ON)...",
+                file=sys.stderr,
+            )
+            pass_b = asyncio.run(
+                _score_faithfulness(
+                    queries,
+                    k=args.k,
+                    use_native_citations=False,
+                    use_thinking=True,
+                    thinking_budget_tokens=args.thinking_budget,
+                )
+            )
+            _print_faithfulness(pass_b, label="thinking on")
+            _print_side_by_side(
+                pass_a,
+                pass_b,
+                a_label="thinking off",
+                b_label="thinking on",
+            )
+            _print_per_query_compare(
+                pass_a,
+                pass_b,
+                a_label="off",
+                b_label="on",
+            )
+            json_payload["faithfulness_thinking_off"] = pass_a
+            json_payload["faithfulness_thinking_on"] = pass_b
+            gate_report = pass_a
+            gate_label = "thinking-off"
+        else:
+            print(
+                "\nRunning faithfulness pass (legacy [P{n}] path)...",
+                file=sys.stderr,
+            )
+            legacy = asyncio.run(
+                _score_faithfulness(
+                    queries,
+                    k=args.k,
+                    use_native_citations=False,
                     use_thinking=args.thinking,
                     thinking_budget_tokens=args.thinking_budget,
                 )
             )
-            _print_faithfulness(native, label="native")
-            _print_side_by_side(legacy, native)
+            _print_faithfulness(legacy, label="legacy")
+            json_payload["faithfulness_legacy"] = legacy
 
-        if legacy["mean_faithfulness"] < args.min_faithfulness:
+            if args.native_citations:
+                print(
+                    "\nRunning faithfulness pass (native citations path)...",
+                    file=sys.stderr,
+                )
+                native = asyncio.run(
+                    _score_faithfulness(
+                        queries,
+                        k=args.k,
+                        use_native_citations=True,
+                        use_thinking=args.thinking,
+                        thinking_budget_tokens=args.thinking_budget,
+                    )
+                )
+                _print_faithfulness(native, label="native")
+                _print_side_by_side(legacy, native)
+                json_payload["faithfulness_native"] = native
+
+            gate_report = legacy
+            gate_label = "legacy"
+
+        if args.json is not None:
+            _dump_json(args.json, json_payload)
+
+        if gate_report["mean_faithfulness"] < args.min_faithfulness:
             print(
-                f"\nFAIL: legacy mean_faithfulness "
-                f"{legacy['mean_faithfulness']:.3f} "
+                f"\nFAIL: {gate_label} mean_faithfulness "
+                f"{gate_report['mean_faithfulness']:.3f} "
                 f"< gate {args.min_faithfulness:.3f}",
                 file=sys.stderr,
             )
             return 1
         print(
             f"\nPASS: P@1 ≥ {args.min_precision:.2%} and "
-            f"legacy faithfulness ≥ {args.min_faithfulness:.3f}."
+            f"{gate_label} faithfulness ≥ {args.min_faithfulness:.3f}."
         )
         return 0
 
