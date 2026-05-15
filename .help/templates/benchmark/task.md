@@ -1,49 +1,46 @@
 ---
-type: task
 feature: benchmark
 depth: task
-generated_at: 2026-04-23T03:36:40.994101+00:00
-source_hash: efe3184170bbd1e763131bf4307b2835dc8fb12752af2f0f8b5cb67b4d27ad03
+generated_at: 2026-05-15T13:03:36.555996+00:00
+source_hash: fa744d71791100502f1e27d84431e0d8aa1381376327b87453c04f3f56c22384
 status: generated
 ---
 
 # Work with benchmark
 
-Run benchmark when you need to evaluate retrieval quality or gate CI builds on configurable precision, recall, and faithfulness thresholds.
+Use benchmark when you need to precision/recall/faithfulness benchmark runner — gates ci on configurable thresholds; supports custom query files and optional faithfulness scoring via --with-faithfulness.
 
 ## Prerequisites
 
 - Access to the project source code
-- Query files for testing (optional — benchmark includes defaults)
-- Understanding of your quality thresholds for CI gates
+- Familiarity with the files under src/attune_rag/benchmark.py
 
 ## Steps
 
-1. **Navigate to the benchmark module.**
-   Open `src/attune_rag/benchmark.py` to examine the main entry point and available configuration options.
+1. **Understand the current behavior.**
+   Read the entry points to see what benchmark
+   does today before making changes.
+   The primary functions are:
+   - `main()` in `src/attune_rag/benchmark.py`
+2. **Locate the right function to change.**
+   Each function has a single responsibility. Read its
+   docstring, parameters, and return type to confirm it
+   owns the behavior you need to modify.
 
-2. **Identify your evaluation scope.**
-   Decide whether you need basic retrieval metrics (precision/recall) or comprehensive evaluation including faithfulness scoring via the `--with-faithfulness` flag.
+3. **Make your change.**
+   Follow existing patterns in the file — naming
+   conventions, error handling style, and logging.
 
-3. **Configure your test queries.**
-   Either use the default query set or specify custom query files that match your evaluation requirements.
-
-4. **Set quality thresholds.**
-   Define the minimum acceptable scores for precision, recall, and faithfulness that will determine CI pass/fail status.
-
-5. **Execute the benchmark.**
-   Run the `main()` function with your chosen configuration to generate evaluation metrics and apply threshold checks.
-
-6. **Review the results.**
-   Examine the output to verify metrics meet your quality gates and identify any areas needing improvement.
-
-## Verification
-
-The benchmark completes successfully when:
-- All configured quality thresholds are met
-- The function returns exit code 0
-- Evaluation metrics are displayed in the output
+4. **Run the related tests.**
+   This catches regressions before they reach other
+   developers. Target with `pytest -k "benchmark"`.
 
 ## Key files
 
-- `src/attune_rag/benchmark.py` — Main benchmark runner and configuration
+- `src/attune_rag/benchmark.py`
+
+## Common modifications
+
+Functions you are most likely to modify:
+
+- `main()` in `src/attune_rag/benchmark.py`
