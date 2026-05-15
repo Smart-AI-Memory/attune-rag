@@ -11,6 +11,7 @@ from ._lint import Diagnostic, Severity, lint_template
 from ._references import Reference, ReferenceContext, ReferenceKind, find_references
 from ._rename import (
     FileEdit,
+    FileMove,
     Hunk,
     RenameCollisionError,
     RenameError,
@@ -28,6 +29,7 @@ from ._schema import (
 __all__ = [
     "Diagnostic",
     "FileEdit",
+    "FileMove",
     "Hunk",
     "Reference",
     "ReferenceContext",
