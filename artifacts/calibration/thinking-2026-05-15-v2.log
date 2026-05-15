@@ -1,0 +1,722 @@
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=205.02 fallback_used=False hit_count=3 prompt_variant=citation query='how do I run a security audit' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.76 fallback_used=False hit_count=3 prompt_variant=citation query='generate tests for my code' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.69 fallback_used=False hit_count=3 prompt_variant=citation query='fix failing tests' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.66 fallback_used=False hit_count=3 prompt_variant=citation query='review code quality' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.55 fallback_used=False hit_count=3 prompt_variant=citation query='deep review my PR' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.66 fallback_used=False hit_count=3 prompt_variant=citation query='predict bugs before they happen' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.62 fallback_used=False hit_count=3 prompt_variant=citation query='refactor my code' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.56 fallback_used=False hit_count=3 prompt_variant=citation query='prepare a release' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.56 fallback_used=False hit_count=3 prompt_variant=citation query='audit documentation for staleness' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.53 fallback_used=False hit_count=3 prompt_variant=citation query='plan a new feature' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.51 fallback_used=False hit_count=3 prompt_variant=citation query='vulnerability scan' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.53 fallback_used=False hit_count=3 prompt_variant=citation query='write documentation for my module' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.58 fallback_used=False hit_count=3 prompt_variant=citation query='orchestrate documentation workflow' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.57 fallback_used=False hit_count=3 prompt_variant=citation query='look for dangerous eval calls' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.54 fallback_used=False hit_count=3 prompt_variant=citation query='sniff out hard-to-catch bugs' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.62 fallback_used=False hit_count=3 prompt_variant=citation query='find bugs in my code' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.62 fallback_used=False hit_count=3 prompt_variant=citation query='create documentation for my code' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.62 fallback_used=False hit_count=3 prompt_variant=citation query='check code quality' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.5 fallback_used=False hit_count=3 prompt_variant=citation query='create a release' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.57 fallback_used=False hit_count=3 prompt_variant=citation query='write unit tests' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.52 fallback_used=False hit_count=3 prompt_variant=citation query='clean up technical debt' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.61 fallback_used=False hit_count=3 prompt_variant=citation query='add test coverage to my project' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.55 fallback_used=False hit_count=3 prompt_variant=citation query='check for security vulnerabilities' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.56 fallback_used=False hit_count=3 prompt_variant=citation query='debug failing tests' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.53 fallback_used=False hit_count=3 prompt_variant=citation query='find stale documentation' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.5 fallback_used=False hit_count=3 prompt_variant=citation query='version bump and changelog' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.69 fallback_used=False hit_count=3 prompt_variant=citation query='spot risky code changes before merging' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.5 fallback_used=False hit_count=3 prompt_variant=citation query='architect a new feature' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.6 fallback_used=False hit_count=3 prompt_variant=citation query='improve code quality metrics' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.58 fallback_used=False hit_count=3 prompt_variant=citation query='reduce code complexity' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.54 fallback_used=False hit_count=3 prompt_variant=citation query='my CI pipeline keeps failing' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=0.938 corpus=attune-help elapsed_ms=0.48 fallback_used=False hit_count=3 prompt_variant=citation query='SAST scan my repository' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.56 fallback_used=False hit_count=3 prompt_variant=citation query='add docstrings to all my functions' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.51 fallback_used=False hit_count=3 prompt_variant=citation query='manage the documentation pipeline' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.46 fallback_used=False hit_count=3 prompt_variant=citation query='publish to PyPI' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.59 fallback_used=False hit_count=3 prompt_variant=citation query='identify which files are most likely to break' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.59 fallback_used=False hit_count=3 prompt_variant=citation query='end-to-end review before merging a PR' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.58 fallback_used=False hit_count=3 prompt_variant=citation query='coordinate documentation updates across the project' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.61 fallback_used=False hit_count=3 prompt_variant=citation query='scope out next sprint tasks' retriever=KeywordRetriever
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.77 fallback_used=False hit_count=3 prompt_variant=citation query='find potential runtime errors before deployment' retriever=KeywordRetriever
+
+Running faithfulness pass A (thinking OFF)...
+  judging: gq-001 — 'how do I run a security audit'
+Retriever:  KeywordRetriever
+Corpus:     attune-help
+Queries:    40
+Precision@1: 95.00% (38/40)
+Recall@3:    100.00% (40/40)
+Mean latency: 5.72ms
+Max latency:  205.14ms
+
+Breakdown by difficulty:
+  easy    P@1=9/10  R@3=10/10
+  medium  P@1=26/27  R@3=27/27
+  hard    P@1=3/3  R@3=3/3
+
+Per-query detail:
+  [OK*] gq-001 (easy): 'how do I run a security audit'
+  [OK*] gq-002 (easy): 'generate tests for my code'
+  [OK*] gq-003 (easy): 'fix failing tests'
+  [OK*] gq-004 (easy): 'review code quality'
+  [OK*] gq-005 (easy): 'deep review my PR'
+  [OK*] gq-006 (medium): 'predict bugs before they happen'
+  [OK*] gq-007 (medium): 'refactor my code'
+  [OK*] gq-008 (medium): 'prepare a release'
+  [OK*] gq-009 (medium): 'audit documentation for staleness'
+  [OK*] gq-010 (medium): 'plan a new feature'
+  [OK ] gq-011 (medium): 'vulnerability scan'
+  [OK*] gq-012 (medium): 'write documentation for my module'
+  [OK*] gq-013 (hard): 'orchestrate documentation workflow'
+  [OK*] gq-014 (medium): 'look for dangerous eval calls'
+  [OK*] gq-015 (medium): 'sniff out hard-to-catch bugs'
+  [OK*] gq-016 (easy): 'find bugs in my code'
+  [OK*] gq-017 (easy): 'create documentation for my code'
+  [OK*] gq-018 (easy): 'check code quality'
+  [OK*] gq-019 (easy): 'create a release'
+  [OK ] gq-020 (easy): 'write unit tests'
+  [OK*] gq-021 (hard): 'clean up technical debt'
+  [OK*] gq-022 (medium): 'add test coverage to my project'
+  [OK*] gq-023 (medium): 'check for security vulnerabilities'
+  [OK*] gq-024 (medium): 'debug failing tests'
+  [OK*] gq-025 (medium): 'find stale documentation'
+  [OK*] gq-026 (medium): 'version bump and changelog'
+  [OK*] gq-027 (medium): 'spot risky code changes before merging'
+  [OK*] gq-028 (medium): 'architect a new feature'
+  [OK*] gq-029 (medium): 'improve code quality metrics'
+  [OK*] gq-030 (medium): 'reduce code complexity'
+  [OK*] gq-031 (medium): 'my CI pipeline keeps failing'
+  [OK*] gq-032 (medium): 'SAST scan my repository'
+  [OK*] gq-033 (medium): 'add docstrings to all my functions'
+  [OK*] gq-034 (medium): 'manage the documentation pipeline'
+  [OK*] gq-035 (hard): 'publish to PyPI'
+  [OK*] gq-036 (medium): 'identify which files are most likely to break'
+  [OK*] gq-037 (medium): 'end-to-end review before merging a PR'
+  [OK*] gq-038 (medium): 'coordinate documentation updates across the project'
+  [OK*] gq-039 (medium): 'scope out next sprint tasks'
+  [OK*] gq-040 (medium): 'find potential runtime errors before deployment'
+2026-05-15 15:32:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=195.21 fallback_used=False hit_count=3 prompt_variant=citation query='how do I run a security audit' retriever=KeywordRetriever
+  judging: gq-002 — 'generate tests for my code'
+2026-05-15 15:32:57 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=3.6 fallback_used=False hit_count=3 prompt_variant=citation query='generate tests for my code' retriever=KeywordRetriever
+  judging: gq-003 — 'fix failing tests'
+2026-05-15 15:33:09 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.22 fallback_used=False hit_count=3 prompt_variant=citation query='fix failing tests' retriever=KeywordRetriever
+  judging: gq-004 — 'review code quality'
+2026-05-15 15:33:30 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.18 fallback_used=False hit_count=3 prompt_variant=citation query='review code quality' retriever=KeywordRetriever
+  judging: gq-005 — 'deep review my PR'
+2026-05-15 15:33:45 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.89 fallback_used=False hit_count=3 prompt_variant=citation query='deep review my PR' retriever=KeywordRetriever
+  judging: gq-006 — 'predict bugs before they happen'
+2026-05-15 15:33:56 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.07 fallback_used=False hit_count=3 prompt_variant=citation query='predict bugs before they happen' retriever=KeywordRetriever
+  judging: gq-007 — 'refactor my code'
+2026-05-15 15:34:11 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.93 fallback_used=False hit_count=3 prompt_variant=citation query='refactor my code' retriever=KeywordRetriever
+  judging: gq-008 — 'prepare a release'
+2026-05-15 15:34:24 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.46 fallback_used=False hit_count=3 prompt_variant=citation query='prepare a release' retriever=KeywordRetriever
+  judging: gq-009 — 'audit documentation for staleness'
+2026-05-15 15:34:47 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.88 fallback_used=False hit_count=3 prompt_variant=citation query='audit documentation for staleness' retriever=KeywordRetriever
+  judging: gq-010 — 'plan a new feature'
+2026-05-15 15:34:58 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.74 fallback_used=False hit_count=3 prompt_variant=citation query='plan a new feature' retriever=KeywordRetriever
+  judging: gq-011 — 'vulnerability scan'
+2026-05-15 15:35:14 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.93 fallback_used=False hit_count=3 prompt_variant=citation query='vulnerability scan' retriever=KeywordRetriever
+  judging: gq-012 — 'write documentation for my module'
+2026-05-15 15:35:27 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.74 fallback_used=False hit_count=3 prompt_variant=citation query='write documentation for my module' retriever=KeywordRetriever
+  judging: gq-013 — 'orchestrate documentation workflow'
+2026-05-15 15:35:44 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.9 fallback_used=False hit_count=3 prompt_variant=citation query='orchestrate documentation workflow' retriever=KeywordRetriever
+  judging: gq-014 — 'look for dangerous eval calls'
+2026-05-15 15:35:59 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.9 fallback_used=False hit_count=3 prompt_variant=citation query='look for dangerous eval calls' retriever=KeywordRetriever
+  judging: gq-015 — 'sniff out hard-to-catch bugs'
+2026-05-15 15:36:14 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.95 fallback_used=False hit_count=3 prompt_variant=citation query='sniff out hard-to-catch bugs' retriever=KeywordRetriever
+  judging: gq-016 — 'find bugs in my code'
+2026-05-15 15:36:37 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.65 fallback_used=False hit_count=3 prompt_variant=citation query='find bugs in my code' retriever=KeywordRetriever
+  judging: gq-017 — 'create documentation for my code'
+2026-05-15 15:36:56 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.93 fallback_used=False hit_count=3 prompt_variant=citation query='create documentation for my code' retriever=KeywordRetriever
+  judging: gq-018 — 'check code quality'
+2026-05-15 15:37:09 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.91 fallback_used=False hit_count=3 prompt_variant=citation query='check code quality' retriever=KeywordRetriever
+  judging: gq-019 — 'create a release'
+2026-05-15 15:37:23 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.79 fallback_used=False hit_count=3 prompt_variant=citation query='create a release' retriever=KeywordRetriever
+  judging: gq-020 — 'write unit tests'
+2026-05-15 15:37:40 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.54 fallback_used=False hit_count=3 prompt_variant=citation query='write unit tests' retriever=KeywordRetriever
+  judging: gq-021 — 'clean up technical debt'
+2026-05-15 15:37:57 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.75 fallback_used=False hit_count=3 prompt_variant=citation query='clean up technical debt' retriever=KeywordRetriever
+  judging: gq-022 — 'add test coverage to my project'
+2026-05-15 15:38:11 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.07 fallback_used=False hit_count=3 prompt_variant=citation query='add test coverage to my project' retriever=KeywordRetriever
+  judging: gq-023 — 'check for security vulnerabilities'
+2026-05-15 15:38:26 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.75 fallback_used=False hit_count=3 prompt_variant=citation query='check for security vulnerabilities' retriever=KeywordRetriever
+  judging: gq-024 — 'debug failing tests'
+2026-05-15 15:38:40 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.98 fallback_used=False hit_count=3 prompt_variant=citation query='debug failing tests' retriever=KeywordRetriever
+  judging: gq-025 — 'find stale documentation'
+2026-05-15 15:38:58 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.52 fallback_used=False hit_count=3 prompt_variant=citation query='find stale documentation' retriever=KeywordRetriever
+  judging: gq-026 — 'version bump and changelog'
+2026-05-15 15:39:07 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.63 fallback_used=False hit_count=3 prompt_variant=citation query='version bump and changelog' retriever=KeywordRetriever
+  judging: gq-027 — 'spot risky code changes before merging'
+2026-05-15 15:39:27 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.3 fallback_used=False hit_count=3 prompt_variant=citation query='spot risky code changes before merging' retriever=KeywordRetriever
+  judging: gq-028 — 'architect a new feature'
+2026-05-15 15:39:43 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.45 fallback_used=False hit_count=3 prompt_variant=citation query='architect a new feature' retriever=KeywordRetriever
+  judging: gq-029 — 'improve code quality metrics'
+2026-05-15 15:40:05 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.71 fallback_used=False hit_count=3 prompt_variant=citation query='improve code quality metrics' retriever=KeywordRetriever
+  judging: gq-030 — 'reduce code complexity'
+2026-05-15 15:40:20 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.95 fallback_used=False hit_count=3 prompt_variant=citation query='reduce code complexity' retriever=KeywordRetriever
+  judging: gq-031 — 'my CI pipeline keeps failing'
+2026-05-15 15:40:35 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.88 fallback_used=False hit_count=3 prompt_variant=citation query='my CI pipeline keeps failing' retriever=KeywordRetriever
+  judging: gq-032 — 'SAST scan my repository'
+2026-05-15 15:40:53 [info     ] rag.run                        confidence=0.938 corpus=attune-help elapsed_ms=0.92 fallback_used=False hit_count=3 prompt_variant=citation query='SAST scan my repository' retriever=KeywordRetriever
+  judging: gq-033 — 'add docstrings to all my functions'
+2026-05-15 15:41:07 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.5 fallback_used=False hit_count=3 prompt_variant=citation query='add docstrings to all my functions' retriever=KeywordRetriever
+  judging: gq-034 — 'manage the documentation pipeline'
+2026-05-15 15:41:20 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.93 fallback_used=False hit_count=3 prompt_variant=citation query='manage the documentation pipeline' retriever=KeywordRetriever
+  judging: gq-035 — 'publish to PyPI'
+2026-05-15 15:41:37 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.67 fallback_used=False hit_count=3 prompt_variant=citation query='publish to PyPI' retriever=KeywordRetriever
+  judging: gq-036 — 'identify which files are most likely to break'
+2026-05-15 15:41:58 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.9 fallback_used=False hit_count=3 prompt_variant=citation query='identify which files are most likely to break' retriever=KeywordRetriever
+  judging: gq-037 — 'end-to-end review before merging a PR'
+2026-05-15 15:42:18 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.02 fallback_used=False hit_count=3 prompt_variant=citation query='end-to-end review before merging a PR' retriever=KeywordRetriever
+  judging: gq-038 — 'coordinate documentation updates across the project'
+2026-05-15 15:42:33 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.81 fallback_used=False hit_count=3 prompt_variant=citation query='coordinate documentation updates across the project' retriever=KeywordRetriever
+  judging: gq-039 — 'scope out next sprint tasks'
+2026-05-15 15:42:46 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.92 fallback_used=False hit_count=3 prompt_variant=citation query='scope out next sprint tasks' retriever=KeywordRetriever
+  judging: gq-040 — 'find potential runtime errors before deployment'
+2026-05-15 15:43:03 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.96 fallback_used=False hit_count=3 prompt_variant=citation query='find potential runtime errors before deployment' retriever=KeywordRetriever
+
+Running faithfulness pass B (thinking ON)...
+  judging: gq-001 — 'how do I run a security audit'
+
+Mean faithfulness (thinking off):   0.985
+Refusal rate (thinking off):        0.0%
+Hallucination rate (thinking off):  20.0%
+Citation emit rate (thinking off):  0.0%
+Mean latency (thinking off):        8030 ms
+p95 latency (thinking off):         12315 ms
+2026-05-15 15:43:24 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=218.37 fallback_used=False hit_count=3 prompt_variant=citation query='how do I run a security audit' retriever=KeywordRetriever
+Task exception was never retrieved
+future: <Task finished name='Task-110' coro=<AsyncClient.aclose() done, defined at /Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1985, in aclose
+    await self._transport.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 406, in aclose
+    await self._pool.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 353, in aclose
+    await self._close_connections(closing_connections)
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 345, in _close_connections
+    await connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 173, in aclose
+    await self._connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 258, in aclose
+    await self._network_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 53, in aclose
+    await self._stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/streams/tls.py", line 236, in aclose
+    await self.transport_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1344, in aclose
+    self._transport.close()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/selector_events.py", line 864, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+    self._check_closed()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-111' coro=<AsyncClient.aclose() done, defined at /Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1985, in aclose
+    await self._transport.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 406, in aclose
+    await self._pool.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 353, in aclose
+    await self._close_connections(closing_connections)
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 345, in _close_connections
+    await connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 173, in aclose
+    await self._connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 258, in aclose
+    await self._network_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 53, in aclose
+    await self._stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/streams/tls.py", line 236, in aclose
+    await self.transport_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1344, in aclose
+    self._transport.close()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/selector_events.py", line 864, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+    self._check_closed()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-112' coro=<AsyncClient.aclose() done, defined at /Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1985, in aclose
+    await self._transport.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 406, in aclose
+    await self._pool.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 353, in aclose
+    await self._close_connections(closing_connections)
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 345, in _close_connections
+    await connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 173, in aclose
+    await self._connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 258, in aclose
+    await self._network_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 53, in aclose
+    await self._stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/streams/tls.py", line 236, in aclose
+    await self.transport_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1344, in aclose
+    self._transport.close()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/selector_events.py", line 864, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+    self._check_closed()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-113' coro=<AsyncClient.aclose() done, defined at /Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1985, in aclose
+    await self._transport.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 406, in aclose
+    await self._pool.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 353, in aclose
+    await self._close_connections(closing_connections)
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 345, in _close_connections
+    await connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 173, in aclose
+    await self._connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 258, in aclose
+    await self._network_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 53, in aclose
+    await self._stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/streams/tls.py", line 236, in aclose
+    await self.transport_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1344, in aclose
+    self._transport.close()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/selector_events.py", line 864, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+    self._check_closed()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-114' coro=<AsyncClient.aclose() done, defined at /Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1985, in aclose
+    await self._transport.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 406, in aclose
+    await self._pool.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 353, in aclose
+    await self._close_connections(closing_connections)
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 345, in _close_connections
+    await connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 173, in aclose
+    await self._connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 258, in aclose
+    await self._network_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 53, in aclose
+    await self._stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/streams/tls.py", line 236, in aclose
+    await self.transport_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1344, in aclose
+    self._transport.close()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/selector_events.py", line 864, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+    self._check_closed()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-115' coro=<AsyncClient.aclose() done, defined at /Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1985, in aclose
+    await self._transport.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 406, in aclose
+    await self._pool.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 353, in aclose
+    await self._close_connections(closing_connections)
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 345, in _close_connections
+    await connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 173, in aclose
+    await self._connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 258, in aclose
+    await self._network_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 53, in aclose
+    await self._stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/streams/tls.py", line 236, in aclose
+    await self.transport_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1344, in aclose
+    self._transport.close()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/selector_events.py", line 864, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+    self._check_closed()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-116' coro=<AsyncClient.aclose() done, defined at /Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1985, in aclose
+    await self._transport.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 406, in aclose
+    await self._pool.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 353, in aclose
+    await self._close_connections(closing_connections)
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 345, in _close_connections
+    await connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 173, in aclose
+    await self._connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 258, in aclose
+    await self._network_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 53, in aclose
+    await self._stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/streams/tls.py", line 236, in aclose
+    await self.transport_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1344, in aclose
+    self._transport.close()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/selector_events.py", line 864, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+    self._check_closed()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-117' coro=<AsyncClient.aclose() done, defined at /Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1985, in aclose
+    await self._transport.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 406, in aclose
+    await self._pool.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 353, in aclose
+    await self._close_connections(closing_connections)
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 345, in _close_connections
+    await connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 173, in aclose
+    await self._connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 258, in aclose
+    await self._network_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 53, in aclose
+    await self._stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/streams/tls.py", line 236, in aclose
+    await self.transport_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1344, in aclose
+    self._transport.close()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/selector_events.py", line 864, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+    self._check_closed()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-118' coro=<AsyncClient.aclose() done, defined at /Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1985, in aclose
+    await self._transport.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 406, in aclose
+    await self._pool.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 353, in aclose
+    await self._close_connections(closing_connections)
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 345, in _close_connections
+    await connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 173, in aclose
+    await self._connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 258, in aclose
+    await self._network_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 53, in aclose
+    await self._stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/streams/tls.py", line 236, in aclose
+    await self.transport_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1344, in aclose
+    self._transport.close()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/selector_events.py", line 864, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+    self._check_closed()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-119' coro=<AsyncClient.aclose() done, defined at /Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1985, in aclose
+    await self._transport.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 406, in aclose
+    await self._pool.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 353, in aclose
+    await self._close_connections(closing_connections)
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 345, in _close_connections
+    await connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 173, in aclose
+    await self._connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 258, in aclose
+    await self._network_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 53, in aclose
+    await self._stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/streams/tls.py", line 236, in aclose
+    await self.transport_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1344, in aclose
+    self._transport.close()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/selector_events.py", line 864, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+    self._check_closed()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-120' coro=<AsyncClient.aclose() done, defined at /Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1985, in aclose
+    await self._transport.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 406, in aclose
+    await self._pool.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 353, in aclose
+    await self._close_connections(closing_connections)
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 345, in _close_connections
+    await connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 173, in aclose
+    await self._connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 258, in aclose
+    await self._network_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 53, in aclose
+    await self._stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/streams/tls.py", line 236, in aclose
+    await self.transport_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1344, in aclose
+    self._transport.close()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/selector_events.py", line 864, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+    self._check_closed()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-121' coro=<AsyncClient.aclose() done, defined at /Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1985, in aclose
+    await self._transport.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 406, in aclose
+    await self._pool.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 353, in aclose
+    await self._close_connections(closing_connections)
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 345, in _close_connections
+    await connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 173, in aclose
+    await self._connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 258, in aclose
+    await self._network_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 53, in aclose
+    await self._stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/streams/tls.py", line 236, in aclose
+    await self.transport_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1344, in aclose
+    self._transport.close()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/selector_events.py", line 864, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+    self._check_closed()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+  judging: gq-002 — 'generate tests for my code'
+2026-05-15 15:43:44 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.29 fallback_used=False hit_count=3 prompt_variant=citation query='generate tests for my code' retriever=KeywordRetriever
+  judging: gq-003 — 'fix failing tests'
+2026-05-15 15:44:15 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.89 fallback_used=False hit_count=3 prompt_variant=citation query='fix failing tests' retriever=KeywordRetriever
+  judging: gq-004 — 'review code quality'
+2026-05-15 15:44:39 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.9 fallback_used=False hit_count=3 prompt_variant=citation query='review code quality' retriever=KeywordRetriever
+  judging: gq-005 — 'deep review my PR'
+2026-05-15 15:45:06 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.86 fallback_used=False hit_count=3 prompt_variant=citation query='deep review my PR' retriever=KeywordRetriever
+  judging: gq-006 — 'predict bugs before they happen'
+2026-05-15 15:45:30 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.92 fallback_used=False hit_count=3 prompt_variant=citation query='predict bugs before they happen' retriever=KeywordRetriever
+  judging: gq-007 — 'refactor my code'
+2026-05-15 15:46:08 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.53 fallback_used=False hit_count=3 prompt_variant=citation query='refactor my code' retriever=KeywordRetriever
+  judging: gq-008 — 'prepare a release'
+2026-05-15 15:46:34 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.01 fallback_used=False hit_count=3 prompt_variant=citation query='prepare a release' retriever=KeywordRetriever
+  judging: gq-009 — 'audit documentation for staleness'
+2026-05-15 15:47:01 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.88 fallback_used=False hit_count=3 prompt_variant=citation query='audit documentation for staleness' retriever=KeywordRetriever
+  judging: gq-010 — 'plan a new feature'
+2026-05-15 15:47:24 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.83 fallback_used=False hit_count=3 prompt_variant=citation query='plan a new feature' retriever=KeywordRetriever
+  judging: gq-011 — 'vulnerability scan'
+2026-05-15 15:47:58 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.74 fallback_used=False hit_count=3 prompt_variant=citation query='vulnerability scan' retriever=KeywordRetriever
+  judging: gq-012 — 'write documentation for my module'
+2026-05-15 15:48:25 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.81 fallback_used=False hit_count=3 prompt_variant=citation query='write documentation for my module' retriever=KeywordRetriever
+Task exception was never retrieved
+future: <Task finished name='Task-150' coro=<AsyncClient.aclose() done, defined at /Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1985, in aclose
+    await self._transport.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 406, in aclose
+    await self._pool.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 353, in aclose
+    await self._close_connections(closing_connections)
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 345, in _close_connections
+    await connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 173, in aclose
+    await self._connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 258, in aclose
+    await self._network_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 53, in aclose
+    await self._stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/streams/tls.py", line 236, in aclose
+    await self.transport_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1344, in aclose
+    self._transport.close()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/selector_events.py", line 864, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+    self._check_closed()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-151' coro=<AsyncClient.aclose() done, defined at /Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1985, in aclose
+    await self._transport.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 406, in aclose
+    await self._pool.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 353, in aclose
+    await self._close_connections(closing_connections)
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 345, in _close_connections
+    await connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 173, in aclose
+    await self._connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 258, in aclose
+    await self._network_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 53, in aclose
+    await self._stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/streams/tls.py", line 236, in aclose
+    await self.transport_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.claude/worktrees/admiring-shockley-df47b7/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1344, in aclose
+    self._transport.close()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/selector_events.py", line 864, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+    self._check_closed()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+  judging: gq-013 — 'orchestrate documentation workflow'
+2026-05-15 15:48:55 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.73 fallback_used=False hit_count=3 prompt_variant=citation query='orchestrate documentation workflow' retriever=KeywordRetriever
+  judging: gq-014 — 'look for dangerous eval calls'
+2026-05-15 15:49:20 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.81 fallback_used=False hit_count=3 prompt_variant=citation query='look for dangerous eval calls' retriever=KeywordRetriever
+  judging: gq-015 — 'sniff out hard-to-catch bugs'
+2026-05-15 15:49:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.85 fallback_used=False hit_count=3 prompt_variant=citation query='sniff out hard-to-catch bugs' retriever=KeywordRetriever
+  judging: gq-016 — 'find bugs in my code'
+2026-05-15 15:50:13 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.1 fallback_used=False hit_count=3 prompt_variant=citation query='find bugs in my code' retriever=KeywordRetriever
+  judging: gq-017 — 'create documentation for my code'
+2026-05-15 15:50:36 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.4 fallback_used=False hit_count=3 prompt_variant=citation query='create documentation for my code' retriever=KeywordRetriever
+  judging: gq-018 — 'check code quality'
+2026-05-15 15:51:00 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.41 fallback_used=False hit_count=3 prompt_variant=citation query='check code quality' retriever=KeywordRetriever
+  judging: gq-019 — 'create a release'
+2026-05-15 15:51:24 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.68 fallback_used=False hit_count=3 prompt_variant=citation query='create a release' retriever=KeywordRetriever
+  judging: gq-020 — 'write unit tests'
+2026-05-15 15:51:52 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.81 fallback_used=False hit_count=3 prompt_variant=citation query='write unit tests' retriever=KeywordRetriever
+  judging: gq-021 — 'clean up technical debt'
+2026-05-15 15:52:25 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.68 fallback_used=False hit_count=3 prompt_variant=citation query='clean up technical debt' retriever=KeywordRetriever
+  judging: gq-022 — 'add test coverage to my project'
+2026-05-15 15:52:46 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.78 fallback_used=False hit_count=3 prompt_variant=citation query='add test coverage to my project' retriever=KeywordRetriever
+  judging: gq-023 — 'check for security vulnerabilities'
+2026-05-15 15:53:15 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.88 fallback_used=False hit_count=3 prompt_variant=citation query='check for security vulnerabilities' retriever=KeywordRetriever
+  judging: gq-024 — 'debug failing tests'
+2026-05-15 15:53:35 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=3.14 fallback_used=False hit_count=3 prompt_variant=citation query='debug failing tests' retriever=KeywordRetriever
+  judging: gq-025 — 'find stale documentation'
+2026-05-15 15:54:01 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.56 fallback_used=False hit_count=3 prompt_variant=citation query='find stale documentation' retriever=KeywordRetriever
+  judging: gq-026 — 'version bump and changelog'
+2026-05-15 15:54:25 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.84 fallback_used=False hit_count=3 prompt_variant=citation query='version bump and changelog' retriever=KeywordRetriever
+  judging: gq-027 — 'spot risky code changes before merging'
+2026-05-15 15:54:50 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.26 fallback_used=False hit_count=3 prompt_variant=citation query='spot risky code changes before merging' retriever=KeywordRetriever
+  judging: gq-028 — 'architect a new feature'
+2026-05-15 15:55:16 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.26 fallback_used=False hit_count=3 prompt_variant=citation query='architect a new feature' retriever=KeywordRetriever
+  judging: gq-029 — 'improve code quality metrics'
+2026-05-15 15:55:53 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.08 fallback_used=False hit_count=3 prompt_variant=citation query='improve code quality metrics' retriever=KeywordRetriever
+  judging: gq-030 — 'reduce code complexity'
+2026-05-15 15:56:15 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.45 fallback_used=False hit_count=3 prompt_variant=citation query='reduce code complexity' retriever=KeywordRetriever
+  judging: gq-031 — 'my CI pipeline keeps failing'
+2026-05-15 15:56:40 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.93 fallback_used=False hit_count=3 prompt_variant=citation query='my CI pipeline keeps failing' retriever=KeywordRetriever
+  judging: gq-032 — 'SAST scan my repository'
+2026-05-15 15:57:12 [info     ] rag.run                        confidence=0.938 corpus=attune-help elapsed_ms=1.64 fallback_used=False hit_count=3 prompt_variant=citation query='SAST scan my repository' retriever=KeywordRetriever
+  judging: gq-033 — 'add docstrings to all my functions'
+2026-05-15 15:57:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.93 fallback_used=False hit_count=3 prompt_variant=citation query='add docstrings to all my functions' retriever=KeywordRetriever
+  judging: gq-034 — 'manage the documentation pipeline'
+2026-05-15 15:57:51 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.78 fallback_used=False hit_count=3 prompt_variant=citation query='manage the documentation pipeline' retriever=KeywordRetriever
+  judging: gq-035 — 'publish to PyPI'
+2026-05-15 15:58:22 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.41 fallback_used=False hit_count=3 prompt_variant=citation query='publish to PyPI' retriever=KeywordRetriever
+  judging: gq-036 — 'identify which files are most likely to break'
+2026-05-15 15:58:57 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=3.1 fallback_used=False hit_count=3 prompt_variant=citation query='identify which files are most likely to break' retriever=KeywordRetriever
+  judging: gq-037 — 'end-to-end review before merging a PR'
+2026-05-15 15:59:24 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.19 fallback_used=False hit_count=3 prompt_variant=citation query='end-to-end review before merging a PR' retriever=KeywordRetriever
+  judging: gq-038 — 'coordinate documentation updates across the project'
+2026-05-15 15:59:51 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.34 fallback_used=False hit_count=3 prompt_variant=citation query='coordinate documentation updates across the project' retriever=KeywordRetriever
+  judging: gq-039 — 'scope out next sprint tasks'
+2026-05-15 16:00:09 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.05 fallback_used=False hit_count=3 prompt_variant=citation query='scope out next sprint tasks' retriever=KeywordRetriever
+  judging: gq-040 — 'find potential runtime errors before deployment'
+2026-05-15 16:00:37 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.47 fallback_used=False hit_count=3 prompt_variant=citation query='find potential runtime errors before deployment' retriever=KeywordRetriever
+
+Wrote per-query JSON: artifacts/calibration/thinking-2026-05-15-v2.json
+
+Mean faithfulness (thinking on):   0.969
+Refusal rate (thinking on):        0.0%
+Hallucination rate (thinking on):  30.0%
+Citation emit rate (thinking on):  0.0%
+Mean latency (thinking on):        8128 ms
+p95 latency (thinking on):         11622 ms
+
+Metric                      thinking off     thinking on           Δ
+------------------------  --------------  --------------  ----------
+Mean faithfulness                  0.985           0.969      -0.016
+Refusal rate                        0.0%            0.0%       +0.0%
+Hallucination rate                 20.0%           30.0%      +10.0%
+Citation emit rate                  0.0%            0.0%       +0.0%
+Mean latency (ms)                   8030            8128         +98
+p95 latency (ms)                   12315           11622        -693
+
+Per-query verdict comparison (off vs on):
+  id                   score Δ      claims A→B  verdict shift           
+  gq-001                +0.062     16 → 15      score,count,partition   
+  gq-002                -0.071     17 → 14      score,count,partition   
+  gq-003                +0.000     15 → 18      count,partition         
+  gq-004                +0.000     17 → 24      count,partition         
+  gq-005                -0.100     14 → 10      score,count,partition   
+  gq-006                +0.000     18 → 23      count,partition         
+  gq-007                +0.000     14 → 17      count,partition         
+  gq-008                +0.000     24 → 23      count,partition         
+  gq-009                +0.009     10 → 11      score,count,partition   
+  gq-010                -0.048     13 → 21      score,count,partition   
+  gq-011                +0.000     17 → 17      —                       
+  gq-012                +0.000     22 → 27      count,partition         
+  gq-013                -0.008     17 → 15      score,count,partition   
+  gq-014                -0.014     13 → 11      score,count,partition   
+  gq-015                +0.042     24 → 21      score,count,partition   
+  gq-016                +0.000     15 → 15      —                       
+  gq-017                -0.250     10 → 12      score,count,partition   
+  gq-018                +0.000     18 → 18      —                       
+  gq-019                +0.000     18 → 18      —                       
+  gq-020                -0.062     17 → 16      score,count,partition   
+  gq-021                +0.000     17 → 17      —                       
+  gq-022                +0.000     16 → 22      count,partition         
+  gq-023                +0.000     18 → 19      count,partition         
+  gq-024                +0.000     20 → 24      count,partition         
+  gq-025                -0.067      8 → 15      score,count,partition   
+  gq-026                +0.000     19 → 17      count,partition         
+  gq-027                +0.000     19 → 17      count,partition         
+  gq-028                -0.135     19 → 16      score,count,partition   
+  gq-029                +0.000     25 → 19      count,partition         
+  gq-030                +0.000     13 → 13      —                       
+  gq-031                +0.000     18 → 19      count,partition         
+  gq-032                -0.062     15 → 16      score,count,partition   
+  gq-033                +0.000     19 → 11      count,partition         
+  gq-034                -0.016     17 → 15      score,count,partition   
+  gq-035                +0.000     23 → 34      count,partition         
+  gq-036                +0.000     24 → 19      count,partition         
+  gq-037                +0.071     14 → 19      score,count,partition   
+  gq-038                +0.000     16 → 13      count,partition         
+  gq-039                +0.000     15 → 19      count,partition         
+  gq-040                +0.000     18 → 19      count,partition         
+
+Verdict-shift rate: 34/40 = 85.0%
+
+PASS: P@1 ≥ 0.00% and thinking-off faithfulness ≥ 0.000.

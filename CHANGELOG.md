@@ -40,6 +40,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   text or retrieved passages, so the kit surfaces the judge's
   claim lists as a proxy; a follow-up will enrich the JSON.
 
+- **Larger calibration kit (17 queries, v2).** A re-run of
+  `--compare-thinking` against the 40-query golden set on
+  enriched-JSON output (post-#26, with `answer` + `context`
+  embedded per query) produced a fresh artifact at
+  `artifacts/calibration/thinking-2026-05-15-v2.json`. From
+  that, a 17-query labeling kit at
+  `artifacts/calibration/ground-truth-2026-05-15-v2.template.md`
+  (13 highest-shift + 4 controls). Since `answer` and
+  `context` are embedded per query, the kit is now
+  self-contained — no live API calls needed at label time.
+  Surfaced a call-to-call-variance observation worth noting:
+  v2's high-shift set differs significantly from v1's
+  (e.g., gq-017 went from Δ=+0.182 to Δ=−0.250 across the
+  two runs); judge non-determinism means each calibration
+  captures a snapshot, not ground truth itself. See
+  `docs/rag/faithfulness-thinking-calibration.md`.
+
 - **Ground-truth validation of the v0.1.15 calibration.**
   Patrick labeled the 8-query kit interactively under a strict
   lens; results are committed at
