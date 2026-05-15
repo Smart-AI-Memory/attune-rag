@@ -199,6 +199,67 @@ The first kit for the 2026-05-15 run is committed at
 [`artifacts/calibration/ground-truth-2026-05-15.template.md`](../../artifacts/calibration/ground-truth-2026-05-15.template.md)
 and covers 8 queries (5 highest-shift + 3 controls).
 
+## Ground-truth validation results (2026-05-15)
+
+Patrick labeled the 8-query kit interactively under a **strict
+lens** ("editorial framing or synthesis beyond what the passage
+literally says counts as unsupported"). Labels live at
+[`artifacts/calibration/ground-truth-2026-05-15.md`](../../artifacts/calibration/ground-truth-2026-05-15.md).
+
+| ID                  | Label | Off    | On     | Δoff   | Δon    | Closer |
+| ------------------- | ----: | -----: | -----: | -----: | -----: | :----: |
+| gq-017 (shift)      | 0.95  | 0.818  | 1.000  | 0.132  | 0.050  | on     |
+| gq-015 (shift)      | 1.00  | 1.000  | 0.900  | 0.000  | 0.100  | off    |
+| gq-038 (shift)      | 0.85  | 0.909  | 0.824  | 0.059  | 0.026  | on     |
+| gq-030 (shift)      | 0.85  | 0.917  | 1.000  | 0.067  | 0.150  | off    |
+| gq-008 (shift)      | 1.00  | 1.000  | 0.920  | 0.000  | 0.080  | off    |
+| gq-003 (control)    | 1.00  | 1.000  | 1.000  | 0.000  | 0.000  | tied   |
+| gq-007 (control)    | 1.00  | 1.000  | 1.000  | 0.000  | 0.000  | tied   |
+| gq-009 (control)    | 1.00  | 1.000  | 1.000  | 0.000  | 0.000  | tied   |
+
+| Aggregate alignment | Count | % of 8 |
+| ------------------- | ----: | -----: |
+| Off-closer          |     3 |   38 % |
+| On-closer           |     2 |   25 % |
+| Tied                |     3 |   38 % (all controls) |
+
+### What the data says
+
+Among the 5 high-shift queries (where the two judges disagreed,
+forcing human input to break the tie):
+
+- **Off won 3** (gq-015, gq-008, gq-030) by *not* phantom-flagging
+  claims that weren't in the answer (gq-015, gq-008) and by
+  catching a genuine editorial leap that on missed (gq-030).
+- **On won 2** (gq-017, gq-038) by being more aggressive about
+  flagging real editorial framing in gq-038 and by being less
+  paranoid about a direct paraphrase in gq-017.
+- The 3 tied controls confirm both judges are reliable when the
+  answer is straightforwardly grounded.
+
+### Phantom-claim pattern observed
+
+Three of judge-on's flagged "unsupported" claims (one each in
+gq-015, gq-008, gq-038) **did not literally appear in the
+answer text** — judge-on appears to paraphrase the answer into
+slightly more specific or assertive claims, then flag its own
+paraphrases. This is a systematic behavior worth tracking; it
+inflates the "verdict-shift rate" without inflating accuracy.
+
+### Decision: B confirmed empirically
+
+The original calibration landed at Option **B** (keep
+`--thinking` opt-in) without ground truth, on the grounds that
+the available proxies (mean score, hallucination rate)
+all pointed the wrong way. With ground truth: B is *still* the
+call, now with empirical backing rather than absence of
+evidence. Off-closer beats on-closer by 1 query on a sample of
+5, and judge-on's phantom-claim habit is a real cost that
+shows up in the wins-vs-losses ledger.
+
+A larger labeled subset (~20 queries) could shift the
+conclusion. For now, no default-flip.
+
 ### Known gap
 
 The calibration JSON artifact does not currently capture the
