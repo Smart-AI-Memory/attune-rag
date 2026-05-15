@@ -1,44 +1,58 @@
 ---
 type: concept
+name: pipeline-concept
 feature: pipeline
 depth: concept
-generated_at: 2026-04-23T03:32:40.577127+00:00
-source_hash: 65f24abb9bb5f4301d29cbd0c7d716a93bfe027e33389ceb15135635b6d7a679
+generated_at: 2026-05-15T20:01:28.739702+00:00
+source_hash: f5cc845ee3957a76674338c9a162ce4a86e404c42291f721ed77a3b4c3b27569
 status: generated
 ---
 
 # Pipeline
 
-## What
+`RagPipeline` is an LLM-agnostic orchestrator that takes a query, retrieves relevant context from a corpus, assembles a grounded prompt, and optionally calls an LLM — all in a single method call.
 
-The pipeline is a RAG (Retrieval-Augmented Generation) orchestrator that connects your corpus, retrieval system, and LLM in a single call. You provide a query, and it returns both an answer and full provenance showing exactly which sources informed the response.
+## How the pieces fit together
 
-## How it works
+A pipeline run flows through four cooperating components:
 
-When you call `RagPipeline.run()`, the system follows this flow:
+| Component | Role |
+|-----------|------|
+| **Corpus** (`CorpusProtocol`) | Stores the documents to search |
+| **Retriever** (`RetrieverProtocol`) | Selects the most relevant passages for a query |
+| **Prompt builder** | Assembles the retrieved context and query into a prompt variant |
+| **LLM provider** | Generates a response (only required for `run_and_generate`) |
 
-1. **Retrieve** relevant passages from your corpus using the configured retriever
-2. **Augment** your original query by injecting the retrieved context into a prompt template
-3. **Generate** citations and confidence scores based on source relevance
-4. **Package** everything into a `RagResult` with the final prompt, citation details, and timing metadata
+You wire these together when you construct `RagPipeline`, then call `run()` or `run_and_generate()` to execute the full sequence. Optional components — `QueryExpander` and `LLMReranker` — slot in between retrieval and prompt assembly to broaden or reorder results before the prompt is built.
 
-The pipeline is LLM-agnostic — it prepares the augmented prompt but doesn't call the language model itself. Use `run_and_generate()` if you want the LLM call included.
+## `RagPipeline` — the orchestrator
 
-## Core components
+`RagPipeline.__init__` accepts a corpus, retriever, expander, and reranker, all optional so you can start with defaults and add components incrementally.
 
-**RagPipeline** — The orchestrator class that coordinates retrieval and prompt building. Initialize it with a corpus (your knowledge base) and retriever (your search strategy).
+Two execution paths are available:
 
-**RagResult** — The output containing everything you need: the augmented prompt ready for your LLM, citation records for transparency, confidence scores, and performance timing.
+- **`run(query, k, prompt_variant)`** — retrieves `k` passages, builds an augmented prompt, and returns a `RagResult` without calling any LLM. Use this when you supply your own LLM or want to inspect the prompt before generation.
+- **`run_and_generate(query, provider, ...)`** — does everything `run` does, then calls the specified `LLMProvider` and returns both the generated text and the `RagResult`.
 
-## Fallback behavior
+If no relevant context is found in the corpus, the pipeline substitutes a fallback prompt that instructs the LLM to answer honestly rather than invent information.
 
-When the retriever finds no relevant context for a query, the pipeline switches to `FALLBACK_PROMPT_TEMPLATE`. This template instructs the LLM to answer honestly about what it knows without inventing project-specific details. The `RagResult.fallback_used` field tells you when this happened.
+## `RagResult` — the output record
 
-## Integration points
+Every `run()` call returns a `RagResult` dataclass. Its fields give you the full picture of what happened:
 
-The pipeline connects to other attune components through two protocols:
+| Field | Type | What it tells you |
+|-------|------|-------------------|
+| `augmented_prompt` | `str` | The exact prompt sent to the LLM |
+| `citation` | `CitationRecord` | Provenance for the retrieved context |
+| `confidence` | `float` | Retrieval confidence score |
+| `fallback_used` | `bool` | Whether the corpus returned no usable context |
+| `elapsed_ms` | `float` | Wall-clock time for the full run |
+| `context` | `str` | The raw retrieved context |
+| `claim_citations` | `tuple[ClaimCitation, ...]` | Per-claim source attribution |
+| `used_native_citations` | `bool` | Whether the LLM's own citation format was used |
 
-- **CorpusProtocol** — Your knowledge base (like `DirectoryCorpus` for file-based sources)
-- **RetrieverProtocol** — Your search strategy (like `KeywordRetriever` for text matching)
+`fallback_used: True` is a useful signal in production: it means the query fell outside the corpus's scope and the answer came from the model's weights rather than your documents.
 
-This design lets you swap corpus types or retrieval algorithms without changing pipeline code.
+## When the pipeline matters
+
+Use `RagPipeline` whenever you need retrieval-augmented answers with traceable provenance. The citation fields on `RagResult` let you show users exactly which source passages informed each answer — something a plain LLM call cannot provide.

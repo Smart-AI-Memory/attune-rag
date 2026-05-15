@@ -1,44 +1,52 @@
 ---
 type: concept
+name: prompts-concept
 feature: prompts
 depth: concept
-generated_at: 2026-04-23T03:34:27.946399+00:00
-source_hash: 3c35e8e0b30791a15e2c36afa2edf13ea407da219b38803d3325fc50b9980c18
+generated_at: 2026-05-15T20:02:27.251670+00:00
+source_hash: eb6d61656b11230b111f643d8856103251dedb5b5d717c16d6107954b12867f6
 status: generated
 ---
 
 # Prompts
 
-The prompts module assembles LLM prompts by combining user queries with retrieved documentation passages as grounding context.
+The `prompts` module assembles the final text that attune-rag sends to an LLM — combining a user query, retrieved documentation passages, and a prompt variant into a single, grounded request.
 
 ## How prompt assembly works
 
-When you ask a question, the system retrieves relevant documentation and packages it with your query into a structured prompt that helps the LLM give accurate, grounded answers.
+When you call `build_augmented_prompt(query, context, variant)`, the module takes three inputs and renders them into one prompt string:
 
-The process has two stages:
+1. **The query** — a non-empty string representing what the user asked. Passing an empty string raises a `ValueError`.
+2. **The context** — a block of retrieved passages produced by `join_context()` or `join_context_numbered()`, wrapped in sentinel tags so the LLM can distinguish documentation from instructions.
+3. **The variant** — a named prompt style (such as `baseline`, `citation`, or `grounded`). Passing an unrecognised variant raises a `ValueError` listing the valid options.
 
-1. **Context preparation** — Retrieved passages are wrapped in `<passage>` tags with injection defense to prevent prompt manipulation
-2. **Prompt assembly** — Your query and the prepared context are combined using one of three prompt variants: baseline, citation, or grounded
+The context block itself is built by one of two helpers:
 
-## Context formatting
+- `join_context()` wraps each retrieved hit in `<passage>...</passage>` tags and concatenates them up to a character limit (`DEFAULT_MAX_CONTEXT_CHARS`). Use this when you need a clean, unmarked block.
+- `join_context_numbered()` does the same but labels each passage `[P1]`, `[P2]`, and so on. Use this when the prompt variant needs the LLM to cite specific passages by number.
 
-The module provides two ways to format retrieved content:
+Both helpers accept an optional `CorpusProtocol` to resolve hit contents, and both silently stop adding passages once the character budget is reached.
 
-- **`join_context()`** wraps each passage in `<passage>` tags with separator spacing
-- **`join_context_numbered()`** adds reference numbers like `[P1]`, `[P2]` for citation-style responses
+## Injection defense
 
-Both functions respect character limits (configurable via `max_chars`) and include injection defense clauses that instruct the LLM to treat passage content as documentation, not as commands.
+Every assembled context block carries `_INJECTION_DEFENSE_CLAUSE` — a standing instruction that tells the LLM to treat anything inside `<passage>...</passage>` tags as retrieved documentation, never as a command. This means even if a retrieved document contains text that looks like a system message or an attempt to break out of the wrapper, the LLM is instructed to read it as content about that technique, not as a directive to follow.
 
-## Prompt variants
+## How the pieces fit together
 
-`build_augmented_prompt()` supports multiple prompt styles through its `variant` parameter:
+```
+user query
+    │
+    ▼
+build_augmented_prompt(query, context, variant)
+    │                        │
+    │              join_context()          ← plain sentinel-wrapped passages
+    │              join_context_numbered() ← [P1]/[P2]-labelled passages
+    │                        │
+    │              <passage>...</passage> blocks
+    │              + _INJECTION_DEFENSE_CLAUSE
+    │
+    ▼
+rendered prompt string → LLM
+```
 
-- **baseline** — Standard question-answering format
-- **citation** — Includes instructions for citing sources with reference numbers
-- **grounded** — Emphasizes staying within the provided documentation
-
-The function validates that queries are non-empty strings and throws a `ValueError` for unknown variants.
-
-## Security considerations
-
-All context formatting includes an injection defense clause that explicitly tells the LLM to ignore any text within passage tags that looks like instructions or system messages. This prevents retrieved documentation from manipulating the LLM's behavior.
+The variant controls which prompt template wraps the query and context. Choosing `citation` or `grounded` (versus `baseline`) changes the instructions the LLM receives, but the context-assembly step is the same regardless of variant.

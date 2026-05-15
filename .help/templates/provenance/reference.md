@@ -1,44 +1,65 @@
 ---
 type: reference
+name: provenance-reference
 feature: provenance
 depth: reference
-generated_at: 2026-04-23T03:35:22.361999+00:00
-source_hash: b73a1160ff46834c79ea6e86a93d74f6cf038d000d9ddef76a85565d587b7310
+generated_at: 2026-05-15T20:02:41.245136+00:00
+source_hash: 2ad01dedc91108386ca6445b49decedb0fa3b58762c00286b0a0e45fed8409a7
 status: generated
 ---
 
 # Provenance reference
 
-Record and format citation data for RAG pipeline traceability. Track query provenance with source attribution and render citations as markdown.
+Record and render citation provenance for RAG pipeline runs. `CitationRecord` and `CitedSource` capture which corpus entries grounded each answer; `ClaimCitation` tracks individual claim-level citations from the Anthropic Citations API; the formatting functions render provenance as markdown for display.
 
 ## Classes
 
 | Class | Description |
 |-------|-------------|
-| `CitedSource` | A single cited source within a CitationRecord |
-| `CitationRecord` | Provenance for a single RAG pipeline run |
+| `ClaimCitation` | One claim-level citation produced by the Anthropic Citations API. |
+| `CitedSource` | A single cited source within a `CitationRecord`. |
+| `CitationRecord` | Provenance for a single RAG pipeline run. |
 
-### CitedSource
+### `ClaimCitation` fields
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `template_path` | `str` | | Path to the source template |
-| `category` | `str` | | Classification of the source type |
-| `score` | `float` | | Relevance score from retrieval |
-| `excerpt` | `str \| None` | `None` | Optional text snippet from the source |
+| Field | Type | Default |
+|-------|------|---------|
+| `response_span` | `tuple[int, int]` | |
+| `document_index` | `int` | |
+| `document_title` | `str` | |
+| `cited_text` | `str` | |
+| `cited_block_index` | `int` | `0` |
 
-### CitationRecord
+### `CitedSource` fields
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `query` | `str` | | The original user query |
-| `hits` | `tuple[CitedSource, ...]` | | Retrieved sources for this query |
-| `retrieved_at` | `datetime` | | Timestamp of the retrieval |
-| `retriever_name` | `str` | | Identifier of the retrieval system used |
+| Field | Type | Default |
+|-------|------|---------|
+| `template_path` | `str` | |
+| `category` | `str` | |
+| `score` | `float` | |
+| `excerpt` | `str | None` | `None` |
+
+### `CitationRecord` fields
+
+| Field | Type | Default |
+|-------|------|---------|
+| `query` | `str` | |
+| `hits` | `tuple[CitedSource, ...]` | |
+| `retrieved_at` | `datetime` | |
+| `retriever_name` | `str` | |
 
 ## Functions
 
 | Function | Parameters | Returns | Description |
 |----------|------------|---------|-------------|
-| `format_citations_markdown` | `record: CitationRecord`, `base_url: str \| None = None` | `str` | Render a CitationRecord as a markdown section |
-| `build_citation_record` | `query: str`, `hits: Iterable`, `retriever_name: str`, `retrieved_at: datetime`, `excerpt_chars: int = 200` | `CitationRecord` | Convert RetrievalHit objects into a CitationRecord |
+| `format_citations_markdown` | `record: CitationRecord, base_url: str | None = None` | `str` | Render a `CitationRecord` as a markdown section. |
+| `format_claim_citations_markdown` | `text: str, citations: Iterable[ClaimCitation], base_url: str | None = None` | `str` | Render response text with footnote-style claim citations. |
+| `build_citation_record` | `query: str, hits: Iterable, retriever_name: str, retrieved_at: datetime, excerpt_chars: int = 200` | `CitationRecord` | Convert `RetrievalHit` objects into a `CitationRecord`. |
+
+## Source files
+
+- `src/attune_rag/provenance.py`
+
+## Tags
+
+`provenance`, `citations`, `traceability`

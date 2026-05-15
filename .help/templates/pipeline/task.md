@@ -1,97 +1,121 @@
 ---
 type: task
+name: pipeline-task
 feature: pipeline
 depth: task
-generated_at: 2026-04-23T03:32:53.260013+00:00
-source_hash: 65f24abb9bb5f4301d29cbd0c7d716a93bfe027e33389ceb15135635b6d7a679
+generated_at: 2026-05-15T20:01:28.744228+00:00
+source_hash: f5cc845ee3957a76674338c9a162ce4a86e404c42291f721ed77a3b4c3b27569
 status: generated
 ---
 
-# Work with pipeline
+# Work with the RAG pipeline
 
-Use RagPipeline when you need to combine document retrieval, prompt augmentation, and LLM generation into a single workflow with built-in citation tracking.
+Use `RagPipeline` when you want to run retrieval, prompt assembly, and LLM generation in a single call and receive a structured `RagResult` containing the answer, confidence score, and citation provenance.
 
 ## Prerequisites
 
-- Access to a corpus (CorpusProtocol implementation)
-- A retriever (RetrieverProtocol implementation)
-- An LLM provider for text generation (optional)
+- Read access to `src/attune_rag/pipeline.py` and `src/attune_rag/__init__.py`
+- A configured corpus that implements `CorpusProtocol`
 
-## Set up the pipeline
+## Run a basic query
 
-1. **Initialize RagPipeline with your components:**
+1. **Import `RagPipeline` and instantiate it** with your corpus:
+
    ```python
-   from attune_rag import RagPipeline, DirectoryCorpus, KeywordRetriever
+   from attune_rag import RagPipeline, DirectoryCorpus
 
-   corpus = DirectoryCorpus("./docs")
-   retriever = KeywordRetriever()
-   pipeline = RagPipeline(corpus=corpus, retriever=retriever)
+   corpus = DirectoryCorpus("path/to/docs")
+   pipeline = RagPipeline(corpus=corpus)
    ```
 
-2. **Run retrieval and prompt assembly:**
+2. **Call `pipeline.run()`** with your query:
+
    ```python
-   result = pipeline.run(
-       query="How do I configure authentication?",
-       k=3,  # number of documents to retrieve
-       prompt_variant="citation"  # or other available variants
-   )
+   result = pipeline.run(query="What is the retention policy?", k=3)
    ```
 
-3. **Access the results:**
-   ```python
-   print(f"Augmented prompt: {result.augmented_prompt}")
-   print(f"Citation: {result.citation}")
-   print(f"Confidence: {result.confidence}")
-   print(f"Fallback used: {result.fallback_used}")
-   ```
+   `run()` returns a `RagResult`. The fields you'll use most often are:
 
-## Generate responses with an LLM
+   | Field | Type | Contains |
+   |---|---|---|
+   | `augmented_prompt` | `str` | The prompt sent to the LLM |
+   | `citation` | `CitationRecord` | Source provenance for the answer |
+   | `confidence` | `float` | Retrieval confidence score |
+   | `fallback_used` | `bool` | `True` if no grounding context was found |
+   | `context` | `str` | Retrieved context passages |
+   | `elapsed_ms` | `float` | Total wall-clock time for the call |
 
-1. **Run the full pipeline with text generation:**
-   ```python
-   response, rag_result = pipeline.run_and_generate(
-       query="How do I configure authentication?",
-       provider="openai",  # or your LLM provider
-       model="gpt-4",
-       max_tokens=2048
-   )
-   ```
+3. **Check `fallback_used`** before trusting the answer:
 
-2. **Handle fallback scenarios:**
    ```python
-   if rag_result.fallback_used:
-       print("No relevant context found - LLM answered from general knowledge")
+   if result.fallback_used:
+       print("No grounding context found — answer may be speculative.")
    else:
-       print(f"Answer grounded in {len(rag_result.context)} characters of context")
+       print(result.augmented_prompt)
+       print(result.citation)
    ```
 
-## Extend pipeline behavior
+## Run retrieval and generation together
 
-1. **Create a custom pipeline subclass:**
+If you want the pipeline to call an LLM and return the generated text alongside the `RagResult`, use `run_and_generate()` instead:
+
+```python
+text, result = pipeline.run_and_generate(
+    query="Summarise the onboarding process",
+    provider="openai",
+    k=3,
+    model="gpt-4o",
+    max_tokens=512,
+    prompt_variant="citation",
+)
+print(text)
+print(result.claim_citations)
+```
+
+Pass `use_native_citations=True` to let the LLM provider handle citation formatting natively; `result.used_native_citations` will reflect whether that path was taken.
+
+## Extend the pipeline
+
+1. **Add an expander or reranker** by passing them to the constructor:
+
    ```python
-   class CustomRagPipeline(RagPipeline):
-       def run(self, query: str, k: int = 3, prompt_variant: str = 'citation') -> RagResult:
-           # Add custom preprocessing
-           processed_query = self._preprocess_query(query)
-           return super().run(processed_query, k, prompt_variant)
+   from attune_rag import QueryExpander, LLMReranker
+
+   pipeline = RagPipeline(
+       corpus=corpus,
+       expander=QueryExpander(),
+       reranker=LLMReranker(),
+   )
    ```
 
-2. **Add custom prompt variants:**
+   `RagPipeline.__init__` accepts `corpus`, `retriever`, `expander`, and `reranker` — all optional.
+
+2. **Swap the retriever** if the default `KeywordRetriever` does not suit your corpus. Pass any object that implements `RetrieverProtocol`:
+
    ```python
-   # Check available variants
-   from attune_rag import PROMPT_VARIANTS
-   print(PROMPT_VARIANTS.keys())
+   pipeline = RagPipeline(corpus=corpus, retriever=my_custom_retriever)
    ```
 
-## Verify pipeline setup
+3. **Run the pipeline tests** to verify your changes:
 
-Run a test query and confirm you receive a RagResult with:
-- Non-empty `augmented_prompt`
-- Valid `citation` with source information
-- Confidence score between 0 and 1
-- Reasonable `elapsed_ms` timing
+   ```bash
+   pytest -k "pipeline"
+   ```
+
+## Verify success
+
+After calling `pipeline.run()`, confirm all of the following:
+
+- `result.augmented_prompt` is a non-empty string
+- `result.confidence` is greater than `0.0`
+- `result.fallback_used` is `False` (for a query your corpus covers)
+- `result.elapsed_ms` is a positive number
+
+If `result.fallback_used` is `True` for a query you expect the corpus to answer, check that your `DirectoryCorpus` path points to the correct documents and that `k` is large enough to retrieve relevant passages.
 
 ## Key files
 
-- `src/attune_rag/pipeline.py` — Core RagPipeline and RagResult classes
-- `src/attune_rag/__init__.py` — Public API exports
+| File | Purpose |
+|---|---|
+| `src/attune_rag/pipeline.py` | `RagPipeline` and `RagResult` definitions |
+| `src/attune_rag/__init__.py` | Public exports including all pipeline symbols |

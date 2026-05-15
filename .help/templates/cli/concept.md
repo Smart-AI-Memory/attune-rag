@@ -1,39 +1,43 @@
 ---
 type: concept
+name: cli-concept
 feature: cli
 depth: concept
-generated_at: 2026-04-23T03:36:55.162724+00:00
-source_hash: dd67ed58271857e52c84068665bf3e4f498258f5607603a6e6df7dac8dfc63fe
+generated_at: 2026-05-15T20:03:28.191523+00:00
+source_hash: 96db3d6bf557349fb1cbc8ae947bdd3fa30475c1926eb4172b0875e533ece578
 status: generated
 ---
 
 # CLI
 
-## What it is
+The `attune-rag` command-line interface is a debugging entry point that lets you run retrieval-augmented generation queries and inspect corpus state directly from your terminal.
 
-The CLI is attune-rag's command-line interface for debugging retrieval operations directly from the terminal.
+## Two commands, two purposes
 
-## Core commands
+The CLI exposes two subcommands:
 
-The CLI provides two main commands:
+- **`attune-rag query`** — runs a RAG query against the corpus and prints the grounded answer with citations.
+- **`attune-rag corpus-info`** — displays corpus statistics, useful for verifying that your corpus is populated and healthy before running queries.
 
-- **`attune-rag query`** — Runs a RAG query and prints the grounded answer with citations
-- **`attune-rag corpus-info`** — Shows statistics about the current corpus
+These commands exist specifically for debugging retrieval. If a query returns unexpected results, `corpus-info` lets you check the corpus state without writing any code.
 
-## How it works
+## How the pieces fit together
 
-The CLI module acts as the command-line entry point for debugging retrieval without running the full application. When you invoke `attune-rag`, the system:
+Two functions in `src/attune_rag/cli.py` wire everything together:
 
-1. **Parses arguments** using `build_parser()` to set up the command structure
-2. **Routes commands** through `main()` to execute the requested operation
-3. **Returns results** directly to stdout for immediate inspection
+| Function | Role |
+|---|---|
+| `build_parser()` | Constructs the `argparse.ArgumentParser` — defines the `query` and `corpus-info` subcommands and their arguments. |
+| `main(argv)` | The executable entry point. Accepts an optional argument list (defaults to `sys.argv`), delegates to the appropriate subcommand, and returns an integer exit code. |
 
-This design lets you test retrieval behavior, inspect corpus contents, and debug query responses from any terminal session.
+When you run `attune-rag`, the interpreter calls `main()`. `main()` calls `build_parser()` to understand what you typed, then routes to whichever subcommand you invoked.
 
-## When to use it
+## When the CLI matters
 
-Use the CLI when you need to:
-- Test how the RAG system responds to specific queries
-- Check corpus statistics during development
-- Debug retrieval issues without launching the full application
-- Verify that your corpus is properly indexed and accessible
+Use the CLI when you want to:
+
+- Spot-check retrieval quality without writing a Python caller.
+- Confirm corpus statistics after ingestion.
+- Reproduce a query failure in isolation so you can trace it through the retrieval pipeline.
+
+For programmatic access — calling retrieval from your own code — use the underlying Python API directly rather than shelling out to `main()`.
