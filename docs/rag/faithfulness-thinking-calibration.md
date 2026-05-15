@@ -199,6 +199,28 @@ The first kit for the 2026-05-15 run is committed at
 [`artifacts/calibration/ground-truth-2026-05-15.template.md`](../../artifacts/calibration/ground-truth-2026-05-15.template.md)
 and covers 8 queries (5 highest-shift + 3 controls).
 
+A **second, larger kit** built from the enriched-JSON
+re-calibration (post-PR #26, with `answer` + `context`
+embedded per query) lives at
+[`artifacts/calibration/ground-truth-2026-05-15-v2.template.md`](../../artifacts/calibration/ground-truth-2026-05-15-v2.template.md)
+and covers 17 queries (13 highest-shift + 4 controls).
+Source artifact:
+[`artifacts/calibration/thinking-2026-05-15-v2.json`](../../artifacts/calibration/thinking-2026-05-15-v2.json).
+This is the kit to label for the larger ground-truth round
+that would unlock a more statistically meaningful
+default-flip decision.
+
+> **Note on call-to-call variance.** The v2 calibration run
+> picked a noticeably different set of high-shift queries
+> than v1 (e.g., `gq-017` swung Δ=+0.182 in v1 and Δ=−0.250
+> in v2 — opposite directions). That's not a bug; the
+> Anthropic judge is non-deterministic by design. Each
+> calibration run captures a *snapshot* of judge behavior on
+> the golden set, and the kit script picks the highest-signal
+> queries for *that* snapshot. Comparing v1 and v2 directly
+> is reasonable for the 5 controls but not for the shifted
+> set.
+
 ## Ground-truth validation results (2026-05-15)
 
 Patrick labeled the 8-query kit interactively under a **strict
