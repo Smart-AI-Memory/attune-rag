@@ -6,6 +6,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Extended thinking on the faithfulness judge.**
+  `FaithfulnessJudge.score` now accepts keyword-only
+  `use_thinking: bool = False` and
+  `thinking_budget_tokens: int = 32768`. When enabled, the
+  judge sends Anthropic's `thinking={"type": "enabled", ...}`
+  block and swaps `tool_choice` to `"auto"` (required by
+  Anthropic when thinking + tools are used together on Claude 4
+  models). The response parser now prefers `tool_use` blocks
+  (schema-guaranteed happy path) and falls back to JSON-parsing
+  a `text` block only when the model declines the tool. The
+  `_strip_code_fences` helper handles ` ```json ` wrappers in
+  thinking-mode text responses.
+- **`FaithfulnessResult.thinking_used`** — new boolean field
+  (defaults to `False`) surfaces whether the verdict was
+  produced with thinking enabled. Included in `to_dict()`.
+- **`attune-rag-benchmark --thinking`** flag plus
+  `ATTUNE_RAG_FAITHFULNESS_THINKING` env-var default and
+  `ATTUNE_RAG_FAITHFULNESS_THINKING_BUDGET` for budget override.
+  Per-query benchmark output gains a `thinking_used` column.
+
+### Changed
+
+- **`anthropic` SDK floor pinned to `>=0.95,<1.0`** (was
+  `>=0.40.0,<1.0`) across the `[claude]`, `[all]`, and `[dev]`
+  extras. Required for stable extended-thinking + tool-use
+  support on Claude 4 models.
+
 ## [0.1.14] - 2026-05-08
 
 ### Changed
