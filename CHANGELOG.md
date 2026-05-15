@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`attune_rag.__version__` was stale.** Both v0.1.15 and
+  v0.1.16 shipped with `__version__ = "0.1.14"` because the
+  release-prep flow only bumped `pyproject.toml` (the version
+  PyPI uses) and never touched the in-source constant. Synced
+  `__version__` to `0.1.16` and added
+  `tests/unit/test_package_metadata.py` asserting it matches
+  `importlib.metadata.version("attune-rag")` so the next
+  release-prep PR will fail CI if it forgets the bump.
+
 ### Added
 
 - **Calibration ground-truth labeling kit.** Two scripts under
