@@ -165,6 +165,7 @@ async def test_score_faithfulness_passes_thinking_kwargs_to_judge(monkeypatch: A
                 supported_claims = ["x"]
                 unsupported_claims: list[str] = []
                 total_claims = 1
+                reasoning = "stub"
                 thinking_used = kwargs.get("use_thinking", False)
 
             return _Verdict()

@@ -27,6 +27,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `ATTUNE_RAG_FAITHFULNESS_THINKING` env-var default and
   `ATTUNE_RAG_FAITHFULNESS_THINKING_BUDGET` for budget override.
   Per-query benchmark output gains a `thinking_used` column.
+- **`attune-rag-benchmark --compare-thinking`** runs the judge
+  twice (thinking off, thinking on at `--thinking-budget`) and
+  prints a side-by-side aggregate table plus a per-query
+  verdict-shift list. Mutually exclusive with `--thinking` and
+  `--native-citations`. Calibration data lives in
+  `docs/rag/faithfulness-thinking-calibration.md` (resolves
+  [#17](https://github.com/Smart-AI-Memory/attune-rag/issues/17)).
+  Outcome of the 2026-05-15 calibration run: 80 % verdict-shift
+  rate but mean faithfulness barely moves (−0.005) and
+  hallucination rate worsens slightly (+2.5 pp); `--thinking`
+  stays opt-in pending hand-labeled ground-truth queries.
+- **`attune-rag-benchmark --json PATH`** dumps the full
+  structured faithfulness report — including per-query
+  reasoning text and the supported / unsupported claim lists —
+  to a JSON file for offline analysis. Per-query benchmark
+  records also gain `supported_claims`, `unsupported_claims`,
+  `reasoning`, and `latency_ms` fields.
 
 ### Changed
 
