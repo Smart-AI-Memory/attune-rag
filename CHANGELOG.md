@@ -6,6 +6,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Calibration ground-truth labeling kit.** Two scripts under
+  `scripts/`:
+  - `build_calibration_labeling_kit.py` picks N queries from a
+    `--compare-thinking --json` artifact (largest shifts + a
+    few unchanged controls) and emits a markdown labeling
+    template.
+  - `score_against_ground_truth.py` reads the labeled markdown
+    plus the artifact and reports which judge pass (off / on)
+    aligned more closely with the human labels — the empirical
+    signal that gates a future `--thinking` default-flip
+    decision.
+
+  Workflow documented in
+  `docs/rag/faithfulness-thinking-calibration.md`. First kit
+  for the 2026-05-15 run is committed at
+  `artifacts/calibration/ground-truth-2026-05-15.template.md`
+  (8 queries: 5 highest-shift + 3 controls). Known gap: the
+  benchmark JSON doesn't yet capture the generator's answer
+  text or retrieved passages, so the kit surfaces the judge's
+  claim lists as a proxy; a follow-up will enrich the JSON.
+
 ## [0.1.16] - 2026-05-15
 
 ### Added

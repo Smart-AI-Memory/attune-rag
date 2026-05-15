@@ -162,7 +162,53 @@ repeat. The next step that *would* unlock a default-flip
 decision is a hand-labeled ground-truth subset of the golden
 queries (5–10 queries with expert-judged supported /
 unsupported claim lists), then re-running this calibration
-against those labels. That's a separate ticket.
+against those labels. **See the labeling-kit workflow below.**
+
+## Labeling workflow
+
+Two scripts under `scripts/` close the loop between this
+calibration and a real ground-truth-anchored decision:
+
+1. **`build_calibration_labeling_kit.py`** picks N queries from
+   the JSON artifact — biased toward queries where the two
+   judge passes disagree the most, plus a few unchanged
+   queries as controls — and emits a markdown file with one
+   labeling section per query.
+2. **`score_against_ground_truth.py`** reads the labeled
+   markdown plus the original artifact and reports which judge
+   pass (off / on) aligned more closely with the human labels.
+
+```bash
+# 1. Generate the labeling kit:
+python scripts/build_calibration_labeling_kit.py \
+  --artifact artifacts/calibration/thinking-2026-05-15.json \
+  --out     artifacts/calibration/ground-truth-2026-05-15.template.md \
+  --n-shifted 5 --n-controls 3
+
+# 2. Hand-edit the template: fill in `verdict` and
+#    `faithfulness_score` (0.0–1.0) in each YAML block, save
+#    as ground-truth-2026-05-15.md (drop ".template").
+
+# 3. Score:
+python scripts/score_against_ground_truth.py \
+  --labels   artifacts/calibration/ground-truth-2026-05-15.md \
+  --artifact artifacts/calibration/thinking-2026-05-15.json
+```
+
+The first kit for the 2026-05-15 run is committed at
+[`artifacts/calibration/ground-truth-2026-05-15.template.md`](../../artifacts/calibration/ground-truth-2026-05-15.template.md)
+and covers 8 queries (5 highest-shift + 3 controls).
+
+### Known gap
+
+The calibration JSON artifact does not currently capture the
+generator answer text or the retrieved passages — only the
+judge's verdict on each. To label confidently a labeller needs
+to read the answer + context. The kit currently surfaces the
+judge's identified claims as a proxy. A follow-up should
+extend `_score_faithfulness` in `benchmark.py` to also store
+the answer string and joined-passages string per query so the
+kit can include them. Tracked separately.
 
 ## What ships in v0.1.16
 
