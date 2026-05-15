@@ -164,10 +164,166 @@ def test_apply_detects_drifted_base(trio: Path) -> None:
     assert "[[beta]]" not in gamma_text
 
 
-def test_template_path_rename_is_not_implemented(trio: Path) -> None:
+# -- template_path rename -------------------------------------------
+
+
+def test_template_path_rename_moves_file_and_emits_move(trio: Path) -> None:
+    """Plan returns one FileMove; apply replaces the file at the new path."""
     corpus = DirectoryCorpus(trio)
-    with pytest.raises(NotImplementedError):
-        plan_rename(corpus, "alpha.md", "alpha-renamed.md", kind="template_path")
+    plan = plan_rename(corpus, "alpha.md", "alpha-renamed.md", kind="template_path")
+    assert plan.kind == "template_path"
+    assert len(plan.moves) == 1
+    move = plan.moves[0]
+    assert move.old_path == "alpha.md"
+    assert move.new_path == "alpha-renamed.md"
+    assert plan.edits == []  # no sidecar in this fixture
+
+    written = apply_rename(corpus, plan)
+    assert "alpha-renamed.md" in written
+    assert (trio / "alpha-renamed.md").is_file()
+    assert not (trio / "alpha.md").exists()
+
+    # Corpus indexes reflect the new path.
+    paths = set(corpus.path_index)
+    assert "alpha-renamed.md" in paths
+    assert "alpha.md" not in paths
+    # The alias still belongs to the renamed template.
+    assert corpus.alias_index["a"]["template_path"] == "alpha-renamed.md"
+
+
+def test_template_path_rename_into_new_subdir(trio: Path) -> None:
+    """Apply creates missing parent directories of the target path."""
+    corpus = DirectoryCorpus(trio)
+    plan = plan_rename(corpus, "alpha.md", "concepts/alpha.md", kind="template_path")
+    apply_rename(corpus, plan)
+    assert (trio / "concepts" / "alpha.md").is_file()
+    assert not (trio / "alpha.md").exists()
+
+
+def test_template_path_rename_rejects_existing_target(trio: Path) -> None:
+    """Collide with an existing file at the new path."""
+    corpus = DirectoryCorpus(trio)
+    with pytest.raises(RenameCollisionError) as exc:
+        plan_rename(corpus, "alpha.md", "gamma.md", kind="template_path")
+    err = exc.value
+    assert err.name == "gamma.md"
+    assert err.owning_path == "gamma.md"
+
+
+def test_template_path_rename_to_same_path_is_noop(trio: Path) -> None:
+    corpus = DirectoryCorpus(trio)
+    plan = plan_rename(corpus, "alpha.md", "alpha.md", kind="template_path")
+    assert plan.moves == []
+    assert plan.edits == []
+    assert apply_rename(corpus, plan) == []
+
+
+def test_template_path_rename_rejects_escape(trio: Path) -> None:
+    """Reject ``..`` walks that point outside the corpus root."""
+    corpus = DirectoryCorpus(trio)
+    with pytest.raises(ValueError, match="escapes corpus root"):
+        plan_rename(corpus, "alpha.md", "../escapee.md", kind="template_path")
+
+
+def test_template_path_rename_rejects_missing_source(trio: Path) -> None:
+    corpus = DirectoryCorpus(trio)
+    from attune_rag.editor import RenameError
+
+    with pytest.raises(RenameError, match="Source template does not exist"):
+        plan_rename(corpus, "no-such.md", "elsewhere.md", kind="template_path")
+
+
+def test_template_path_rename_updates_summaries_sidecar(trio: Path) -> None:
+    """``summaries.json`` entry gets its key renamed; other keys preserved."""
+    import json as _json
+
+    sidecar = trio / "summaries.json"
+    sidecar.write_text(
+        _json.dumps(
+            {
+                "alpha.md": "Alpha summary.",
+                "gamma.md": "Gamma summary.",
+            },
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    corpus = DirectoryCorpus(trio, summaries_file="summaries.json")
+    plan = plan_rename(corpus, "alpha.md", "alpha-renamed.md", kind="template_path")
+    sidecar_edit = next(e for e in plan.edits if e.path == "summaries.json")
+    assert "alpha-renamed.md" in sidecar_edit.new_text
+    assert "alpha.md" not in sidecar_edit.new_text.split("alpha-renamed.md")[0]
+    assert "Gamma summary." in sidecar_edit.new_text  # untouched
+
+    apply_rename(corpus, plan)
+    on_disk = _json.loads((trio / "summaries.json").read_text(encoding="utf-8"))
+    assert "alpha-renamed.md" in on_disk
+    assert "alpha.md" not in on_disk
+    assert on_disk["gamma.md"] == "Gamma summary."
+
+
+def test_template_path_rename_no_sidecar_is_not_an_error(trio: Path) -> None:
+    """Missing summaries.json is normal; planning still succeeds."""
+    corpus = DirectoryCorpus(trio)
+    plan = plan_rename(corpus, "alpha.md", "alpha-renamed.md", kind="template_path")
+    assert plan.edits == []  # no sidecar to update
+    apply_rename(corpus, plan)
+    assert (trio / "alpha-renamed.md").is_file()
+
+
+def test_template_path_rename_rolls_back_when_target_appears_late(
+    trio: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """If the target appears between plan and apply, raise and leave source intact.
+
+    Simulates a TOCTOU window: planning sees the target as free, then
+    another process creates the file before apply. apply_rename's
+    re-check should catch it and not move the source.
+    """
+    corpus = DirectoryCorpus(trio)
+    plan = plan_rename(corpus, "alpha.md", "alpha-renamed.md", kind="template_path")
+
+    # Drift: someone else writes the target between plan and apply.
+    (trio / "alpha-renamed.md").write_text("intruder", encoding="utf-8")
+
+    with pytest.raises(RenameCollisionError):
+        apply_rename(corpus, plan)
+    # Source preserved.
+    assert (trio / "alpha.md").is_file()
+    # Intruder preserved.
+    assert (trio / "alpha-renamed.md").read_text(encoding="utf-8") == "intruder"
+
+
+def test_template_path_rename_rolls_back_move_when_edit_drifts(trio: Path) -> None:
+    """If a sidecar edit's drift check fails post-move, the move is reversed."""
+    import json as _json
+
+    sidecar = trio / "summaries.json"
+    sidecar.write_text(
+        _json.dumps({"alpha.md": "Alpha summary."}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    corpus = DirectoryCorpus(trio, summaries_file="summaries.json")
+    plan = plan_rename(corpus, "alpha.md", "alpha-renamed.md", kind="template_path")
+
+    # Drift the sidecar contents between plan and apply.
+    sidecar.write_text(
+        _json.dumps({"alpha.md": "Tampered summary."}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    from attune_rag.editor import RenameError
+
+    with pytest.raises(RenameError, match="drifted"):
+        apply_rename(corpus, plan)
+    # Move reversed.
+    assert (trio / "alpha.md").is_file()
+    assert not (trio / "alpha-renamed.md").exists()
+    # Sidecar untouched (still the tampered value).
+    assert "Tampered" in (trio / "summaries.json").read_text(encoding="utf-8")
 
 
 # -- diff structure --------------------------------------------------

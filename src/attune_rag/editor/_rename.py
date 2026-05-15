@@ -9,14 +9,17 @@ Two phases:
   to the original snapshot on partial failure) and refreshes the
   corpus index.
 
-Supported kinds in v1: ``alias`` and ``tag``. ``template_path`` rename
-(moving a file + updating cross-links) is reserved for a follow-up.
+Supported kinds: ``alias`` and ``tag`` (text edits inside other
+templates), and ``template_path`` (move a template file and update
+the path-keyed ``summaries.json`` / ``summaries_by_path.json``
+sidecar entry, if present).
 """
 
 from __future__ import annotations
 
 import difflib
 import hashlib
+import json
 import os
 import re
 import tempfile
@@ -28,6 +31,11 @@ from ._references import ReferenceKind
 
 _FRONTMATTER_RE = re.compile(r"^(---\s*\n)(.*?)(\n---\s*\n)", re.DOTALL)
 _FENCE_RE = re.compile(r"^(```|~~~)")
+
+# Sidecar files we look for in the corpus root when planning a
+# template_path rename. Both have the same flat ``rel_path -> summary``
+# shape; ``summaries_by_path.json`` is the attune-help variant.
+_PATH_KEYED_SIDECARS = ("summaries.json", "summaries_by_path.json")
 _ALIAS_REF_RE = re.compile(r"(?<!\\)\[\[([^\[\]\n]+?)\]\]")
 
 
@@ -79,11 +87,28 @@ class FileEdit:
 
 
 @dataclass(frozen=True)
+class FileMove:
+    """A planned file move (rename of a template's rel-path).
+
+    The text of the file does not change. Sidecar text edits that
+    follow the move (e.g. ``summaries.json``) live in
+    :attr:`RenamePlan.edits`.
+    """
+
+    old_path: str
+    new_path: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"old_path": self.old_path, "new_path": self.new_path}
+
+
+@dataclass(frozen=True)
 class RenamePlan:
     old: str
     new: str
     kind: ReferenceKind
     edits: list[FileEdit] = field(default_factory=list)
+    moves: list[FileMove] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -91,6 +116,7 @@ class RenamePlan:
             "new": self.new,
             "kind": self.kind,
             "edits": [e.to_dict() for e in self.edits],
+            "moves": [m.to_dict() for m in self.moves],
         }
 
 
@@ -112,9 +138,7 @@ def plan_rename(corpus: Any, old: str, new: str, kind: ReferenceKind) -> RenameP
     if kind == "tag":
         return _plan_tag_rename(corpus, old, new)
     if kind == "template_path":
-        raise NotImplementedError(
-            "template_path rename is reserved for a future spec; v1 supports alias + tag."
-        )
+        return _plan_template_path_rename(corpus, old, new)
     raise ValueError(f"Unsupported rename kind: {kind!r}")
 
 
@@ -150,6 +174,86 @@ def _plan_tag_rename(corpus: Any, old: str, new: str) -> RenamePlan:
             continue
         edits.append(_file_edit(path, old_text, new_text))
     return RenamePlan(old=old, new=new, kind="tag", edits=edits)
+
+
+def _plan_template_path_rename(corpus: Any, old: str, new: str) -> RenamePlan:
+    """Plan a template-file move within the corpus root.
+
+    Validates that the new path stays inside the corpus root and that
+    no file already exists at the target. Reads path-keyed sidecars
+    (``summaries.json`` / ``summaries_by_path.json``) in the corpus
+    root and plans key-rename edits when present.
+    """
+    root = _corpus_root(corpus)
+    if root is None:
+        raise RenameError(
+            "Corpus has no resolvable root path; template_path rename is not supported."
+        )
+
+    old_rel = _normalize_corpus_relpath(root, old)
+    new_rel = _normalize_corpus_relpath(root, new)
+
+    source = root / old_rel
+    if not source.is_file():
+        raise RenameError(f"Source template does not exist: {old_rel}")
+
+    target = root / new_rel
+    if target.exists():
+        raise RenameCollisionError(new_rel, owning_path=new_rel)
+
+    move = FileMove(old_path=old_rel, new_path=new_rel)
+    edits = _plan_sidecar_path_rename_edits(root, old_rel, new_rel)
+    return RenamePlan(old=old_rel, new=new_rel, kind="template_path", edits=edits, moves=[move])
+
+
+def _normalize_corpus_relpath(root: Path, raw: str) -> str:
+    """Validate ``raw`` is a non-empty corpus-relative posix path.
+
+    Rejects absolute paths, ``..`` escapes, and empty strings. Returns
+    the cleaned posix-style relative path.
+    """
+    if not raw or not raw.strip():
+        raise ValueError("Empty template path")
+    candidate = Path(raw)
+    if candidate.is_absolute():
+        raise ValueError(f"Template path must be relative to the corpus root: {raw!r}")
+    # Resolve relative to root WITHOUT following symlinks so we can
+    # check containment. ``Path.resolve(strict=False)`` works on
+    # nonexistent targets (we need that — target is a future file).
+    resolved = (root / candidate).resolve(strict=False)
+    try:
+        resolved.relative_to(root.resolve(strict=False))
+    except ValueError as exc:
+        raise ValueError(f"Template path escapes corpus root: {raw!r}") from exc
+    return resolved.relative_to(root.resolve(strict=False)).as_posix()
+
+
+def _plan_sidecar_path_rename_edits(root: Path, old_rel: str, new_rel: str) -> list[FileEdit]:
+    """Build FileEdit entries for path-keyed sidecars that mention ``old_rel``.
+
+    Sidecar files that don't exist, can't be parsed as JSON, or don't
+    contain ``old_rel`` as a top-level key are skipped silently.
+    """
+    edits: list[FileEdit] = []
+    for sidecar in _PATH_KEYED_SIDECARS:
+        sidecar_path = root / sidecar
+        if not sidecar_path.is_file():
+            continue
+        try:
+            old_text = sidecar_path.read_text(encoding="utf-8")
+            data = json.loads(old_text)
+        except (OSError, json.JSONDecodeError):
+            continue
+        if not isinstance(data, dict) or old_rel not in data:
+            continue
+        renamed: dict[str, Any] = {}
+        for key, value in data.items():
+            renamed[new_rel if key == old_rel else key] = value
+        new_text = json.dumps(renamed, indent=2, sort_keys=True) + "\n"
+        if new_text == old_text:
+            continue
+        edits.append(_file_edit(sidecar, old_text, new_text))
+    return edits
 
 
 # -- rewrites -------------------------------------------------------
@@ -322,12 +426,19 @@ def _make_hunk(header: str, lines: list[str], path: str) -> Hunk:
 def apply_rename(corpus: Any, plan: RenamePlan) -> list[str]:
     """Apply ``plan`` to disk and refresh the corpus.
 
-    Returns the list of relative paths that were actually written.
-    Best-effort atomic: each file is staged to a tempfile in the same
-    directory, then renamed into place sequentially. If a later rename
-    fails, earlier files are restored from their in-memory snapshots.
+    Returns the list of relative paths that were actually written or
+    moved. Best-effort atomic:
+
+    - File moves run first via ``os.replace`` (atomic on the same
+      filesystem). Parent directories are created as needed and
+      tracked for rollback.
+    - Text edits are then staged to tempfiles (drift detection runs
+      here) and renamed into place sequentially.
+
+    On any mid-flight failure, prior moves are reversed and prior
+    edits are restored from in-memory snapshots before re-raising.
     """
-    if not plan.edits:
+    if not plan.edits and not plan.moves:
         _refresh_corpus(corpus)
         return []
 
@@ -335,37 +446,113 @@ def apply_rename(corpus: Any, plan: RenamePlan) -> list[str]:
     if root is None:
         raise RenameError("Corpus has no resolvable root path; apply is not supported.")
 
-    staged: list[tuple[Path, Path, str]] = []  # (target, tmp, original_text)
+    # 1) Apply moves first. Track what we did so we can reverse it.
+    applied_moves: list[tuple[Path, Path]] = []  # (source_now_target, was_source)
+    created_dirs: list[Path] = []
     written: list[str] = []
-    for edit in plan.edits:
-        target = root / edit.path
-        if not target.exists():
-            raise RenameError(f"Planned target does not exist: {target}")
-        original = target.read_text(encoding="utf-8")
-        if original != edit.old_text:
-            raise RenameError(f"File {edit.path!r} drifted from the planned base; rebuild plan.")
-        tmp = _stage(target, edit.new_text)
-        staged.append((target, tmp, original))
+    try:
+        for move in plan.moves:
+            source = root / move.old_path
+            target = root / move.new_path
+            if not source.is_file():
+                raise RenameError(f"Move source missing at apply time: {move.old_path}")
+            if target.exists():
+                raise RenameCollisionError(move.new_path, owning_path=move.new_path)
+            created_dirs.extend(_ensure_parents(target, root))
+            try:
+                os.replace(source, target)
+            except OSError as exc:
+                raise RenameError(
+                    f"Failed to move {move.old_path!r} -> {move.new_path!r}: {exc}"
+                ) from exc
+            applied_moves.append((target, source))
+            written.append(move.new_path)
+    except Exception:
+        _undo_moves(applied_moves)
+        _undo_created_dirs(created_dirs)
+        raise
 
-    # Sequential rename; on failure, restore originals from snapshots.
+    # 2) Stage edits + drift-check. On failure here, also reverse moves.
+    staged: list[tuple[Path, Path, str]] = []  # (target, tmp, original_text)
+    try:
+        for edit in plan.edits:
+            target = root / edit.path
+            if not target.exists():
+                raise RenameError(f"Planned target does not exist: {target}")
+            original = target.read_text(encoding="utf-8")
+            if original != edit.old_text:
+                raise RenameError(
+                    f"File {edit.path!r} drifted from the planned base; rebuild plan."
+                )
+            tmp = _stage(target, edit.new_text)
+            staged.append((target, tmp, original))
+    except Exception:
+        for _t, leftover, _o in staged:
+            leftover.unlink(missing_ok=True)
+        _undo_moves(applied_moves)
+        _undo_created_dirs(created_dirs)
+        raise
+
+    # 3) Sequential rename of staged edits. On failure mid-loop,
+    # restore prior edits AND reverse moves.
     for idx, (target, tmp, _original) in enumerate(staged):
         try:
             os.replace(tmp, target)
             written.append(str(target.relative_to(root).as_posix()))
         except OSError:
-            # Restore previously-renamed files from snapshots.
             for prev_target, _prev_tmp, prev_original in staged[:idx]:
                 try:
                     prev_target.write_text(prev_original, encoding="utf-8")
                 except OSError:
                     pass
-            # Clean up untouched tempfiles.
             for _t, leftover, _o in staged[idx:]:
                 leftover.unlink(missing_ok=True)
+            _undo_moves(applied_moves)
+            _undo_created_dirs(created_dirs)
             raise
 
     _refresh_corpus(corpus)
     return written
+
+
+def _ensure_parents(target: Path, root: Path) -> list[Path]:
+    """Create missing parents of ``target`` inside ``root``.
+
+    Returns the directories created, deepest first, so they can be
+    removed on rollback in reverse order.
+    """
+    created: list[Path] = []
+    parent = target.parent
+    chain: list[Path] = []
+    while parent != root and not parent.exists():
+        chain.append(parent)
+        parent = parent.parent
+    # Build from outermost-missing to innermost so mkdir succeeds.
+    for d in reversed(chain):
+        try:
+            d.mkdir(parents=False, exist_ok=False)
+            created.append(d)
+        except FileExistsError:
+            continue
+    return list(reversed(created))
+
+
+def _undo_moves(applied: list[tuple[Path, Path]]) -> None:
+    """Reverse moves recorded by :func:`apply_rename`."""
+    for now_at, was_at in reversed(applied):
+        try:
+            os.replace(now_at, was_at)
+        except OSError:
+            pass
+
+
+def _undo_created_dirs(created: list[Path]) -> None:
+    """Remove directories we created, deepest first, only if empty."""
+    for d in created:
+        try:
+            d.rmdir()
+        except OSError:
+            pass
 
 
 def _stage(target: Path, new_text: str) -> Path:
@@ -408,6 +595,7 @@ def _iter_entries(corpus: Any):
 
 __all__ = [
     "FileEdit",
+    "FileMove",
     "Hunk",
     "RenameCollisionError",
     "RenameError",

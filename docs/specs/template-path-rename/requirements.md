@@ -8,7 +8,7 @@
 
 ## Phase 1: Requirements
 
-**Status**: draft
+**Status**: complete
 
 ### Problem statement
 
@@ -99,27 +99,73 @@ That gap matters because:
 
 ## Phase 2: Design
 
-> Stubbed. Open the design phase before implementation. Key questions
-> to answer:
->
-> 1. What is the canonical list of path-keyed sidecar files inside a
->    corpus root? (`summaries.json` confirmed; check for others.)
-> 2. How does the editor's WS infrastructure handle the path change
->    for the active session — does it close-and-redirect, or does it
->    rebind in-place?
-> 3. Is the "Rename file…" trigger on the chip context menu (where
->    alias/tag rename lives) or in a new command palette entry?
-> 4. Should `apply_rename` for `template_path` require an empty
->    target directory, or only an empty target *file*?
+**Status**: approved (backend only — gui-side deferred)
+
+### Design answers
+
+**Q1 — Canonical path-keyed sidecars.** Only two:
+
+- `summaries.json` (used by `DirectoryCorpus`)
+- `summaries_by_path.json` (the attune-help variant of the same)
+
+Both have flat `rel_path → summary` shape. `cross_links.json` is
+out per the scope section (template-name keyed in the spec; the
+attune-help variant uses a nested layout that isn't a flat
+path-keyed map). No `*-index.json` files written by
+attune-author exist in this repo — that's an attune-author
+concern, out of scope.
+
+**Q2 — WS active-session handling.** Cross-repo (attune-gui).
+The backend emits the new path in the apply response; the gui
+decides whether to close-and-redirect or rebind in-place.
+Tracked separately.
+
+**Q3 — "Rename file…" trigger location.** Cross-repo (attune-gui)
+UX call. No backend implication.
+
+**Q4 — Empty target dir vs. empty target file.** Empty target
+**file** only. Target directory may exist; missing intermediate
+directories are created on apply and tracked for rollback (see
+`_ensure_parents` / `_undo_created_dirs` in
+`src/attune_rag/editor/_rename.py`).
+
+### RenamePlan encoding
+
+`RenamePlan` grows a new field `moves: list[FileMove]` where
+`FileMove(old_path, new_path)`. Text edits (the sidecar key
+rename) live in the existing `edits: list[FileEdit]` field.
+Apply applies moves first, then edits, with rollback on any
+mid-flight failure.
 
 ---
 
 ## Phase 3: Tasks
 
-> Stubbed; fill out after Phase 2 is approved.
+**Status**: complete (in PR linked from CHANGELOG `[Unreleased]`)
+
+1. ✅ `FileMove` dataclass + `RenamePlan.moves` field with
+   `to_dict()` updates.
+2. ✅ `_plan_template_path_rename` — validates corpus-root
+   containment, missing-source, target collision; emits
+   `FileMove` + sidecar `FileEdit`s when present.
+3. ✅ Extended `apply_rename` — moves first with `mkdir -p`
+   + rollback for created dirs; edits second with the existing
+   tempfile + drift-check flow. Failures at either phase reverse
+   prior work.
+4. ✅ Tests in `tests/unit/test_editor_rename.py`:
+   `test_template_path_rename_moves_file_and_emits_move`,
+   `_into_new_subdir`, `_rejects_existing_target`,
+   `_to_same_path_is_noop`, `_rejects_escape`,
+   `_rejects_missing_source`, `_updates_summaries_sidecar`,
+   `_no_sidecar_is_not_an_error`,
+   `_rolls_back_when_target_appears_late`,
+   `_rolls_back_move_when_edit_drifts`.
+5. ✅ `FileMove` exported from `attune_rag.editor`.
 
 ---
 
 ## Phase 4: Implementation
 
-> Not started.
+**Status**: shipped (backend). attune-gui follow-up tracked
+separately for the "Rename file…" trigger + WS path-change
+handling.

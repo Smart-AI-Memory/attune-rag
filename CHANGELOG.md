@@ -44,6 +44,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to a JSON file for offline analysis. Per-query benchmark
   records also gain `supported_claims`, `unsupported_claims`,
   `reasoning`, and `latency_ms` fields.
+- **`plan_rename(..., kind="template_path")`** is now
+  implemented (was `NotImplementedError` in v0.1.15). Moves a
+  template file within its corpus root and updates path-keyed
+  sidecars (`summaries.json` / `summaries_by_path.json`) when
+  present. `RenamePlan` grows a new `moves: list[FileMove]`
+  field and `FileMove(old_path, new_path)` is exported from
+  `attune_rag.editor`. `apply_rename` applies moves first
+  (creating missing parent directories, tracked for rollback)
+  then text edits, reversing prior work on any mid-flight
+  failure. Out of scope: cross-corpus moves, `cross_links.json`
+  updates, attune-help static index, git history. The gui-side
+  "Rename file…" trigger and WS path-change handling live in
+  attune-gui. See `docs/specs/template-path-rename/`.
 
 ### Changed
 
