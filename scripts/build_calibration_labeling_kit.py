@@ -74,17 +74,26 @@ def _format_passages(context: str) -> str:
 def _format_query_block(qid: str, off: dict[str, Any], on: dict[str, Any]) -> str:
     """Render one labeling section for ``qid``.
 
-    NB: the benchmark artifact doesn't currently capture the
-    generator's answer text or the retrieved passages — only the
-    judge's verdict on each. The kit surfaces the judge's claim
-    lists as a proxy. A follow-up should extend the benchmark
-    output so this template can include the actual answer +
-    context. See `docs/rag/faithfulness-thinking-calibration.md`.
+    Embeds the generator's answer text and the retrieved
+    passages when present in the artifact (added in
+    benchmark.py post-2026-05-15). When absent (older
+    artifacts), surfaces a warning instead of the missing
+    fields so the kit still works on legacy data.
     """
     query = off.get("query", "")
+    answer = off.get("answer")
+    context = off.get("context")
+    if answer is None or context is None:
+        body_block = _MD_LEGACY_WARNING
+    else:
+        body_block = _MD_ANSWER_CONTEXT_BLOCK.format(
+            context=_format_passages(context),
+            answer=answer,
+        )
     return _MD_BLOCK_TEMPLATE.format(
         qid=qid,
         query=query,
+        body_block=body_block,
         score_off=off["score"],
         sup_off=off["supported"],
         unsup_off=off["unsupported"],
@@ -100,16 +109,29 @@ def _format_query_block(qid: str, off: dict[str, Any], on: dict[str, Any]) -> st
     )
 
 
+_MD_LEGACY_WARNING = """\
+> ⚠️ This artifact predates answer/context capture. The kit
+> only has the judge's claim lists as a proxy. Re-run the
+> calibration with a current `attune-rag-benchmark` to get a
+> richer kit.
+"""
+
+
+_MD_ANSWER_CONTEXT_BLOCK = """\
+### Retrieved context
+
+{context}
+
+### Answer
+
+{answer}
+"""
+
+
 _MD_BLOCK_TEMPLATE = """\
 ## {qid} — `{query}`
 
-> ⚠️ The benchmark artifact does not currently capture the generator
-> ANSWER text or the retrieved passages — only the judge's verdict
-> on each. To label this query against ground truth you need to
-> re-run the RAG pipeline locally and read the answer + context. A
-> follow-up commit should add answer/context capture to the
-> benchmark JSON output. For now, the judge's claim lists are
-> provided below as a proxy.
+{body_block}
 
 ### Judge verdicts (off → on)
 
