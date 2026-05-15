@@ -186,7 +186,13 @@ async def test_score_faithfulness_passes_thinking_kwargs_to_judge(monkeypatch: A
     )
     assert captured["use_thinking"] is True
     assert captured["thinking_budget_tokens"] == 16384
-    assert result["per_query"][0]["thinking_used"] is True
+    rec = result["per_query"][0]
+    assert rec["thinking_used"] is True
+    # Per-query records carry the generator's answer + retrieved
+    # context so calibration kits can embed them without re-running
+    # the pipeline. Added 2026-05-15 follow-up to PR #19.
+    assert rec["answer"] == "an answer"
+    assert rec["context"] == "some passages"
 
 
 # Need typing.Any in the monkeypatch test

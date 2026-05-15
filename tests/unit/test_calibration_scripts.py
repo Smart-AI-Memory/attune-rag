@@ -151,6 +151,80 @@ def test_kit_returns_nonzero_when_artifact_missing(tmp_path: Path) -> None:
     assert rc == 2
 
 
+def _q_with_answer_context(qid: str, score: float, answer: str, context: str) -> dict[str, Any]:
+    """``_q`` plus the ``answer``/``context`` fields added 2026-05-15."""
+    rec = _q(qid, score)
+    rec["answer"] = answer
+    rec["context"] = context
+    return rec
+
+
+def test_kit_embeds_answer_and_context_when_present(tmp_path: Path) -> None:
+    """Modern artifacts include answer + context — the kit should embed them."""
+    artifact_path = tmp_path / "artifact.json"
+    off = _q_with_answer_context(
+        "shift-1", 0.5, answer="THE ANSWER TEXT", context="P1 PASSAGE TEXT"
+    )
+    on = _q_with_answer_context("shift-1", 1.0, answer="THE ANSWER TEXT", context="P1 PASSAGE TEXT")
+    artifact = {
+        "faithfulness_thinking_off": {"per_query": [off]},
+        "faithfulness_thinking_on": {"per_query": [on]},
+    }
+    artifact_path.write_text(json.dumps(artifact), encoding="utf-8")
+
+    out = tmp_path / "kit.md"
+    rc = kit.main(
+        [
+            "--artifact",
+            str(artifact_path),
+            "--out",
+            str(out),
+            "--n-shifted",
+            "1",
+            "--n-controls",
+            "0",
+        ]
+    )
+    assert rc == 0
+    text = out.read_text(encoding="utf-8")
+    # Both fields show up under their headings.
+    assert "### Retrieved context" in text
+    assert "P1 PASSAGE TEXT" in text
+    assert "### Answer" in text
+    assert "THE ANSWER TEXT" in text
+    # Legacy warning should NOT appear when fields are present.
+    assert "predates answer/context capture" not in text
+
+
+def test_kit_falls_back_to_legacy_warning_when_fields_absent(tmp_path: Path) -> None:
+    """Older artifacts (pre-2026-05-15) lack answer/context — show warning."""
+    artifact_path = tmp_path / "artifact.json"
+    artifact = {
+        "faithfulness_thinking_off": {"per_query": [_q("shift-1", 0.5)]},
+        "faithfulness_thinking_on": {"per_query": [_q("shift-1", 1.0)]},
+    }
+    artifact_path.write_text(json.dumps(artifact), encoding="utf-8")
+
+    out = tmp_path / "kit.md"
+    rc = kit.main(
+        [
+            "--artifact",
+            str(artifact_path),
+            "--out",
+            str(out),
+            "--n-shifted",
+            "1",
+            "--n-controls",
+            "0",
+        ]
+    )
+    assert rc == 0
+    text = out.read_text(encoding="utf-8")
+    assert "predates answer/context capture" in text
+    assert "### Retrieved context" not in text  # not embedded
+    assert "### Answer" not in text
+
+
 # ---------------------------------------------------------------------------
 # score_against_ground_truth._extract_labels
 # ---------------------------------------------------------------------------

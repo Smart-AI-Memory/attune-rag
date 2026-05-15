@@ -236,6 +236,8 @@ async def _score_faithfulness(
             {
                 "id": entry["id"],
                 "query": query,
+                "answer": answer,
+                "context": rag_result.context,
                 "score": verdict.score,
                 "supported": len(verdict.supported_claims),
                 "unsupported": len(verdict.unsupported_claims),
