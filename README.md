@@ -163,6 +163,47 @@ prompts, or eval paths, or when the PR title contains
 re-measurement procedure live under
 [`docs/specs/release-quality-baseline/`](https://github.com/Smart-AI-Memory/attune-rag/blob/main/docs/specs/release-quality-baseline/baseline-1.md).
 
+### What faithfulness measures
+
+Faithfulness scores how well an answer is **grounded in the retrieved
+passages** — `1.0` means every claim in the answer is supported by a
+cited source; lower scores mean some claims have no support in the
+context. It catches hallucination in a way that `precision_at_k` and
+`recall_at_k` can't: those only measure whether the *right documents*
+were retrieved, not whether the *generated answer* actually used them.
+
+attune-rag uses **Claude as the judge** via Anthropic's tool-use API
+to produce a structured score in `[0.0, 1.0]` for each
+`(query, answer, retrieved_context)` triple. The reported metric is
+the mean over the golden query set. Aggregate σ ≈ `0.005` over 40
+queries even though per-query judge non-determinism can swing 40+
+percentage points on individual queries — averaging absorbs the noise.
+
+### Run faithfulness manually
+
+```bash
+pip install 'attune-rag[claude]'
+export ANTHROPIC_API_KEY=sk-ant-...
+
+# Retrieval metrics only (free, deterministic):
+attune-rag-benchmark --queries queries.yaml --json out.json
+
+# Add faithfulness (~1 Claude API call per query, costs tokens):
+attune-rag-benchmark --queries queries.yaml --with-faithfulness --json out.json
+
+# Compare extended-thinking on vs off (2× judge cost):
+attune-rag-benchmark --queries queries.yaml --with-faithfulness --compare-thinking --json out.json
+```
+
+The judge implementation lives at
+`attune_rag.eval.faithfulness.FaithfulnessJudge`. Note: `attune_rag.eval.*`
+is currently INTERNAL and may move — the `attune-rag-benchmark
+--with-faithfulness` CLI is the stable contract.
+
+For the methodology behind the `0.9686` threshold, the v1/v2 ground-truth
+calibration runs, and the extended-thinking-vs-default decision record, see
+[`docs/rag/faithfulness-thinking-calibration.md`](https://github.com/Smart-AI-Memory/attune-rag/blob/main/docs/rag/faithfulness-thinking-calibration.md).
+
 ## Roadmap — embeddings (next minor release)
 
 Keyword retrieval + optional Claude reranker currently carry
