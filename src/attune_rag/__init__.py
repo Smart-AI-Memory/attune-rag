@@ -24,7 +24,12 @@ __version__ = "0.1.17"
 # NOTE: Imports are added incrementally as tasks 1.2-1.8
 # land. For task 1.1 (scaffold only) the public names
 # below resolve to minimal stubs so imports work for CI.
-from .corpus import CorpusProtocol, DirectoryCorpus, RetrievalEntry
+from .corpus import (
+    AttuneHelpCorpus,
+    CorpusProtocol,
+    DirectoryCorpus,
+    RetrievalEntry,
+)
 from .expander import QueryExpander
 from .pipeline import RagPipeline, RagResult
 from .prompts import PROMPT_VARIANTS, build_augmented_prompt
@@ -49,6 +54,7 @@ __all__ = [
     "CorpusProtocol",
     "RetrievalEntry",
     "DirectoryCorpus",
+    "AttuneHelpCorpus",
     "KeywordRetriever",
     "RetrievalHit",
     "RetrieverProtocol",
