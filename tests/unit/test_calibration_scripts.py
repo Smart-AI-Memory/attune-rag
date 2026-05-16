@@ -86,17 +86,18 @@ def test_select_picks_largest_shifts_then_controls() -> None:
             ("stable-b", 1.0, 1.0),  # unchanged + same counts (control)
         ]
     )
-    selected = kit._select_queries(artifact, n_shifted=2, n_controls=2, shift_threshold=0.05)
-    # First two by |Δ|, then up to two unchanged.
-    assert selected[:2] == ["big-shift", "med-shift"]
-    assert set(selected[2:]) <= {"stable-a", "stable-b"}
-    assert len(selected[2:]) == 2
+    shifted, controls, random_picks = kit._select_queries(
+        artifact, n_shifted=2, n_controls=2, shift_threshold=0.05
+    )
+    assert shifted == ["big-shift", "med-shift"]
+    assert set(controls) == {"stable-a", "stable-b"}
+    assert random_picks == []
 
 
 def test_select_skips_shifts_below_threshold() -> None:
     artifact = _artifact([("only-tiny", 0.50, 0.51), ("stable", 0.9, 0.9)])
-    selected = kit._select_queries(artifact, n_shifted=5, n_controls=0, shift_threshold=0.05)
-    assert "only-tiny" not in selected  # 0.01 < 0.05 threshold
+    shifted, _, _ = kit._select_queries(artifact, n_shifted=5, n_controls=0, shift_threshold=0.05)
+    assert "only-tiny" not in shifted  # 0.01 < 0.05 threshold
 
 
 def test_select_empty_when_no_overlap() -> None:
@@ -105,7 +106,222 @@ def test_select_empty_when_no_overlap() -> None:
         "faithfulness_thinking_off": {"per_query": [_q("a", 1.0)]},
         "faithfulness_thinking_on": {"per_query": [_q("b", 1.0)]},
     }
-    assert kit._select_queries(artifact, n_shifted=5, n_controls=5, shift_threshold=0.05) == []
+    assert kit._select_queries(artifact, n_shifted=5, n_controls=5, shift_threshold=0.05) == (
+        [],
+        [],
+        [],
+    )
+
+
+# ---------------------------------------------------------------------------
+# build_calibration_labeling_kit._select_queries — --n-random bucket
+# ---------------------------------------------------------------------------
+
+
+def _artifact_n(n: int) -> dict[str, Any]:
+    """Build an artifact with ``n`` queries — all stable (no shift), no controls.
+
+    Every query has score 1.0 in both passes BUT distinct claim
+    counts so they don't qualify as 'controls' under the
+    unchanged-score-AND-unchanged-claim-count rule. This leaves
+    the entire set available for the random bucket.
+    """
+    import random as _random
+
+    rng = _random.Random(0)
+    artifact = {
+        "faithfulness_thinking_off": {"per_query": []},
+        "faithfulness_thinking_on": {"per_query": []},
+    }
+    for i in range(n):
+        qid = f"gq-{i:03d}"
+        sup = rng.randint(5, 20)
+        artifact["faithfulness_thinking_off"]["per_query"].append(_q(qid, 1.0, supported=sup))
+        # Different claim count on the 'on' side keeps it out of the control bucket.
+        artifact["faithfulness_thinking_on"]["per_query"].append(_q(qid, 1.0, supported=sup + 1))
+    return artifact
+
+
+def test_n_random_is_disjoint_from_shifted_and_controls() -> None:
+    """Random picks come from common queries minus shifted minus controls."""
+    import random as _random
+
+    artifact = _artifact(
+        [
+            ("big-shift", 0.5, 1.0),  # shifted
+            ("med-shift", 0.8, 0.9),  # shifted
+            ("stable-a", 0.7, 0.7),  # control
+            ("stable-b", 1.0, 1.0),  # control
+            (
+                "random-pool-1",
+                0.5,
+                0.5,
+            ),  # eligible for random (score same, claims same → also control)
+            ("random-pool-2", 0.5, 0.5),
+        ]
+    )
+    # Make pool entries NOT eligible as controls by varying claim count.
+    for rec in artifact["faithfulness_thinking_on"]["per_query"]:
+        if rec["id"].startswith("random-pool"):
+            rec["supported"] = 99
+            rec["supported_claims"] = [f"s{i}" for i in range(99)]
+
+    shifted, controls, random_picks = kit._select_queries(
+        artifact,
+        n_shifted=2,
+        n_controls=2,
+        shift_threshold=0.05,
+        n_random=2,
+        rng=_random.Random(42),
+    )
+    assert set(shifted).isdisjoint(controls)
+    assert set(random_picks).isdisjoint(shifted)
+    assert set(random_picks).isdisjoint(controls)
+    assert len(random_picks) == 2
+    assert set(random_picks) <= {"random-pool-1", "random-pool-2"}
+
+
+def test_n_random_is_reproducible_under_seed() -> None:
+    """Same seed → same draw; different seed → different draw."""
+    import random as _random
+
+    artifact = _artifact_n(20)
+
+    def draw(seed: int) -> list[str]:
+        _, _, picks = kit._select_queries(
+            artifact,
+            n_shifted=0,
+            n_controls=0,
+            shift_threshold=0.05,
+            n_random=5,
+            rng=_random.Random(seed),
+        )
+        return picks
+
+    assert draw(42) == draw(42)
+    # Different seeds *almost certainly* produce different draws at n=5 of 20.
+    assert draw(42) != draw(7)
+
+
+def test_n_random_zero_skips_bucket() -> None:
+    """n_random=0 → no random picks, no rng required."""
+    artifact = _artifact([("a", 0.5, 1.0), ("b", 0.5, 0.5)])
+    shifted, _, random_picks = kit._select_queries(
+        artifact, n_shifted=1, n_controls=0, shift_threshold=0.05, n_random=0, rng=None
+    )
+    assert shifted == ["a"]
+    assert random_picks == []
+
+
+def test_n_random_errors_when_rng_missing() -> None:
+    """Asking for random picks without an rng is a programmer error."""
+    artifact = _artifact_n(10)
+    with pytest.raises(ValueError, match="rng is required"):
+        kit._select_queries(
+            artifact,
+            n_shifted=0,
+            n_controls=0,
+            shift_threshold=0.05,
+            n_random=3,
+            rng=None,
+        )
+
+
+def test_n_random_errors_when_exceeds_pool() -> None:
+    """N > remaining pool surfaces a clear, user-facing error."""
+    import random as _random
+
+    artifact = _artifact_n(3)  # pool of 3
+    with pytest.raises(ValueError, match="exceeds remaining pool"):
+        kit._select_queries(
+            artifact,
+            n_shifted=0,
+            n_controls=0,
+            shift_threshold=0.05,
+            n_random=10,  # impossible
+            rng=_random.Random(0),
+        )
+
+
+# ---------------------------------------------------------------------------
+# build_calibration_labeling_kit.main — --n-random CLI integration
+# ---------------------------------------------------------------------------
+
+
+def test_cli_n_random_writes_blocks_for_all_buckets(tmp_path: Path) -> None:
+    """End-to-end: --n-random N adds N more blocks past shift+control."""
+    artifact = _artifact_n(10)
+    artifact_path = tmp_path / "a.json"
+    artifact_path.write_text(json.dumps(artifact), encoding="utf-8")
+
+    out = tmp_path / "kit.md"
+    rc = kit.main(
+        [
+            "--artifact",
+            str(artifact_path),
+            "--out",
+            str(out),
+            "--n-shifted",
+            "0",
+            "--n-controls",
+            "0",
+            "--n-random",
+            "4",
+            "--seed",
+            "42",
+        ]
+    )
+    assert rc == 0
+    text = out.read_text(encoding="utf-8")
+    assert "0 shifted + 0 controls + 4 random" in text
+    assert "seed = 42" in text
+    # Four `## gq-NNN —` headings present.
+    assert text.count("## gq-") == 4
+
+
+def test_cli_n_random_overflow_returns_two(tmp_path: Path) -> None:
+    """N > pool → exit code 2, error message on stderr."""
+    artifact = _artifact_n(3)
+    artifact_path = tmp_path / "a.json"
+    artifact_path.write_text(json.dumps(artifact), encoding="utf-8")
+
+    out = tmp_path / "kit.md"
+    rc = kit.main(
+        [
+            "--artifact",
+            str(artifact_path),
+            "--out",
+            str(out),
+            "--n-shifted",
+            "0",
+            "--n-controls",
+            "0",
+            "--n-random",
+            "99",
+            "--seed",
+            "42",
+        ]
+    )
+    assert rc == 2
+    assert not out.exists()
+
+
+def test_cli_negative_counts_rejected(tmp_path: Path) -> None:
+    artifact_path = tmp_path / "a.json"
+    artifact_path.write_text(json.dumps(_artifact_n(5)), encoding="utf-8")
+    out = tmp_path / "kit.md"
+    rc = kit.main(
+        [
+            "--artifact",
+            str(artifact_path),
+            "--out",
+            str(out),
+            "--n-shifted",
+            "-1",
+        ]
+    )
+    assert rc == 2
+    assert not out.exists()
 
 
 # ---------------------------------------------------------------------------

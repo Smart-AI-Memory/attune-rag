@@ -9,7 +9,7 @@ working session so state is recoverable cold from disk.
 |---|---|
 | Current version | 0.1.17 |
 | Target version | 1.0.0 |
-| Current phase | Phase 1 — complete (M3.5 manual verification pending post-merge); Phase 2 unblocked |
+| Current phase | Phase 2 — spec approved 2026-05-16; M2 (labeling-kit extension + paired benchmark at n=30) is the active milestone. |
 | Last updated | 2026-05-16 |
 
 ---
@@ -64,10 +64,10 @@ results doc.
 
 ## Phase 2 — Eval story landed
 
-**Spec:** `docs/specs/faithfulness-thinking-decision/` (to create)
-**Status:** not started
+**Spec:** [docs/specs/faithfulness-thinking-decision/](faithfulness-thinking-decision/)
+**Status:** in progress — spec approved 2026-05-16 (M1 complete). M2 active: extend labeling kit with `--n-random`, then paired benchmark at n=30.
 **Estimate:** ~3 weeks of attention
-**Depends on:** Phase 1 complete
+**Depends on:** Phase 1 complete ✓ (PR #33 merged 2026-05-16)
 
 **Outcome:** `--thinking` default is decided. Calibration
 doc has a conclusion, not a "pending" tag. Judge
