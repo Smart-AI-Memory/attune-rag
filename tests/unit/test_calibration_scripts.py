@@ -528,7 +528,8 @@ verdict: partial
     # q2: label 0.6, off 0.6, on 0.7 → off closer.
     assert "off-closer" in out
     assert "on-closer" in out
-    assert "Signal: tied" in out  # 1 vs 1
+    # Old "Signal: tied" decision hint was replaced by the rubric block.
+    assert "Rubric verdict" in out
 
 
 def test_score_main_returns_nonzero_when_no_usable_labels(
@@ -550,3 +551,276 @@ faithfulness_score: TBD
     rc = score.main(["--labels", str(labels), "--artifact", str(artifact_path)])
     assert rc == 1
     assert "No usable labels" in capsys.readouterr().err
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 M5 extensions: design-rule classify, bootstrap CI, phantom rate,
+# rubric verdict, controls excluded from rubric numerator/denominator.
+# ---------------------------------------------------------------------------
+
+
+# _classify_rubric (design.md tie rule)
+
+
+def test_classify_rubric_tied_when_all_three_within_threshold() -> None:
+    """off, on, and label all within 0.025 of each other = tied."""
+    assert score._classify_rubric(1.0, 1.0, 1.0) == "tied"
+    assert score._classify_rubric(0.95, 0.95, 0.95) == "tied"
+    # Close but within threshold.
+    assert score._classify_rubric(0.95, 0.96, 0.97, threshold=0.025) == "tied"
+
+
+def test_classify_rubric_not_tied_when_judges_disagree() -> None:
+    """|off - on| >= threshold breaks the tie even if both are near label."""
+    # off=0.94, on=0.96, label=0.95: |off-on|=0.02 < 0.025, all near label → tied.
+    assert score._classify_rubric(0.95, 0.94, 0.96, threshold=0.025) == "tied"
+    # off=0.90, on=0.95, label=0.95: |off-on|=0.05 > 0.025 → not tied.
+    assert score._classify_rubric(0.95, 0.90, 0.95, threshold=0.025) == "on"
+
+
+def test_classify_rubric_picks_closer_when_not_tied() -> None:
+    # label 0.85, off 0.95 (Δ=0.10), on 0.80 (Δ=0.05) — on closer.
+    assert score._classify_rubric(0.85, 0.95, 0.80) == "on"
+    # Reverse.
+    assert score._classify_rubric(0.85, 0.80, 0.95) == "off"
+
+
+def test_classify_rubric_off_when_judges_far_from_label() -> None:
+    """All three differ by > threshold: closer-to-label wins."""
+    # off=0.50, on=0.95, label=1.0: on closer.
+    assert score._classify_rubric(1.0, 0.50, 0.95) == "on"
+
+
+# _content_words
+
+
+def test_content_words_keeps_identifier_tokens() -> None:
+    """Slash, hyphen, underscore identifiers should survive tokenization."""
+    words = score._content_words("Run /smart-test and bug_predict on src/auth.py")
+    assert "/smart-test" in words
+    assert "bug_predict" in words
+    # Common short words filtered out.
+    assert "and" not in words
+    assert "on" not in words
+
+
+def test_content_words_lowercases() -> None:
+    assert "deep" in score._content_words("Deep Review of MyClass")
+
+
+# _phantom_claim_rate
+
+
+def test_phantom_rate_zero_for_paraphrase() -> None:
+    """Claim is a paraphrase with high word overlap → not phantom."""
+    on_records = {
+        "q1": {
+            "answer": "The /doc-gen skill generates documentation. It accepts a path parameter.",
+            "unsupported_claims": [
+                "The skill generates documentation when given a path parameter.",
+            ],
+        }
+    }
+    rate, phantoms, total = score._phantom_claim_rate(["q1"], on_records)
+    assert phantoms == 0
+    assert total == 1
+    assert rate == 0.0
+
+
+def test_phantom_rate_detects_unseen_entities() -> None:
+    """Claim names tools that aren't in the answer at all → phantom."""
+    on_records = {
+        "q1": {
+            "answer": "The /doc-gen skill generates documentation.",
+            "unsupported_claims": [
+                # Mentions /smart-test and /refactor — neither in answer.
+                "The /doc-gen skill works alongside /smart-test and /refactor.",
+            ],
+        }
+    }
+    rate, phantoms, total = score._phantom_claim_rate(["q1"], on_records, overlap_threshold=0.4)
+    # Claim words: {/doc-gen, skill, works, alongside, /smart-test, /refactor}
+    # Answer words: {/doc-gen, skill, generates, documentation}
+    # Overlap: 2 / 6 = 0.333 < 0.4 → phantom.
+    assert phantoms == 1
+    assert total == 1
+
+
+def test_phantom_rate_zero_when_no_unsupported_claims() -> None:
+    on_records = {"q1": {"answer": "something", "unsupported_claims": []}}
+    rate, phantoms, total = score._phantom_claim_rate(["q1"], on_records)
+    assert rate == 0.0
+    assert phantoms == 0
+    assert total == 0
+
+
+def test_phantom_rate_handles_missing_answer() -> None:
+    """No answer text → can't classify; claim is counted in total but not phantom."""
+    on_records = {"q1": {"answer": None, "unsupported_claims": ["whatever"]}}
+    rate, phantoms, total = score._phantom_claim_rate(["q1"], on_records)
+    assert total == 1
+    assert phantoms == 0
+
+
+def test_phantom_rate_skips_unrelated_queries() -> None:
+    """Only iterate qids passed in; ignore others in the records dict."""
+    on_records = {
+        "q1": {"answer": "abc", "unsupported_claims": ["xyz123 unrelated"]},
+        "q2": {"answer": "abc", "unsupported_claims": ["xyz123 unrelated"]},
+    }
+    # Only q1 in qids.
+    _, _, total = score._phantom_claim_rate(["q1"], on_records)
+    assert total == 1
+
+
+# _bootstrap_margin_ci
+
+
+def test_bootstrap_ci_strong_off_advantage_excludes_zero() -> None:
+    """20 off-wins, 0 on-wins → CI strictly above 0."""
+    verdicts = ["off"] * 20 + ["tied"] * 5
+    point, lo, hi = score._bootstrap_margin_ci(verdicts, iters=2000, seed=0)
+    assert point == 20.0
+    assert lo > 0  # CI excludes 0 below.
+
+
+def test_bootstrap_ci_balanced_includes_zero() -> None:
+    """10 off, 10 on → CI brackets 0."""
+    verdicts = ["off"] * 10 + ["on"] * 10 + ["tied"] * 10
+    _, lo, hi = score._bootstrap_margin_ci(verdicts, iters=2000, seed=0)
+    assert lo < 0 < hi
+
+
+def test_bootstrap_ci_all_tied_yields_zero() -> None:
+    """No off / on wins → CI is degenerate (0, 0)."""
+    verdicts = ["tied"] * 15
+    point, lo, hi = score._bootstrap_margin_ci(verdicts, iters=500, seed=0)
+    assert point == 0.0
+    assert lo == 0.0
+    assert hi == 0.0
+
+
+def test_bootstrap_ci_seed_reproducible() -> None:
+    """Same seed → same CI bounds."""
+    verdicts = ["off", "off", "on", "tied", "off", "on", "off"]
+    a = score._bootstrap_margin_ci(verdicts, iters=1000, seed=42)
+    b = score._bootstrap_margin_ci(verdicts, iters=1000, seed=42)
+    assert a == b
+
+
+def test_bootstrap_ci_empty_returns_zero() -> None:
+    point, lo, hi = score._bootstrap_margin_ci([], iters=100)
+    assert (point, lo, hi) == (0.0, 0.0, 0.0)
+
+
+# _apply_rubric (6 verdict branches)
+
+
+def test_rubric_high_variance_escalates() -> None:
+    label, _ = score._apply_rubric(
+        wins_off=5, wins_on=4, ci_low=-2, ci_high=6, phantom_rate=0.1, margin_stdev=0.15
+    )
+    assert label == "inconclusive-escalate"
+
+
+def test_rubric_ci_excludes_zero_off_ahead_keeps_off() -> None:
+    label, prose = score._apply_rubric(
+        wins_off=15, wins_on=2, ci_low=5, ci_high=20, phantom_rate=0.1, margin_stdev=0.05
+    )
+    assert label == "off-forever"
+    assert "Ship at 0.1.18" in prose
+
+
+def test_rubric_ci_excludes_zero_on_ahead_with_low_phantom_flips_on() -> None:
+    label, prose = score._apply_rubric(
+        wins_off=2, wins_on=15, ci_low=5, ci_high=20, phantom_rate=0.05, margin_stdev=0.05
+    )
+    assert label == "on-flip"
+    assert "0.2.0" in prose
+
+
+def test_rubric_on_ahead_but_high_phantom_keeps_off_with_followup() -> None:
+    label, _ = score._apply_rubric(
+        wins_off=2, wins_on=10, ci_low=-1, ci_high=12, phantom_rate=0.30, margin_stdev=0.05
+    )
+    assert label == "off-with-followup"
+
+
+def test_rubric_ci_includes_zero_keeps_off() -> None:
+    label, _ = score._apply_rubric(
+        wins_off=8, wins_on=5, ci_low=-2, ci_high=10, phantom_rate=0.10, margin_stdev=0.05
+    )
+    assert label == "off-forever"
+
+
+def test_rubric_handles_no_margin_stdev() -> None:
+    """margin_stdev=None → escalation rule is skipped, but the rest applies."""
+    label, _ = score._apply_rubric(
+        wins_off=15, wins_on=2, ci_low=5, ci_high=20, phantom_rate=0.05, margin_stdev=None
+    )
+    assert label == "off-forever"
+
+
+# main() — controls excluded, design tie rule, rubric output present
+
+
+def test_main_with_controls_and_rubric_block(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    artifact = _artifact(
+        [
+            ("q1", 0.5, 0.9),  # rubric query
+            ("q2", 0.6, 0.7),  # rubric query
+            ("c1", 1.0, 1.0),  # control
+        ]
+    )
+    artifact_path = tmp_path / "a.json"
+    artifact_path.write_text(json.dumps(artifact), encoding="utf-8")
+
+    labels = tmp_path / "labels.md"
+    labels.write_text(
+        """\
+```yaml
+id: q1
+faithfulness_score: 0.9
+verdict: faithful
+```
+
+```yaml
+id: q2
+faithfulness_score: 0.6
+verdict: partial
+```
+
+```yaml
+id: c1
+faithfulness_score: 1.0
+verdict: faithful
+```
+""",
+        encoding="utf-8",
+    )
+    rc = score.main(
+        [
+            "--labels",
+            str(labels),
+            "--artifact",
+            str(artifact_path),
+            "--rubric-rule",
+            "design",
+            "--control-ids",
+            "c1",
+            "--bootstrap-iters",
+            "500",
+            "--seed",
+            "0",
+        ]
+    )
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "Rubric verdict" in out
+    assert "Bootstrap CI" in out
+    assert "Phantom-claim rate" in out
+    # Controls excluded from rubric numerator/denominator.
+    assert "rubric n = 2, controls excluded" in out
+    assert "Controls (excluded from rubric): c1" in out
