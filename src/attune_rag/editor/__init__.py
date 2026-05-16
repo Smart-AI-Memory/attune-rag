@@ -6,10 +6,10 @@ core so the editor surface can grow without bloating retrieval imports.
 
 from __future__ import annotations
 
-from ._autocomplete import autocomplete_aliases, autocomplete_tags
-from ._lint import Diagnostic, Severity, lint_template
-from ._references import Reference, ReferenceContext, ReferenceKind, find_references
-from ._rename import (
+from .autocomplete import autocomplete_aliases, autocomplete_tags
+from .lint import Diagnostic, Severity, lint_template
+from .references import Reference, ReferenceContext, ReferenceKind, find_references
+from .rename import (
     FileEdit,
     FileMove,
     Hunk,
@@ -19,7 +19,7 @@ from ._rename import (
     apply_rename,
     plan_rename,
 )
-from ._schema import (
+from .schema import (
     SchemaError,
     load_schema,
     parse_frontmatter,

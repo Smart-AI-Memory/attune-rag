@@ -54,7 +54,7 @@ def test_quickstart_is_a_valid_type() -> None:
     using the other 8 types. ``quickstart`` is the largest of those
     (41 templates).
     """
-    from attune_rag.editor._schema import parse_frontmatter
+    from attune_rag.editor.schema import parse_frontmatter
 
     _, issues = parse_frontmatter("type: quickstart\nname: x\n")
     assert not any(i.code == "bad-enum" for i in issues)

@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.18] - 2026-05-16
+
+> Two parallel tracks ship together: **Phase 1 of the v1.0 roadmap**
+> (release-quality baseline + CI gate) and **API-surface groundwork
+> toward the 0.2.0 freeze**. The public surface is now documented and
+> snapshot-tested, but formal SemVer commitments still begin at 0.2.0
+> — see [docs/POLICY.md](docs/POLICY.md). Roadmap:
+> [docs/specs/ROADMAP-v1.md](docs/specs/ROADMAP-v1.md). API spec:
+> [docs/specs/api-v0.2-public-surface/](docs/specs/api-v0.2-public-surface/).
+
 ### Added
 
 - **Release quality gate (Phase 1 of v1.0 roadmap).** Every PR
@@ -46,11 +56,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`docs/specs/release-quality-baseline/`** — full Phase 1
   spec (requirements, design, tasks) plus the locked
   `baseline-1.md`, `thresholds.json`, and re-measurement
-  procedure at `re-measure.md`. The v1.0 roadmap itself lives
-  at `docs/specs/ROADMAP-v1.md`.
+  procedure at `re-measure.md`.
 - **`docs/specs/ROADMAP-v1.md`** — 5-phase plan from 0.1.x to
-  v1.0.0 with a decisions log. Phase 1 (baseline lock-in) is
-  the only phase landed so far.
+  v1.0.0 with a decisions log.
+- **Public API surface documented and snapshot-tested.**
+  `tests/unit/test_api_surface.py` locks `__all__` for every PUBLIC
+  module and the importability of every PUBLIC submodule. Symbol
+  additions or removals must update the test in the same PR. See
+  [docs/POLICY.md](docs/POLICY.md) for the deprecation policy (which
+  takes effect formally in 0.2.0) and the README's new "Public API"
+  section for the enumerated surface.
+- **`AttuneHelpCorpus` re-exported at the package root.** Already
+  reachable via `attune_rag.corpus.attune_help.AttuneHelpCorpus`;
+  the root re-export makes the constraint visible in the surface
+  test so accidental removal fails CI.
+- **New `author` optional extra** (`pip install 'attune-rag[author]'`)
+  pinning `attune-author>=0.13.0`. Centralizes the docs-authoring
+  toolchain for `.help/templates/` regeneration so the venv doesn't
+  drift onto pre-polish versions. New `Makefile` wraps the workflow
+  (`make help-regen` / `make help-regen-batch` etc.) with a feature
+  probe that sidesteps the stale-`__version__` packaging bug in the
+  0.13.0 wheel.
 
 ### Changed
 
@@ -61,6 +87,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `faithfulness_legacy` see the same key when
   `--with-faithfulness` is passed. Enables the CI quality gate
   to dump retrieval metrics without spending API tokens.
+- **Five editor submodules renamed** to drop the misleading
+  underscore prefix (the underscore convention falsely signaled
+  "private" for modules that downstream tools already imported by
+  name). New canonical paths:
+  - `attune_rag.editor.rename` (was `_rename`)
+  - `attune_rag.editor.schema` (was `_schema`)
+  - `attune_rag.editor.lint` (was `_lint`)
+  - `attune_rag.editor.autocomplete` (was `_autocomplete`)
+  - `attune_rag.editor.references` (was `_references`)
+
+  The public symbols re-exported from `attune_rag.editor` are
+  unchanged.
+
+### Deprecated
+
+- **`attune_rag.editor._rename` and four sibling underscore modules.**
+  These now exist as deprecation shims that re-export the renamed
+  modules and emit `DeprecationWarning`. They are removed in
+  **attune-rag 0.3.0**.
 
 ## [0.1.17] - 2026-05-15
 

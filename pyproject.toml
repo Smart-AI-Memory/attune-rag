@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "attune-rag"
-version = "0.1.17"
+version = "0.1.18"
 description = "Lightweight, LLM-agnostic RAG pipeline with pluggable corpora. Works with Claude, Gemini, or any LLM."
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.10"
@@ -43,11 +43,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-attune-help = ["attune-help>=0.10.0,<0.11"]
+attune-help = ["attune-help>=0.10.1,<0.11"]
 claude = ["anthropic>=0.95,<1.0"]
 gemini = ["google-genai>=1.0,<2.0"]
+# Maintainer tooling — the docs/help authoring CLI used to regenerate
+# .help/templates/<feature>/{concept,reference,task}.md with the polish
+# pass. 0.13.0 is the floor because earlier versions skipped polish (the
+# unpolished output shipped as #20 was reverted in `revert(help): restore
+# polished benchmark templates`).
+author = ["attune-author>=0.13.0"]
 all = [
-    "attune-help>=0.10.0,<0.11",
+    "attune-help>=0.10.1,<0.11",
     "anthropic>=0.95,<1.0",
     "google-genai>=1.0,<2.0",
 ]
@@ -59,7 +65,8 @@ dev = [
     "black>=24.0",
     "build>=1.0",
     "twine>=5.0",
-    "attune-help>=0.10.0,<0.11",
+    "attune-help>=0.10.1,<0.11",
+    "attune-author>=0.13.0",
     "anthropic>=0.95,<1.0",
     "google-genai>=1.0,<2.0",
 ]
