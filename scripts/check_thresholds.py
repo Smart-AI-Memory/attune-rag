@@ -329,7 +329,7 @@ def main(argv: list[str] | None = None) -> int:
         _print_failures(failures)
         if args.comment_out is not None:
             args.comment_out.parent.mkdir(parents=True, exist_ok=True)
-            args.comment_out.write_text(format_failure_comment(failures))
+            args.comment_out.write_text(format_failure_comment(failures), encoding="utf-8")
         return 1
     return 0
 

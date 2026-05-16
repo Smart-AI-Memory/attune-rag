@@ -219,7 +219,13 @@ def write_thresholds_json(
         },
     }
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True))
+    # encoding="utf-8" pins the on-disk encoding so Windows
+    # (cp1252 by default) doesn't choke on Unicode characters we
+    # might emit later (e.g. U+2212 in the markdown report).
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True),
+        encoding="utf-8",
+    )
 
 
 def render_markdown(
@@ -373,7 +379,8 @@ def main(argv: list[str] | None = None) -> int:
             sigma=args.sigma,
             stats_by_metric=stats_by_metric,
             measured_at=measured_at,
-        )
+        ),
+        encoding="utf-8",
     )
     print(f"wrote {args.out}", file=sys.stderr)
     print(f"wrote {args.thresholds_out}", file=sys.stderr)
