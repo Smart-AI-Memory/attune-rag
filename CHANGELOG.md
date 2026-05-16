@@ -70,28 +70,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   results appended to
   `docs/rag/faithfulness-thinking-calibration.md`.
 
-- **Ground-truth validation of the v2 calibration (17 queries).**
-  Follow-up to the v1 round below. Patrick labeled the larger
-  17-query v2 kit under the same strict-lens philosophy.
-  Outcome: **off-closer 6, on-closer 5, tied 6** — option B
-  confirmed at 2× sample size. V1's off-vs-on margin narrowed
-  from 1.5× to 1.2× — on more competitive than v1 suggested,
-  but not enough to flip the call. Labels at
-  `artifacts/calibration/ground-truth-2026-05-15-v2.md`;
-  results appended to
-  `docs/rag/faithfulness-thinking-calibration.md`.
-
-- **Ground-truth validation of the v2 calibration (17 queries).**
-  Follow-up to the v1 round below. Patrick labeled the larger
-  17-query v2 kit under the same strict-lens philosophy.
-  Outcome: **off-closer 6, on-closer 5, tied 6** — option B
-  confirmed at 2× sample size. V1's off-vs-on margin narrowed
-  from 1.5× to 1.2× — on more competitive than v1 suggested,
-  but not enough to flip the call. Labels at
-  `artifacts/calibration/ground-truth-2026-05-15-v2.md`;
-  results appended to
-  `docs/rag/faithfulness-thinking-calibration.md`.
-
 - **Ground-truth validation of the v0.1.15 calibration.**
   Patrick labeled the 8-query kit interactively under a strict
   lens; results are committed at
