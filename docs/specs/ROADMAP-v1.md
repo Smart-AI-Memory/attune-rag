@@ -9,7 +9,7 @@ working session so state is recoverable cold from disk.
 |---|---|
 | Current version | 0.1.17 |
 | Target version | 1.0.0 |
-| Current phase | Phase 1 — M1 complete (baseline locked); M2 next |
+| Current phase | Phase 1 — M1/M2/M3 complete; M4 (docs + CHANGELOG) next |
 | Last updated | 2026-05-16 |
 
 ---
