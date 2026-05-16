@@ -25,10 +25,10 @@ guess.
 | M3.3 | Conditional faithfulness: skip the judge unless the PR touches `src/attune_rag/{retrieval,reranker,expander,pipeline,prompts,eval}/**` OR the PR title contains `[full-bench]`. | attune-rag | done | Implemented in the `Decide gate mode` step. PR title routed via `PR_TITLE` env var (never interpolated into shell). Push to main / `workflow_dispatch` always runs full. Also degrades to retrieval-only when `ANTHROPIC_API_KEY` is not in repo Secrets — gate works today, auto-enables faithfulness when the secret lands. Added `--skip-metric` to `check_thresholds.py` (with 3 tests) so retrieval-only runs don't trip on the faithfulness threshold entry. |
 | M3.4 | Inconclusive handling: transient API error → retry once → still fails → workflow reports inconclusive, does not block. | attune-rag | done | Full pass: 2 attempts with 30 s sleep between. Retrieval-only: 1 attempt (deterministic + free). On unrecoverable: `::warning::` annotation, `inconclusive=true` output, exit 0 so the PR isn't blocked. GitHub no longer supports neutral exit 75; "warning + green" is the modern equivalent. |
 | M3.5 | Smoke test: confirms the gate fires on a deliberately-bad input. | attune-rag | partial | In-CI half: `scripts/smoke_check_gate.sh` runs on every workflow execution and asserts good/bad/broken → exit 0/1/2 + comment written/missing/missing. Locally verified all six assertions pass. The "deliberately-bad PR against main" half waits until the workflow lands on main and the user can open a test PR; tracked as a manual verification step for the M3 close-out. |
-| M4.1 | README: add a "Quality baseline" section quoting the current numbers + link to `baseline-1.md`. | attune-rag | todo | |
-| M4.2 | Re-measurement procedure: short doc at `docs/specs/release-quality-baseline/re-measure.md` explaining when and how. | attune-rag | todo | Phase 2 will be the first user. |
-| M4.3 | CHANGELOG entry under the next patch version (`Added` — "release quality gate" and "noise-floor baseline doc"). | attune-rag | todo | |
-| M4.4 | Update `ROADMAP-v1.md` Phase 1 status to **in progress** when M1 starts, **complete** when M3.5 passes. | attune-rag | todo | |
+| M4.1 | README: add a "Quality baseline" section quoting the current numbers + link to `baseline-1.md`. | attune-rag | done | Placed between Dashboard and Roadmap sections. Quotes the three thresholds + the methodology link. |
+| M4.2 | Re-measurement procedure: short doc at `docs/specs/release-quality-baseline/re-measure.md` explaining when and how. | attune-rag | done | Five-step procedure: land judge change → run variance script → eyeball numbers → open follow-up PR with `[baseline-update]` → merge in order. Includes a three-diagnostic sanity-check checklist for weird re-measurements. |
+| M4.3 | CHANGELOG entry under the next patch version (`Added` — "release quality gate" and "noise-floor baseline doc"). | attune-rag | done | Landed in `[Unreleased]`. Records the locked numbers, the σ-was-tighter-than-expected finding, and the relaxed `--json` guard under `Changed`. |
+| M4.4 | Update `ROADMAP-v1.md` Phase 1 status to **in progress** when M1 starts, **complete** when M3.5 passes. | attune-rag | done | Status flips to **complete (pending M3.5 manual verification)** with this PR. |
 
 ### Dependencies
 
@@ -102,14 +102,14 @@ The gate is additive. Rollback strategy:
 
 ## Phase 4: Implementation
 
-**Status**: not started
+**Status**: complete (pending M3.5 manual verification post-merge)
 
-### Completion checklist (placeholders)
+### Completion checklist
 
-- [ ] M1 — variance script + locked baseline-1.md + thresholds.json
-- [ ] M2 — threshold-check script + tests
-- [ ] M3 — CI workflow wired, PR-comment-on-fail, conditional faithfulness
-- [ ] M3.5 — deliberately-bad PR confirms gate fires
-- [ ] M4 — README, re-measure doc, CHANGELOG, ROADMAP status update
-- [ ] Phase 1 of v1.0 roadmap marked complete in
+- [x] M1 — variance script + locked baseline-1.md + thresholds.json (2026-05-16)
+- [x] M2 — threshold-check script + tests (2026-05-16)
+- [x] M3 — CI workflow wired, PR-comment-on-fail, conditional faithfulness, smoke script (2026-05-16)
+- [ ] M3.5 — deliberately-bad PR confirms gate fires (manual; waits for workflow to land on main)
+- [x] M4 — README, re-measure doc, CHANGELOG, ROADMAP status update (2026-05-16)
+- [x] Phase 1 of v1.0 roadmap marked complete in
       [ROADMAP-v1.md](../ROADMAP-v1.md)

@@ -6,6 +6,62 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Release quality gate (Phase 1 of v1.0 roadmap).** Every PR
+  is now gated against a locked retrieval + faithfulness
+  baseline. Thresholds set at `mean − 2σ` per metric, measured
+  from N = 20 back-to-back benchmark runs on commit `d98fabe`:
+  `precision_at_1 ≥ 0.95`, `recall_at_3 ≥ 1.00`,
+  `mean_faithfulness ≥ 0.9686`. Aggregate faithfulness σ
+  measured at 0.0052 — much tighter than per-query judge
+  non-determinism (40+ pp single-query swings) suggested.
+- **`scripts/measure_baseline_variance.py`** — runs the
+  benchmark N times on an unchanged HEAD and emits a locked
+  `baseline-N.md` + machine-readable `thresholds.json`. Pure
+  stdlib, subprocess-driven, stdout-parsed. Supports
+  `--skip-faithfulness` for cheap script validation.
+- **`scripts/check_thresholds.py`** — pure-stdlib threshold
+  checker invoked by CI. Exits 0 (pass) / 1 (regression) /
+  2 (malformed input or `queries_sha256` mismatch). Emits a
+  deterministic markdown PR-comment body via `--comment-out`,
+  wrapped in a `<!-- attune-rag-quality-gate -->` marker so the
+  CI workflow edits the comment in place instead of stacking
+  one per push. Supports `--skip-metric` (repeatable) for
+  retrieval-only runs.
+- **`scripts/smoke_check_gate.sh`** — six in-CI assertions on
+  the gate's own plumbing (good / bad / broken dumps → exit
+  0 / 1 / 2; comment written on regression, not on validation
+  errors). Keeps the gate's logic exercised on every PR even
+  when the real benchmark passes or is skipped.
+- **`.github/workflows/benchmark.yml`** — runs the benchmark
+  on every PR + push to main. Decides retrieval-only vs full
+  faithfulness mode from PR title (`[full-bench]` opt-in) or
+  diff (faithfulness-affecting paths). Degrades gracefully to
+  retrieval-only when `ANTHROPIC_API_KEY` isn't in repo
+  Secrets — auto-engages faithfulness gating once the secret
+  lands, no workflow edit needed. Full pass retries once on
+  transient API errors with 30 s backoff; inconclusive runs
+  exit 0 with a `::warning::` annotation.
+- **`docs/specs/release-quality-baseline/`** — full Phase 1
+  spec (requirements, design, tasks) plus the locked
+  `baseline-1.md`, `thresholds.json`, and re-measurement
+  procedure at `re-measure.md`. The v1.0 roadmap itself lives
+  at `docs/specs/ROADMAP-v1.md`.
+- **`docs/specs/ROADMAP-v1.md`** — 5-phase plan from 0.1.x to
+  v1.0.0 with a decisions log. Phase 1 (baseline lock-in) is
+  the only phase landed so far.
+
+### Changed
+
+- **`attune-rag-benchmark --json` no longer requires
+  `--with-faithfulness`.** Retrieval-only `--json` now emits a
+  dump containing `retrieval` + `queries_path`. The dump shape
+  is additive — existing consumers that read
+  `faithfulness_legacy` see the same key when
+  `--with-faithfulness` is passed. Enables the CI quality gate
+  to dump retrieval metrics without spending API tokens.
+
 ## [0.1.17] - 2026-05-15
 
 ### Fixed
