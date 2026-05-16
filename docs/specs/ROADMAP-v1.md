@@ -65,7 +65,7 @@ results doc.
 ## Phase 2 — Eval story landed
 
 **Spec:** [docs/specs/faithfulness-thinking-decision/](faithfulness-thinking-decision/)
-**Status:** in progress — spec approved 2026-05-16 (M1 complete). M2 active: extend labeling kit with `--n-random`, then paired benchmark at n=30.
+**Status:** in progress — M1 + M2 + M3 complete 2026-05-16. v3 labeling at n=30 (+ 2 controls) yields wins_off = 9, wins_on = 4 (script tie rule), tied = 17. Off-to-on ratio 2.25× reverses the v1→v2 narrowing trend. M4 (judge variance) + M5 (bootstrap CI + phantom-claim rate) are next; they formally lock the rubric verdict.
 **Estimate:** ~3 weeks of attention
 **Depends on:** Phase 1 complete ✓ (PR #33 merged 2026-05-16)
 
