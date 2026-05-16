@@ -106,6 +106,9 @@ _MIN_STEM_LEN: int = 3
 
 
 def _stem(token: str) -> str:
+    for suffix in _STEM_SUFFIXES:
+        if token.endswith(suffix) and len(token) - len(suffix) >= _MIN_STEM_LEN:
+            return token[: -len(suffix)]
     return token
 
 
