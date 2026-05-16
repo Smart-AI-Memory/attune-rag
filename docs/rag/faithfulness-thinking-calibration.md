@@ -282,6 +282,163 @@ shows up in the wins-vs-losses ledger.
 A larger labeled subset (~20 queries) could shift the
 conclusion. For now, no default-flip.
 
+## Ground-truth validation results — v2 (2026-05-15, 17 queries)
+
+Follow-up labeling round on the larger v2 kit (post-PR #26 /
+#27, with answer + context embedded). 17 queries: 13
+high-shift + 4 controls. Labels at
+[`artifacts/calibration/ground-truth-2026-05-15-v2.md`](../../artifacts/calibration/ground-truth-2026-05-15-v2.md).
+
+| ID                  | Label | Off    | On     | Closer |
+| ------------------- | ----: | -----: | -----: | :----: |
+| gq-017              | 0.85  | 1.000  | 0.750  | on     |
+| gq-028              | 0.85  | 0.947  | 0.812  | on     |
+| gq-005              | 1.00  | 1.000  | 0.900  | off    |
+| gq-002              | 1.00  | 1.000  | 0.929  | off    |
+| gq-037              | 0.90  | 0.929  | 1.000  | off    |
+| gq-025              | 0.95  | 1.000  | 0.933  | on     |
+| gq-001              | 0.92  | 0.938  | 1.000  | off    |
+| gq-020              | 0.95  | 1.000  | 0.938  | on     |
+| gq-032              | 0.95  | 1.000  | 0.938  | on     |
+| gq-010              | 1.00  | 1.000  | 0.952  | off    |
+| gq-015              | 0.92  | 0.958  | 1.000  | off    |
+| gq-034              | 0.85  | 0.882  | 0.867  | tied   |
+| gq-014              | 0.90  | 0.923  | 0.909  | tied   |
+| gq-011              | 1.00  | 1.000  | 1.000  | tied   |
+| gq-016              | 1.00  | 1.000  | 1.000  | tied   |
+| gq-018              | 1.00  | 1.000  | 1.000  | tied   |
+| gq-019              | 1.00  | 1.000  | 1.000  | tied   |
+
+| Aggregate | Count | % of 17 |
+| --------- | ----: | ------: |
+| Off-closer  | 6   | 35 % |
+| On-closer   | 5   | 29 % |
+| Tied        | 6   | 35 % |
+
+### V1 vs V2 comparison
+
+| Metric | V1 (8) | V2 (17) |
+| ------ | -----: | ------: |
+| Off-closer | 3 (38 %) | 6 (35 %) |
+| On-closer | 2 (25 %) | 5 (29 %) |
+| Tied | 3 (38 %) | 6 (35 %) |
+| Off-vs-on gap | +1 | +1 |
+| Off-wins ÷ on-wins | 1.5 | 1.2 |
+
+Off still wins, but the margin **narrows** at higher sample
+size (1.5× → 1.2×). With more queries the gap doesn't widen
+in off's favor — suggesting on is more competitive than the
+v1 round implied.
+
+### Observations from the v2 round
+
+- **Phantom-claim pattern persists** in judge-on (gq-005,
+  gq-002 — flagged claim phrasings not literally in the
+  answer text), but is balanced by **real strict-lens wins**
+  judge-off misses (gq-017, gq-028, gq-020, gq-032 — added
+  vocabulary bridges, editorial framings).
+- **Tied rate is high (35 %)** — judges genuinely converge on
+  both straightforward answers (controls) AND moderately
+  editorial ones (gq-034, gq-014 — both judges caught the
+  same issues).
+- **Same query, different swing** — gq-017 was on-closer in
+  v1 (Δ=+0.182) and on-closer in v2 (Δ=−0.250) — both
+  rounds favored on, but the v2 judges swung the opposite
+  direction from v1 on the same query. Judge non-determinism
+  remains the dominant noise source.
+
+### Decision: B holds at 2× sample size
+
+The 17-query sample confirms the v1 round's option-B call,
+with a slightly tighter off-vs-on margin. The pre-committed
+matrix's first criterion for option A (≥10 % verdict
+disagreement) is met. The second (thinking-on aligns better
+with hand-labeled truth) is *not* met — off still aligns
+better on more queries.
+
+A further round (~40 queries = full golden set) could
+potentially reveal convergence, but the marginal value
+diminishes given the consistent signal across v1 and v2.
+
+
+## Ground-truth validation results — v2 (2026-05-15, 17 queries)
+
+Follow-up labeling round on the larger v2 kit (post-PR #26 /
+#27, with answer + context embedded). 17 queries: 13
+high-shift + 4 controls. Labels at
+[`artifacts/calibration/ground-truth-2026-05-15-v2.md`](../../artifacts/calibration/ground-truth-2026-05-15-v2.md).
+
+| ID                  | Label | Off    | On     | Closer |
+| ------------------- | ----: | -----: | -----: | :----: |
+| gq-017              | 0.85  | 1.000  | 0.750  | on     |
+| gq-028              | 0.85  | 0.947  | 0.812  | on     |
+| gq-005              | 1.00  | 1.000  | 0.900  | off    |
+| gq-002              | 1.00  | 1.000  | 0.929  | off    |
+| gq-037              | 0.90  | 0.929  | 1.000  | off    |
+| gq-025              | 0.95  | 1.000  | 0.933  | on     |
+| gq-001              | 0.92  | 0.938  | 1.000  | off    |
+| gq-020              | 0.95  | 1.000  | 0.938  | on     |
+| gq-032              | 0.95  | 1.000  | 0.938  | on     |
+| gq-010              | 1.00  | 1.000  | 0.952  | off    |
+| gq-015              | 0.92  | 0.958  | 1.000  | off    |
+| gq-034              | 0.85  | 0.882  | 0.867  | tied   |
+| gq-014              | 0.90  | 0.923  | 0.909  | tied   |
+| gq-011              | 1.00  | 1.000  | 1.000  | tied   |
+| gq-016              | 1.00  | 1.000  | 1.000  | tied   |
+| gq-018              | 1.00  | 1.000  | 1.000  | tied   |
+| gq-019              | 1.00  | 1.000  | 1.000  | tied   |
+
+| Aggregate | Count | % of 17 |
+| --------- | ----: | ------: |
+| Off-closer  | 6   | 35 % |
+| On-closer   | 5   | 29 % |
+| Tied        | 6   | 35 % |
+
+### V1 vs V2 comparison
+
+| Metric | V1 (8) | V2 (17) |
+| ------ | -----: | ------: |
+| Off-closer | 3 (38 %) | 6 (35 %) |
+| On-closer | 2 (25 %) | 5 (29 %) |
+| Tied | 3 (38 %) | 6 (35 %) |
+| Off-vs-on gap | +1 | +1 |
+| Off-wins ÷ on-wins | 1.5 | 1.2 |
+
+Off still wins, but the margin **narrows** at higher sample
+size (1.5× → 1.2×). With more queries the gap doesn't widen
+in off's favor — suggesting on is more competitive than the
+v1 round implied.
+
+### Observations from the v2 round
+
+- **Phantom-claim pattern persists** in judge-on (gq-005,
+  gq-002 — flagged claim phrasings not literally in the
+  answer text), but is balanced by **real strict-lens wins**
+  judge-off misses (gq-017, gq-028, gq-020, gq-032 — added
+  vocabulary bridges, editorial framings).
+- **Tied rate is high (35 %)** — judges genuinely converge on
+  both straightforward answers (controls) AND moderately
+  editorial ones (gq-034, gq-014 — both judges caught the
+  same issues).
+- **Same query, different swing** — gq-017 was on-closer in
+  v1 (Δ=+0.182) and on-closer in v2 (Δ=−0.250) — both
+  rounds favored on, but the v2 judges swung the opposite
+  direction from v1 on the same query. Judge non-determinism
+  remains the dominant noise source.
+
+### Decision: B holds at 2× sample size
+
+The 17-query sample confirms the v1 round's option-B call,
+with a slightly tighter off-vs-on margin. The pre-committed
+matrix's first criterion for option A (≥10 % verdict
+disagreement) is met. The second (thinking-on aligns better
+with hand-labeled truth) is *not* met — off still aligns
+better on more queries.
+
+A further round (~40 queries = full golden set) could
+potentially reveal convergence, but the marginal value
+diminishes given the consistent signal across v1 and v2.
+
 ### Known gap
 
 The calibration JSON artifact does not currently capture the
