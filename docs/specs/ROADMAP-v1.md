@@ -9,7 +9,7 @@ working session so state is recoverable cold from disk.
 |---|---|
 | Current version | 0.1.17 |
 | Target version | 1.0.0 |
-| Current phase | Phase 2 — spec approved 2026-05-16; M2 (labeling-kit extension + paired benchmark at n=30) is the active milestone. |
+| Current phase | Phase 2 — labeling complete 2026-05-16 (v3, n=30 rubric + 2 controls, 9:4 off-to-on). M4 (judge-variance measurement) and M5 (bootstrap CI + phantom-claim rate) are the active milestones. |
 | Last updated | 2026-05-16 |
 
 ---
