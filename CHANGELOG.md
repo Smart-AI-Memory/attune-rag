@@ -10,11 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > **Phase 2 of the v1.0 roadmap** — the `--thinking` default
 > decision is locked. No behavioral change ships in this
-> version (the default was already OFF and stays OFF), but the
-> calibration story is now anchored on a quantified
-> confidence interval rather than "absence of evidence." Phase
-> 3 (API surface groundwork) shipped in 0.1.18 in parallel —
-> see ROADMAP-v1.md for sequencing notes.
+> version (the default was already OFF and stays OFF). The
+> v3 ground-truth round (n = 30) gives a bootstrap 95 % CI
+> on `(wins_off − wins_on)` of `[−1, +13]` — point estimate
+> `+6`, CI includes zero. The decision rests on
+> "off-favored but not statistically distinguishable at this
+> sample size" plus judge variance well below the
+> escalation threshold, NOT on a positive CI. Phase 3's
+> API-surface groundwork (snapshot tests + deprecation
+> policy + `__all__` audit) landed in 0.1.18 in parallel;
+> the formal API freeze still targets 0.2.0. See
+> [ROADMAP-v1.md](docs/specs/ROADMAP-v1.md) for sequencing.
 
 ### Changed
 
@@ -33,6 +39,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [`docs/specs/faithfulness-thinking-decision/decision.md`](docs/specs/faithfulness-thinking-decision/decision.md).
   Calibration writeup:
   [`docs/rag/faithfulness-thinking-calibration.md`](docs/rag/faithfulness-thinking-calibration.md).
+- **`docs/rag/faithfulness-thinking-calibration.md` rewritten.**
+  Top blockquote now states the locked Phase 2 decision
+  (was "pending"). The duplicated v2 ground-truth section
+  (two near-identical copies in the file) has been
+  deduplicated. A new "v3 (2026-05-16, n = 30 rubric + 2
+  controls)" section adds the aggregate-alignment table,
+  bootstrap CI, judge-variance discussion with the σ=0
+  finding, phantom-claim examples, the v1 → v2 → v3
+  comparison table, and a trace of all six rubric rules.
+- **`docs/specs/ROADMAP-v1.md`** marks Phase 2 complete
+  and Phase 3 unblocked; current-version row reflects
+  0.1.19.
 
 ### Added
 
@@ -64,14 +82,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `(shifted, controls, random)`; the kit script's previous
   flat-list return is gone (M2.1 / M2.2 of Phase 2).
 - **`docs/specs/faithfulness-thinking-decision/`** — full
-  Phase 2 spec (requirements, design, tasks, locked
-  `decision.md`).
+  Phase 2 spec (requirements, design, tasks).
+- **`docs/specs/faithfulness-thinking-decision/decision.md`** —
+  locked, machine-readable YAML record of the Phase 2 verdict:
+  per-round win counts, bootstrap CI bounds, phantom rate,
+  variance numbers, prior-round comparisons, and the
+  methodology footnote about the mid-round labeler shift.
+  Future re-evaluations should start a successor spec
+  directory rather than amending this record.
 - **v3 calibration artifacts** at
   `artifacts/calibration/thinking-2026-05-16.json` (paired
   off+on benchmark at n=40),
   `ground-truth-2026-05-16.md` (n=32 labels; 30 rubric +
   2 controls), and `variance-2026-05-16.json` (K=8 × M=5
   judge-variance measurement).
+- **New unit-test coverage for the calibration toolchain.**
+  `tests/unit/test_measure_judge_variance.py` (9 tests:
+  fake-judge integration, aggregate stdev math, CLI
+  validation) and an expanded `tests/unit/test_calibration_scripts.py`
+  (27 new tests across the design tie rule, content-word
+  tokenizer, phantom-rate detector, bootstrap CI, and all
+  six rubric branches; total 52 tests pass in 0.13 s).
 
 ## [0.1.18] - 2026-05-16
 
