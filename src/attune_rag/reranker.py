@@ -45,6 +45,28 @@ class LLMReranker:
         candidate_multiplier: int = 3,
         timeout: float = 60.0,
     ) -> None:
+        """Configure model, credentials, and the over-fetch factor.
+
+        Args:
+            model: Anthropic model id used for the rerank call.
+                Defaults to Haiku 4.5 — cheapest model that
+                gives stable index lists. Override for
+                experimentation, not for production.
+            api_key: Optional explicit ``ANTHROPIC_API_KEY``.
+                When ``None``, the Anthropic SDK pulls from the
+                environment. Useful for tests that need to scope
+                credentials per call.
+            candidate_multiplier: How many extra candidates the
+                pipeline over-fetches before reranking. Pipeline
+                asks the retriever for ``k * candidate_multiplier``
+                hits, then the reranker reorders that wider pool
+                and the pipeline keeps the top ``k``. Default 3
+                — large enough to give the LLM real choice,
+                small enough that the rerank prompt stays cheap.
+            timeout: Per-call HTTP timeout (seconds). Defaults
+                to 60s; Haiku rerank calls typically return in
+                <2s so this is generous.
+        """
         self._model = model
         self._api_key = api_key
         self._timeout = timeout

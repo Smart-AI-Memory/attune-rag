@@ -23,6 +23,22 @@ from .providers import list_available
 
 
 def _cmd_query(args: argparse.Namespace) -> int:
+    """Handle ``attune-rag query``.
+
+    Two paths:
+
+    - With ``--provider``: runs the full RAG pipeline (retrieve
+      + assemble prompt + call LLM) and prints the response,
+      optionally with native claim-level citations.
+    - Without ``--provider``: prints retrieval results only —
+      either a human-readable hit list, or JSON when ``--json``
+      is set.
+
+    Returns 0 on success (including the "no grounding context
+    found" fallback). Does not catch exceptions from the
+    pipeline or providers; surfacing the traceback is
+    intentional.
+    """
     pipeline = RagPipeline()
     if args.provider:
         response, result = asyncio.run(
@@ -76,6 +92,14 @@ def _cmd_query(args: argparse.Namespace) -> int:
 
 
 def _cmd_corpus_info(args: argparse.Namespace) -> int:
+    """Handle ``attune-rag corpus-info``.
+
+    Loads the default corpus (currently :class:`AttuneHelpCorpus`)
+    and prints its name, version, total entry count, and a
+    per-category breakdown sorted by descending count then
+    alphabetical category. ``args`` is unused — the command
+    takes no flags. Returns 0.
+    """
     _ = args
     pipeline = RagPipeline()
     corpus = pipeline.corpus
@@ -94,6 +118,14 @@ def _cmd_corpus_info(args: argparse.Namespace) -> int:
 
 
 def _cmd_providers(args: argparse.Namespace) -> int:
+    """Handle ``attune-rag providers``.
+
+    Prints which provider extras are currently installed (e.g.
+    ``claude``, ``gemini``). When nothing is installed, prints
+    a one-line install hint. Returns 0 in both cases; non-zero
+    exits are reserved for actual failures, not for "empty
+    list."
+    """
     _ = args
     available = list_available()
     if not available:
@@ -107,6 +139,15 @@ def _cmd_providers(args: argparse.Namespace) -> int:
 
 
 def _cmd_dashboard_render(args: argparse.Namespace) -> int:
+    """Handle ``attune-rag dashboard render``.
+
+    Builds a fresh snapshot for ``--corpus-package``, renders
+    the packaged HTML template to ``--out``, and optionally
+    opens the result in the system browser when ``--open`` is
+    set. Returns 0 on success, 2 on a ``ValueError`` from
+    snapshot building or rendering (typically a bad output
+    path).
+    """
     from .dashboard.refresh import build_snapshot
     from .dashboard.render import render
 
@@ -126,12 +167,26 @@ def _cmd_dashboard_render(args: argparse.Namespace) -> int:
 
 
 def _cmd_dashboard_show(args: argparse.Namespace) -> int:
+    """Handle ``attune-rag dashboard show``.
+
+    Thin shim over :func:`attune_rag.dashboard.show.main` —
+    builds a snapshot for ``--corpus-package`` and pretty-prints
+    it to the terminal via Rich. Returns the inner ``main``'s
+    exit code unchanged.
+    """
     from .dashboard.show import main as _show
 
     return _show(args.corpus_package)
 
 
 def _cmd_dashboard_refresh(args: argparse.Namespace) -> int:
+    """Handle ``attune-rag dashboard refresh``.
+
+    Thin shim over :func:`attune_rag.dashboard.refresh.main` —
+    rebuilds the snapshot for ``--corpus-package`` and writes it
+    to the corpus's standard snapshot path. Returns the inner
+    ``main``'s exit code unchanged.
+    """
     from .dashboard.refresh import main as _refresh
 
     return _refresh(args.corpus_package)

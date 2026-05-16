@@ -1,4 +1,34 @@
-"""Keyword retriever and retriever protocol."""
+"""Keyword retriever and retriever protocol.
+
+Scoring model
+-------------
+
+:class:`KeywordRetriever` ranks entries by a weighted sum of
+token-set intersections between the tokenized query and several
+entry fields:
+
+- **path hits** — tokens in the file path (filename + parent
+  segments), heaviest weight
+- **summary hits** — tokens in the entry's one-line summary
+- **aliases hits** — tokens in declared frontmatter aliases
+- **content hits** — tokens anywhere in the body, lightest
+  weight (defensive against false positives from long content)
+- **related hits** — tokens in the paths of cross-linked
+  entries (from ``cross_links.json``)
+
+The raw weighted sum is then multiplied by a per-category
+coefficient (see ``_DEFAULT_CATEGORY_WEIGHTS``) to boost
+primary user-facing material (concepts, quickstarts) and
+penalize incidental categories (errors, lessons). Hits below
+``MIN_SCORE`` are dropped. Final ordering is descending score,
+ties broken by lexicographic path so results are stable across
+runs.
+
+Token preparation: ``_tokenize`` lowercases, strips
+punctuation, removes a short stopword list, and stems via a
+suffix-trimming rule (``_stem``) so plural/possessive/-ing
+forms collapse onto the same key.
+"""
 
 from __future__ import annotations
 
@@ -266,6 +296,18 @@ class KeywordRetriever:
         corpus: CorpusProtocol,
         k: int = 3,
     ) -> list[RetrievalHit]:
+        """Return the top-``k`` hits from ``corpus`` for ``query``.
+
+        Tokenizes the query, scores every corpus entry per the
+        module-level "Scoring model", filters by ``MIN_SCORE``,
+        and returns the top ``k`` sorted by descending score
+        (ties broken by lexicographic ``entry.path`` for
+        run-to-run determinism).
+
+        Returns an empty list when the query tokenizes to the
+        empty set (e.g. all stopwords). Raises ``ValueError`` on
+        empty query, ``k < 1``, or ``corpus is None``.
+        """
         if not query or not query.strip():
             raise ValueError("query must be a non-empty string")
         if k < 1:

@@ -40,6 +40,12 @@ from typing import Any
 
 
 def _default_queries_path() -> Path:
+    """Resolve the bundled golden-query set's path.
+
+    Walks up from this file (``src/attune_rag/benchmark.py``)
+    to the repo root and returns ``tests/golden/queries.yaml``.
+    Used as the ``--queries`` default; callers can override.
+    """
     return Path(__file__).resolve().parent.parent.parent / "tests" / "golden" / "queries.yaml"
 
 
@@ -61,6 +67,13 @@ def _env_int(name: str) -> int | None:
 
 
 def _load_queries(path: Path) -> list[dict[str, Any]]:
+    """Read the ``queries:`` list from a YAML file at ``path``.
+
+    Expected schema: ``{queries: [{id: str, query: str,
+    expected_in_top_3: list[str], difficulty?: str}, ...]}``.
+    Raises ``ValueError`` if the file parses but the queries
+    list is empty or missing.
+    """
     import yaml
 
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
@@ -74,6 +87,28 @@ def _run_benchmark(
     queries: list[dict[str, Any]],
     k: int,
 ) -> dict[str, Any]:
+    """Run retrieval-only benchmark across ``queries`` and aggregate metrics.
+
+    Returns a report dict with this shape (consumed by
+    :func:`_print_summary`, the dashboard, and ``main``):
+
+    - ``retriever`` (str) — class name of the active retriever
+    - ``corpus`` (str) — corpus.name from the active pipeline
+    - ``total_queries`` (int)
+    - ``precision_at_1`` (float) — fraction where the top-1 hit
+      is in ``expected_in_top_3``
+    - ``recall_at_k`` (float) — fraction where any hit in the
+      top-k intersects ``expected_in_top_3``
+    - ``k`` (int) — the top-k cap used
+    - ``mean_latency_ms`` (float)
+    - ``max_latency_ms`` (float)
+    - ``per_query`` (list[dict]) — one record per query with
+      ``id``, ``difficulty``, ``query``, ``expected``, ``actual``,
+      ``top1_match``, ``topk_match``
+
+    Pure: no LLM calls, no disk writes. Spends only the cost of
+    retrieval (CPU-bound for ``KeywordRetriever``).
+    """
     from . import RagPipeline
 
     pipeline = RagPipeline()
@@ -264,6 +299,13 @@ async def _score_faithfulness(
 
 
 def _percentile(values: list[float], pct: float) -> float:
+    """Return the ``pct``-th percentile of ``values`` (e.g. ``0.95``).
+
+    Uses nearest-rank, not interpolation — sufficient for the
+    benchmark's latency-summary use case. Returns 0.0 for an
+    empty input rather than raising; ``pct`` must be in
+    ``[0.0, 1.0]``.
+    """
     if not values:
         return 0.0
     ordered = sorted(values)
@@ -275,6 +317,12 @@ def _print_faithfulness(
     fr: dict[str, Any],
     label: str = "",
 ) -> None:
+    """Print one faithfulness report (``mean``, refusal, hallucination, latency).
+
+    Reads the dict shape returned by :func:`_score_faithfulness`.
+    ``label`` is appended in parens to each metric line so a
+    caller can disambiguate when printing multiple passes.
+    """
     suffix = f" ({label})" if label else ""
     print()
     print(f"Mean faithfulness{suffix}:   {fr['mean_faithfulness']:.3f}")
@@ -360,6 +408,14 @@ def _dump_json(
     path: Path,
     payload: dict[str, Any],
 ) -> None:
+    """Write ``payload`` as pretty-printed, sorted-key JSON to ``path``.
+
+    Creates parent directories if missing. ``sort_keys=True``
+    keeps run-to-run diffs deterministic so that two artifacts
+    from the same data are byte-identical. Prints the written
+    path to stderr so the user sees where the file landed even
+    when stdout is being captured.
+    """
     import json
 
     path.parent.mkdir(parents=True, exist_ok=True)
