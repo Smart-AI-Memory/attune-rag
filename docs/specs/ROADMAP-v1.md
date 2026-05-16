@@ -7,9 +7,9 @@ working session so state is recoverable cold from disk.
 
 | Field | Value |
 |---|---|
-| Current version | 0.1.17 |
+| Current version | 0.1.18 (Phase 1 + Phase 3 groundwork shipped on PyPI 2026-05-16) |
 | Target version | 1.0.0 |
-| Current phase | Phase 1 — complete; Phase 2 unblocked |
+| Current phase | Phase 2 — **complete 2026-05-16**. Decision: keep `--thinking` opt-in (`off-forever`). Ships at 0.1.19. Phase 3's API-surface groundwork shipped in parallel as part of 0.1.18 (see PR #36). |
 | Last updated | 2026-05-16 |
 
 ---
@@ -64,10 +64,10 @@ results doc.
 
 ## Phase 2 — Eval story landed
 
-**Spec:** `docs/specs/faithfulness-thinking-decision/` (to create)
-**Status:** not started
+**Spec:** [docs/specs/faithfulness-thinking-decision/](faithfulness-thinking-decision/)
+**Status:** **complete 2026-05-16**. Final v3 results (design.md tie rule, controls excluded): wins_off = 10, wins_on = 4, ties = 16. Bootstrap 95 % CI on `(wins_off − wins_on)` = `[−1, +13]` includes 0; point estimate +6. Judge variance `margin_stdev = 0.0189` (well below 0.10 escalation threshold). Phantom-claim rate 7.4 % (heuristic). **Verdict: `off-forever` — keep `--thinking` opt-in.** Locked at [`faithfulness-thinking-decision/decision.md`](faithfulness-thinking-decision/decision.md). Ships at 0.1.18. No baseline re-measurement required.
 **Estimate:** ~3 weeks of attention
-**Depends on:** Phase 1 complete
+**Depends on:** Phase 1 complete ✓ (PR #33 merged 2026-05-16)
 
 **Outcome:** `--thinking` default is decided. Calibration
 doc has a conclusion, not a "pending" tag. Judge

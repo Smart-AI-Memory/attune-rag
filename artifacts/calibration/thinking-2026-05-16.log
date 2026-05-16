@@ -1,0 +1,316 @@
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=255.4 fallback_used=False hit_count=3 prompt_variant=citation query='how do I run a security audit' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.21 fallback_used=False hit_count=3 prompt_variant=citation query='generate tests for my code' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.69 fallback_used=False hit_count=3 prompt_variant=citation query='fix failing tests' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.67 fallback_used=False hit_count=3 prompt_variant=citation query='review code quality' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.78 fallback_used=False hit_count=3 prompt_variant=citation query='deep review my PR' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.62 fallback_used=False hit_count=3 prompt_variant=citation query='predict bugs before they happen' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.59 fallback_used=False hit_count=3 prompt_variant=citation query='refactor my code' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.56 fallback_used=False hit_count=3 prompt_variant=citation query='prepare a release' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.56 fallback_used=False hit_count=3 prompt_variant=citation query='audit documentation for staleness' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.54 fallback_used=False hit_count=3 prompt_variant=citation query='plan a new feature' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.49 fallback_used=False hit_count=3 prompt_variant=citation query='vulnerability scan' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.58 fallback_used=False hit_count=3 prompt_variant=citation query='write documentation for my module' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.68 fallback_used=False hit_count=3 prompt_variant=citation query='orchestrate documentation workflow' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.55 fallback_used=False hit_count=3 prompt_variant=citation query='look for dangerous eval calls' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.59 fallback_used=False hit_count=3 prompt_variant=citation query='sniff out hard-to-catch bugs' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.62 fallback_used=False hit_count=3 prompt_variant=citation query='find bugs in my code' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.63 fallback_used=False hit_count=3 prompt_variant=citation query='create documentation for my code' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.68 fallback_used=False hit_count=3 prompt_variant=citation query='check code quality' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.52 fallback_used=False hit_count=3 prompt_variant=citation query='create a release' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.61 fallback_used=False hit_count=3 prompt_variant=citation query='write unit tests' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.59 fallback_used=False hit_count=3 prompt_variant=citation query='clean up technical debt' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.65 fallback_used=False hit_count=3 prompt_variant=citation query='add test coverage to my project' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.61 fallback_used=False hit_count=3 prompt_variant=citation query='check for security vulnerabilities' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.85 fallback_used=False hit_count=3 prompt_variant=citation query='debug failing tests' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.67 fallback_used=False hit_count=3 prompt_variant=citation query='find stale documentation' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.66 fallback_used=False hit_count=3 prompt_variant=citation query='version bump and changelog' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.83 fallback_used=False hit_count=3 prompt_variant=citation query='spot risky code changes before merging' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.58 fallback_used=False hit_count=3 prompt_variant=citation query='architect a new feature' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.85 fallback_used=False hit_count=3 prompt_variant=citation query='improve code quality metrics' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.69 fallback_used=False hit_count=3 prompt_variant=citation query='reduce code complexity' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.66 fallback_used=False hit_count=3 prompt_variant=citation query='my CI pipeline keeps failing' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=0.938 corpus=attune-help elapsed_ms=0.51 fallback_used=False hit_count=3 prompt_variant=citation query='SAST scan my repository' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.66 fallback_used=False hit_count=3 prompt_variant=citation query='add docstrings to all my functions' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.54 fallback_used=False hit_count=3 prompt_variant=citation query='manage the documentation pipeline' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.55 fallback_used=False hit_count=3 prompt_variant=citation query='publish to PyPI' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.71 fallback_used=False hit_count=3 prompt_variant=citation query='identify which files are most likely to break' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.06 fallback_used=False hit_count=3 prompt_variant=citation query='end-to-end review before merging a PR' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.77 fallback_used=False hit_count=3 prompt_variant=citation query='coordinate documentation updates across the project' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.82 fallback_used=False hit_count=3 prompt_variant=citation query='scope out next sprint tasks' retriever=KeywordRetriever
+2026-05-16 05:42:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.17 fallback_used=False hit_count=3 prompt_variant=citation query='find potential runtime errors before deployment' retriever=KeywordRetriever
+
+Running faithfulness pass A (thinking OFF)...
+  judging: gq-001 — 'how do I run a security audit'
+Retriever:  KeywordRetriever
+Corpus:     attune-help
+Queries:    40
+Precision@1: 95.00% (38/40)
+Recall@3:    100.00% (40/40)
+Mean latency: 7.46ms
+Max latency:  255.59ms
+
+Breakdown by difficulty:
+  easy    P@1=9/10  R@3=10/10
+  medium  P@1=26/27  R@3=27/27
+  hard    P@1=3/3  R@3=3/3
+2026-05-16 05:42:33 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=187.27 fallback_used=False hit_count=3 prompt_variant=citation query='how do I run a security audit' retriever=KeywordRetriever
+  judging: gq-002 — 'generate tests for my code'
+2026-05-16 05:42:46 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.27 fallback_used=False hit_count=3 prompt_variant=citation query='generate tests for my code' retriever=KeywordRetriever
+  judging: gq-003 — 'fix failing tests'
+2026-05-16 05:43:00 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.81 fallback_used=False hit_count=3 prompt_variant=citation query='fix failing tests' retriever=KeywordRetriever
+  judging: gq-004 — 'review code quality'
+2026-05-16 05:43:17 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.38 fallback_used=False hit_count=3 prompt_variant=citation query='review code quality' retriever=KeywordRetriever
+  judging: gq-005 — 'deep review my PR'
+2026-05-16 05:43:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.83 fallback_used=False hit_count=3 prompt_variant=citation query='deep review my PR' retriever=KeywordRetriever
+  judging: gq-006 — 'predict bugs before they happen'
+2026-05-16 05:43:47 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.44 fallback_used=False hit_count=3 prompt_variant=citation query='predict bugs before they happen' retriever=KeywordRetriever
+  judging: gq-007 — 'refactor my code'
+2026-05-16 05:44:05 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.86 fallback_used=False hit_count=3 prompt_variant=citation query='refactor my code' retriever=KeywordRetriever
+  judging: gq-008 — 'prepare a release'
+2026-05-16 05:44:17 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.88 fallback_used=False hit_count=3 prompt_variant=citation query='prepare a release' retriever=KeywordRetriever
+  judging: gq-009 — 'audit documentation for staleness'
+2026-05-16 05:44:36 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.25 fallback_used=False hit_count=3 prompt_variant=citation query='audit documentation for staleness' retriever=KeywordRetriever
+  judging: gq-010 — 'plan a new feature'
+2026-05-16 05:44:50 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.97 fallback_used=False hit_count=3 prompt_variant=citation query='plan a new feature' retriever=KeywordRetriever
+  judging: gq-011 — 'vulnerability scan'
+2026-05-16 05:45:05 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.2 fallback_used=False hit_count=3 prompt_variant=citation query='vulnerability scan' retriever=KeywordRetriever
+  judging: gq-012 — 'write documentation for my module'
+2026-05-16 05:45:19 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.03 fallback_used=False hit_count=3 prompt_variant=citation query='write documentation for my module' retriever=KeywordRetriever
+  judging: gq-013 — 'orchestrate documentation workflow'
+2026-05-16 05:45:37 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.79 fallback_used=False hit_count=3 prompt_variant=citation query='orchestrate documentation workflow' retriever=KeywordRetriever
+  judging: gq-014 — 'look for dangerous eval calls'
+2026-05-16 05:45:59 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.36 fallback_used=False hit_count=3 prompt_variant=citation query='look for dangerous eval calls' retriever=KeywordRetriever
+  judging: gq-015 — 'sniff out hard-to-catch bugs'
+2026-05-16 05:46:14 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.1 fallback_used=False hit_count=3 prompt_variant=citation query='sniff out hard-to-catch bugs' retriever=KeywordRetriever
+  judging: gq-016 — 'find bugs in my code'
+2026-05-16 05:46:35 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.1 fallback_used=False hit_count=3 prompt_variant=citation query='find bugs in my code' retriever=KeywordRetriever
+  judging: gq-017 — 'create documentation for my code'
+2026-05-16 05:46:50 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.73 fallback_used=False hit_count=3 prompt_variant=citation query='create documentation for my code' retriever=KeywordRetriever
+  judging: gq-018 — 'check code quality'
+2026-05-16 05:47:05 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.05 fallback_used=False hit_count=3 prompt_variant=citation query='check code quality' retriever=KeywordRetriever
+  judging: gq-019 — 'create a release'
+2026-05-16 05:47:18 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.58 fallback_used=False hit_count=3 prompt_variant=citation query='create a release' retriever=KeywordRetriever
+  judging: gq-020 — 'write unit tests'
+2026-05-16 05:47:39 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.8 fallback_used=False hit_count=3 prompt_variant=citation query='write unit tests' retriever=KeywordRetriever
+  judging: gq-021 — 'clean up technical debt'
+2026-05-16 05:47:54 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.66 fallback_used=False hit_count=3 prompt_variant=citation query='clean up technical debt' retriever=KeywordRetriever
+  judging: gq-022 — 'add test coverage to my project'
+2026-05-16 05:48:11 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.6 fallback_used=False hit_count=3 prompt_variant=citation query='add test coverage to my project' retriever=KeywordRetriever
+  judging: gq-023 — 'check for security vulnerabilities'
+2026-05-16 05:48:28 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.33 fallback_used=False hit_count=3 prompt_variant=citation query='check for security vulnerabilities' retriever=KeywordRetriever
+  judging: gq-024 — 'debug failing tests'
+2026-05-16 05:48:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.78 fallback_used=False hit_count=3 prompt_variant=citation query='debug failing tests' retriever=KeywordRetriever
+  judging: gq-025 — 'find stale documentation'
+2026-05-16 05:49:07 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.82 fallback_used=False hit_count=3 prompt_variant=citation query='find stale documentation' retriever=KeywordRetriever
+  judging: gq-026 — 'version bump and changelog'
+2026-05-16 05:49:14 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.79 fallback_used=False hit_count=3 prompt_variant=citation query='version bump and changelog' retriever=KeywordRetriever
+  judging: gq-027 — 'spot risky code changes before merging'
+2026-05-16 05:49:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.28 fallback_used=False hit_count=3 prompt_variant=citation query='spot risky code changes before merging' retriever=KeywordRetriever
+  judging: gq-028 — 'architect a new feature'
+2026-05-16 05:49:48 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.56 fallback_used=False hit_count=3 prompt_variant=citation query='architect a new feature' retriever=KeywordRetriever
+  judging: gq-029 — 'improve code quality metrics'
+2026-05-16 05:50:10 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.87 fallback_used=False hit_count=3 prompt_variant=citation query='improve code quality metrics' retriever=KeywordRetriever
+  judging: gq-030 — 'reduce code complexity'
+2026-05-16 05:50:23 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.6 fallback_used=False hit_count=3 prompt_variant=citation query='reduce code complexity' retriever=KeywordRetriever
+  judging: gq-031 — 'my CI pipeline keeps failing'
+2026-05-16 05:50:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.06 fallback_used=False hit_count=3 prompt_variant=citation query='my CI pipeline keeps failing' retriever=KeywordRetriever
+  judging: gq-032 — 'SAST scan my repository'
+2026-05-16 05:51:01 [info     ] rag.run                        confidence=0.938 corpus=attune-help elapsed_ms=0.85 fallback_used=False hit_count=3 prompt_variant=citation query='SAST scan my repository' retriever=KeywordRetriever
+  judging: gq-033 — 'add docstrings to all my functions'
+2026-05-16 05:51:14 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.06 fallback_used=False hit_count=3 prompt_variant=citation query='add docstrings to all my functions' retriever=KeywordRetriever
+  judging: gq-034 — 'manage the documentation pipeline'
+2026-05-16 05:51:33 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.44 fallback_used=False hit_count=3 prompt_variant=citation query='manage the documentation pipeline' retriever=KeywordRetriever
+  judging: gq-035 — 'publish to PyPI'
+2026-05-16 05:51:53 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.76 fallback_used=False hit_count=3 prompt_variant=citation query='publish to PyPI' retriever=KeywordRetriever
+  judging: gq-036 — 'identify which files are most likely to break'
+2026-05-16 05:52:16 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.09 fallback_used=False hit_count=3 prompt_variant=citation query='identify which files are most likely to break' retriever=KeywordRetriever
+  judging: gq-037 — 'end-to-end review before merging a PR'
+2026-05-16 05:52:36 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.04 fallback_used=False hit_count=3 prompt_variant=citation query='end-to-end review before merging a PR' retriever=KeywordRetriever
+  judging: gq-038 — 'coordinate documentation updates across the project'
+2026-05-16 05:52:53 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.58 fallback_used=False hit_count=3 prompt_variant=citation query='coordinate documentation updates across the project' retriever=KeywordRetriever
+  judging: gq-039 — 'scope out next sprint tasks'
+2026-05-16 05:53:08 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.74 fallback_used=False hit_count=3 prompt_variant=citation query='scope out next sprint tasks' retriever=KeywordRetriever
+  judging: gq-040 — 'find potential runtime errors before deployment'
+2026-05-16 05:53:28 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.87 fallback_used=False hit_count=3 prompt_variant=citation query='find potential runtime errors before deployment' retriever=KeywordRetriever
+
+Running faithfulness pass B (thinking ON)...
+  judging: gq-001 — 'how do I run a security audit'
+
+Mean faithfulness (thinking off):   0.979
+Refusal rate (thinking off):        0.0%
+Hallucination rate (thinking off):  27.5%
+Citation emit rate (thinking off):  0.0%
+Mean latency (thinking off):        8275 ms
+p95 latency (thinking off):         11822 ms
+2026-05-16 05:53:49 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=206.47 fallback_used=False hit_count=3 prompt_variant=citation query='how do I run a security audit' retriever=KeywordRetriever
+Task exception was never retrieved
+future: <Task finished name='Task-122' coro=<AsyncClient.aclose() done, defined at /Users/patrickroebuck/attune-rag/.venv/lib/python3.11/site-packages/httpx/_client.py:1978> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/Users/patrickroebuck/attune-rag/.venv/lib/python3.11/site-packages/httpx/_client.py", line 1985, in aclose
+    await self._transport.aclose()
+  File "/Users/patrickroebuck/attune-rag/.venv/lib/python3.11/site-packages/httpx/_transports/default.py", line 406, in aclose
+    await self._pool.aclose()
+  File "/Users/patrickroebuck/attune-rag/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 353, in aclose
+    await self._close_connections(closing_connections)
+  File "/Users/patrickroebuck/attune-rag/.venv/lib/python3.11/site-packages/httpcore/_async/connection_pool.py", line 345, in _close_connections
+    await connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.venv/lib/python3.11/site-packages/httpcore/_async/connection.py", line 173, in aclose
+    await self._connection.aclose()
+  File "/Users/patrickroebuck/attune-rag/.venv/lib/python3.11/site-packages/httpcore/_async/http11.py", line 258, in aclose
+    await self._network_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.venv/lib/python3.11/site-packages/httpcore/_backends/anyio.py", line 53, in aclose
+    await self._stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.venv/lib/python3.11/site-packages/anyio/streams/tls.py", line 236, in aclose
+    await self.transport_stream.aclose()
+  File "/Users/patrickroebuck/attune-rag/.venv/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1344, in aclose
+    self._transport.close()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/selector_events.py", line 864, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+    self._check_closed()
+  File "/Users/patrickroebuck/.local/share/uv/python/cpython-3.11.14-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+  judging: gq-002 — 'generate tests for my code'
+2026-05-16 05:54:08 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.04 fallback_used=False hit_count=3 prompt_variant=citation query='generate tests for my code' retriever=KeywordRetriever
+  judging: gq-003 — 'fix failing tests'
+2026-05-16 05:54:28 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.98 fallback_used=False hit_count=3 prompt_variant=citation query='fix failing tests' retriever=KeywordRetriever
+  judging: gq-004 — 'review code quality'
+2026-05-16 05:54:56 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.4 fallback_used=False hit_count=3 prompt_variant=citation query='review code quality' retriever=KeywordRetriever
+  judging: gq-005 — 'deep review my PR'
+2026-05-16 05:55:25 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.66 fallback_used=False hit_count=3 prompt_variant=citation query='deep review my PR' retriever=KeywordRetriever
+  judging: gq-006 — 'predict bugs before they happen'
+2026-05-16 05:55:45 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.66 fallback_used=False hit_count=3 prompt_variant=citation query='predict bugs before they happen' retriever=KeywordRetriever
+  judging: gq-007 — 'refactor my code'
+2026-05-16 05:56:13 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.6 fallback_used=False hit_count=3 prompt_variant=citation query='refactor my code' retriever=KeywordRetriever
+  judging: gq-008 — 'prepare a release'
+2026-05-16 05:56:35 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.14 fallback_used=False hit_count=3 prompt_variant=citation query='prepare a release' retriever=KeywordRetriever
+  judging: gq-009 — 'audit documentation for staleness'
+2026-05-16 05:57:10 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.93 fallback_used=False hit_count=3 prompt_variant=citation query='audit documentation for staleness' retriever=KeywordRetriever
+  judging: gq-010 — 'plan a new feature'
+2026-05-16 05:57:42 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.18 fallback_used=False hit_count=3 prompt_variant=citation query='plan a new feature' retriever=KeywordRetriever
+  judging: gq-011 — 'vulnerability scan'
+2026-05-16 05:58:03 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.82 fallback_used=False hit_count=3 prompt_variant=citation query='vulnerability scan' retriever=KeywordRetriever
+  judging: gq-012 — 'write documentation for my module'
+2026-05-16 05:58:27 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.96 fallback_used=False hit_count=3 prompt_variant=citation query='write documentation for my module' retriever=KeywordRetriever
+  judging: gq-013 — 'orchestrate documentation workflow'
+2026-05-16 05:58:59 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.64 fallback_used=False hit_count=3 prompt_variant=citation query='orchestrate documentation workflow' retriever=KeywordRetriever
+  judging: gq-014 — 'look for dangerous eval calls'
+2026-05-16 05:59:39 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.52 fallback_used=False hit_count=3 prompt_variant=citation query='look for dangerous eval calls' retriever=KeywordRetriever
+  judging: gq-015 — 'sniff out hard-to-catch bugs'
+2026-05-16 06:00:07 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.8 fallback_used=False hit_count=3 prompt_variant=citation query='sniff out hard-to-catch bugs' retriever=KeywordRetriever
+  judging: gq-016 — 'find bugs in my code'
+2026-05-16 06:00:46 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.42 fallback_used=False hit_count=3 prompt_variant=citation query='find bugs in my code' retriever=KeywordRetriever
+  judging: gq-017 — 'create documentation for my code'
+2026-05-16 06:01:15 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.07 fallback_used=False hit_count=3 prompt_variant=citation query='create documentation for my code' retriever=KeywordRetriever
+  judging: gq-018 — 'check code quality'
+2026-05-16 06:01:41 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.0 fallback_used=False hit_count=3 prompt_variant=citation query='check code quality' retriever=KeywordRetriever
+  judging: gq-019 — 'create a release'
+2026-05-16 06:02:01 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.48 fallback_used=False hit_count=3 prompt_variant=citation query='create a release' retriever=KeywordRetriever
+  judging: gq-020 — 'write unit tests'
+2026-05-16 06:02:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.2 fallback_used=False hit_count=3 prompt_variant=citation query='write unit tests' retriever=KeywordRetriever
+  judging: gq-021 — 'clean up technical debt'
+2026-05-16 06:02:56 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.87 fallback_used=False hit_count=3 prompt_variant=citation query='clean up technical debt' retriever=KeywordRetriever
+  judging: gq-022 — 'add test coverage to my project'
+2026-05-16 06:03:21 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.41 fallback_used=False hit_count=3 prompt_variant=citation query='add test coverage to my project' retriever=KeywordRetriever
+  judging: gq-023 — 'check for security vulnerabilities'
+2026-05-16 06:03:48 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.02 fallback_used=False hit_count=3 prompt_variant=citation query='check for security vulnerabilities' retriever=KeywordRetriever
+  judging: gq-024 — 'debug failing tests'
+2026-05-16 06:04:12 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.01 fallback_used=False hit_count=3 prompt_variant=citation query='debug failing tests' retriever=KeywordRetriever
+  judging: gq-025 — 'find stale documentation'
+2026-05-16 06:04:37 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.98 fallback_used=False hit_count=3 prompt_variant=citation query='find stale documentation' retriever=KeywordRetriever
+  judging: gq-026 — 'version bump and changelog'
+2026-05-16 06:04:57 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.06 fallback_used=False hit_count=3 prompt_variant=citation query='version bump and changelog' retriever=KeywordRetriever
+  judging: gq-027 — 'spot risky code changes before merging'
+2026-05-16 06:05:23 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.05 fallback_used=False hit_count=3 prompt_variant=citation query='spot risky code changes before merging' retriever=KeywordRetriever
+  judging: gq-028 — 'architect a new feature'
+2026-05-16 06:05:47 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.48 fallback_used=False hit_count=3 prompt_variant=citation query='architect a new feature' retriever=KeywordRetriever
+  judging: gq-029 — 'improve code quality metrics'
+2026-05-16 06:06:29 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=2.12 fallback_used=False hit_count=3 prompt_variant=citation query='improve code quality metrics' retriever=KeywordRetriever
+  judging: gq-030 — 'reduce code complexity'
+2026-05-16 06:06:55 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.51 fallback_used=False hit_count=3 prompt_variant=citation query='reduce code complexity' retriever=KeywordRetriever
+  judging: gq-031 — 'my CI pipeline keeps failing'
+2026-05-16 06:07:35 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.3 fallback_used=False hit_count=3 prompt_variant=citation query='my CI pipeline keeps failing' retriever=KeywordRetriever
+  judging: gq-032 — 'SAST scan my repository'
+2026-05-16 06:08:15 [info     ] rag.run                        confidence=0.938 corpus=attune-help elapsed_ms=0.8 fallback_used=False hit_count=3 prompt_variant=citation query='SAST scan my repository' retriever=KeywordRetriever
+  judging: gq-033 — 'add docstrings to all my functions'
+2026-05-16 06:08:43 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.99 fallback_used=False hit_count=3 prompt_variant=citation query='add docstrings to all my functions' retriever=KeywordRetriever
+  judging: gq-034 — 'manage the documentation pipeline'
+2026-05-16 06:09:15 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.92 fallback_used=False hit_count=3 prompt_variant=citation query='manage the documentation pipeline' retriever=KeywordRetriever
+  judging: gq-035 — 'publish to PyPI'
+2026-05-16 06:09:48 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.96 fallback_used=False hit_count=3 prompt_variant=citation query='publish to PyPI' retriever=KeywordRetriever
+  judging: gq-036 — 'identify which files are most likely to break'
+2026-05-16 06:10:31 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.88 fallback_used=False hit_count=3 prompt_variant=citation query='identify which files are most likely to break' retriever=KeywordRetriever
+  judging: gq-037 — 'end-to-end review before merging a PR'
+2026-05-16 06:10:58 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.04 fallback_used=False hit_count=3 prompt_variant=citation query='end-to-end review before merging a PR' retriever=KeywordRetriever
+  judging: gq-038 — 'coordinate documentation updates across the project'
+2026-05-16 06:11:31 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.99 fallback_used=False hit_count=3 prompt_variant=citation query='coordinate documentation updates across the project' retriever=KeywordRetriever
+  judging: gq-039 — 'scope out next sprint tasks'
+2026-05-16 06:12:03 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=1.72 fallback_used=False hit_count=3 prompt_variant=citation query='scope out next sprint tasks' retriever=KeywordRetriever
+  judging: gq-040 — 'find potential runtime errors before deployment'
+2026-05-16 06:12:32 [info     ] rag.run                        confidence=1.0 corpus=attune-help elapsed_ms=0.94 fallback_used=False hit_count=3 prompt_variant=citation query='find potential runtime errors before deployment' retriever=KeywordRetriever
+
+Wrote per-query JSON: /Users/patrickroebuck/attune-rag/.claude/worktrees/crazy-torvalds-c90bf4/artifacts/calibration/thinking-2026-05-16.json
+
+Mean faithfulness (thinking on):   0.957
+Refusal rate (thinking on):        0.0%
+Hallucination rate (thinking on):  42.5%
+Citation emit rate (thinking on):  0.0%
+Mean latency (thinking on):        8252 ms
+p95 latency (thinking on):         11718 ms
+
+Metric                      thinking off     thinking on           Δ
+------------------------  --------------  --------------  ----------
+Mean faithfulness                  0.979           0.957      -0.022
+Refusal rate                        0.0%            0.0%       +0.0%
+Hallucination rate                 27.5%           42.5%      +15.0%
+Citation emit rate                  0.0%            0.0%       +0.0%
+Mean latency (ms)                   8275            8252         -23
+p95 latency (ms)                   11822           11718        -103
+
+Per-query verdict comparison (off vs on):
+  id                   score Δ      claims A→B  verdict shift           
+  gq-001                +0.000     18 → 13      count,partition         
+  gq-002                +0.000     13 → 18      count,partition         
+  gq-003                +0.000     20 → 19      count,partition         
+  gq-004                +0.000     21 → 19      count,partition         
+  gq-005                +0.009     10 → 11      score,count,partition   
+  gq-006                +0.000     31 → 19      count,partition         
+  gq-007                +0.000     14 → 17      count,partition         
+  gq-008                +0.000     24 → 24      —                       
+  gq-009                -0.081     19 → 15      score,count,partition   
+  gq-010                -0.091     13 → 11      score,count,partition   
+  gq-011                +0.000     17 → 17      —                       
+  gq-012                +0.000     24 → 31      count,partition         
+  gq-013                -0.046     17 → 19      score,count,partition   
+  gq-014                +0.005     13 → 14      score,count,partition   
+  gq-015                -0.077     22 → 26      score,count,partition   
+  gq-016                -0.039     15 → 19      score,count,partition   
+  gq-017                -0.098     12 → 11      score,count,partition   
+  gq-018                +0.000     16 → 17      count,partition         
+  gq-019                +0.000     18 → 27      count,partition         
+  gq-020                +0.000     12 → 16      count,partition         
+  gq-021                +0.000     17 → 16      count,partition         
+  gq-022                +0.000     26 → 25      count,partition         
+  gq-023                +0.000     16 → 17      count,partition         
+  gq-024                +0.000     20 → 21      count,partition         
+  gq-025                +0.000      8 → 10      count,partition         
+  gq-026                +0.000     16 → 18      count,partition         
+  gq-027                +0.000     18 → 20      count,partition         
+  gq-028                -0.082     19 → 16      score,count,partition   
+  gq-029                +0.000     14 → 25      count,partition         
+  gq-030                -0.043     16 → 19      score,count,partition   
+  gq-031                -0.056     17 → 18      score,count,partition   
+  gq-032                -0.062     15 → 16      score,count,partition   
+  gq-033                -0.006     20 → 18      score,count,partition   
+  gq-034                -0.121     15 → 16      score,count,partition   
+  gq-035                +0.000     25 → 42      count,partition         
+  gq-036                +0.000     18 → 17      count,partition         
+  gq-037                +0.051     17 → 15      score,count,partition   
+  gq-038                -0.083     16 → 12      score,count,partition   
+  gq-039                -0.056     16 → 18      score,count,partition   
+  gq-040                +0.000     21 → 23      count,partition         
+
+Verdict-shift rate: 38/40 = 95.0%
+
+PASS: P@1 ≥ 0.00% and thinking-off faithfulness ≥ 0.000.

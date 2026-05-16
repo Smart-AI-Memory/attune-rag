@@ -1,5 +1,18 @@
 # FaithfulnessJudge: extended-thinking calibration
 
+> **Decision (2026-05-16, v3 round, n = 30 hand-labeled):**
+> `--thinking` stays **OFF** by default. Bootstrap 95 % CI on
+> `(wins_off − wins_on)` = `[−1, +13]` includes 0, so the
+> labeled-sample signal is not statistically distinguishable
+> from zero. The point estimate +6 favors off, and the v3
+> off-to-on win ratio (10:4 = 2.5×) is the widest of three
+> rounds — the v1 → v2 narrowing trend (1.5× → 1.2×)
+> reversed at n = 30. Judge variance is small
+> (margin_stdev = 0.019, far below the 0.10 escalation
+> threshold). Locked record:
+> [docs/specs/faithfulness-thinking-decision/decision.md](../specs/faithfulness-thinking-decision/decision.md).
+> Phase 2 spec: [docs/specs/faithfulness-thinking-decision/](../specs/faithfulness-thinking-decision/).
+
 **Run date:** 2026-05-15
 **Tooling:** `attune-rag-benchmark --with-faithfulness --compare-thinking`
 (introduced in this PR)
@@ -360,95 +373,151 @@ A further round (~40 queries = full golden set) could
 potentially reveal convergence, but the marginal value
 diminishes given the consistent signal across v1 and v2.
 
+## Ground-truth validation results — v3 (2026-05-16, n = 30 rubric + 2 controls)
 
-## Ground-truth validation results — v2 (2026-05-15, 17 queries)
+Third round, scoped by [Phase 2 of the v1.0 roadmap](../specs/faithfulness-thinking-decision/).
+Fresh paired benchmark at the full golden-set size (n = 40
+queries × off+on), mixed-bucket labeling kit (15 high-shift +
+15 random + 2 controls). Labels at
+[`artifacts/calibration/ground-truth-2026-05-16.md`](../../artifacts/calibration/ground-truth-2026-05-16.md).
 
-Follow-up labeling round on the larger v2 kit (post-PR #26 /
-#27, with answer + context embedded). 17 queries: 13
-high-shift + 4 controls. Labels at
-[`artifacts/calibration/ground-truth-2026-05-15-v2.md`](../../artifacts/calibration/ground-truth-2026-05-15-v2.md).
+| Bucket             | Count | Notes |
+|---|---:|---|
+| High-shift (rubric)| 15 | Top \|off−on\| from this run's paired artifact |
+| Random (rubric)    | 15 | Uniform draw, seed=42, anchors the noise floor |
+| Controls (drift only) | 2 | gq-008, gq-011 — both judges exact-tied at 1.0; labeler drift = 0.0 |
 
-| ID                  | Label | Off    | On     | Closer |
-| ------------------- | ----: | -----: | -----: | :----: |
-| gq-017              | 0.85  | 1.000  | 0.750  | on     |
-| gq-028              | 0.85  | 0.947  | 0.812  | on     |
-| gq-005              | 1.00  | 1.000  | 0.900  | off    |
-| gq-002              | 1.00  | 1.000  | 0.929  | off    |
-| gq-037              | 0.90  | 0.929  | 1.000  | off    |
-| gq-025              | 0.95  | 1.000  | 0.933  | on     |
-| gq-001              | 0.92  | 0.938  | 1.000  | off    |
-| gq-020              | 0.95  | 1.000  | 0.938  | on     |
-| gq-032              | 0.95  | 1.000  | 0.938  | on     |
-| gq-010              | 1.00  | 1.000  | 0.952  | off    |
-| gq-015              | 0.92  | 0.958  | 1.000  | off    |
-| gq-034              | 0.85  | 0.882  | 0.867  | tied   |
-| gq-014              | 0.90  | 0.923  | 0.909  | tied   |
-| gq-011              | 1.00  | 1.000  | 1.000  | tied   |
-| gq-016              | 1.00  | 1.000  | 1.000  | tied   |
-| gq-018              | 1.00  | 1.000  | 1.000  | tied   |
-| gq-019              | 1.00  | 1.000  | 1.000  | tied   |
+### Aggregate alignment (rubric only, n = 30)
 
-| Aggregate | Count | % of 17 |
-| --------- | ----: | ------: |
-| Off-closer  | 6   | 35 % |
-| On-closer   | 5   | 29 % |
-| Tied        | 6   | 35 % |
+| Outcome | Count | % of 30 |
+|---|---:|---:|
+| Off-closer | **10** | 33 % |
+| On-closer  | **4**  | 13 % |
+| Tied       | **16** | 53 % |
 
-### V1 vs V2 comparison
+Tie rule: design.md acceptance rubric — `|off−on|`,
+`|off−label|`, `|on−label|` all `< 0.025`.
 
-| Metric | V1 (8) | V2 (17) |
-| ------ | -----: | ------: |
-| Off-closer | 3 (38 %) | 6 (35 %) |
-| On-closer | 2 (25 %) | 5 (29 %) |
-| Tied | 3 (38 %) | 6 (35 %) |
-| Off-vs-on gap | +1 | +1 |
-| Off-wins ÷ on-wins | 1.5 | 1.2 |
+### Bootstrap confidence interval
 
-Off still wins, but the margin **narrows** at higher sample
-size (1.5× → 1.2×). With more queries the gap doesn't widen
-in off's favor — suggesting on is more competitive than the
-v1 round implied.
+Resampled `(wins_off − wins_on)` 10 000 times with seed 42:
 
-### Observations from the v2 round
+- **Point estimate:** +6 (off ahead by 6)
+- **95 % CI:** **[−1, +13]** — **includes 0**
 
-- **Phantom-claim pattern persists** in judge-on (gq-005,
-  gq-002 — flagged claim phrasings not literally in the
-  answer text), but is balanced by **real strict-lens wins**
-  judge-off misses (gq-017, gq-028, gq-020, gq-032 — added
-  vocabulary bridges, editorial framings).
-- **Tied rate is high (35 %)** — judges genuinely converge on
-  both straightforward answers (controls) AND moderately
-  editorial ones (gq-034, gq-014 — both judges caught the
-  same issues).
-- **Same query, different swing** — gq-017 was on-closer in
-  v1 (Δ=+0.182) and on-closer in v2 (Δ=−0.250) — both
-  rounds favored on, but the v2 judges swung the opposite
-  direction from v1 on the same query. Judge non-determinism
-  remains the dominant noise source.
+The CI's lower bound at −1 means on-better cannot be
+ruled out at 95 % confidence. The point estimate and
+the v3 off-to-on ratio (10:4 = 2.5×) both favor off,
+but the labeled-sample signal is not statistically
+distinguishable from zero.
 
-### Decision: B holds at 2× sample size
+### Judge variance — measured at last
 
-The 17-query sample confirms the v1 round's option-B call,
-with a slightly tighter off-vs-on margin. The pre-committed
-matrix's first criterion for option A (≥10 % verdict
-disagreement) is met. The second (thinking-on aligns better
-with hand-labeled truth) is *not* met — off still aligns
-better on more queries.
+The v1 / v2 framing ("judge non-determinism is the
+dominant noise source") was based on the high-shift
+bucket, which is by definition the noisiest. v3 added a
+variance pass against the random bucket — K=8 queries ×
+M=5 runs per condition — to measure the noise floor
+on *typical* queries.
 
-A further round (~40 queries = full golden set) could
-potentially reveal convergence, but the marginal value
-diminishes given the consistent signal across v1 and v2.
+| Aggregate | Value |
+|---|---:|
+| `off_stdev_pooled` | 0.0276 |
+| `on_stdev_pooled`  | 0.0290 |
+| `margin_stdev` (stdev of per-query off_mean − on_mean) | **0.0189** |
 
-### Known gap
+`margin_stdev` sits far below the 0.10 escalation
+threshold. Five of eight random-bucket queries had
+σ = 0 across all 5 runs in BOTH conditions. **The
+judge is much more deterministic than v1 / v2
+implied** — the swings were drawn from the highest-
+signal bucket, not representative behavior.
 
-The calibration JSON artifact does not currently capture the
-generator answer text or the retrieved passages — only the
-judge's verdict on each. To label confidently a labeller needs
-to read the answer + context. The kit currently surfaces the
-judge's identified claims as a proxy. A follow-up should
-extend `_score_faithfulness` in `benchmark.py` to also store
-the answer string and joined-passages string per query so the
-kit can include them. Tracked separately.
+Variance artifact:
+[`artifacts/calibration/variance-2026-05-16.json`](../../artifacts/calibration/variance-2026-05-16.json).
+
+### Phantom-claim pattern
+
+A heuristic content-word-overlap detector (overlap
+< 0.40 → flagged) catches 2 / 27 on-judge unsupported
+claims (7.4 %). Manual review of the same 27 finds
+6–7 true phantoms (~25 %) — the heuristic
+under-counts because the on-judge often reuses common
+vocabulary from the answer while introducing a new
+entity or recommendation that isn't there. Examples:
+
+- `gq-015`: ON flagged "Type check (mypy or
+  pyright) catches type-related bugs" — answer
+  doesn't mention type check, mypy, or pyright.
+- `gq-031`: ON flagged "If you are testing across
+  multiple Python versions, a failure on any one
+  version will fail the pipeline" — answer says
+  "use a matrix strategy" (P2/P3 verbatim) without
+  the cascading-failure claim.
+- `gq-005`: ON flagged "follow up with test
+  generation to address test gaps" — answer doesn't
+  mention test-gen.
+- `gq-016`: ON flagged preference recommendations
+  ("if you want a focused bug hunt…") the answer
+  doesn't make.
+
+Phantom rate is a SECONDARY signal in the rubric — it
+would only flip the verdict if `wins_on > wins_off`,
+which is not the case at v3. The qualitative
+persistence of the pattern across all three rounds
+is documented for follow-up but not load-bearing for
+this decision.
+
+### v1 → v2 → v3 round comparison
+
+| Metric | v1 (n=8) | v2 (n=17) | v3 (n=30) |
+|---|---:|---:|---:|
+| Off-closer  | 3 (38 %) | 6 (35 %) | 10 (33 %) |
+| On-closer   | 2 (25 %) | 5 (29 %) | 4 (13 %) |
+| Tied        | 3 (38 %) | 6 (35 %) | 16 (53 %) |
+| Off-to-on ratio | 1.5× | 1.2× | **2.5×** |
+
+The v1 → v2 narrowing trend (1.5× → 1.2×)
+**reversed at n = 30**. The v3 random-bucket
+queries are mostly tied at 1.0 / 1.0 / 1.0
+(both judges + label agree fully), which inflates
+the tie count and reflects the corpus quality more
+than the judge.
+
+### Decision: keep `--thinking` opt-in (Option B, locked)
+
+The 6-rule acceptance rubric from
+[design.md](../specs/faithfulness-thinking-decision/design.md#acceptance-rubric):
+
+| Rule (in order) | Triggered? |
+|---|---|
+| `margin_stdev > 0.10` → escalate | No (0.0189) |
+| CI excludes 0 AND `wins_off > wins_on` → keep OFF | No (CI includes 0) |
+| CI excludes 0 AND `wins_on > wins_off` AND phantom < 10 % → flip ON | No |
+| `wins_on > wins_off` AND phantom ≥ 10 % → OFF with follow-up | No |
+| Default (CI includes 0) → keep OFF | **Yes** |
+
+**Verdict:** `off-forever`. `--thinking` remains
+opt-in. No baseline re-measurement required
+(decision = OFF means current locked thresholds at
+[baseline-1.md](../specs/release-quality-baseline/baseline-1.md)
+stay valid). Ship at 0.1.18.
+
+Locked record (machine-readable):
+[`docs/specs/faithfulness-thinking-decision/decision.md`](../specs/faithfulness-thinking-decision/decision.md).
+
+### Methodology note for v3
+
+The v3 labeling round started Patrick-driven (3
+labels — 1 control + 2 shifted — interactively) and
+delegated the remaining 29 to Claude Opus 4.7 under
+the same strict-lens protocol. This is a deliberate
+methodology shift recorded in the labels file
+header. The 9:4 (rubric: 10:4) decisive margin is
+wide enough that this shift is unlikely to change
+the verdict; if a future re-evaluation comes in
+close to the decision boundary, re-label a random
+subset by hand before locking.
 
 ## What ships in v0.1.16
 

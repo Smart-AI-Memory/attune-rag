@@ -17,12 +17,20 @@ Usage::
         --artifact artifacts/calibration/thinking-2026-05-15.json \\
         --out artifacts/calibration/ground-truth-2026-05-15.template.md \\
         --n-shifted 5 --n-controls 3
+
+The ``--n-random`` flag adds a third bucket — N queries drawn
+uniformly from the remaining (non-shifted, non-control) pool.
+Used by Phase 2 of the v1.0 roadmap to separate "judge
+disagreement" from "judge run-to-run variance" (see
+``docs/specs/faithfulness-thinking-decision/design.md``).
+Pair with ``--seed`` for reproducible draws.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import random
 import sys
 from pathlib import Path
 from typing import Any
@@ -37,11 +45,18 @@ def _select_queries(
     n_shifted: int,
     n_controls: int,
     shift_threshold: float,
-) -> list[str]:
-    """Return a list of query IDs: top-shifted then a few unchanged.
+    n_random: int = 0,
+    rng: random.Random | None = None,
+) -> tuple[list[str], list[str], list[str]]:
+    """Return three lists of query IDs: shifted, controls, random.
 
     "Shifted" = abs(score_on - score_off) >= ``shift_threshold``.
     "Control" = unchanged on score AND on claim count.
+    "Random" = uniform draw from the remaining pool, disjoint from
+    shifted and controls. Requires ``rng`` when ``n_random > 0``.
+
+    Raises ``ValueError`` if ``n_random`` exceeds the remaining
+    pool — the caller should either lower N or widen the source.
     """
     off = _per_query_by_id(artifact["faithfulness_thinking_off"])
     on = _per_query_by_id(artifact["faithfulness_thinking_on"])
@@ -60,7 +75,22 @@ def _select_queries(
         if mag >= shift_threshold
     ][:n_shifted]
     controls = [qid for qid, _mag, unchanged in scored if unchanged][:n_controls]
-    return shifted + controls
+
+    random_picks: list[str] = []
+    if n_random > 0:
+        if rng is None:
+            raise ValueError("rng is required when n_random > 0")
+        used = set(shifted) | set(controls)
+        pool = [qid for qid in common if qid not in used]
+        if n_random > len(pool):
+            raise ValueError(
+                f"--n-random={n_random} exceeds remaining pool of {len(pool)} "
+                f"(after {len(shifted)} shifted + {len(controls)} controls); "
+                f"lower --n-random or widen the artifact."
+            )
+        random_picks = sorted(rng.sample(pool, n_random))
+
+    return shifted, controls, random_picks
 
 
 def _format_passages(context: str) -> str:
@@ -212,19 +242,48 @@ def main(argv: list[str] | None = None) -> int:
         default=0.05,
         help="Minimum |score Δ| to count as 'shifted'.",
     )
+    parser.add_argument(
+        "--n-random",
+        type=int,
+        default=0,
+        help=(
+            "Pick this many queries uniformly at random from the pool "
+            "remaining after shift and control selection. Used by Phase 2 "
+            "to anchor judge-variance measurement on typical queries."
+        ),
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Seed the random draw for --n-random (omit for non-deterministic).",
+    )
     args = parser.parse_args(argv)
+
+    if args.n_shifted < 0 or args.n_controls < 0 or args.n_random < 0:
+        print("--n-shifted, --n-controls, --n-random must be >= 0", file=sys.stderr)
+        return 2
 
     if not args.artifact.is_file():
         print(f"Artifact not found: {args.artifact}", file=sys.stderr)
         return 2
 
     artifact = json.loads(args.artifact.read_text(encoding="utf-8"))
-    selected = _select_queries(
-        artifact,
-        n_shifted=args.n_shifted,
-        n_controls=args.n_controls,
-        shift_threshold=args.shift_threshold,
-    )
+    rng = random.Random(args.seed) if args.n_random > 0 else None
+    try:
+        shifted, controls, random_picks = _select_queries(
+            artifact,
+            n_shifted=args.n_shifted,
+            n_controls=args.n_controls,
+            shift_threshold=args.shift_threshold,
+            n_random=args.n_random,
+            rng=rng,
+        )
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    selected = shifted + controls + random_picks
     if not selected:
         print("No queries selected — check artifact and thresholds.", file=sys.stderr)
         return 1
@@ -232,13 +291,15 @@ def main(argv: list[str] | None = None) -> int:
     off = _per_query_by_id(artifact["faithfulness_thinking_off"])
     on = _per_query_by_id(artifact["faithfulness_thinking_on"])
 
+    seed_note = f"; seed = {args.seed}" if args.n_random > 0 and args.seed is not None else ""
     args.out.parent.mkdir(parents=True, exist_ok=True)
     parts: list[str] = [
         "# Faithfulness ground-truth labels\n",
         f"\nSource artifact: `{args.artifact}`\n",
         f"Selected {len(selected)} queries "
-        f"({args.n_shifted} shifted + {args.n_controls} controls; "
-        f"shift threshold = {args.shift_threshold:.2f}).\n",
+        f"({len(shifted)} shifted + {len(controls)} controls + "
+        f"{len(random_picks)} random; "
+        f"shift threshold = {args.shift_threshold:.2f}{seed_note}).\n",
         "\n",
         "## How to label\n",
         "\n",

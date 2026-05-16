@@ -1,0 +1,112 @@
+Judge model: claude-sonnet-4-6  |  runs per condition: 5  |  queries: 8
+
+[1/8] gq-001: 'how do I run a security audit'
+  gq-001  off run 1/5 → 1.000
+  gq-001  off run 2/5 → 1.000
+  gq-001  off run 3/5 → 1.000
+  gq-001  off run 4/5 → 1.000
+  gq-001  off run 5/5 → 1.000
+  gq-001  on  run 1/5 → 1.000
+  gq-001  on  run 2/5 → 1.000
+  gq-001  on  run 3/5 → 1.000
+  gq-001  on  run 4/5 → 1.000
+  gq-001  on  run 5/5 → 1.000
+  → off mean=1.000 σ=0.000  on mean=1.000 σ=0.000  (elapsed 115s)
+
+[2/8] gq-002: 'generate tests for my code'
+  gq-002  off run 1/5 → 1.000
+  gq-002  off run 2/5 → 1.000
+  gq-002  off run 3/5 → 1.000
+  gq-002  off run 4/5 → 1.000
+  gq-002  off run 5/5 → 1.000
+  gq-002  on  run 1/5 → 1.000
+  gq-002  on  run 2/5 → 1.000
+  gq-002  on  run 3/5 → 1.000
+  gq-002  on  run 4/5 → 0.923
+  gq-002  on  run 5/5 → 0.929
+  → off mean=1.000 σ=0.000  on mean=0.970 σ=0.041  (elapsed 252s)
+
+[3/8] gq-004: 'review code quality'
+  gq-004  off run 1/5 → 0.955
+  gq-004  off run 2/5 → 1.000
+  gq-004  off run 3/5 → 0.947
+  gq-004  off run 4/5 → 0.944
+  gq-004  off run 5/5 → 0.957
+  gq-004  on  run 1/5 → 1.000
+  gq-004  on  run 2/5 → 1.000
+  gq-004  on  run 3/5 → 1.000
+  gq-004  on  run 4/5 → 1.000
+  gq-004  on  run 5/5 → 1.000
+  → off mean=0.961 σ=0.023  on mean=1.000 σ=0.000  (elapsed 410s)
+
+[4/8] gq-006: 'predict bugs before they happen'
+  gq-006  off run 1/5 → 1.000
+  gq-006  off run 2/5 → 1.000
+  gq-006  off run 3/5 → 1.000
+  gq-006  off run 4/5 → 1.000
+  gq-006  off run 5/5 → 1.000
+  gq-006  on  run 1/5 → 1.000
+  gq-006  on  run 2/5 → 1.000
+  gq-006  on  run 3/5 → 1.000
+  gq-006  on  run 4/5 → 1.000
+  gq-006  on  run 5/5 → 1.000
+  → off mean=1.000 σ=0.000  on mean=1.000 σ=0.000  (elapsed 550s)
+
+[5/8] gq-012: 'write documentation for my module'
+  gq-012  off run 1/5 → 1.000
+  gq-012  off run 2/5 → 1.000
+  gq-012  off run 3/5 → 1.000
+  gq-012  off run 4/5 → 1.000
+  gq-012  off run 5/5 → 1.000
+  gq-012  on  run 1/5 → 1.000
+  gq-012  on  run 2/5 → 1.000
+  gq-012  on  run 3/5 → 1.000
+  gq-012  on  run 4/5 → 0.958
+  gq-012  on  run 5/5 → 1.000
+  → off mean=1.000 σ=0.000  on mean=0.992 σ=0.019  (elapsed 699s)
+
+[6/8] gq-014: 'look for dangerous eval calls'
+  gq-014  off run 1/5 → 0.923
+  gq-014  off run 2/5 → 0.929
+  gq-014  off run 3/5 → 0.929
+  gq-014  off run 4/5 → 0.923
+  gq-014  off run 5/5 → 0.923
+  gq-014  on  run 1/5 → 0.929
+  gq-014  on  run 2/5 → 0.923
+  gq-014  on  run 3/5 → 0.923
+  gq-014  on  run 4/5 → 0.923
+  gq-014  on  run 5/5 → 0.929
+  → off mean=0.925 σ=0.003  on mean=0.925 σ=0.003  (elapsed 856s)
+
+[7/8] gq-018: 'check code quality'
+  gq-018  off run 1/5 → 1.000
+  gq-018  off run 2/5 → 1.000
+  gq-018  off run 3/5 → 1.000
+  gq-018  off run 4/5 → 1.000
+  gq-018  off run 5/5 → 1.000
+  gq-018  on  run 1/5 → 1.000
+  gq-018  on  run 2/5 → 1.000
+  gq-018  on  run 3/5 → 1.000
+  gq-018  on  run 4/5 → 1.000
+  gq-018  on  run 5/5 → 1.000
+  → off mean=1.000 σ=0.000  on mean=1.000 σ=0.000  (elapsed 989s)
+
+[8/8] gq-019: 'create a release'
+  gq-019  off run 1/5 → 1.000
+  gq-019  off run 2/5 → 1.000
+  gq-019  off run 3/5 → 1.000
+  gq-019  off run 4/5 → 1.000
+  gq-019  off run 5/5 → 1.000
+  gq-019  on  run 1/5 → 1.000
+  gq-019  on  run 2/5 → 1.000
+  gq-019  on  run 3/5 → 1.000
+  gq-019  on  run 4/5 → 1.000
+  gq-019  on  run 5/5 → 1.000
+  → off mean=1.000 σ=0.000  on mean=1.000 σ=0.000  (elapsed 1124s)
+
+Wrote /Users/patrickroebuck/attune-rag/.claude/worktrees/crazy-torvalds-c90bf4/artifacts/calibration/variance-2026-05-16.json
+Aggregate:
+  off_stdev_pooled = 0.0276
+  on_stdev_pooled  = 0.0290
+  margin_stdev     = 0.0189
+

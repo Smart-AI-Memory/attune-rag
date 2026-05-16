@@ -6,6 +6,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.19] - 2026-05-16
+
+> **Phase 2 of the v1.0 roadmap** — the `--thinking` default
+> decision is locked. No behavioral change ships in this
+> version (the default was already OFF and stays OFF), but the
+> calibration story is now anchored on a quantified
+> confidence interval rather than "absence of evidence." Phase
+> 3 (API surface groundwork) shipped in 0.1.18 in parallel —
+> see ROADMAP-v1.md for sequencing notes.
+
+### Changed
+
+- **`--thinking` default decision locked: stays OFF (Phase 2
+  of v1.0 roadmap).** v3 ground-truth round at n=30 (15 shift
+  + 15 random + 2 controls). Bootstrap 95 % CI on
+  `(wins_off − wins_on)` = `[−1, +13]` — point estimate +6,
+  CI includes 0 (off favored but not statistically
+  distinguishable). v3 off-to-on ratio 2.5× reverses the
+  v1 → v2 narrowing (1.5× → 1.2× → 2.5×). Judge variance is
+  small: `margin_stdev = 0.0189`, far below the 0.10
+  escalation threshold (K=8 random-bucket queries × M=5 runs;
+  5 of 8 hit σ=0 in both conditions). No baseline
+  re-measurement needed because the default doesn't flip.
+  Locked record:
+  [`docs/specs/faithfulness-thinking-decision/decision.md`](docs/specs/faithfulness-thinking-decision/decision.md).
+  Calibration writeup:
+  [`docs/rag/faithfulness-thinking-calibration.md`](docs/rag/faithfulness-thinking-calibration.md).
+
+### Added
+
+- **`scripts/measure_judge_variance.py`** — judge-only
+  variance measurement. Re-runs the FaithfulnessJudge M times
+  per query in each condition (off, on) against captured
+  answer + context from a calibration artifact. Outputs
+  per-query mean/stdev + aggregate pooled stdevs +
+  `margin_stdev`. Used by Phase 2 to anchor the rubric's
+  noise-floor escalation rule.
+- **Bootstrap CI + phantom-claim rate in
+  `scripts/score_against_ground_truth.py`.** Extended with
+  `--rubric-rule {legacy,design}`, `--control-ids`,
+  `--bootstrap-iters`, `--seed`, and `--variance`. The
+  design-rule classifier flags a tie iff `|off−on|`,
+  `|off−label|`, `|on−label|` are all `< 0.025`. Bootstrap
+  resamples per-query verdicts B times and reports the 2.5 %
+  / 97.5 % quantiles. Phantom-claim detection uses a
+  content-word overlap heuristic (overlap `< 0.40` ⇒
+  flagged); honest about the limits — a literal-substring
+  matcher was tried first and yielded a meaningless 100 %
+  rate. The 6-rule acceptance rubric from `design.md` runs at
+  the bottom of every score run.
+- **`build_calibration_labeling_kit.py --n-random N` +
+  `--seed`.** New bucket: N queries drawn uniformly from the
+  remaining pool after shift+controls. Anchors the
+  noise-floor measurement on typical queries instead of
+  high-shift outliers. `_select_queries` now returns
+  `(shifted, controls, random)`; the kit script's previous
+  flat-list return is gone (M2.1 / M2.2 of Phase 2).
+- **`docs/specs/faithfulness-thinking-decision/`** — full
+  Phase 2 spec (requirements, design, tasks, locked
+  `decision.md`).
+- **v3 calibration artifacts** at
+  `artifacts/calibration/thinking-2026-05-16.json` (paired
+  off+on benchmark at n=40),
+  `ground-truth-2026-05-16.md` (n=32 labels; 30 rubric +
+  2 controls), and `variance-2026-05-16.json` (K=8 × M=5
+  judge-variance measurement).
+
 ## [0.1.18] - 2026-05-16
 
 > Two parallel tracks ship together: **Phase 1 of the v1.0 roadmap**
