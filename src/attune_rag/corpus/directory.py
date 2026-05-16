@@ -85,6 +85,39 @@ class DirectoryCorpus(CorpusProtocol):
         cache: bool = True,
         glob: str = DEFAULT_GLOB,
     ) -> None:
+        """Configure the corpus root and optional sidecars.
+
+        Args:
+            root: Directory containing the markdown corpus.
+                Must exist; resolved to an absolute path. Path
+                escapes (``..``) outside this root are rejected
+                at load time.
+            summaries_file: Optional filename (relative to
+                ``root``) of a path-keyed summaries sidecar
+                (e.g. ``"summaries.json"``). Schema:
+                ``{rel_path: summary_string | null}``. When
+                ``None``, no summaries are loaded.
+            cross_links_file: Optional filename of a path-keyed
+                cross-links sidecar. Schema:
+                ``{rel_path: [related_rel_path, ...]}``. Feeds
+                :attr:`RetrievalEntry.related`. When ``None``,
+                no cross-links are loaded.
+            extra_summaries: In-memory summaries that override
+                or supplement the sidecar (sidecar first, this
+                dict layered on top). Useful for tests and for
+                packages that ship their own summary table
+                programmatically.
+            cache: If True (the default), the loaded entry
+                dict is memoized on the instance. Set False to
+                re-scan disk on every call — useful in long-
+                running processes where the corpus changes.
+            glob: Shell glob for files to include. Default
+                ``"**/*.md"`` (all markdown, recursive).
+
+        Raises:
+            ValueError: When ``root`` is not an existing
+                directory.
+        """
         self._root = Path(root).resolve()
         if not self._root.is_dir():
             raise ValueError(f"DirectoryCorpus root is not a directory: {self._root}")

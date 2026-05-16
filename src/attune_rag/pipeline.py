@@ -97,6 +97,27 @@ class RagPipeline:
         expander: QueryExpander | None = None,
         reranker: LLMReranker | None = None,
     ) -> None:
+        """Wire up retrieval, optional query expansion, and optional reranking.
+
+        Args:
+            corpus: Source of retrievable entries. If ``None``,
+                the pipeline lazily falls back to
+                :class:`AttuneHelpCorpus` on first ``corpus``
+                access — see :meth:`_default_corpus`.
+            retriever: Strategy for scoring/ranking entries.
+                Defaults to :class:`KeywordRetriever` when
+                ``None``.
+            expander: Optional :class:`QueryExpander`. When set,
+                :meth:`_retrieve` synonym-expands the query
+                before passing it to the retriever (joined as
+                ``"original expansion1 expansion2 …"`` so the
+                original terms still dominate scoring).
+            reranker: Optional :class:`LLMReranker`. When set,
+                :meth:`_retrieve` over-fetches by the reranker's
+                ``candidate_multiplier`` and re-orders the
+                widened candidate pool with an LLM call before
+                trimming to ``k``.
+        """
         self._corpus = corpus
         self.retriever = retriever or KeywordRetriever()
         self.expander = expander
@@ -104,12 +125,26 @@ class RagPipeline:
 
     @property
     def corpus(self) -> CorpusProtocol:
+        """The corpus this pipeline retrieves from.
+
+        Lazy: if no ``corpus`` was passed to ``__init__``, the
+        first access triggers :meth:`_default_corpus` and the
+        result is cached on the instance. Subsequent accesses
+        return the cached corpus.
+        """
         if self._corpus is None:
             self._corpus = self._default_corpus()
         return self._corpus
 
     @staticmethod
     def _default_corpus() -> CorpusProtocol:
+        """Fall back to :class:`AttuneHelpCorpus` when no corpus is provided.
+
+        Raises ``RuntimeError`` (chained from ``ImportError``)
+        with an actionable message if the ``[attune-help]``
+        extra is not installed, so the failure mode is "tell me
+        what to install" instead of "module not found."
+        """
         try:
             from .corpus.attune_help import AttuneHelpCorpus
         except ImportError as exc:

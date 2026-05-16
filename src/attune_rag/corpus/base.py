@@ -9,17 +9,44 @@ from typing import Any, Protocol, TypedDict, runtime_checkable
 
 @dataclass(frozen=True)
 class RetrievalEntry:
-    """A single corpus entry. Task 1.1 shape; task 1.2 wires loaders.
+    """A single corpus entry.
 
-    The ``_tokens_cache`` field is a per-instance mutable cache used by
-    :mod:`attune_rag.retrieval` to memoize tokenized representations
-    (path / summary / content-preview / aliases) so the keyword
-    retriever doesn't re-tokenize on every query. ``frozen=True``
-    prevents the field itself from being reassigned but doesn't stop
-    callers from mutating its contents — exactly what we want for a
-    write-once-on-first-access cache. Excluded from hash, equality,
-    and repr so two entries with the same content compare equal even
-    if one has cached tokens and the other hasn't.
+    Attributes:
+        path: Corpus-relative posix path (e.g.
+            ``"concepts/tool-fix-test.md"``). The unique key
+            used by ``CorpusProtocol.get``,
+            ``Corpus.path_index``, and as the value of every
+            ``AliasInfo.template_path``.
+        category: First path segment (e.g. ``"concepts"``,
+            ``"tasks"``). Drives the per-category scoring
+            weight in :class:`KeywordRetriever`.
+        content: The full body text of the markdown file
+            (frontmatter is parsed out into ``metadata`` /
+            ``aliases`` and is not included here).
+        summary: Optional one-line summary, typically sourced
+            from a corpus-root ``summaries.json`` sidecar.
+            ``None`` when no summary is registered.
+        related: Tuple of corpus-relative paths cross-linked
+            from this entry, sourced from ``cross_links.json``.
+            Used by the retriever's "related hits" signal.
+        aliases: Tuple of alias strings declared in the entry's
+            frontmatter ``aliases`` list. Each alias must be
+            globally unique within a corpus (enforced at load
+            time via :class:`DuplicateAliasError`).
+        metadata: The remaining frontmatter as a plain dict.
+            Free-form; consumers should treat keys as optional.
+
+    Mutability note: the ``_tokens_cache`` field is a
+    per-instance mutable cache used by
+    :mod:`attune_rag.retrieval` to memoize tokenized
+    representations (path / summary / content-preview /
+    aliases) so the keyword retriever doesn't re-tokenize on
+    every query. ``frozen=True`` prevents the field itself from
+    being reassigned but doesn't stop callers from mutating its
+    contents — exactly what we want for a write-once-on-first-
+    access cache. Excluded from hash, equality, and repr so two
+    entries with the same content compare equal even if one has
+    cached tokens and the other hasn't.
     """
 
     path: str
