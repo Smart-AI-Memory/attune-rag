@@ -2,7 +2,7 @@
 
 ## Phase 3: Tasks
 
-**Status**: 0.1.18 candidate ready (M1–M3 + M4.1–M4.3 + M5.1 done; M4.4–M4.5 retargeted from 0.2.0 to 0.1.18; M5.2–M5.3 unblock once 0.1.18 publishes)
+**Status**: 0.1.18 + 0.1.19 shipped (M1–M3 + M4 done in attune-rag; M5.1 + M5.2 done in attune-gui on branch `feature/attune-rag-0.2-editor-rename`, not yet merged; M5.3 + attune-gui PR merge remain). Formal 0.2.0 freeze + classifier flip still queued for a successor spec.
 
 ### Implementation order
 
@@ -28,10 +28,10 @@ attune-gui, post-release.
 | M4.2 | Add "Public API" section to [README.md](README.md) listing the PUBLIC symbols and submodules, with a link to `docs/POLICY.md`. | attune-rag | **done** | Inserted before "Status". Groups symbols by topic (Pipeline, Corpus, Retrieval, Provenance, Prompting, Hybrid retrieval) + enumerates PUBLIC submodules + notes the 0.3.0 shim removal. |
 | M4.3 | Add a CHANGELOG entry. | attune-rag | **done** | Drafted under `[Unreleased]` with Added/Changed/Deprecated sections. Note explicitly says 0.2.0 ships only after Phase 2 lands. |
 | M4.4 | Bump `pyproject.toml` and `__version__` to `0.1.18` (retargeted from 0.2.0 — the work is backward-compatible groundwork, not the formal freeze). Classifier remains `Development Status :: 3 - Alpha`. The 0.2.0 freeze + Stable flip stay queued for after Phase 2. | attune-rag | **done** | Both `pyproject.toml` and `src/attune_rag/__init__.py` set to 0.1.18. |
-| M4.5 | Tag and publish per the existing release workflow (`/attune-release-check` then `gh release create`). | attune-rag | pending | Ready to fire — all 491 tests pass, surface tests + shim tests green, CHANGELOG entry under `[0.1.18] - 2026-05-16`. |
+| M4.5 | Tag and publish per the existing release workflow (`/attune-release-check` then `gh release create`). | attune-rag | **done** | 0.1.18 tagged + published 2026-05-16T11:23:47Z via PR #36 (commit `6d95ee1`). 0.1.19 followed in PR #38 + PR #39 (Phase 2 close-out + CHANGELOG precision fix) and published 2026-05-16T12:02:48Z. Both releases passed the `attune-release-check` skill and the manual `pypi` environment approval gate. |
 | M5.1 | In attune-gui: replace `attune_rag.editor._rename` imports with `attune_rag.editor.rename`. Same for `_schema`. | attune-gui | **done** | Landed in attune-gui on branch `feature/attune-rag-0.2-editor-rename` (commit `5bf35ec`). 5 files: 2 route handlers, 2 tests, 1 docstring. Note: the commit message refers to "attune-rag 0.2.0" but the renames actually ship in 0.1.18 — technical capability unchanged. |
-| M5.2 | In attune-gui: remove the unpublished-module guard in `sidecar/attune_gui/_editor_dep.py` once the floor version of attune-rag is bumped to `>=0.1.18` (retargeted from 0.2.0). | attune-gui | pending | The friendly 503 stops being necessary. **Gated on 0.1.18 published.** |
-| M5.3 | Run attune-gui's full test suite (including the contract tests in `sidecar/tests/test_contract_attune_rag.py` and `test_editor_dep.py`) against attune-rag 0.1.18. | attune-gui | pending | Green before merging the cleanup PR. **Gated on 0.1.18 published.** |
+| M5.2 | In attune-gui: remove the unpublished-module guard in `sidecar/attune_gui/_editor_dep.py` once the floor version of attune-rag is bumped to `>=0.1.18` (retargeted from 0.2.0). | attune-gui | **done** | Commit `b5f4d3b` on branch `feature/attune-rag-0.2-editor-rename`. The 503 guard + `test_editor_dep.py` were removed; floor pinned at `attune-rag>=0.1.18,<0.2` in attune-gui's `pyproject.toml`. Branch not yet merged (gated on M5.3 + PR review). |
+| M5.3 | Run attune-gui's full test suite (including the contract tests in `sidecar/tests/test_contract_attune_rag.py`) against attune-rag 0.1.19. | attune-gui | pending | Gate cleared (0.1.18 + 0.1.19 both on PyPI). Next concrete action: in attune-gui, upgrade the venv (`pip install --upgrade 'attune-rag==0.1.19'`), `pytest -q`, expect green; then open the PR to merge `feature/attune-rag-0.2-editor-rename` into attune-gui's main. |
 
 ### Dependencies
 
@@ -60,12 +60,18 @@ are both backward-compatible.
       paths).
 - [ ] `AttuneHelpCorpus` is in both root and `attune_rag.corpus`
       `__all__` lists.
-- [ ] `pyproject.toml` is at version `0.2.0`.
-- [ ] CHANGELOG has an "Added", "Changed", and "Deprecated" section
-      for 0.2.0.
+- [x] `pyproject.toml` is at version `0.1.18` (re-targeted from
+      `0.2.0` — the work is additive groundwork, not the formal
+      freeze; bumped again to `0.1.19` in PR #38). The formal
+      0.2.0 freeze + classifier flip stay queued for a successor
+      spec.
+- [x] CHANGELOG has an "Added", "Changed", and "Deprecated" section
+      for 0.1.18 (and a follow-up `[0.1.19]` section for Phase 2).
 - [ ] attune-gui's contract test (`test_contract_attune_rag.py`)
-      passes against the published 0.2.0 wheel.
-- [ ] attune-gui's `_editor_dep.py` 503 guard is removed (M5.2).
+      passes against the published 0.1.19 wheel (M5.3).
+- [x] attune-gui's `_editor_dep.py` 503 guard is removed (M5.2,
+      commit `b5f4d3b` on `feature/attune-rag-0.2-editor-rename`;
+      branch unmerged pending M5.3).
 
 ### Risks & mitigations
 
