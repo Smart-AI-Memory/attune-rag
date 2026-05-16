@@ -193,6 +193,46 @@ context block is reused across calls.
 No configuration needed — the provider handles the `cache_control`
 header automatically.
 
+## Public API
+
+attune-rag's public surface is documented below and snapshot-tested
+in [tests/unit/test_api_surface.py](tests/unit/test_api_surface.py).
+Formal SemVer commitments begin with the 0.2.0 release — see
+[docs/POLICY.md](docs/POLICY.md) for the deprecation policy. Until
+then the surface is honor-system: the lock test catches drift, but
+treat 0.1.x as still-evolving.
+
+**Top-level (`from attune_rag import ...`):**
+
+- Pipeline — `RagPipeline`, `RagResult`
+- Corpus — `CorpusProtocol`, `RetrievalEntry`, `DirectoryCorpus`,
+  `AttuneHelpCorpus`
+- Retrieval — `KeywordRetriever`, `RetrievalHit`, `RetrieverProtocol`
+- Provenance — `CitationRecord`, `CitedSource`, `ClaimCitation`,
+  `format_citations_markdown`, `format_claim_citations_markdown`
+- Prompting — `build_augmented_prompt`, `PROMPT_VARIANTS`
+- Hybrid retrieval — `QueryExpander`, `LLMReranker`
+
+**PUBLIC submodules** (importable by qualified path):
+
+- `attune_rag.corpus` — exposes `AliasInfo`, `DuplicateAliasError`
+  in addition to the top-level corpus names
+- `attune_rag.corpus.attune_help` — `AttuneHelpCorpus`
+- `attune_rag.corpus.help_adapter` — `HelpCorpusAdapter` Protocol
+- `attune_rag.providers` — `LLMProvider`, `get_provider`,
+  `list_available`
+- `attune_rag.editor` — template-editor primitives (lint, schema,
+  rename, autocomplete, references); see "Template editor primitives"
+  above for the symbol list
+- `attune_rag.editor.{rename,schema,lint,autocomplete,references}` —
+  the individual editor submodules
+
+Anything not listed above is INTERNAL and may change in any release.
+The underscore-prefixed editor modules (`attune_rag.editor._rename`
+etc.) shipped in 0.1.x are deprecation shims as of 0.2.0; they
+re-export the new non-underscore names and emit `DeprecationWarning`.
+They are removed in 0.3.0.
+
 ## Status
 
 v0.1.10. Part of the attune ecosystem

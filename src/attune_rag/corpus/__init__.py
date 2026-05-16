@@ -6,6 +6,7 @@
 - AliasInfo, DuplicateAliasError (template-editor M1 task #2)
 """
 
+from .attune_help import AttuneHelpCorpus
 from .base import (
     AliasInfo,
     CorpusProtocol,
@@ -16,6 +17,7 @@ from .directory import DirectoryCorpus
 
 __all__ = [
     "AliasInfo",
+    "AttuneHelpCorpus",
     "CorpusProtocol",
     "DirectoryCorpus",
     "DuplicateAliasError",
