@@ -70,6 +70,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   reachable via `attune_rag.corpus.attune_help.AttuneHelpCorpus`;
   the root re-export makes the constraint visible in the surface
   test so accidental removal fails CI.
+- **New `author` optional extra** (`pip install 'attune-rag[author]'`)
+  pinning `attune-author>=0.13.0`. Centralizes the docs-authoring
+  toolchain for `.help/templates/` regeneration so the venv doesn't
+  drift onto pre-polish versions. New `Makefile` wraps the workflow
+  (`make help-regen` / `make help-regen-batch` etc.) with a feature
+  probe that sidesteps the stale-`__version__` packaging bug in the
+  0.13.0 wheel.
 
 ### Changed
 

@@ -54,6 +54,20 @@ wheels = [
 ]
 
 [[package]]
+name = "attune-author"
+version = "0.13.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jinja2" },
+    { name = "python-frontmatter" },
+    { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/35/ef/d38455c9c72c35b67cfa2af836f9417c7794f7f1548ad7107c1695afde45/attune_author-0.13.0.tar.gz", hash = "sha256:ab94a7c591267852a9e0656a61472e853d93c41d6e04f4e724c1cf5df376b289", size = 217193, upload-time = "2026-05-15T18:38:27.941Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/d2/06ec03b4ba3434472c34e4749fe058adc97e76ac0370605bb92499a05fbf/attune_author-0.13.0-py3-none-any.whl", hash = "sha256:a7869acaaba1c02d5ad2ea6dc7d9d437a24abbb3adace2c45ec8f96cf3d85fa3", size = 159632, upload-time = "2026-05-15T18:38:25.978Z" },
+]
+
+[[package]]
 name = "attune-help"
 version = "0.10.0"
 source = { registry = "https://pypi.org/simple" }
@@ -67,7 +81,7 @@ wheels = [
 
 [[package]]
 name = "attune-rag"
-version = "0.1.17"
+version = "0.1.18"
 source = { editable = "." }
 dependencies = [
     { name = "jinja2" },
@@ -86,11 +100,15 @@ all = [
 attune-help = [
     { name = "attune-help" },
 ]
+author = [
+    { name = "attune-author" },
+]
 claude = [
     { name = "anthropic" },
 ]
 dev = [
     { name = "anthropic" },
+    { name = "attune-author" },
     { name = "attune-help" },
     { name = "black" },
     { name = "build" },
@@ -110,6 +128,8 @@ requires-dist = [
     { name = "anthropic", marker = "extra == 'all'", specifier = ">=0.95,<1.0" },
     { name = "anthropic", marker = "extra == 'claude'", specifier = ">=0.95,<1.0" },
     { name = "anthropic", marker = "extra == 'dev'", specifier = ">=0.95,<1.0" },
+    { name = "attune-author", marker = "extra == 'author'", specifier = ">=0.13.0" },
+    { name = "attune-author", marker = "extra == 'dev'", specifier = ">=0.13.0" },
     { name = "attune-help", marker = "extra == 'all'", specifier = ">=0.10.0,<0.11" },
     { name = "attune-help", marker = "extra == 'attune-help'", specifier = ">=0.10.0,<0.11" },
     { name = "attune-help", marker = "extra == 'dev'", specifier = ">=0.10.0,<0.11" },
@@ -129,7 +149,7 @@ requires-dist = [
     { name = "structlog", specifier = ">=24.0" },
     { name = "twine", marker = "extra == 'dev'", specifier = ">=5.0" },
 ]
-provides-extras = ["attune-help", "claude", "gemini", "all", "dev"]
+provides-extras = ["attune-help", "claude", "gemini", "author", "all", "dev"]
 
 [[package]]
 name = "backports-asyncio-runner"
