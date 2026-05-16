@@ -9,7 +9,7 @@ working session so state is recoverable cold from disk.
 |---|---|
 | Current version | 0.1.17 |
 | Target version | 1.0.0 |
-| Current phase | Phase 2 — labeling complete 2026-05-16 (v3, n=30 rubric + 2 controls, 9:4 off-to-on). M4 (judge-variance measurement) and M5 (bootstrap CI + phantom-claim rate) are the active milestones. |
+| Current phase | Phase 2 — **complete 2026-05-16**. Decision: keep `--thinking` opt-in (`off-forever`). Ship at 0.1.18 (M8.4 release pending). Phase 3 unblocked. |
 | Last updated | 2026-05-16 |
 
 ---
@@ -65,7 +65,7 @@ results doc.
 ## Phase 2 — Eval story landed
 
 **Spec:** [docs/specs/faithfulness-thinking-decision/](faithfulness-thinking-decision/)
-**Status:** in progress — M1 + M2 + M3 complete 2026-05-16. v3 labeling at n=30 (+ 2 controls) yields wins_off = 9, wins_on = 4 (script tie rule), tied = 17. Off-to-on ratio 2.25× reverses the v1→v2 narrowing trend. M4 (judge variance) + M5 (bootstrap CI + phantom-claim rate) are next; they formally lock the rubric verdict.
+**Status:** **complete 2026-05-16**. Final v3 results (design.md tie rule, controls excluded): wins_off = 10, wins_on = 4, ties = 16. Bootstrap 95 % CI on `(wins_off − wins_on)` = `[−1, +13]` includes 0; point estimate +6. Judge variance `margin_stdev = 0.0189` (well below 0.10 escalation threshold). Phantom-claim rate 7.4 % (heuristic). **Verdict: `off-forever` — keep `--thinking` opt-in.** Locked at [`faithfulness-thinking-decision/decision.md`](faithfulness-thinking-decision/decision.md). Ships at 0.1.18. No baseline re-measurement required.
 **Estimate:** ~3 weeks of attention
 **Depends on:** Phase 1 complete ✓ (PR #33 merged 2026-05-16)
 
