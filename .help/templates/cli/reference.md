@@ -1,22 +1,23 @@
 ---
 type: reference
+name: cli-reference
 feature: cli
 depth: reference
-generated_at: 2026-04-23T03:37:11.480966+00:00
-source_hash: dd67ed58271857e52c84068665bf3e4f498258f5607603a6e6df7dac8dfc63fe
+generated_at: 2026-05-15T20:03:28.198307+00:00
+source_hash: 96db3d6bf557349fb1cbc8ae947bdd3fa30475c1926eb4172b0875e523ece578
 status: generated
 ---
 
 # CLI reference
 
-Command-line interface for debugging document retrieval and corpus inspection.
+Command-line entry point for debugging retrieval. Use these functions to build and invoke the argument parser for the `attune-rag` command.
 
 ## Functions
 
 | Function | Parameters | Returns | Description |
 |----------|------------|---------|-------------|
-| `build_parser()` | | `argparse.ArgumentParser` | Create argument parser for CLI commands |
-| `main()` | `argv: list[str] \| None = None` | `int` | Execute CLI command and return exit code |
+| `build_parser` | — | `argparse.ArgumentParser` | Constructs and returns the argument parser for the `attune-rag` CLI. |
+| `main` | `argv: list[str] | None = None` | `int` | Parses arguments and runs the CLI; returns an exit code. |
 
 ## Source files
 

@@ -1,84 +1,58 @@
 ---
 type: task
+name: prompts-task
 feature: prompts
 depth: task
-generated_at: 2026-04-23T03:34:39.272580+00:00
-source_hash: 3c35e8e0b30791a15e2c36afa2edf13ea407da219b38803d3325fc50b9980c18
+generated_at: 2026-05-15T20:02:27.255457+00:00
+source_hash: eb6d61656b11230b111f643d8856103251dedb5b5d717c16d6107954b12867f6
 status: generated
 ---
 
 # Work with prompts
 
-Use the prompts module when you need to build LLM prompts with retrieved context or customize how search results are formatted for prompt injection.
+Use the prompts module when you need to assemble a grounded LLM prompt — it combines a user query, retrieved passages, and a prompt variant into a single augmented prompt ready to send to a model.
 
 ## Prerequisites
 
-- Access to the project source code
-- Understanding of retrieval-augmented generation (RAG) patterns
-- Familiarity with `src/attune_rag/prompts.py`
+- Access to `src/attune_rag/prompts.py`
+- Retrieved passages available as `RetrievalHit` objects (or a plain iterable)
 
-## Build an augmented prompt
+## Steps
 
-1. **Import the prompt builder:**
+1. **Format your retrieved passages into a context string.**
+   Call `join_context()` or `join_context_numbered()` to concatenate your `RetrievalHit` objects into a sentinel-wrapped string:
+
+   - Use `join_context()` when your prompt template does not require numbered citation markers.
+   - Use `join_context_numbered()` when you need `[P1]`/`[P2]`-style passage labels for citation.
+
+   Both functions accept an optional `corpus` and a `max_chars` cap (default: `DEFAULT_MAX_CONTEXT_CHARS`).
+
+2. **Choose a prompt variant.**
+   `build_augmented_prompt()` accepts a `variant` parameter. Valid values are `'baseline'` (the default) and any other variant names defined in the module. Passing an unknown variant raises `ValueError: 'unknown prompt variant {...}; valid: {...}'`.
+
+3. **Build the augmented prompt.**
+   Call `build_augmented_prompt()` with your query, the context string from step 1, and your chosen variant:
+
    ```python
-   from attune_rag.prompts import build_augmented_prompt
+   from attune_rag.prompts import build_augmented_prompt, join_context_numbered
+
+   context = join_context_numbered(hits)
+   prompt = build_augmented_prompt(query="What is template migration?", context=context, variant="baseline")
    ```
 
-2. **Prepare your query and context:**
-   Your query is the user's question. Your context comes from search results, typically formatted using `join_context()` or `join_context_numbered()`.
+   Pass a non-empty string as `query`; an empty string raises `ValueError: 'query must be a non-empty string'`.
 
-3. **Choose a prompt variant:**
-   Use `'baseline'` (default), or check the function documentation for other available variants.
+4. **Run the related tests.**
+   Verify that your usage does not break existing behaviour:
 
-4. **Build the prompt:**
-   ```python
-   prompt = build_augmented_prompt(
-       query="How do I configure authentication?",
-       context="<passage>Authentication requires...</passage>",
-       variant='baseline'
-   )
+   ```
+   pytest -k "prompts"
    ```
 
-## Format search results as context
+## Key files
 
-1. **For simple concatenation, use `join_context()`:**
-   ```python
-   from attune_rag.prompts import join_context
+- `src/attune_rag/prompts.py`
 
-   context = join_context(
-       hits=search_results,
-       corpus=your_corpus,
-       max_chars=4000
-   )
-   ```
+## Verify success
 
-2. **For numbered passages, use `join_context_numbered()`:**
-   ```python
-   from attune_rag.prompts import join_context_numbered
-
-   context = join_context_numbered(
-       hits=search_results,
-       corpus=your_corpus,
-       max_chars=4000
-   )
-   ```
-   This creates `[P1]`, `[P2]` prefixed passages that you can reference in responses.
-
-## Extend prompt variants
-
-1. **Locate the variant logic in `build_augmented_prompt()`:**
-   Open `src/attune_rag/prompts.py` and find where variants are handled.
-
-2. **Add your variant:**
-   Follow the existing pattern for variant selection and template formatting.
-
-3. **Test your variant:**
-   Run `pytest -k "prompts"` to verify your changes don't break existing functionality.
-
-## Verify your changes
-
-Your prompt integration works correctly when:
-- `build_augmented_prompt()` returns a well-formed prompt string
-- Search context appears wrapped in `<passage>` tags
-- The LLM receives injection-resistant prompts (check for the injection defense clause)
-- Tests pass with `pytest -k "prompts"`
+`build_augmented_prompt()` returns a non-empty string containing your query, the passage content wrapped in `<passage>...</passage>` sentinels, and the injection-defense clause. Confirm that the returned prompt includes all three before sending it to the model.

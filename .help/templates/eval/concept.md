@@ -1,30 +1,61 @@
 ---
 type: concept
+name: eval-concept
 feature: eval
 depth: concept
-generated_at: 2026-04-23T03:35:59.671106+00:00
-source_hash: c51ee93d206242f5b5e8a7ad4ed5772aaf45bc2940d459444097d7a899d4513c
+generated_at: 2026-05-15T20:03:10.201475+00:00
+source_hash: 9d4d7626c287ef8da26b5caa6cd8470542d6e7b12acbf7d3e678d0c442cc9f43
 status: generated
 ---
 
 # Eval
 
-Eval is the evaluation harness that measures RAG answer quality through AI-powered faithfulness scoring and prompt variant testing.
+The `eval` feature gives you a structured way to measure whether a RAG system's answers are actually grounded in the passages it retrieved — and to benchmark prompt variants against a golden set.
 
-## Core responsibilities
+## The faithfulness problem
 
-**Faithfulness scoring**: The `FaithfulnessJudge` uses Claude to decompose RAG answers into atomic factual claims and verify each claim against the retrieved passages. Claims are marked as supported (explicitly stated in passages) or unsupported (based on outside knowledge, inference, or invention).
+A RAG system can produce fluent, confident-sounding answers that introduce facts not present in any retrieved passage. Without a systematic check, these hallucinations are invisible during development. The `eval` feature surfaces them by decomposing each answer into atomic factual claims and verifying each claim against the source passages independently.
 
-**Prompt benchmarking**: The system tests different prompt variants against golden datasets to identify which approaches produce the most faithful answers.
+The judge is strict by design: a claim is supported only if a passage **explicitly states it**. Reasonable inference, outside knowledge, and invented details (workflow names, CLI flags, API shapes not in the passages) all count as unsupported.
 
-## Components
+## Core components
 
-**`FaithfulnessJudge`**: The primary scoring engine that takes a user query, generated answer, and retrieved passages, then returns a `FaithfulnessResult` with a score (0.0-1.0), lists of supported and unsupported claims, and reasoning.
+**`FaithfulnessJudge`** drives the evaluation. It calls Claude (`claude-sonnet-4-6` by default) using tool use, passing the original query, the retrieved passages, and the answer under review. Claude decomposes the answer into atomic claims and reports which are supported and which are not.
 
-**`FaithfulnessResult`**: A structured verdict containing the faithfulness score, claim breakdowns, model reasoning, and metadata. It provides a `total_claims` property and can serialize to a dictionary for storage or reporting.
+**`FaithfulnessResult`** holds the verdict for a single answer. Its fields map directly to what you need for analysis:
 
-## Evaluation philosophy
+| Field | Type | What it tells you |
+|---|---|---|
+| `score` | `float` | Fraction of claims that are supported |
+| `supported_claims` | `list[str]` | Claims grounded in the passages |
+| `unsupported_claims` | `list[str]` | Claims that go beyond the passages |
+| `reasoning` | `str` | The judge's explanation |
+| `model` | `str` | Which Claude model produced the verdict |
+| `thinking_used` | `bool` | Whether extended thinking was enabled |
 
-The judge applies strict standards — claims are unsupported unless passages explicitly state them. This catches hallucinations where the model invents workflow names, CLI flags, or API details not present in the context. Refusals ("the context doesn't cover this") are treated as zero claims rather than scoring events.
+`total_claims` is a computed property — the sum of supported and unsupported claims — so you can quickly see the denominator behind `score`.
 
-The system uses Claude's tool-calling capability to ensure structured output and consistent scoring criteria across evaluations.
+## How the pieces fit together
+
+When you call `FaithfulnessJudge.score(query, answer, passages)`, the flow is:
+
+1. The judge formats the query, passages, and answer into a structured prompt using `_JUDGE_USER_TEMPLATE`.
+2. Claude receives a strict system prompt (`_JUDGE_SYSTEM_PROMPT`) that instructs it to treat refusals as zero claims rather than as supported or unsupported ones.
+3. Claude calls the `report_faithfulness` tool with the decomposed claims.
+4. The judge returns a `FaithfulnessResult` you can inspect, serialize with `to_dict()`, or aggregate across a golden set.
+
+For cases where answer complexity warrants deeper analysis, pass `use_thinking=True` to enable extended thinking; the `thinking_budget_tokens` parameter controls how much reasoning Claude can do before reporting.
+
+## When this matters
+
+Use `eval` when you need to:
+
+- **Catch hallucinations before they reach users.** Run `FaithfulnessJudge` as part of your CI pipeline against a golden set of query/passage/answer triples.
+- **Compare prompt variants.** The A/B benchmark module lets you score two or more prompt variants against the same golden set and compare their faithfulness distributions.
+- **Audit a deployed system.** Log `FaithfulnessResult` records in production to track score trends over time as your retrieval corpus or prompt changes.
+
+## Related topics
+
+- **FAQ**: `eval` in tests — how to use `FaithfulnessJudge` in unit and integration tests
+- **Reference**: `eval` — all fields, parameters, and default constants
+- **Quickstart**: `eval` — score your first answer in five steps

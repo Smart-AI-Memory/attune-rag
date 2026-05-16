@@ -1,63 +1,84 @@
 ---
 type: reference
+name: pipeline-reference
 feature: pipeline
 depth: reference
-generated_at: 2026-04-23T03:33:06.535660+00:00
-source_hash: 65f24abb9bb5f4301d29cbd0c7d716a93bfe027e33389ceb15135635b6d7a679
+generated_at: 2026-05-15T20:01:28.747508+00:00
+source_hash: f5cc845ee3957a76674338c9a162ce4a86e404c42291f721ed77a3b4c3b27569
 status: generated
 ---
 
 # Pipeline reference
 
-Build RAG workflows that combine corpus retrieval, prompt augmentation, and citation tracking.
+Use `RagPipeline` to orchestrate corpus retrieval, prompt assembly, and LLM generation in a single call. Each run returns a `RagResult` containing the augmented prompt, `CitationRecord` provenance, and confidence metadata.
 
 ## Classes
 
 | Class | Description |
 |-------|-------------|
-| `RagPipeline` | Orchestrate retrieval-augmented generation workflows |
-| `RagResult` | Structured output from pipeline execution |
+| `RagResult` | Dataclass returned by `RagPipeline.run`. Carries the augmented prompt, citation record, confidence score, and elapsed time. |
+| `RagPipeline` | LLM-agnostic RAG pipeline that combines a corpus, retriever, optional query expander, and optional reranker. |
 
-### RagPipeline
+---
 
-Coordinates corpus search, context injection, and provenance tracking for LLM-agnostic RAG workflows.
+### `RagResult`
 
-#### Methods
+`[dataclass]` — output of `RagPipeline.run`.
 
-| Method | Parameters | Returns | Description |
-|--------|------------|---------|-------------|
-| `__init__` | `corpus: CorpusProtocol \| None = None, retriever: RetrieverProtocol \| None = None` | `None` | Initialize pipeline with corpus and retriever components |
-| `run` | `query: str, k: int = 3, prompt_variant: str = 'citation'` | `RagResult` | Execute retrieval and prompt augmentation workflow |
-| `run_and_generate` | `query: str, provider: LLMProvider \| str, k: int = 3, model: str \| None = None, max_tokens: int = 2048, prompt_variant: str = 'citation'` | `tuple[str, RagResult]` | Execute pipeline and generate LLM response |
+#### Fields
+
+| Field | Type | Default |
+|-------|------|---------|
+| `augmented_prompt` | `str` | — |
+| `citation` | `CitationRecord` | — |
+| `confidence` | `float` | — |
+| `fallback_used` | `bool` | — |
+| `elapsed_ms` | `float` | — |
+| `context` | `str` | `''` |
+| `claim_citations` | `tuple[ClaimCitation, ...]` | `()` |
+| `used_native_citations` | `bool` | `False` |
+
+---
+
+### `RagPipeline`
+
+LLM-agnostic RAG pipeline.
+
+#### Constructor
+
+```python
+RagPipeline(
+    corpus: CorpusProtocol | None = None,
+    retriever: RetrieverProtocol | None = None,
+    expander: QueryExpander | None = None,
+    reranker: LLMReranker | None = None,
+) -> None
+```
 
 #### Properties
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `corpus` | `CorpusProtocol` | Access the underlying corpus instance |
+| `corpus` | `CorpusProtocol` | The corpus attached to this pipeline instance. |
 
-### RagResult
+#### Methods
 
-Structured output capturing retrieval context, citations, performance metrics, and fallback status.
+| Method | Parameters | Returns | Description |
+|--------|------------|---------|-------------|
+| `run` | `query: str`, `k: int = 3`, `prompt_variant: str = 'citation'` | `RagResult` | Retrieve context, assemble the augmented prompt, and return a `RagResult`. |
+| `run_and_generate` | `query: str`, `provider: LLMProvider \| str`, `k: int = 3`, `model: str \| None = None`, `max_tokens: int = 2048`, `prompt_variant: str = 'citation'`, `use_native_citations: bool = False` | `tuple[str, RagResult]` | Retrieve context, call the LLM, and return the generated text together with the full `RagResult`. |
 
-#### Fields
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `augmented_prompt` | `str` |  | Prompt text with injected retrieval context |
-| `citation` | `CitationRecord` |  | Source attribution and provenance data |
-| `confidence` | `float` |  | Retrieval relevance score |
-| `fallback_used` | `bool` |  | Whether fallback prompt was used when no context found |
-| `elapsed_ms` | `float` |  | Pipeline execution time in milliseconds |
-| `context` | `str` | `''` | Retrieved text snippets used for augmentation |
+---
 
 ## Constants
 
-| Constant | Description |
-|----------|-------------|
-| `FALLBACK_PROMPT_TEMPLATE` | Template used when no grounding context is found in the corpus |
-| `__version__` | Package version string |
-| `__all__` | Public API exports |
+| Constant | Type | Value |
+|----------|------|-------|
+| `FALLBACK_PROMPT_TEMPLATE` | `str` | `"### USER REQUEST\n\n{query}\n\n### INSTRUCTION\n\nNo grounding context was found in the corpus for this\nrequest. Answer honestly about what you do and do not\nknow. Do not invent attune APIs, workflow names, or CLI\ncommands. If the user is asking about something outside\nthe corpus's scope, say so."` |
+| `_CACHE_SPLIT` | `str` | `'\n### USER REQUEST\n'` |
+| `__version__` | `str` | `'0.1.16'` |
+
+---
 
 ## Source files
 

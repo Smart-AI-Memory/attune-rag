@@ -1,28 +1,38 @@
 ---
+type: concept
+name: benchmark-concept
 feature: benchmark
 depth: concept
-generated_at: 2026-05-15T13:03:36.549184+00:00
-source_hash: fa744d71791100502f1e27d84431e0d8aa1381376327b87453c04f3f56c22384
+generated_at: 2026-05-15T18:40:20.588450+00:00
+source_hash: 82975cf88c844b87657deb87845f45f4f5fbc32319ccba10e0eb8a798867630f
 status: generated
 ---
 
 # Benchmark
 
-## How it works
+The benchmark feature is a retrieval and faithfulness quality gate that measures how well the RAG pipeline performs and fails CI when results fall below configurable thresholds.
 
-Precision/recall/faithfulness benchmark runner — gates CI on configurable thresholds; supports custom query files and optional faithfulness scoring via --with-faithfulness.
+## What it measures
 
-The main entry points are:
+The benchmark runner evaluates two dimensions of RAG output:
 
-- **`main()`** — core function
+- **Retrieval quality** — precision and recall scores that reflect whether the right documents are being surfaced for a given query.
+- **Faithfulness** — an optional check (enabled with `--with-faithfulness`) that scores whether generated answers stay grounded in the retrieved content.
 
-## What connects to it
+You can supply a custom query file to target specific domains or edge cases rather than relying on defaults.
 
-This feature relates to: benchmark, ci, precision, recall, quality.
+## How the pieces fit together
 
-Other parts of the codebase call into
-benchmark through these functions:
+At the center is `main()` in `src/attune_rag/benchmark.py`. When called, it runs the configured benchmark suite, computes scores, and returns an exit code — `0` for pass, non-zero for fail. That exit code is what CI uses to gate a build: if precision, recall, or faithfulness drops below a threshold, the pipeline stops.
 
-| Function | Purpose | File |
-|----------|---------|------|
-| `main()` | — | `src/attune_rag/benchmark.py` |
+The flow looks like this:
+
+1. `main()` loads queries (default or from a custom file).
+2. It runs retrieval and scores precision and recall.
+3. If `--with-faithfulness` is set, it also scores answer grounding.
+4. It compares each score against its configured threshold.
+5. It exits `0` if all thresholds pass, non-zero otherwise.
+
+## When it matters
+
+Run the benchmark when you want confidence that a change to the retrieval pipeline — new chunking strategy, updated embeddings, adjusted ranking — hasn't degraded quality. Because `main()` returns a standard exit code, plugging it into CI is straightforward: a regression fails the build before it reaches production.
