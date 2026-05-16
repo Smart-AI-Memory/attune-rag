@@ -2,7 +2,7 @@
 
 ## Phase 3: Tasks
 
-**Status**: 0.1.18 + 0.1.19 shipped (M1–M3 + M4 done in attune-rag; M5.1 + M5.2 done in attune-gui on branch `feature/attune-rag-0.2-editor-rename`, not yet merged; M5.3 + attune-gui PR merge remain). Formal 0.2.0 freeze + classifier flip still queued for a successor spec.
+**Status**: 0.1.18 + 0.1.19 shipped; M1–M3 + M4 done in attune-rag; M5.1 + M5.2 + M5.3 done in attune-gui on branch `feature/attune-rag-0.2-editor-rename` (verified 2026-05-16 against published 0.1.19). **Only remaining step:** merge the attune-gui branch into attune-gui's main. Formal 0.2.0 freeze + classifier flip still queued for a successor spec.
 
 ### Implementation order
 
@@ -31,7 +31,7 @@ attune-gui, post-release.
 | M4.5 | Tag and publish per the existing release workflow (`/attune-release-check` then `gh release create`). | attune-rag | **done** | 0.1.18 tagged + published 2026-05-16T11:23:47Z via PR #36 (commit `6d95ee1`). 0.1.19 followed in PR #38 + PR #39 (Phase 2 close-out + CHANGELOG precision fix) and published 2026-05-16T12:02:48Z. Both releases passed the `attune-release-check` skill and the manual `pypi` environment approval gate. |
 | M5.1 | In attune-gui: replace `attune_rag.editor._rename` imports with `attune_rag.editor.rename`. Same for `_schema`. | attune-gui | **done** | Landed in attune-gui on branch `feature/attune-rag-0.2-editor-rename` (commit `5bf35ec`). 5 files: 2 route handlers, 2 tests, 1 docstring. Note: the commit message refers to "attune-rag 0.2.0" but the renames actually ship in 0.1.18 — technical capability unchanged. |
 | M5.2 | In attune-gui: remove the unpublished-module guard in `sidecar/attune_gui/_editor_dep.py` once the floor version of attune-rag is bumped to `>=0.1.18` (retargeted from 0.2.0). | attune-gui | **done** | Commit `b5f4d3b` on branch `feature/attune-rag-0.2-editor-rename`. The 503 guard + `test_editor_dep.py` were removed; floor pinned at `attune-rag>=0.1.18,<0.2` in attune-gui's `pyproject.toml`. Branch not yet merged (gated on M5.3 + PR review). |
-| M5.3 | Run attune-gui's full test suite (including the contract tests in `sidecar/tests/test_contract_attune_rag.py`) against attune-rag 0.1.19. | attune-gui | pending | Gate cleared (0.1.18 + 0.1.19 both on PyPI). Next concrete action: in attune-gui, upgrade the venv (`pip install --upgrade 'attune-rag==0.1.19'`), `pytest -q`, expect green; then open the PR to merge `feature/attune-rag-0.2-editor-rename` into attune-gui's main. |
+| M5.3 | Run attune-gui's full test suite (including the contract tests in `sidecar/tests/test_contract_attune_rag.py`) against attune-rag 0.1.19. | attune-gui | **done** | 2026-05-16. Ran `uv pip install --upgrade 'attune-rag==0.1.19'` then `pytest -q` on branch `feature/attune-rag-0.2-editor-rename`. **All 32 attune-rag-touching tests pass:** `test_contract_attune_rag` (5 tests), `test_editor_template` (19), `test_services_rag_pipeline` (8). Full-suite count: 489 pass / 3 fail / 3 deselected / 1 xfailed. The 3 failures (`test_cowork_specs::test_specs_root_env_var_wins`, `test_cowork_specs::test_specs_root_walks_up_from_cwd`, `test_cowork_templates::test_templates_staleness_thresholds`) are **pre-existing on attune-gui's `main`** (verified by stashing the M5 branch and re-running) — they fail on env-var resolution, cwd walk-up, and a date-based staleness threshold, all unrelated to attune-rag. **Next step:** open the attune-gui PR to merge `feature/attune-rag-0.2-editor-rename` into main. |
 
 ### Dependencies
 
@@ -67,8 +67,9 @@ are both backward-compatible.
       spec.
 - [x] CHANGELOG has an "Added", "Changed", and "Deprecated" section
       for 0.1.18 (and a follow-up `[0.1.19]` section for Phase 2).
-- [ ] attune-gui's contract test (`test_contract_attune_rag.py`)
-      passes against the published 0.1.19 wheel (M5.3).
+- [x] attune-gui's contract test (`test_contract_attune_rag.py`)
+      passes against the published 0.1.19 wheel (M5.3, verified
+      2026-05-16; 32/32 attune-rag-touching tests green).
 - [x] attune-gui's `_editor_dep.py` 503 guard is removed (M5.2,
       commit `b5f4d3b` on `feature/attune-rag-0.2-editor-rename`;
       branch unmerged pending M5.3).
