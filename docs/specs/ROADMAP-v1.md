@@ -9,7 +9,7 @@ working session so state is recoverable cold from disk.
 |---|---|
 | Current version | 0.1.17 |
 | Target version | 1.0.0 |
-| Current phase | Phase 1 — complete (M3.5 manual verification pending post-merge); Phase 2 unblocked |
+| Current phase | Phase 1 — complete; Phase 2 unblocked |
 | Last updated | 2026-05-16 |
 
 ---
@@ -31,7 +31,7 @@ working session so state is recoverable cold from disk.
 ## Phase 1 — Baseline lock-in
 
 **Spec:** [docs/specs/release-quality-baseline/](release-quality-baseline/)
-**Status:** complete (2026-05-16). Baseline locked at [baseline-1.md](release-quality-baseline/baseline-1.md). Thresholds: faithfulness ≥ 0.9686 (mean 0.979, σ 0.0052), P@1 ≥ 0.95, R@3 ≥ 1.00. CI gate wired at [`.github/workflows/benchmark.yml`](../../.github/workflows/benchmark.yml). One open item: M3.5 manual verification (deliberately-bad PR confirms gate fires) — waits for the workflow to land on main.
+**Status:** complete (2026-05-16). Baseline locked at [baseline-1.md](release-quality-baseline/baseline-1.md). Thresholds: faithfulness ≥ 0.9686 (mean 0.979, σ 0.0052), P@1 ≥ 0.95, R@3 ≥ 1.00. CI gate wired at [`.github/workflows/benchmark.yml`](../../.github/workflows/benchmark.yml). M3.5 verified 2026-05-16 via throwaway [#34](https://github.com/Smart-AI-Memory/attune-rag/pull/34): gate fires, comment posts under marker, edit-in-place on subsequent failures.
 **Estimate:** ~1 week of attention
 
 **Outcome:** every release reports P@1, R@3, and
