@@ -88,10 +88,10 @@ under `Changed`.
 
 ## Phase 3 — Public API freeze, ship 0.2.0
 
-**Spec:** `docs/specs/api-v0.2-public-surface/` (to create)
-**Status:** not started
-**Estimate:** ~3 weeks of attention
-**Depends on:** Phase 2 ships before 0.2.0 ships.
+**Spec:** [docs/specs/api-v0.2-public-surface/](api-v0.2-public-surface/)
+**Status:** **groundwork shipped 2026-05-16** in attune-rag 0.1.18 (PR #36) — M1–M3 + M4 done; surface lock test, deprecation shims, POLICY.md, README "Public API" section, `AttuneHelpCorpus` re-export all in. **M5 (attune-gui downstream cleanup) is partly done:** M5.1 + M5.2 landed on branch `feature/attune-rag-0.2-editor-rename`; M5.3 (full-suite test against published 0.1.19) and the PR merge remain. **The formal 0.2.0 SemVer freeze + classifier flip (Alpha → Stable) are still queued** — they require a successor spec since they ride on top of Phase 4's burn-in.
+**Estimate:** ~3 weeks of attention (largely realized; ~1 day to close M5)
+**Depends on:** Phase 2 ships before 0.2.0 ships. ✓ Phase 2 shipped as 0.1.19 (2026-05-16).
 **Sequencing (per Decision 3):** soft-parallel. Phase 3
 scoping — surface mapping, `__all__` audit, spec drafting
 — may begin during Phase 2. 0.2.0 release ships only
