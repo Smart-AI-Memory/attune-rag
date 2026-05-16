@@ -338,18 +338,33 @@ def test_main_compare_thinking_rejects_native_citations(
     assert "cannot" in capsys.readouterr().err
 
 
-def test_main_json_requires_with_faithfulness(
+def test_main_json_without_faithfulness_dumps_retrieval_only(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
+    """`--json` without `--with-faithfulness` now emits a retrieval-only dump.
+
+    Enables the CI quality gate to dump retrieval metrics on PRs
+    that don't qualify for the (expensive) faithfulness pass.
+    The dump shape is additive: `retrieval` + `queries_path`, no
+    `faithfulness_legacy`.
+    """
+    import json
+
     p = _write_queries(
         tmp_path / "q.yaml",
         [{"id": "q1", "query": "auth", "expected_in_top_3": ["a.md"]}],
     )
+    out_path = tmp_path / "out.json"
     pipeline = _FakePipeline({"auth": ["a.md"]})
     with patch("attune_rag.RagPipeline", return_value=pipeline):
-        rc = main(["--queries", str(p), "--json", str(tmp_path / "out.json")])
-    assert rc == 2
-    assert "--json requires --with-faithfulness" in capsys.readouterr().err
+        rc = main(["--queries", str(p), "--json", str(out_path)])
+    assert rc == 0
+    assert out_path.exists()
+    payload = json.loads(out_path.read_text())
+    assert "retrieval" in payload
+    assert "queries_path" in payload
+    assert "faithfulness_legacy" not in payload
+    assert payload["retrieval"]["precision_at_1"] == 1.0
 
 
 # ---------------------------------------------------------------------------
