@@ -161,10 +161,15 @@ jobs:
 
       # ── M3.2: post / update the PR comment on regression ─────────
       - name: Post or update PR comment on regression
+        # rc == '1' from check_thresholds.py already guarantees the
+        # comment file was written (see scripts/check_thresholds.py).
+        # An earlier draft also gated on
+        # ``hashFiles('/tmp/gate-comment.md')``, but ``hashFiles``
+        # only matches paths under ``$GITHUB_WORKSPACE`` — it silently
+        # returned '' for the /tmp path and the step never ran.
         if: |
           github.event_name == 'pull_request'
           && steps.check.outputs.rc == '1'
-          && hashFiles('/tmp/gate-comment.md') != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
