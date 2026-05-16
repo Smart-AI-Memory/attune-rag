@@ -96,7 +96,8 @@ uniformly at random from the 40.
 
 #### Option C: mixed-bucket re-sample (chosen)
 
-Run a fresh paired benchmark; label 30 queries:
+Run a fresh paired benchmark; label 33 queries — 30 for the
+rubric plus 3 drift-check controls (decided 2026-05-16):
 
 - **15 high-shift queries** (largest |off - on| from the new
   artifact). These force the labeler to break ties; this is
@@ -105,6 +106,22 @@ Run a fresh paired benchmark; label 30 queries:
   25 golden queries. These anchor the noise floor and let
   the variance script measure judge non-determinism on
   *typical* queries, not edge cases.
+- **Up to 3 control queries** (unchanged on score AND claim
+  count between off and on). Labeled at session start,
+  mid-session, and session end as a labeler-drift detector —
+  NOT included in the rubric numerator or denominator. If
+  the labeler's scores on the controls drift by > 0.05
+  across the session, the session is re-done.
+
+  **Methodology footnote (2026-05-16 run):** the v3 paired
+  artifact yielded only 2 queries qualifying as strict
+  controls (the on-pass re-parses claim sets even when
+  scores tie — 38 / 40 queries showed *some* shift). The
+  v3 session uses 2 controls (session start + session end)
+  rather than 3. The drift check stays valid; the cadence
+  is coarser. Documented here so a future re-run with a
+  different shift distribution doesn't silently lose the
+  third control.
 
 - Pro: separates "off vs on disagreement" (high-shift bucket)
   from "judge run-to-run variance" (random bucket).
