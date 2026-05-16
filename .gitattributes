@@ -1,0 +1,5 @@
+# Force LF line endings on any text file whose SHA-256 we lock,
+# so the quality gate's `queries_sha256` check stays byte-stable
+# across macOS / Linux / Windows checkouts.
+tests/golden/queries.yaml text eol=lf
+docs/specs/release-quality-baseline/thresholds.json text eol=lf

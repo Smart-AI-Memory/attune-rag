@@ -1,0 +1,229 @@
+name: Quality gate
+
+# Phase 1 deliverable from docs/specs/ROADMAP-v1.md / Phase 1
+# (Baseline lock-in). Runs the benchmark on every PR / push to
+# main and gates merge on the locked thresholds in
+# docs/specs/release-quality-baseline/thresholds.json.
+#
+# Faithfulness gating requires ANTHROPIC_API_KEY in repo Secrets.
+# When the secret is missing (default state of the repo today),
+# this workflow degrades gracefully to retrieval-only gating and
+# logs a notice. Add the secret to enable faithfulness gating —
+# no workflow edit needed.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write  # for posting / editing the gate comment
+
+concurrency:
+  # Cancel superseded runs on the same PR — only the latest push
+  # matters for the gate verdict.
+  group: quality-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: Threshold gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      THRESHOLDS_PATH: docs/specs/release-quality-baseline/thresholds.json
+      DUMP_PATH: /tmp/benchmark-dump.json
+      COMMENT_PATH: /tmp/gate-comment.md
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          # Full history so we can diff PR head against the base ref.
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install with [all] extra
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[all,dev]"
+
+      # ── M3.3: decide whether to run full faithfulness ────────────
+      - name: Decide gate mode (retrieval-only vs full)
+        id: mode
+        env:
+          # PR title is user-controlled — pass via env, never
+          # interpolate ${{ }} into a shell line.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_REF: ${{ github.base_ref }}
+          EVENT: ${{ github.event_name }}
+          HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+        run: |
+          set -euo pipefail
+          REASON=""
+
+          if [ "$EVENT" = "push" ] || [ "$EVENT" = "workflow_dispatch" ]; then
+            REASON="${EVENT} (post-merge / manual)"
+          elif printf '%s' "$PR_TITLE" | grep -qF '[full-bench]'; then
+            REASON="PR title opt-in via [full-bench]"
+          else
+            # Diff PR head against base ref. Faithfulness-affecting
+            # paths per docs/specs/release-quality-baseline/design.md.
+            CHANGED=$(git diff --name-only "origin/${BASE_REF}...HEAD" -- \
+              'src/attune_rag/retrieval.py' \
+              'src/attune_rag/reranker.py' \
+              'src/attune_rag/expander.py' \
+              'src/attune_rag/pipeline.py' \
+              'src/attune_rag/prompts.py' \
+              'src/attune_rag/eval/**' \
+              || true)
+            if [ -n "$CHANGED" ]; then
+              REASON="diff touches faithfulness-affecting paths:"$'\n'"$CHANGED"
+            fi
+          fi
+
+          if [ -z "$REASON" ]; then
+            echo "mode=retrieval-only" >> "$GITHUB_OUTPUT"
+            echo "reason=PR does not touch faithfulness-affecting paths and does not opt in via [full-bench]." >> "$GITHUB_OUTPUT"
+            echo "Faithfulness gate: SKIPPED (no qualifying signal)."
+          elif [ "$HAS_KEY" != "true" ]; then
+            echo "mode=retrieval-only" >> "$GITHUB_OUTPUT"
+            echo "reason=Would qualify for full gate but ANTHROPIC_API_KEY is not configured in repo Secrets." >> "$GITHUB_OUTPUT"
+            echo "::warning::Faithfulness gate SKIPPED — would qualify ($REASON) but ANTHROPIC_API_KEY is not in repo Secrets."
+          else
+            echo "mode=full" >> "$GITHUB_OUTPUT"
+            echo "reason=$REASON" >> "$GITHUB_OUTPUT"
+            echo "Faithfulness gate: ENABLED ($REASON)."
+          fi
+
+      # ── M3.1 + M3.4: run the benchmark with one retry on transient errors ─
+      - name: Run benchmark (retry once on transient failure)
+        id: bench
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          MODE: ${{ steps.mode.outputs.mode }}
+        run: |
+          set +e
+          if [ "$MODE" = "full" ]; then
+            FLAGS=(--with-faithfulness --json "$DUMP_PATH")
+            ATTEMPTS=2  # full pass spends API tokens; one retry on transient error
+          else
+            FLAGS=(--json "$DUMP_PATH")
+            ATTEMPTS=1  # retrieval is deterministic + free; no retry needed
+          fi
+
+          RC=0
+          for attempt in $(seq 1 $ATTEMPTS); do
+            python -m attune_rag.benchmark "${FLAGS[@]}"
+            RC=$?
+            if [ $RC -eq 0 ]; then break; fi
+            echo "::warning::Benchmark attempt $attempt failed with exit $RC."
+            if [ $attempt -lt $ATTEMPTS ]; then sleep 30; fi
+          done
+
+          if [ $RC -ne 0 ]; then
+            echo "::warning::Benchmark failed after $ATTEMPTS attempt(s) — marking gate inconclusive (not blocking PR)."
+            echo "inconclusive=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "inconclusive=false" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      # ── M3.1: check thresholds ────────────────────────────────────
+      - name: Check thresholds
+        id: check
+        if: steps.bench.outputs.inconclusive == 'false'
+        env:
+          MODE: ${{ steps.mode.outputs.mode }}
+        run: |
+          set +e
+          SKIP_ARGS=()
+          if [ "$MODE" = "retrieval-only" ]; then
+            SKIP_ARGS+=(--skip-metric mean_faithfulness)
+          fi
+          python scripts/check_thresholds.py \
+            --dump "$DUMP_PATH" \
+            --thresholds "$THRESHOLDS_PATH" \
+            --comment-out "$COMMENT_PATH" \
+            "${SKIP_ARGS[@]}"
+          RC=$?
+          echo "rc=$RC" >> "$GITHUB_OUTPUT"
+          exit $RC
+        shell: bash
+        continue-on-error: true
+
+      # ── M3.2: post / update the PR comment on regression ─────────
+      - name: Post or update PR comment on regression
+        if: |
+          github.event_name == 'pull_request'
+          && steps.check.outputs.rc == '1'
+          && hashFiles('/tmp/gate-comment.md') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Find an existing gate comment by its marker.
+          EXISTING=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --paginate \
+            --jq '.[] | select(.body | contains("<!-- attune-rag-quality-gate -->")) | .id' \
+            | head -1 || true)
+          if [ -n "$EXISTING" ]; then
+            echo "Updating existing comment id=$EXISTING"
+            gh api -X PATCH "repos/${REPO}/issues/comments/${EXISTING}" \
+              -F body=@"$COMMENT_PATH"
+          else
+            echo "Posting new comment on PR #$PR_NUMBER"
+            gh pr comment "$PR_NUMBER" --body-file "$COMMENT_PATH"
+          fi
+        shell: bash
+
+      # ── Mode disclosure: always announce what we did, for green PRs too ─
+      - name: Summary
+        if: always()
+        env:
+          MODE: ${{ steps.mode.outputs.mode }}
+          REASON: ${{ steps.mode.outputs.reason }}
+          BENCH_RC: ${{ steps.bench.outputs.inconclusive }}
+          CHECK_RC: ${{ steps.check.outputs.rc }}
+        run: |
+          {
+            echo "### attune-rag quality gate"
+            echo ""
+            echo "- Mode: \`${MODE}\`"
+            echo "- Reason: ${REASON}"
+            echo "- Inconclusive: ${BENCH_RC}"
+            echo "- check_thresholds.py exit: ${CHECK_RC:-skipped}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # ── M3.5 (partial): in-CI smoke test of the gate plumbing ────
+      # Runs the bundled smoke script against synthetic good/bad
+      # dumps so the gate's own logic stays exercised even on PRs
+      # where the real benchmark passes (or is skipped).
+      - name: Smoke-test the gate plumbing
+        if: always()
+        run: bash scripts/smoke_check_gate.sh
+        shell: bash
+
+      # ── Fail the job iff check_thresholds reported a regression ──
+      - name: Fail on regression
+        if: steps.check.outputs.rc == '1'
+        run: |
+          echo "::error::Quality gate failed — see the PR comment and the FAIL lines above."
+          exit 1
+        shell: bash
+
+      - name: Fail on validation error
+        if: steps.check.outputs.rc == '2'
+        run: |
+          echo "::error::Quality gate hit a validation error — see the error lines above. Common causes: malformed dump, queries.yaml SHA mismatch (re-measure with scripts/measure_baseline_variance.py), or threshold expects a metric the dump lacks."
+          exit 1
+        shell: bash

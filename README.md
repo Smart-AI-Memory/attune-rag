@@ -141,6 +141,28 @@ attune-rag dashboard show    # live terminal dashboard
 attune-rag dashboard render --out report.html  # HTML snapshot
 ```
 
+## Quality baseline
+
+Every PR is gated against a locked retrieval + faithfulness
+baseline. Thresholds are set at `mean − 2σ` per metric,
+measured from 20 back-to-back benchmark runs on an unchanged
+HEAD — empirically grounded rather than guessed.
+
+| Metric | Threshold (current) | Source |
+|---|---:|---|
+| `precision_at_1` | **0.95** | retrieval, deterministic |
+| `recall_at_3` | **1.00** | retrieval, deterministic |
+| `mean_faithfulness` | **0.9686** | Claude judge, σ ≈ 0.005 |
+
+The CI workflow at
+[.github/workflows/benchmark.yml](https://github.com/Smart-AI-Memory/attune-rag/blob/main/.github/workflows/benchmark.yml)
+runs the benchmark on every PR. Faithfulness gating engages
+when the PR touches retrieval, reranker, expander, pipeline,
+prompts, or eval paths, or when the PR title contains
+`[full-bench]`. Methodology, raw numbers, and the
+re-measurement procedure live under
+[`docs/specs/release-quality-baseline/`](https://github.com/Smart-AI-Memory/attune-rag/blob/main/docs/specs/release-quality-baseline/baseline-1.md).
+
 ## Roadmap — embeddings (next minor release)
 
 Keyword retrieval + optional Claude reranker currently carry

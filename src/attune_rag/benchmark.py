@@ -549,13 +549,6 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 2
-    if args.json is not None and not args.with_faithfulness:
-        print(
-            "error: --json requires --with-faithfulness (nothing to " "dump otherwise).",
-            file=sys.stderr,
-        )
-        return 2
-
     if not args.queries.is_file():
         print(f"Queries file not found: {args.queries}", file=sys.stderr)
         return 2
@@ -570,6 +563,17 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 1
+
+    # Retrieval-only `--json` path. Used by the CI quality gate
+    # when faithfulness gating is off-budget for the PR. The dump
+    # carries `retrieval` + `queries_path`; downstream consumers
+    # treat the absence of `faithfulness_legacy` as
+    # "retrieval-only run".
+    if args.json is not None and not args.with_faithfulness:
+        _dump_json(
+            args.json,
+            {"retrieval": report, "queries_path": str(args.queries)},
+        )
 
     if args.with_faithfulness:
         if not os.environ.get("ANTHROPIC_API_KEY"):

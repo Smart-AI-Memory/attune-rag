@@ -1,0 +1,25 @@
+{
+  "commit": "d98fabe349210341ea7e1a1f357aba15164556e6",
+  "measured_at": "2026-05-16T08:11:25Z",
+  "metrics": {
+    "mean_faithfulness": {
+      "mean": 0.979,
+      "stdev": 0.0052,
+      "threshold": 0.9686
+    },
+    "precision_at_1": {
+      "mean": 0.95,
+      "stdev": 0.0,
+      "threshold": 0.95
+    },
+    "recall_at_3": {
+      "mean": 1.0,
+      "stdev": 0.0,
+      "threshold": 1.0
+    }
+  },
+  "queries_path": "tests/golden/queries.yaml",
+  "queries_sha256": "f47486df87c61e2391a4326f9ffe68659373f6837063cf70c5b990a639f2290c",
+  "runs": 20,
+  "sigma": 2.0
+}
