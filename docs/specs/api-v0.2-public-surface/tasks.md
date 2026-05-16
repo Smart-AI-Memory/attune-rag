@@ -89,3 +89,20 @@ are both backward-compatible.
   spec. Revisit only if a real programmatic consumer materializes.
 - **Promoting `benchmark.py` to PUBLIC.** CLI / `python -m` is the
   contract; no programmatic API surface today.
+
+### Follow-ups (post-0.1.18)
+
+- **Worktree-local `.venv` ambiguity.** Three Python environments
+  are currently in play for this worktree: the main repo's
+  `/Users/patrickroebuck/attune-rag/.venv`, an auto-created
+  worktree-local `.venv` (made when `uv run` was first invoked
+  here), and the global `~/.pyenv/versions/3.10.11/site-packages/`.
+  `uv run` picks the project-local `.venv` and ignores activated
+  VIRTUAL_ENV, but the resolution path is non-obvious. Cleanup:
+  `rm -rf .claude/worktrees/admiring-feynman-51ae7d/.venv` and let
+  `uv sync --extra dev --extra author` re-create it from
+  `pyproject.toml` cleanly. Defer until after the 0.1.18 polished
+  regen lands so we don't lose attune-author 0.13.0 mid-flight.
+- **Yanked `attune-help==0.10.0` pin** — being addressed in the
+  same commit as the polished regen (pyproject floor bumped to
+  `>=0.10.1`).
