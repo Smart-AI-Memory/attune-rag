@@ -23,6 +23,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > the calendar's 2026-05-24. End of W4 (and the 0.2.0 SemVer cut)
 > targets 2026-06-17 if no regression resets the clock.
 
+### Changed
+
+- **Perf-gate noise tolerance widened pre-W3.1 (internal tooling
+  only — no public API impact).** Three coordinated changes to
+  `scripts/measure_perf_baseline.py` and `.github/workflows/perf.yml`:
+  (a) `DEFAULT_SIGMA` 2.0 → 3.0 (threshold formula tolerance);
+  (b) per-PR `delta-check` `--runs` 10 → 30 (tighter per-PR mean);
+  (c) `lock-baseline` workflow_dispatch default `runs` 30 → 50
+  (tighter baseline mean). Rationale: PR #72 vs PR #74 produced
+  a ±23 % swing on `rag_pipeline_run.cpu` despite zero perf-relevant
+  code changes between them, exposing inter-run noise the original
+  N=10 / 2σ formula didn't tolerate. With the gate set to promote
+  to blocking in W3.1, the original setting would have produced
+  false-positive blocks. Re-locked baseline at N=50 lands in a
+  follow-up auto-PR from the `lock-baseline` workflow.
+
 ## [0.1.22] - 2026-05-20
 
 > **Freeze override (Phase 4 of v1.0 roadmap).** The
