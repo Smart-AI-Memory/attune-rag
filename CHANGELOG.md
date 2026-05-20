@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`.help/` corpus refreshed and extended.** Regenerated stale
+  `pipeline` and `retrieval` templates against post-0.1.18 source.
+  Added four new feature areas to close public-surface coverage
+  gaps: `editor` (template-editor primitives), `dashboard`
+  (living-docs three-stage pipeline), `expander` (LLM-driven
+  query expansion), `reranker` (LLM-driven re-ranking). Each
+  feature ships `concept`, `reference`, and `task` templates
+  produced by `attune-author regenerate` with the polish pass
+  applied. `features.yaml` extended in lockstep. No code change.
 - **README** rewritten with the eval-as-marketing thesis foregrounded.
   New "Why attune-rag" section quotes the locked retrieval +
   faithfulness thresholds plus the per-hot-path latency baseline

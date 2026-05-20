@@ -64,3 +64,35 @@ features:
     files:
       - src/attune_rag/cli.py
     tags: [cli, query, corpus-info]
+
+  editor:
+    description: Headless template-editor primitives — load_schema parses the v1 frontmatter contract; parse_frontmatter and validate_frontmatter split and check templates; lint_template returns 1-indexed Diagnostics; autocomplete_tags/aliases prefix-match against the corpus; find_references locates alias/tag/path occurrences; plan_rename builds a RenamePlan with per-file FileEdit hunks; apply_rename runs the plan atomically with rollback. Pure functions over CorpusProtocol — used live by the attune-gui editor and attune-author edit CLI.
+    files:
+      - src/attune_rag/editor/__init__.py
+      - src/attune_rag/editor/schema.py
+      - src/attune_rag/editor/lint.py
+      - src/attune_rag/editor/autocomplete.py
+      - src/attune_rag/editor/references.py
+      - src/attune_rag/editor/rename.py
+    tags: [editor, lint, rename, autocomplete, schema, references, refactor, template]
+
+  dashboard:
+    description: Living-docs dashboard for a registered corpus — three-stage pipeline (refresh → render → show). refresh runs the benchmark against the corpus and emits a snapshot JSON; render produces a packaged HTML report; show pretty-prints the snapshot to the terminal via Rich. Each stage has its own CLI entry point under `attune-rag dashboard`.
+    files:
+      - src/attune_rag/dashboard/__init__.py
+      - src/attune_rag/dashboard/refresh.py
+      - src/attune_rag/dashboard/render.py
+      - src/attune_rag/dashboard/show.py
+    tags: [dashboard, living-docs, html, terminal, snapshot, freshness]
+
+  expander:
+    description: LLM-powered query expansion — QueryExpander uses Claude Haiku to broaden a user query into related terms and synonyms before keyword retrieval, lifting recall on queries with low surface-level overlap against the target documents. Opt-in and fail-safe — any API error falls back to the original query order.
+    files:
+      - src/attune_rag/expander.py
+    tags: [expander, hybrid-retrieval, recall, claude, haiku]
+
+  reranker:
+    description: LLM-powered re-ranking — LLMReranker uses Claude Haiku as a relevance judge over the top-K keyword-retrieved candidates, producing a precision-optimized order. Opt-in and fail-safe — any API error falls back to the keyword-only order.
+    files:
+      - src/attune_rag/reranker.py
+    tags: [reranker, hybrid-retrieval, precision, claude, haiku]
