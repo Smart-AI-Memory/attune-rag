@@ -144,9 +144,12 @@ jobs:
       pull-requests: write
     env:
       BASELINE_JSON: docs/specs/downstream-validation/perf-thresholds.json
-      CURRENT_JSON: /tmp/perf-current.json
-      CURRENT_MD: /tmp/perf-current.md  # not used downstream, but required by the script
-      COMMENT_PATH: /tmp/perf-comment.md
+      # Workspace-relative paths so hashFiles() works in step
+      # conditionals (it only matches files under GITHUB_WORKSPACE
+      # — silently returns '' for /tmp paths, defeating the guard).
+      CURRENT_JSON: perf-current.json
+      CURRENT_MD: perf-current.md  # not used downstream, but required by the script
+      COMMENT_PATH: perf-comment.md
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -224,7 +227,7 @@ jobs:
       - name: Post or update PR comment
         if: |
           github.event_name == 'pull_request'
-          && hashFiles('/tmp/perf-comment.md') != ''
+          && hashFiles(env.COMMENT_PATH) != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
