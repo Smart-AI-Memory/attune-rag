@@ -33,9 +33,8 @@ patterns for human review, not actual exploits.
 
 ### Findings
 
-All 11 dispositions were confirmed in W0.11 (2026-05-19) against
-the code at `c6c911d`. No revisions; no fix-now items; no
-Phase-5 tickets opened from this source.
+Dispositions confirmed in W0.11 (initial pass 2026-05-19; W09.S.011
+re-opened + closed 2026-05-20 after the fix landed in this PR).
 
 | ID | Severity | Location | Detail | Disposition |
 |---|---|---|---|---|
@@ -45,11 +44,11 @@ Phase-5 tickets opened from this source.
 | W09.S.004 | medium | `src/attune_rag/corpus/directory.py:121` | `Path(root).resolve()` — `root` is the library API caller's corpus directory | non-issue: library API contract; caller chooses corpus root, validated with `is_dir()` immediately after |
 | W09.S.005 | medium | `src/attune_rag/dashboard/refresh.py:25` | `Path(str(_ilr.files(corpus_package).joinpath("templates")))` | non-issue: `importlib.resources` internal path |
 | W09.S.006 | medium | `src/attune_rag/editor/rename.py:217` | `candidate = Path(raw)` inside `_normalize_corpus_relpath` (THE sanitizer) | non-issue: scanner flagged input to the validator itself; the surrounding code rejects absolute paths, `..` escapes, and empty strings |
-| W09.S.007 | medium | `src/attune_rag/editor/rename.py:567` | `Path(tmp_path).unlink(missing_ok=True)` | non-issue: `tmp_path` is from `tempfile.mkstemp()` — system-allocated, not user input |
+| W09.S.007 | medium | `src/attune_rag/editor/rename.py:567` | `Path(tmp_path).unlink(missing_ok=True)` | non-issue: `tmp_path` is from `tempfile.mkstemp()` at line 560 inside `_stage()` — system-allocated, never user-influenced |
 | W09.S.008 | medium | `src/attune_rag/editor/rename.py:569` | `return Path(tmp_path)` (atomic-write tmp path) | non-issue: same `tempfile.mkstemp()` return as W09.S.007 |
 | W09.S.009 | medium | `src/attune_rag/eval/bench_prompts.py:50` | `Path(__file__).resolve()...queries.yaml` (default queries path) | non-issue: `__file__`-derived default |
 | W09.S.010 | medium | `src/attune_rag/eval/bench_prompts.py:66` | `Path(text).resolve()` inside `_validate_read_path` (sanitizer; null-byte check on the preceding line) | non-issue: scanner flagged input to validator |
-| W09.S.011 | medium | `src/attune_rag/eval/bench_prompts.py:85` | `Path(str(raw)).absolute()` for symlink-resolution check against `_SYSTEM_DIRS` denylist | non-issue: defensive check, not the vector — guards against `/etc/passwd`-style writes |
+| W09.S.011 | medium | `src/attune_rag/eval/bench_prompts.py:85` | `Path(str(raw)).absolute()` for symlink-resolution check against `_SYSTEM_DIRS` denylist | **fix-now (closed in this PR)**: macOS direct-path bypass — `/private/etc/passwd` wasn't denied because the raw-path arm of the check only had `/etc`. Mirrored each original entry under `/private/` (e.g. `/private/etc`, `/private/sys`, …). Deliberately NOT adding bare `/private`, `/var`, or `/usr/...` — those would over-block legitimate user-writable temp roots (pytest's `tmp_path` lives under `/private/var/folders/...`). |
 
 **Pattern note.** Six of the 11 findings (`S.006`, `S.010`, `S.011`,
 plus all three `__file__`-derived ones) reveal a known limit of
@@ -100,10 +99,12 @@ stdlib pass and is re-opened when the deep sweep lands._
 
 | Source | Triaged on | fix-now | non-issue | Phase-5-ticket |
 |---|---|---:|---:|---:|
-| 1 (stdlib) | 2026-05-19 | 0 | 11 | 0 |
+| 1 (stdlib) | 2026-05-19 + 2026-05-20 (W09.S.011 re-opened, fix landed) | 1 (closed) | 10 | 0 |
 | 2 (attune-ai deep sweep) | pending | — | — | — |
 
-Source 1 triage is complete. Source 2 findings, when the deep
-sweep lands, are folded into a follow-up pass and amended above.
-The hard gate (`zero severity: high open`) holds on the Source 1
-side; recheck at end of W0 against the union of both sources.
+Source 1 triage is complete; W09.S.011 surfaced a real macOS
+direct-path bypass and is fixed in this PR (`_SYSTEM_DIRS`
+extended). Source 2 findings, when the deep sweep lands, are
+folded into a follow-up pass and amended above. The hard gate
+(`zero severity: high open`) holds on the Source 1 side; recheck
+at end of W0 against the union of both sources.

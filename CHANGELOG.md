@@ -6,7 +6,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **Close macOS direct-path bypass in `_SYSTEM_DIRS` denylist**
+  (`attune_rag.eval.bench_prompts`). Found during W0.11 triage of
+  W0.9 finding W09.S.011: `/etc`/`/sys`/etc. were caught via
+  symlink-resolution (those paths resolve to `/private/...` on
+  macOS), but a user typing `--output /private/etc/passwd`
+  directly bypassed the guard because the raw-path arm of the
+  check didn't have `/private/etc` in its denylist. Mirrored
+  each original entry under `/private/` so the direct form is
+  blocked too. Did NOT add bare `/private`, `/var`, or
+  `/usr/...` — those would over-block legitimate
+  user-writable temp roots (pytest tmp_path lives under
+  `/private/var/folders/...`). 3 new test cases added to
+  `tests/unit/test_eval_bench_prompts.py`. Threat model is
+  developer-typo, not a hardened jail.
+
 ### Changed
+
+- **`docs/specs/downstream-validation/security-findings.md`** —
+  W0.11 partial triage: 10 of 11 stdlib findings confirmed
+  `non-issue` after deeper code reads; the 11th (W09.S.011)
+  surfaced the macOS denylist gap above and is being closed in
+  this same PR. Source 2 (attune-ai deep sweep) still pending.
 
 - **`.help/` corpus refreshed and extended.** Regenerated stale
   `pipeline` and `retrieval` templates against post-0.1.18 source.

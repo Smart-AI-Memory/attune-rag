@@ -32,7 +32,34 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
-_SYSTEM_DIRS: tuple[str, ...] = ("/etc", "/sys", "/proc", "/dev", "/bin", "/sbin", "/boot")
+_SYSTEM_DIRS: tuple[str, ...] = (
+    # Canonical system dirs that hold OS-level content.
+    "/etc",
+    "/sys",
+    "/proc",
+    "/dev",
+    "/bin",
+    "/sbin",
+    "/boot",
+    # macOS direct-path bypass guard: on macOS the canonical
+    # entries above are symlinks to `/private/...`, so the
+    # resolved-path arm of the check catches `--output
+    # /etc/passwd`. But a user could ALSO type
+    # `--output /private/etc/passwd` directly — that path
+    # doesn't get rewritten on resolution because it's already
+    # canonical. Mirror the originals under `/private/` so the
+    # raw-path arm of the check blocks the direct form too.
+    # NOT adding bare `/private` here — `/private/tmp` and
+    # `/private/var/folders/...` are legitimate user-writable
+    # temp roots (pytest tmp_path lives under the latter).
+    "/private/etc",
+    "/private/sys",
+    "/private/proc",
+    "/private/dev",
+    "/private/bin",
+    "/private/sbin",
+    "/private/boot",
+)
 
 
 def _default_queries_path() -> Path:

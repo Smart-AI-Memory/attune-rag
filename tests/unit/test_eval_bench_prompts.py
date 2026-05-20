@@ -151,7 +151,22 @@ def test_validate_write_path_accepts_tmp(tmp_path: Path) -> None:
 @_unix_only
 @pytest.mark.parametrize(
     "sysdir",
-    ["/etc/passwd", "/sys/kernel/foo", "/proc/self/status", "/dev/null", "/bin/sh"],
+    [
+        # Original coverage — canonical Linux/BSD system roots.
+        "/etc/passwd",
+        "/sys/kernel/foo",
+        "/proc/self/status",
+        "/dev/null",
+        "/bin/sh",
+        # macOS direct-path bypass closed in W0.11 triage of
+        # W09.S.011: a user typing `--output /private/etc/passwd`
+        # was bypassing the raw-path arm of the check because
+        # the resolved-arm only catches `/etc/...` (the symlink
+        # source), not `/private/etc/...` (the symlink target).
+        "/private/etc/passwd",
+        "/private/sys/kernel/x",
+        "/private/bin/sh",
+    ],
 )
 def test_validate_write_path_refuses_system_dirs(sysdir: str) -> None:
     with pytest.raises(ValueError, match="system directory"):
