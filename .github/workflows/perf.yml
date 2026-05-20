@@ -8,17 +8,24 @@ name: Perf
 # Two jobs:
 #
 # 1. `lock-baseline` — triggered manually via Actions UI. Runs
-#    N=30 iterations (default) of all benchmarks, optionally
+#    N=50 iterations (default) of all benchmarks, optionally
 #    `--include-llm`, commits the locked files to
 #    docs/specs/downstream-validation/. This is the mechanism for
 #    W0.4 (the spec's "Lock initial perf baseline" deliverable).
+#    N was bumped 30→50 pre-W3.1 to tighten the baseline mean
+#    estimate on sub-millisecond benchmarks where the original
+#    N=30 ran into inter-run variance the locked stdev didn't
+#    capture (see PR after #74).
 #
-# 2. `delta-check` — triggered on every PR. Runs a cheaper N=10
-#    LLM-free measurement, compares against the locked baseline,
-#    posts an advisory comment. Pre-W0.4 (no baseline locked yet),
-#    the comment is a "baseline pending" notice and the job stays
-#    green. Advisory mode through W3.1 (per design.md §2's
-#    promotion ramp); doesn't fail the PR.
+# 2. `delta-check` — triggered on every PR. Runs an N=30 LLM-free
+#    measurement, compares against the locked baseline, posts an
+#    advisory comment. Bumped from N=10 pre-W3.1: the original
+#    N=10 produced ±23% swings between consecutive PRs on
+#    identical perf-relevant code (rag_pipeline_run, PR #72/#74),
+#    making the gate unreliable. N=30 cuts that swing by √3 ≈ 1.73x
+#    and brings per-PR variance closer to the baseline's intra-run
+#    measurement methodology. Advisory mode through W3.1 (per
+#    design.md §2's promotion ramp); doesn't fail the PR.
 
 on:
   pull_request:
@@ -28,7 +35,7 @@ on:
       runs:
         description: "Iterations per benchmark (>= 10)."
         required: false
-        default: "30"
+        default: "50"
       include_llm:
         description: "Include LLMReranker.rerank (needs ANTHROPIC_API_KEY)?"
         required: false
@@ -203,7 +210,7 @@ jobs:
         run: |
           set -euo pipefail
           python scripts/measure_perf_baseline.py \
-            --runs 10 \
+            --runs 30 \
             --out "$CURRENT_MD" \
             --thresholds-out "$CURRENT_JSON"
         shell: bash

@@ -86,7 +86,19 @@ LLM_FREE_BENCHMARKS: tuple[str, ...] = (
 )
 LLM_BENCHMARKS: tuple[str, ...] = ("llm_reranker_rerank",)
 
-DEFAULT_SIGMA = 2.0
+# Threshold = mean + sigma * stdev (latencies are higher-is-worse).
+#
+# sigma=3.0 (was 2.0) tolerates the inter-run noise observed on
+# sub-millisecond benchmarks during W1–W2 advisory operation.
+# Specifically: two consecutive perf-workflow readings on
+# perf-relevant-identical code (PR #72 and PR #74) produced a ±23%
+# swing on `rag_pipeline_run.cpu`, while baseline intra-run stdev
+# suggests only ±8% RSD. The inter-run noise (different runner SKUs,
+# co-tenancy, GC) is real and isn't captured by the intra-run stdev
+# the locked baseline measures. sigma=3.0 absorbs that asymmetry
+# without making the gate useless: a real 50%+ regression still
+# fires. Re-evaluate at W4 close once we have ~4 weeks of readings.
+DEFAULT_SIGMA = 3.0
 MIN_RUNS = 10  # statistics.stdev needs ≥2, but small N is unreliable
 
 
