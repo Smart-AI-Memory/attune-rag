@@ -1,6 +1,6 @@
 # Spec: Faithfulness `--thinking` Default Decision (attune-rag)
 
-**Status**: approved (Phase 2 of v1.0 roadmap, M1 cleared 2026-05-16)
+**Status**: complete (Phase 2 of v1.0 roadmap, shipped as 0.1.19 on 2026-05-16; verdict: `off-forever` — keep `--thinking` opt-in)
 
 > Roadmap context: [docs/specs/ROADMAP-v1.md](../ROADMAP-v1.md) — Phase 2.
 > Depends on: Phase 1 ([docs/specs/release-quality-baseline/](../release-quality-baseline/)) — locked thresholds and the re-measurement procedure are inputs to Phase 2's close-out.
@@ -13,7 +13,7 @@
 
 ## Phase 1: Requirements
 
-**Status**: approved
+**Status**: complete
 
 ### Problem statement
 

@@ -1,6 +1,6 @@
 # Spec: Release Quality Baseline (attune-rag)
 
-**Status**: draft (Phase 1 of v1.0 roadmap, not started)
+**Status**: complete (Phase 1 of v1.0 roadmap, shipped via PR [#33](https://github.com/Smart-AI-Memory/attune-rag/pull/33) on 2026-05-16; baseline locked at faithfulness ≥ 0.9686, P@1 ≥ 0.95, R@3 ≥ 1.00)
 
 > Roadmap context: [docs/specs/ROADMAP-v1.md](../ROADMAP-v1.md) — Phase 1.
 >
@@ -12,7 +12,7 @@
 
 ## Phase 1: Requirements
 
-**Status**: draft
+**Status**: complete
 
 ### Problem statement
 

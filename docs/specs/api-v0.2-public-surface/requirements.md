@@ -1,6 +1,6 @@
 # Spec: Public API Surface Freeze for attune-rag 0.2.0
 
-**Status**: 0.1.18 candidate ready (M1–M3 + M4.1–M4.3 + M5.1 done; M4.4 retargeted from 0.2.0 to 0.1.18; M4.5 ready to fire)
+**Status**: complete — all in-scope work shipped 2026-05-16 (M1–M5 done; groundwork in 0.1.18 via PR [#36](https://github.com/Smart-AI-Memory/attune-rag/pull/36); attune-gui downstream cleanup verified green against 0.1.19). The formal 0.2.0 SemVer freeze is queued for the [api-v0.2.0-cut](../api-v0.2.0-cut/) successor spec (activates after Phase 4 W4.2); the classifier flip stays Phase 5's.
 
 - **Owner:** Patrick
 - **Created:** 2026-05-16

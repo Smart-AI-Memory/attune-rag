@@ -2,7 +2,7 @@
 
 ## Phase 2: Design
 
-**Status**: approved
+**Status**: complete (decision locked at [`decision.md`](./decision.md) on 2026-05-16)
 
 
 ### Architecture

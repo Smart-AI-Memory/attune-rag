@@ -2,7 +2,7 @@
 
 ## Phase 3: Tasks
 
-**Status**: approved
+**Status**: complete (all milestones done 2026-05-16; shipped as 0.1.19 with verdict `off-forever`)
 
 ### Implementation order
 
@@ -133,7 +133,7 @@ M7.2 (default flip). Rollback:
 
 ## Phase 4: Implementation
 
-**Status**: in progress — M1 cleared 2026-05-16 (spec approved); M2 (kit extension + paired benchmark) is the active milestone.
+**Status**: complete — all milestones M1–M8 done 2026-05-16; shipped as 0.1.19. Verdict locked at [`decision.md`](./decision.md) as `off-forever`.
 
 ### Completion checklist
 
