@@ -36,6 +36,14 @@ before scoping begins. Reproduced from
       File: `docs/specs/downstream-validation/exit-summary.md`.
       The recommendation is the Phase-4 owner's call; Phase 5
       reads, it does not re-litigate.
+- [ ] **0.2.0 cut spec executed and shipped.** The W4.4 successor
+      spec [`docs/specs/api-v0.2.0-cut/`](../api-v0.2.0-cut/) (already
+      scaffolded — see
+      [#83](https://github.com/Smart-AI-Memory/attune-rag/pull/83))
+      has been scoped via `/spec`, all milestones completed,
+      `attune-rag==0.2.0` published to PyPI. The 0.2.0 cut spec
+      explicitly *does not* flip the classifier — that gate stays
+      this spec's problem.
 - [ ] **0.2.0 has been on PyPI for at least N days with zero
       hotfixes** — N is a placeholder. Pin N during the formal
       scoping pass (`/spec` on this directory). Candidate range:
@@ -104,8 +112,14 @@ before scoping begins. Reproduced from
 exists (scaffolded in attune-rag
 [PR #82](https://github.com/Smart-AI-Memory/attune-rag/pull/82))
 with 11 items across quality (Q1–Q4), perf (P1–P4), test-audit
-(T1–T3), and methodology (M1). At Phase-5 scoping time those
-items are triaged into one of three buckets:
+(T1–T3), and methodology (M1).
+
+**M1 has already promoted** to its own spec at
+[docs/specs/perf-baseline-multi-run/](../perf-baseline-multi-run/)
+([PR #86](https://github.com/Smart-AI-Memory/attune-rag/pull/86))
+— it is a Phase 5 deliverable in its own right and not subject to
+this spec's triage. The remaining 10 items (Q1–Q4, P1–P4, T1–T3)
+are triaged at Phase-5 scoping time into one of three buckets:
 
 1. **Fold into [tasks.md](tasks.md).** Small, on-the-critical-path,
    no spec needed.
