@@ -6,7 +6,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.21] - 2026-05-20
+
+> **Phase 4 W0 setup ships.** Twelve weeks of W0 machinery + four
+> security passes (HIGH + LOW) + the polished `.help/` corpus + the
+> locked perf baseline. No public API change — every CHANGELOG bullet
+> below is either `Security` (hardening), `Fixed` (CDN-supply-chain +
+> XSS), or `Changed` (docs, internal tooling, freeze workflows).
+> Phase 4 W1–W4 burn-in starts from this commit; the formal `0.2.0`
+> SemVer cut follows once the four-week soak completes cleanly.
+>
+> Supersedes the never-published 0.1.20 (tagged at 1f9a7d7) so the
+> security follow-up from PR #68 (W09.A.005..008) ships in the same
+> release as the rest of W0.
+
 ### Security
+
+- **Close macOS direct-path bypass in `_SYSTEM_DIRS` denylist**
+  (`attune_rag.eval.bench_prompts`). Found during W0.11 triage of
+  W0.9 finding W09.S.011: `/etc`/`/sys`/etc. were caught via
+  symlink-resolution (those paths resolve to `/private/...` on
+  macOS), but a user typing `--output /private/etc/passwd`
+  directly bypassed the guard because the raw-path arm of the
+  check didn't have `/private/etc` in its denylist. Mirrored
+  each original entry under `/private/` so the direct form is
+  blocked too. Did NOT add bare `/private`, `/var`, or
+  `/usr/...` — those would over-block legitimate
+  user-writable temp roots (pytest tmp_path lives under
+  `/private/var/folders/...`). 3 new test cases added to
+  `tests/unit/test_eval_bench_prompts.py`. Threat model is
+  developer-typo, not a hardened jail.
 
 - **W0.9 Source 2 LOW hardening (Phase 4).** Three LOW findings surfaced
   by a read-only security-review agent on `src/attune_rag/`, addressed
@@ -35,41 +64,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `/private/etc/foo` on macOS, slipping past the `/etc` denylist
   entry. Added `/private/etc`, `/private/sys`, `/private/dev`
   mirrors. Two new tests in `tests/unit/test_dashboard_render.py`.
-
-### Changed
-
-- **Deep-review MEDIUM/LOW capture marked closed.** `security-findings.md`
-  Source 2 now lists W09.A.005..007 as `fix-now (closed in this PR)` and
-  documents the read-only-agent path as the workaround for the broken
-  `security_audit` MCP. Hard gate (`zero severity: high open`) still
-  holds; LOWs are now zero open as well.
-
-## [0.1.20] - 2026-05-20
-
-> **Phase 4 W0 setup ships.** Twelve weeks of W0 machinery + two
-> security fixes + the polished `.help/` corpus + the locked perf
-> baseline. No public API change — every CHANGELOG bullet below is
-> either `Security` (hardening), `Fixed` (CDN-supply-chain + XSS),
-> or `Changed` (docs, internal tooling, freeze workflows). Phase 4
-> W1–W4 burn-in starts from this commit; the formal `0.2.0`
-> SemVer cut follows once the four-week soak completes cleanly.
-
-### Security
-
-- **Close macOS direct-path bypass in `_SYSTEM_DIRS` denylist**
-  (`attune_rag.eval.bench_prompts`). Found during W0.11 triage of
-  W0.9 finding W09.S.011: `/etc`/`/sys`/etc. were caught via
-  symlink-resolution (those paths resolve to `/private/...` on
-  macOS), but a user typing `--output /private/etc/passwd`
-  directly bypassed the guard because the raw-path arm of the
-  check didn't have `/private/etc` in its denylist. Mirrored
-  each original entry under `/private/` so the direct form is
-  blocked too. Did NOT add bare `/private`, `/var`, or
-  `/usr/...` — those would over-block legitimate
-  user-writable temp roots (pytest tmp_path lives under
-  `/private/var/folders/...`). 3 new test cases added to
-  `tests/unit/test_eval_bench_prompts.py`. Threat model is
-  developer-typo, not a hardened jail.
 
 ### Fixed
 
@@ -161,6 +155,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stale `v0.1.10` to `v0.1.19`; roadmap section repositioned as
   post-freeze 0.2.0+ instead of "next minor release." No public
   API change.
+
+- **Deep-review MEDIUM/LOW capture marked closed.** `security-findings.md`
+  Source 2 now lists W09.A.005..007 as `fix-now (closed in this PR)` and
+  documents the read-only-agent path as the workaround for the broken
+  `security_audit` MCP. Hard gate (`zero severity: high open`) still
+  holds; LOWs are now zero open as well.
+
+- **`benchmark.yml` threshold-gate heredoc fix.** The mode-decision step used the `key=value` form to write `reason` to `$GITHUB_OUTPUT`, which GitHub Actions rejected with `Invalid format` when the PR's diff touched ≥ 2 faithfulness-affecting paths (multi-line value). Switched to the documented heredoc form (`reason<<EOF_REASON \n … \n EOF_REASON`). The gate now correctly emits `mode=full` with multi-line rationale. Surfaced on PR #68 which touched both `reranker.py` and `expander.py`.
 
 ## [0.1.19] - 2026-05-16
 
