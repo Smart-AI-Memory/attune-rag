@@ -31,7 +31,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      COMMENT_PATH: /tmp/freeze-comment.md
+      # Workspace-relative path so hashFiles() works in step
+      # conditionals (it only matches files under GITHUB_WORKSPACE
+      # — silently returns '' for /tmp paths, defeating the guard).
+      COMMENT_PATH: freeze-comment.md
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -127,7 +130,7 @@ jobs:
         # violations. We post whenever the file exists.
         if: |
           github.event_name == 'pull_request'
-          && hashFiles('/tmp/freeze-comment.md') != ''
+          && hashFiles(env.COMMENT_PATH) != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
