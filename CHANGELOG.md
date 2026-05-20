@@ -44,6 +44,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **README task #6 closeout.** Reranker row now ships real numbers
+  (`llm_reranker_rerank.wall`: mean 728 ms, threshold 1.07 s, σ ≈ 170 ms),
+  sourced from the full 4-benchmark lock that landed in #64. The other
+  three rows refreshed in lockstep: the full lock measured slightly
+  different timings than the LLM-free lock because the reranker
+  benchmark exercises corpus paths that warm and re-evaluate adjacent
+  hot paths, so the CPU means and σs shifted. New numbers:
+  `keyword_retriever_retrieve.cpu` 3,212 µs / 34,493 µs (σ ≈ 15.6 ms,
+  cold-cache-noise dominated, as before); `directory_corpus_load.cpu`
+  47 µs / 66 µs (essentially unchanged); `rag_pipeline_run.cpu`
+  537 µs / 625 µs (up from the LLM-free numbers, reflecting the
+  full-pipeline measurement). Footnote updated to explain both
+  noise profiles (cold-cache for keyword, Anthropic-network for
+  reranker). Removed the "re-lock pending" placeholder; closes
+  task #6.
 - **README task #6 partial pass.** Filled real locked numbers into 3
   of the 4 perf-table rows (`keyword_retriever_retrieve`,
   `directory_corpus_load`, `rag_pipeline_run` — all `.cpu` axis,
