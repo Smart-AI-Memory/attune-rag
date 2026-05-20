@@ -2,7 +2,7 @@
 
 ## Phase 2: Design
 
-**Status**: scoping
+**Status**: approved (2026-05-19)
 
 ### Architecture overview
 
@@ -60,21 +60,32 @@ schema tightening fails.
 
 **Measurement methodology:** N=30 runs per benchmark, `pytest-benchmark`
 (already a dev dep). Each benchmark fixes its random seed if any sampling is
-involved. Results dumped as `perf-baseline.json` alongside `baseline-1.md`
-(narrative) and `perf-thresholds.json` (machine-readable).
+involved. Each benchmark records **both wall-clock and CPU-time** per run
+(`time.perf_counter` + `time.process_time`); pytest-benchmark stores
+wall-clock natively, CPU-time is captured via a fixture wrapper. Results
+dumped as `perf-baseline.json` alongside `baseline-1.md` (narrative) and
+`perf-thresholds.json` (machine-readable, two threshold rows per benchmark
+— `<bench>.wall` and `<bench>.cpu`).
 
 Threshold strategy: **same as Phase 1 quality gate** — `mean + 2σ` per
-metric for latencies (higher = worse, so we gate the upper bound). For
-token counts, `mean + 2σ` per input/output dimension. Re-measure trigger:
+metric for latencies (higher = worse, so we gate the upper bound), applied
+independently to wall-clock and CPU-time. CPU-time gates regressions in
+our code; wall-clock tracks user-perceived latency including network. For
+token counts, `mean + 2σ` per input/output dimension (track-only, no
+gate — see Resolved decisions). Re-measure trigger:
 - Python minor version change (3.11 → 3.12 etc.).
 - Hardware change in the CI runner SKU.
 - Any change to `KeywordRetriever`, `LLMReranker`, or `pipeline.py`.
 
 **Promotion ramp:**
 - Week 1–2: advisory only. Workflow comments the regression delta on PRs
-  but doesn't fail.
-- Week 3: gates retrieval perf (deterministic, low noise).
-- Week 4: gates reranker perf too if its observed σ stays tight.
+  (both wall-clock and CPU-time axes) but doesn't fail.
+- Week 3: gates **CPU-time** for retrieval perf (deterministic, low noise).
+  Wall-clock stays advisory for retrieval through W3 — re-evaluate W4 once
+  noise floor is characterized.
+- Week 4: gates reranker CPU-time if its observed σ stays tight. Reranker
+  wall-clock stays advisory (Anthropic network variance is real and
+  unactionable on our side).
 
 **Output files:**
 - `docs/specs/downstream-validation/perf-baseline.md` — narrative + raw
@@ -143,20 +154,25 @@ Run weekly via a `schedule:` cron in
 `docs/specs/downstream-validation/cadence-week-{N}.md` and posted as a PR
 comment if there's an `Added` entry (reinforcing the freeze enforcer).
 
-### Open questions to resolve before implementation
+### Resolved decisions (2026-05-19, spec approval pass)
 
-- **Override label name** — `freeze-override` reads OK; alternatives:
-  `freeze-exempt`, `phase-4-override`. Pick now to avoid bikeshedding mid-flight.
-- **Perf threshold metric for reranker latency** — wall-clock or
-  CPU-time? Wall-clock includes network variance to Anthropic. CPU-time
-  excludes it. Suggest wall-clock with a documented "expect noise" disclaimer.
-- **Downstream gate severity** — does an attune-gui failure block the PR or
-  just comment? Initial recommendation: comment in week 1–2, block in
-  weeks 3–4.
-- **Token-cost tracking** — useful or noise? attune-rag's pipeline calls
-  out to Claude Haiku for reranker; tracking input/output tokens per call
-  gives an early warning if a prompt change increased cost. Initial
-  recommendation: track but don't gate.
+- **Override label name:** `freeze-override`. Neutral, phase-agnostic so the
+  same enforcer survives Phase 5+.
+- **Perf threshold metric:** **both wall-clock and CPU-time**, tracked
+  separately per hot path. CPU-time gates regressions in our code;
+  wall-clock tracks user-perceived latency. Doubles the rows in
+  `perf-thresholds.json` but the signal split is worth it for a freeze gate.
+  Reranker stays advisory in W3 if its observed σ stays loose on either
+  axis (per W3.1).
+- **Downstream gate severity:** comment-only in W1–W2, blocking in W3–W4.
+  Already encoded in tasks.md (W0.8 advisory → W3.2 blocking). Two weeks of
+  characterization before failures become PR blockers.
+- **Token-cost tracking:** track input/output tokens per reranker call in
+  the perf report; do **not** gate. Cost spikes are signal worth capturing,
+  but Anthropic-side pricing/model shifts aren't our bug to block on.
+
+(Previous open-questions section consolidated here once the spec moved from
+scoping to approved. See git history if you need the original framing.)
 
 ### Notes
 

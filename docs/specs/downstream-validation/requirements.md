@@ -1,6 +1,6 @@
 # Spec: Downstream Validation (Phase 4 of v1.0 Roadmap)
 
-**Status**: scoping
+**Status**: approved (2026-05-19)
 
 - **Owner:** Patrick
 - **Created:** 2026-05-16
@@ -20,7 +20,7 @@
 
 ## Phase 1: Requirements
 
-**Status**: scoping (this document)
+**Status**: approved (2026-05-19)
 
 ### Problem statement
 

@@ -9,8 +9,8 @@ working session so state is recoverable cold from disk.
 |---|---|
 | Current version | 0.1.19 (Phase 2 ships 2026-05-16; previous 0.1.18 release shipped Phase 1 closeout + Phase 3 groundwork) |
 | Target version | 1.0.0 |
-| Current phase | Phase 2 — **complete 2026-05-16**. Decision: keep `--thinking` opt-in (`off-forever`). Ships at 0.1.19. Phase 3's API-surface groundwork shipped in parallel as part of 0.1.18 (see PR #36). |
-| Last updated | 2026-05-16 |
+| Current phase | Phase 4 — **spec approved 2026-05-19**. Downstream-validation tasks.md walked task-by-task; 5 design-level open questions resolved (override label `freeze-override`, both wall-clock + CPU-time perf metrics, downstream gate ramp comment→block, token-cost track-only, schema-diff folded into W0.1). W0 starts 2026-05-23. Phase 3 M5.3 (attune-gui-side) still queued separately. |
+| Last updated | 2026-05-19 |
 
 ---
 
@@ -121,9 +121,9 @@ symbols; `tests/unit/test_api_surface.py` snapshots
 
 ## Phase 4 — Quality burn-in + downstream validation
 
-**Spec:** `docs/specs/downstream-validation/` (to create)
-**Status:** not started
-**Estimate:** ~4 weeks of attention
+**Spec:** [docs/specs/downstream-validation/](downstream-validation/)
+**Status:** **approved 2026-05-19**, W0 setup begins 2026-05-23. 23 tasks (W0.1–W4.4) walked task-by-task. Five design-level open questions resolved: override label `freeze-override`; perf gate measures both wall-clock + CPU-time, gates CPU-time first; downstream gate ramps comment (W1–W2) → block (W3–W4); reranker token-cost track-only; W0.1 freeze enforcer covers `__all__` + CHANGELOG + `template_schema.json`. Phase 4 has explicit "freeze semantics" callout in tasks.md so the `### Added` vs `### Changed` distinction is documented (internal selection-criteria improvements ship freely as `### Changed`; new public knobs wait for the 0.2.0 cut).
+**Estimate:** ~4 weeks soak + 1 week setup (W0). Calendar target W0 2026-05-23 → W4 close 2026-06-20, with 2026-06-21 → 06-27 slack week.
 **Depends on:** Phase 3 complete
 
 **Outcome:** four consecutive weeks of CHANGELOG entries
