@@ -3,10 +3,11 @@
 This policy governs the public surface of the `attune-rag` package.
 The surface is **documented and snapshot-tested as of 0.1.18**;
 **formal SemVer commitments take effect with 0.2.0** (gated on
-Phase 2 of the v1.0 roadmap — release-quality baseline). Between
-those two markers the freeze is honor-system: the lock test in
-`tests/unit/test_api_surface.py` catches accidental drift, but
-downstreams should treat 0.1.x as still-evolving and pin tightly.
+Phase 4 of the v1.0 roadmap — downstream-validation burn-in; the
+cut spec is [docs/specs/api-v0.2.0-cut/](specs/api-v0.2.0-cut/)).
+Between those two markers the freeze is honor-system: the lock
+test in `tests/unit/test_api_surface.py` catches accidental drift,
+but downstreams should treat 0.1.x as still-evolving and pin tightly.
 
 The spec that introduced this policy is
 [docs/specs/api-v0.2-public-surface/](specs/api-v0.2-public-surface/).

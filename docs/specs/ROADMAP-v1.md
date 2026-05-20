@@ -7,10 +7,10 @@ working session so state is recoverable cold from disk.
 
 | Field | Value |
 |---|---|
-| Current version | 0.1.19 (Phase 2 ships 2026-05-16; previous 0.1.18 release shipped Phase 1 closeout + Phase 3 groundwork) |
+| Current version | 0.1.22 (0.1.19 shipped Phase 2; 0.1.20–0.1.22 shipped intra-freeze `### Changed` / `### Fixed` work — see PRs [#75](https://github.com/Smart-AI-Memory/attune-rag/pull/75), [#77](https://github.com/Smart-AI-Memory/attune-rag/pull/77), and the selection-criteria-robustness spec) |
 | Target version | 1.0.0 |
-| Current phase | Phase 4 — **spec approved 2026-05-19**. Downstream-validation tasks.md walked task-by-task; 5 design-level open questions resolved (override label `freeze-override`, both wall-clock + CPU-time perf metrics, downstream gate ramp comment→block, token-cost track-only, schema-diff folded into W0.1). W0 starts 2026-05-23. Phase 3 M5.3 (attune-gui-side) still queued separately. |
-| Last updated | 2026-05-19 |
+| Current phase | Phase 4 — **W0 complete 2026-05-20** (3 days ahead of 2026-05-23 target); **W1 freeze clock live** against `attune-rag==0.1.21`; **W2 closed 2026-05-20** (W2.1 deep-review at [`w2-deep-review.md`](downstream-validation/w2-deep-review.md), W2.2 perf audit at [`w2-perf-audit.md`](downstream-validation/w2-perf-audit.md)); **W3.2 downstream gate already promoted to blocking** (PR [#81](https://github.com/Smart-AI-Memory/attune-rag/pull/81)); next mechanical tick is the first weekly cadence-report cron Monday 2026-05-25. Phase 3 M5 fully closed. Successor spec `docs/specs/api-v0.2.0-cut/` scaffolded (this PR); activates after W4.2. |
+| Last updated | 2026-05-20 |
 
 ---
 
@@ -89,8 +89,8 @@ under `Changed`.
 ## Phase 3 — Public API freeze, ship 0.2.0
 
 **Spec:** [docs/specs/api-v0.2-public-surface/](api-v0.2-public-surface/)
-**Status:** **groundwork shipped 2026-05-16** in attune-rag 0.1.18 (PR #36) — M1–M3 + M4 done; surface lock test, deprecation shims, POLICY.md, README "Public API" section, `AttuneHelpCorpus` re-export all in. **M5 (attune-gui downstream cleanup) is partly done:** M5.1 + M5.2 landed on branch `feature/attune-rag-0.2-editor-rename`; M5.3 (full-suite test against published 0.1.19) and the PR merge remain. **The formal 0.2.0 SemVer freeze + classifier flip (Alpha → Stable) are still queued** — they require a successor spec since they ride on top of Phase 4's burn-in.
-**Estimate:** ~3 weeks of attention (largely realized; ~1 day to close M5)
+**Status:** **all in-scope work complete 2026-05-16.** Groundwork shipped in attune-rag 0.1.18 (PR #36) — M1–M3 + M4 done; surface lock test, deprecation shims, POLICY.md, README "Public API" section, `AttuneHelpCorpus` re-export all in. M5 (attune-gui downstream cleanup) fully closed: M5.1 + M5.2 merged via attune-gui PR #36 (commit `af8d3fc`, 2026-05-16); M5.3 verified green against published 0.1.19 (32/32 attune-rag-touching tests pass). **The formal 0.2.0 SemVer freeze + classifier flip remain queued** — the freeze ships via the [`api-v0.2.0-cut`](api-v0.2.0-cut/) successor spec after Phase 4 W4.2; the classifier flip stays Phase 5's (0.2.0 stays at `Development Status :: 3 - Alpha`).
+**Estimate:** ~3 weeks of attention (realized)
 **Depends on:** Phase 2 ships before 0.2.0 ships. ✓ Phase 2 shipped as 0.1.19 (2026-05-16).
 **Sequencing (per Decision 3):** soft-parallel. Phase 3
 scoping — surface mapping, `__all__` audit, spec drafting
