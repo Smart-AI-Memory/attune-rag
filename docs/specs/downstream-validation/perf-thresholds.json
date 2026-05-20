@@ -1,0 +1,53 @@
+{
+  "commit": "58a4b2a1dacbc2ccf6637aed95f9f10cff5d856b",
+  "environment": {
+    "ci_runner": "Linux",
+    "machine": "x86_64",
+    "platform": "Linux-6.17.0-1013-azure-x86_64-with-glibc2.39",
+    "processor": "x86_64",
+    "python_implementation": "CPython",
+    "python_version": "3.11.15"
+  },
+  "include_llm": false,
+  "measured_at": "2026-05-20T02:14:05Z",
+  "metrics": {
+    "directory_corpus_load.cpu": {
+      "mean": 4.7e-05,
+      "n": 30,
+      "stdev": 7e-06,
+      "threshold": 6.2e-05
+    },
+    "directory_corpus_load.wall": {
+      "mean": 4.7e-05,
+      "n": 30,
+      "stdev": 7e-06,
+      "threshold": 6.2e-05
+    },
+    "keyword_retriever_retrieve.cpu": {
+      "mean": 0.00073,
+      "n": 30,
+      "stdev": 0.003526,
+      "threshold": 0.007783
+    },
+    "keyword_retriever_retrieve.wall": {
+      "mean": 0.00073,
+      "n": 30,
+      "stdev": 0.003527,
+      "threshold": 0.007783
+    },
+    "rag_pipeline_run.cpu": {
+      "mean": 0.00027,
+      "n": 30,
+      "stdev": 1.8e-05,
+      "threshold": 0.000307
+    },
+    "rag_pipeline_run.wall": {
+      "mean": 0.00027,
+      "n": 30,
+      "stdev": 1.8e-05,
+      "threshold": 0.000307
+    }
+  },
+  "runs": 30,
+  "sigma": 2.0
+}
