@@ -38,6 +38,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to blocking in W3.1, the original setting would have produced
   false-positive blocks. Re-locked baseline at N=50 lands in a
   follow-up auto-PR from the `lock-baseline` workflow.
+- **Lazy schema-key cache in `editor/lint.py`** — replaced module-import-time
+  `_KNOWN_FRONTMATTER_KEYS = set(load_schema()["properties"].keys())` with
+  an `@lru_cache(maxsize=1)` helper `_known_frontmatter_keys()`. Parallels
+  `_validator()` in `editor/schema.py`; defers the schema-load cost (and
+  any malformed-schema crash) to first use rather than import time.
+- **Type-hint completion in `providers/__init__.py`** — `get_provider`
+  gained `**kwargs: Any` (previously untyped). Pure annotation; runtime
+  behaviour unchanged.
+- **Style normalisation in `providers/gemini.py`** — `cached_prefix:
+  (str | None) = None` → bare `str | None = None` to match the rest of
+  the providers package.
+
+### Fixed
+
+- **`editor/rename.py` symlink-handling docstring** — the comment in
+  `_normalize_corpus_relpath` claimed `Path.resolve(strict=False)` runs
+  "WITHOUT following symlinks". It does follow symlinks; the containment
+  check itself is correct (compares resolved candidate against resolved
+  root, so symlink-escapes are caught). Docstring rewritten so future
+  maintainers don't drop the resolution and reintroduce a containment
+  hole. (W2.1 INFO finding; no behaviour change.)
+- **Docstring fills** — added one-line docstrings to `_stem`
+  (suffix-order contract), `Hunk.to_dict` / `FileEdit.to_dict` /
+  `FileMove.to_dict` / `Diagnostic.to_dict`, and a "non-cryptographic
+  content hash" comment to `_make_hunk`'s sha256 use. All from the
+  W2.1 deep-review nit list.
 
 ## [0.1.22] - 2026-05-20
 
