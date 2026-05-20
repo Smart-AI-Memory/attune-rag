@@ -3,61 +3,89 @@ type: task
 name: retrieval-task
 feature: retrieval
 depth: task
-generated_at: 2026-05-15T20:01:46.531123+00:00
+generated_at: 2026-05-20T03:22:04.674108+00:00
 source_hash: 808240403d72c9dd7f4962d5cbde040fffbec4b4befa508d3a494fb60f9fd862
 status: generated
 ---
 
 # Work with retrieval
 
-Use the retrieval module when you need to score and rank corpus entries against a query using token-overlap, stemming, and stopword filtering.
+Use keyword retrieval when you need to score and rank corpus entries against a natural-language query — `KeywordRetriever` filters stopwords, applies suffix stemming, and weights matches across an entry's path, summary, content, and related fields to return the top-k `RetrievalHit` results.
 
 ## Prerequisites
 
-- Access to the project source code
-- Familiarity with `src/attune_rag/retrieval.py`
+- Read access to `src/attune_rag/retrieval.py`
+- A corpus object that satisfies `CorpusProtocol`
 
 ## Understand the retrieval model
 
-The module is built around three components in `src/attune_rag/retrieval.py`:
+Before writing code, familiarise yourself with the three building blocks in `src/attune_rag/retrieval.py`:
 
-- **`RetrievalHit`** — A dataclass representing a single result. It holds a `RetrievalEntry`, a `score` float, and a `match_reason` string.
-- **`RetrieverProtocol`** — A structural protocol. Any class that implements `retrieve(query, corpus, k)` and returns an `Iterable[RetrievalHit]` satisfies it.
-- **`KeywordRetriever`** — The built-in implementation of `RetrieverProtocol`. It scores entries using token overlap across four weighted fields: path, summary, content, and related.
+| Class | Role |
+|---|---|
+| `RetrievalHit` | Dataclass wrapping a single result: a `RetrievalEntry`, a `float` score, and a `str` match reason. |
+| `RetrieverProtocol` | Structural protocol — any object that exposes `retrieve(query, corpus, k)` qualifies. |
+| `KeywordRetriever` | Concrete token-overlap retriever. Strips `_STOPWORDS`, stems tokens using `_STEM_SUFFIXES`, then scores each entry by weighted field overlap. |
 
-## Extend or implement retrieval
+## Use `KeywordRetriever` directly
 
-### Use `KeywordRetriever` directly
+1. Instantiate `KeywordRetriever` — it requires no constructor arguments.
 
-1. Import `KeywordRetriever` and your corpus from `src/attune_rag/retrieval.py`.
-2. Instantiate `KeywordRetriever`.
-3. Call `retrieve(query, corpus, k)`, where `query` is a string, `corpus` implements `CorpusProtocol`, and `k` is the number of results to return (default: `3`).
-4. Iterate over the returned `list[RetrievalHit]` and read each hit's `entry`, `score`, and `match_reason`.
+   ```python
+   from attune_rag.retrieval import KeywordRetriever
 
-### Implement a custom retriever
+   retriever = KeywordRetriever()
+   ```
 
-1. Create a new class in your module.
-2. Implement the method signature `retrieve(self, query: str, corpus: CorpusProtocol, k: int = 3) -> Iterable[RetrievalHit]`. This satisfies `RetrieverProtocol` without subclassing it.
-3. Return `RetrievalHit` instances with a populated `entry`, a `score` between `0.0` and `1.0`, and a human-readable `match_reason`.
+2. Call `retrieve` with your query string, a `CorpusProtocol` object, and the number of results you want.
 
-### Extend `KeywordRetriever`
+   ```python
+   hits = retriever.retrieve(query="authentication tokens", corpus=my_corpus, k=5)
+   ```
 
-1. Subclass `KeywordRetriever` in a new file.
-2. Override `retrieve` to add pre- or post-processing around the parent implementation — for example, reranking hits or filtering by a score threshold.
-3. Call `super().retrieve(query, corpus, k)` to preserve the base token-overlap scoring.
+3. Iterate over the returned `list[RetrievalHit]` and read each hit's fields.
+
+   ```python
+   for hit in hits:
+       print(hit.score, hit.match_reason, hit.entry)
+   ```
+
+   **Success criterion:** `hits` is a list of up to `k` `RetrievalHit` objects ordered from highest to lowest score. If the list is empty, your query tokens were all stopwords or produced no overlap with the corpus.
+
+## Implement a custom retriever
+
+1. Create a class that implements the `RetrieverProtocol` signature — no explicit inheritance is required.
+
+   ```python
+   from collections.abc import Iterable
+   from attune_rag.retrieval import RetrievalHit
+
+   class SemanticRetriever:
+       def retrieve(
+           self,
+           query: str,
+           corpus: CorpusProtocol,
+           k: int = 3,
+       ) -> Iterable[RetrievalHit]:
+           ...
+   ```
+
+2. Return `RetrievalHit` instances from your `retrieve` method. Populate `entry` with the matched `RetrievalEntry`, `score` with a numeric relevance value, and `match_reason` with a human-readable explanation.
+
+3. Pass your retriever wherever a `RetrieverProtocol` is expected — duck typing means no cast or adapter is needed.
+
+   **Success criterion:** Static type checkers and any runtime protocol checks accept your class without errors.
 
 ## Run the tests
 
-After making any changes, run:
+Verify your changes against the existing test suite:
 
-```bash
+```shell
 pytest -k "retrieval"
 ```
 
-## Verify your work
+All tests pass when the output shows `no failed` for the `retrieval` suite.
 
-You know retrieval is working correctly when:
+## Key files
 
-- `retrieve` returns exactly `k` `RetrievalHit` objects (or fewer if the corpus has fewer than `k` entries).
-- Each hit's `score` is a non-negative float and its `match_reason` is a non-empty string.
-- `pytest -k "retrieval"` passes with no failures.
+- `src/attune_rag/retrieval.py` — contains `RetrievalHit`, `RetrieverProtocol`, `KeywordRetriever`, `_STOPWORDS`, and `_STEM_SUFFIXES`

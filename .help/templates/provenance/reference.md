@@ -3,14 +3,14 @@ type: reference
 name: provenance-reference
 feature: provenance
 depth: reference
-generated_at: 2026-05-15T20:02:41.245136+00:00
+generated_at: 2026-05-20T03:26:07.279977+00:00
 source_hash: 2ad01dedc91108386ca6445b49decedb0fa3b58762c00286b0a0e45fed8409a7
 status: generated
 ---
 
 # Provenance reference
 
-Record and render citation provenance for RAG pipeline runs. `CitationRecord` and `CitedSource` capture which corpus entries grounded each answer; `ClaimCitation` tracks individual claim-level citations from the Anthropic Citations API; the formatting functions render provenance as markdown for display.
+Record which corpus entries grounded each answer and render those citations as markdown. `CitationRecord` and `CitedSource` capture per-query provenance; `ClaimCitation` tracks span-level attribution from the Anthropic Citations API; the format functions turn records into human-readable output.
 
 ## Classes
 
@@ -52,8 +52,8 @@ Record and render citation provenance for RAG pipeline runs. `CitationRecord` an
 
 | Function | Parameters | Returns | Description |
 |----------|------------|---------|-------------|
-| `format_citations_markdown` | `record: CitationRecord, base_url: str | None = None` | `str` | Render a `CitationRecord` as a markdown section. |
-| `format_claim_citations_markdown` | `text: str, citations: Iterable[ClaimCitation], base_url: str | None = None` | `str` | Render response text with footnote-style claim citations. |
+| `format_citations_markdown` | `record: CitationRecord, base_url: str \| None = None` | `str` | Render a `CitationRecord` as a markdown section. |
+| `format_claim_citations_markdown` | `text: str, citations: Iterable[ClaimCitation], base_url: str \| None = None` | `str` | Render response text with footnote-style claim citations. |
 | `build_citation_record` | `query: str, hits: Iterable, retriever_name: str, retrieved_at: datetime, excerpt_chars: int = 200` | `CitationRecord` | Convert `RetrievalHit` objects into a `CitationRecord`. |
 
 ## Source files

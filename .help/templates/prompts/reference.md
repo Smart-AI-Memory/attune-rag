@@ -3,29 +3,29 @@ type: reference
 name: prompts-reference
 feature: prompts
 depth: reference
-generated_at: 2026-05-15T20:02:27.258142+00:00
+generated_at: 2026-05-20T03:24:52.003709+00:00
 source_hash: eb6d61656b11230b111f643d8856103251dedb5b5d717c16d6107954b12867f6
 status: generated
 ---
 
 # Prompts reference
 
-Build augmented LLM prompts and assemble retrieved passages into grounded context strings.
+Use these functions to assemble grounded LLM prompts: inject retrieved passages as context with `join_context` or `join_context_numbered`, then render the final prompt string with `build_augmented_prompt`.
 
 ## Functions
 
 | Function | Parameters | Returns | Description |
 |----------|------------|---------|-------------|
-| `build_augmented_prompt` | `query: str, context: str, variant: str = 'baseline'` | `str` | Renders an augmented prompt for an LLM by combining a query with a retrieved context string. |
-| `join_context` | `hits: Iterable[RetrievalHit], corpus: CorpusProtocol | None = None, max_chars: int = DEFAULT_MAX_CONTEXT_CHARS` | `str` | Concatenates hit contents into a sentinel-wrapped context string. |
-| `join_context_numbered` | `hits: Iterable[RetrievalHit], corpus: CorpusProtocol | None = None, max_chars: int = DEFAULT_MAX_CONTEXT_CHARS` | `str` | Concatenates hits into `<passage>`-wrapped [P1]/[P2] bodies. |
+| `build_augmented_prompt` | `query: str, context: str, variant: str = 'baseline'` | `str` | Render the augmented prompt for an LLM. |
+| `join_context` | `hits: Iterable[RetrievalHit], corpus: CorpusProtocol \| None = None, max_chars: int = DEFAULT_MAX_CONTEXT_CHARS` | `str` | Concatenate hit contents into a sentinel-wrapped context. |
+| `join_context_numbered` | `hits: Iterable[RetrievalHit], corpus: CorpusProtocol \| None = None, max_chars: int = DEFAULT_MAX_CONTEXT_CHARS` | `str` | Concatenate hits into `<passage>`-wrapped [P1]/[P2] bodies. |
 
 ### Raises
 
 #### `build_augmented_prompt`
 
-| Raises | Message |
-|--------|---------|
+| Exception | Message |
+|-----------|---------|
 | `ValueError` | `'query must be a non-empty string'` |
 | `ValueError` | `'unknown prompt variant {...}; valid: {...}'` |
 

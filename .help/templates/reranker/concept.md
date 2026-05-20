@@ -3,45 +3,48 @@ type: concept
 name: reranker-concept
 feature: reranker
 depth: concept
-generated_at: 2026-05-20T02:45:30.116900+00:00
+generated_at: 2026-05-20T03:36:00.762647+00:00
 source_hash: e8daea3d6507f630a80c7cd27c8ac195aab73bcc409c0b5cadc15e215ce9e11d
 status: generated
 ---
 
 # Reranker
 
-The reranker is a second-pass relevance filter that uses Claude Haiku to reorder keyword-retrieval results before they reach the user, trading a small amount of latency for meaningfully higher retrieval precision.
+The reranker is an optional second-pass stage that uses Claude Haiku as a relevance judge to reorder keyword-retrieval candidates before they reach the caller, improving precision without replacing the underlying search index.
 
-## The problem it solves
+## How reranking works
 
-Keyword retrieval is fast but shallow: it ranks documents by term frequency, not by whether a document actually answers the query. The reranker sits between the keyword retrieval step and the final result list. It takes the top-K candidates that keyword search returns, asks Claude Haiku to judge their relevance against the original query, and returns them in the order a reader would find most useful.
+Keyword retrieval is fast but ranks by term frequency, not intent. The reranker addresses this by fetching more candidates than you ultimately need — controlled by `candidate_multiplier` (default `3`) — then asking Claude Haiku to sort them by relevance to the original query.
 
-## How LLMReranker works
+The flow looks like this:
 
-`LLMReranker` (in `src/attune_rag/reranker.py`) is the single class that implements this pipeline:
+1. Keyword retrieval returns `N × candidate_multiplier` hits (for example, if you want 5 results, retrieval fetches 15).
+2. `LLMReranker.rerank(query, hits)` sends Claude Haiku a numbered list of candidate document paths and summaries.
+3. Claude Haiku responds with a JSON array of 0-based indices ordered from most to least relevant. The system prompt encodes domain-specific ranking rules — for example, `tool-release-prep.md` is preferred for queries about versioning or publishing, while `tool-fix-test.md` is preferred over `task-ci-cd-pipeline.md` for failing-test queries.
+4. `rerank` maps those indices back to the original `RetrievalHit` objects and returns the reordered list.
 
-1. **Candidate expansion.** Before reranking, the retriever fetches `candidate_multiplier × N` documents (default multiplier: `3`). This gives Claude a wider pool to reorder rather than a tight list that keyword ranking has already over-constrained.
+If the Claude API call fails for any reason, `rerank` falls back to the original keyword-ranked order, so retrieval continues to work without interruption.
 
-2. **Relevance judgment.** `rerank(query, hits)` passes the query and a numbered list of candidate paths and summaries to Claude Haiku. The model acts as a relevance judge: it returns a JSON array of 0-based indices ranked from most to least relevant — no explanation, just the ordering.
+## Domain-aware ranking rules
 
-3. **Ranking guidance baked into the prompt.** The system prompt encodes attune-specific heuristics. For example:
-   - `tool-*` paths (e.g. `concepts/tool-release-prep.md`) are canonical workflow references and rank above `skill-*`, `task-*`, and `use-*` paths for workflow-goal queries.
-   - Queries mentioning "version bump", "changelog", or "publish" prefer `tool-release-prep.md`.
-   - Queries about failing CI or tests prefer `tool-fix-test.md` or `skill-fix-test.md` over `task-ci-cd-pipeline.md`, which is a setup guide rather than a fix tool.
+The system prompt baked into `LLMReranker` teaches Claude Haiku about the attune-ai documentation taxonomy:
 
-4. **Fail-safe fallback.** If the Claude API call times out or returns an error, `LLMReranker` returns the original keyword-ranked order unchanged. Reranking is opt-in: the rest of the retrieval pipeline keeps working with no reranking if `LLMReranker` is not wired in.
+| Path prefix | Document type |
+|---|---|
+| `tool-` | Canonical attune workflow references (highest priority for goal queries) |
+| `skill-`, `task-`, `use-` | Quickstarts and task guides |
 
-## Configuration
+Several query patterns trigger explicit preferences — for instance, queries mentioning "version bump", "changelog", or "publish to PyPI" are steered toward `tool-release-prep.md` rather than the more generic `task-package-publishing.md`.
 
-`LLMReranker.__init__` accepts four parameters:
+## Key parameters
 
 | Parameter | Default | Effect |
 |---|---|---|
 | `model` | `claude-haiku-4-5-20251001` | The Claude model used as the relevance judge |
-| `api_key` | `None` (uses environment) | Anthropic API key; omit to read from the environment |
-| `candidate_multiplier` | `3` | How many extra candidates to retrieve before reranking |
-| `timeout` | `60.0` | Seconds before the API call is abandoned and the fallback order is used |
+| `candidate_multiplier` | `3` | Multiplier applied to the desired result count to widen the candidate pool before reranking |
+| `timeout` | `60.0` s | Maximum wait for the Claude API response before falling back to keyword order |
+| `api_key` | `None` (uses environment) | Anthropic API key; omit to rely on the default credential chain |
 
-## When reranking matters
+## Relationship to retrieval
 
-Reranking has the most impact when keyword overlap between the query and the document is misleading — for example, when multiple documents mention the same terms but only one actually addresses the user's goal. It matters less for lookup queries where the top keyword result is almost always correct.
+`LLMReranker` operates on `RetrievalHit` objects produced by keyword retrieval — it does not perform its own search. You pass it the raw hits and get back the same objects in a new order. This means you can adopt it incrementally: plug it in after your existing retrieval step, and remove it at any time without changing upstream or downstream code.

@@ -3,52 +3,116 @@ type: task
 name: corpus-task
 feature: corpus
 depth: task
-generated_at: 2026-05-16T10:22:21.651757+00:00
+generated_at: 2026-05-20T03:23:24.651571+00:00
 source_hash: 4acdd163679b03efe44559300b991a4426e0e3b739b30950c8f3ec8964e7efc0
 status: generated
 ---
 
 # Work with corpus
 
-Use the corpus module when you need to load, extend, or replace a collection of retrieval entries — `CorpusProtocol` defines the interface, `DirectoryCorpus` loads markdown files from disk, and `AttuneHelpCorpus` wraps the bundled attune-help templates.
+Use a corpus implementation when you need to load and retrieve help templates — choose `DirectoryCorpus` to read markdown files from disk, `AttuneHelpCorpus` to wrap the bundled attune-help templates, or implement `CorpusProtocol` directly to supply your own source.
 
 ## Prerequisites
 
-- Read access to the project source code
-- Basic familiarity with Python dataclasses and protocols
-
-## Steps
-
-1. **Identify the right entry point.**
-   Choose the corpus class that matches your use case:
-   - `AttuneHelpCorpus` (`src/attune_rag/corpus/attune_help.py`) — use this when you want the bundled attune-help templates. Call `AttuneHelpCorpus.from_attune_help()` for the default instance.
-   - `DirectoryCorpus` (`src/attune_rag/corpus/directory.py`) — use this when you want to load your own markdown files from a directory. Pass a `Path` to the constructor; optionally supply `summaries_file` or `cross_links_file`.
-   - `CorpusProtocol` (`src/attune_rag/corpus/base.py`) — implement this protocol directly when neither existing class fits.
-
-2. **Retrieve entries.**
-   Call `entries()` on your corpus instance to iterate over all `RetrievalEntry` objects, or call `get(path)` to fetch a single entry by its relative path. Each `RetrievalEntry` exposes `path`, `category`, `content`, and optional fields: `summary`, `related`, `aliases`, and `metadata`.
-
-3. **Extend rather than modify base classes.**
-   If you need custom loading behaviour, subclass `DirectoryCorpus` or `AttuneHelpCorpus` and override `entries()` or `get()`. Avoid editing `CorpusProtocol` or `RetrievalEntry` directly — changes there affect every corpus implementation.
-
-4. **Handle alias conflicts.**
-   If two templates declare the same alias, `DirectoryCorpus` raises `DuplicateAliasError` with the conflicting `alias`, `first_path`, and `second_path`. Inspect the `alias_index` property on `DirectoryCorpus` to audit all registered aliases before loading a new corpus root.
-
-5. **Run the tests.**
-   Verify your changes with:
-   ```
-   pytest -k "corpus"
-   ```
+- Access to the project source code
+- Python `Path` available if you are instantiating `DirectoryCorpus`
 
 ## Key files
 
-| File | Purpose |
-|---|---|
-| `src/attune_rag/corpus/__init__.py` | Public exports (`__all__`) |
-| `src/attune_rag/corpus/base.py` | `CorpusProtocol`, `RetrievalEntry`, `AliasInfo`, `DuplicateAliasError` |
-| `src/attune_rag/corpus/directory.py` | `DirectoryCorpus` — markdown-from-disk loader |
-| `src/attune_rag/corpus/attune_help.py` | `AttuneHelpCorpus` — bundled attune-help adapter |
+- `src/attune_rag/corpus/__init__.py`
+- `src/attune_rag/corpus/base.py` — `CorpusProtocol`, `RetrievalEntry`, `AliasInfo`, `DuplicateAliasError`
+- `src/attune_rag/corpus/directory.py` — `DirectoryCorpus`
+- `src/attune_rag/corpus/attune_help.py` — `AttuneHelpCorpus`
 
-## Verify the task worked
+## Steps
 
-After running `pytest -k "corpus"`, all tests pass with no errors. If you added a new corpus class, confirm that `entries()` returns at least one `RetrievalEntry` and that `get(path)` returns the expected entry for a known path. For `DirectoryCorpus`, check the `version` property — it returns a stable SHA-256 fingerprint of the loaded corpus, so re-loading the same directory produces the same value.
+1. **Choose the right corpus class for your use case.**
+
+   | Goal | Class to use |
+   |---|---|
+   | Load markdown files from a local directory | `DirectoryCorpus` |
+   | Wrap the bundled attune-help templates | `AttuneHelpCorpus` |
+   | Supply a custom template source | Implement `CorpusProtocol` |
+
+2. **Instantiate the corpus.**
+
+   - **`DirectoryCorpus`** — point it at a directory of `.md` files:
+     ```python
+     from pathlib import Path
+     from attune_rag.corpus import DirectoryCorpus
+
+     corpus = DirectoryCorpus(
+         root=Path("path/to/templates"),
+         summaries_file="summaries.json",   # optional
+         cross_links_file="links.json",     # optional
+         cache=True,                        # cache entries after first load
+     )
+     ```
+     By default it globs `**/*.md`. Pass a custom `glob` string to restrict or expand which files are loaded.
+
+   - **`AttuneHelpCorpus`** — use the class method to load the bundled templates:
+     ```python
+     from attune_rag.corpus import AttuneHelpCorpus
+
+     corpus = AttuneHelpCorpus.from_attune_help()
+     ```
+
+3. **Retrieve entries from the corpus.**
+
+   - Iterate over every entry:
+     ```python
+     for entry in corpus.entries():
+         print(entry.path, entry.category, entry.summary)
+     ```
+   - Fetch a single entry by path:
+     ```python
+     entry = corpus.get("errors/not-found.md")
+     if entry is None:
+         print("Template not found.")
+     ```
+   Each `RetrievalEntry` exposes `path`, `category`, `content`, and optionally `summary`, `related`, `aliases`, and `metadata`.
+
+4. **Inspect the alias and path indexes (DirectoryCorpus only).**
+
+   Use `path_index` for a `{rel_path: RetrievalEntry}` mapping and `alias_index` for a `{alias: AliasInfo}` mapping:
+   ```python
+   entry = corpus.path_index.get("how-to/configure.md")
+   alias_info = corpus.alias_index.get("configure")
+   ```
+   If two templates declare the same alias, `DirectoryCorpus` raises `DuplicateAliasError` with the conflicting paths. Catch it explicitly if you load untrusted template directories.
+
+5. **Implement a custom corpus (optional).**
+
+   Create a class that satisfies `CorpusProtocol` by implementing `entries()`, `get()`, `name`, and `version`:
+   ```python
+   from attune_rag.corpus import CorpusProtocol, RetrievalEntry
+
+   class MyCorpus:
+       @property
+       def name(self) -> str:
+           return "my-corpus"
+
+       @property
+       def version(self) -> str:
+           return "1.0.0"
+
+       def entries(self):
+           yield RetrievalEntry(path="example.md", category="how-to", content="…")
+
+       def get(self, path: str):
+           ...
+   ```
+
+6. **Run the corpus tests to confirm your changes are correct.**
+
+   ```shell
+   pytest -k "corpus"
+   ```
+
+## Verify success
+
+The task is complete when:
+
+- `corpus.entries()` yields at least one `RetrievalEntry` with a non-empty `path` and `content`.
+- `corpus.get("your/template/path.md")` returns the expected entry rather than `None`.
+- `pytest -k "corpus"` passes with no failures or errors.

@@ -3,59 +3,39 @@ type: concept
 name: editor-concept
 feature: editor
 depth: concept
-generated_at: 2026-05-20T02:44:35.480495+00:00
+generated_at: 2026-05-20T03:31:44.051205+00:00
 source_hash: 1781a70216d482b69e33e146fcc3a1f37451550a76ce813bd81d0e3694790e4a
 status: generated
 ---
 
 # Editor
 
-The attune-rag editor is a suite of headless, pure-function primitives that give any host — the `attune-gui` editor or the `attune-author` CLI — schema validation, live linting, autocomplete, reference lookup, and rename refactoring for template files.
+## Overview
 
-## What the editor does
+The `editor` feature is a collection of headless, pure-function primitives that give attune-rag IDEs and CLI tools schema validation, linting, autocomplete, reference lookup, and cross-template rename refactoring — all operating against a `CorpusProtocol` without coupling to any specific UI layer.
 
-The editor exposes six distinct capabilities, each implemented as a standalone function that operates over a `CorpusProtocol` value:
+The five capabilities form a pipeline that mirrors what a language server does for source code:
 
-| Capability | Entry point | What it produces |
-|---|---|---|
-| **Schema loading** | `load_schema()` | The parsed JSON Schema for template frontmatter |
-| **Frontmatter parsing** | `parse_frontmatter(yaml_text)` | A validated dict plus any `FrontmatterIssue` violations |
-| **Linting** | `lint_template(text, rel_path, corpus)` | A list of 1-indexed `Diagnostic` objects |
-| **Autocomplete** | `autocomplete_tags(corpus, prefix)` / `autocomplete_aliases(corpus, prefix)` | Up to 50 prefix-matched tag or alias suggestions |
-| **Reference lookup** | `find_references(corpus, name, kind)` | Every occurrence of an alias, tag, or template path across the corpus |
-| **Rename refactoring** | `plan_rename(…)` → `apply_rename(…)` | A `RenamePlan` of `FileEdit` hunks and `FileMove` records, applied atomically with rollback |
+1. **Schema validation** — `load_schema` loads the JSON Schema for template frontmatter. `parse_frontmatter` parses a raw YAML block and validates it in one step, raising `SchemaError` on malformed YAML and returning a list of `FrontmatterIssue` objects for any schema violations. `validate_frontmatter` handles the validation step alone when the YAML has already been parsed.
 
-Because every function accepts a corpus and returns plain data, the editor has no UI dependencies — the same code runs identically in the GUI and the CLI.
+2. **Linting** — `lint_template` runs all checks against a template's text and returns a list of `Diagnostic` objects. Each `Diagnostic` carries a `severity`, an error `code`, a human-readable `message`, and 1-indexed `line`/`col`/`end_line`/`end_col` span fields.
 
-## How the pieces fit together
+3. **Autocomplete** — `autocomplete_tags` and `autocomplete_aliases` prefix-match against the corpus and return up to `limit` suggestions (default 50). Tags are returned as plain strings; aliases are returned as `AliasInfo` objects.
 
-A typical editing session flows through the capabilities in layers:
+4. **Reference lookup** — `find_references` searches every file in the corpus for occurrences of a given alias, tag, or template path (selected by `ReferenceKind`) and returns a list of `Reference` objects. Each `Reference` records the `template_path`, `line`, `col`, and a `ReferenceContext` describing how the name is used.
 
-1. **Schema** — `load_schema` and `parse_frontmatter` establish whether a template's YAML frontmatter is structurally valid before any other check runs. If the YAML is malformed, `parse_frontmatter` raises `SchemaError` immediately.
+5. **Rename refactoring** — `plan_rename` computes a `RenamePlan` that collects all necessary `FileEdit` and `FileMove` operations without touching disk. Each `FileEdit` breaks its changes into `Hunk` objects in unified-diff format so callers can preview the diff before committing. `apply_rename` then executes the plan atomically, refreshes the corpus, and raises a `RenameCollisionError` if the proposed new name already exists, or a `RenameError` subclass for problems such as a missing move source or a file that has drifted from the planned base.
 
-2. **Lint** — `lint_template` runs all checks against the full template text and returns `Diagnostic` values with 1-indexed line and column positions that a host can map directly to editor gutter markers.
+## Integration points
 
-3. **Autocomplete** — As the author types a tag or alias, `autocomplete_tags` and `autocomplete_aliases` prefix-match against the live corpus so suggestions always reflect what actually exists.
+Other parts of the codebase consume the `editor` feature through these public interfaces:
 
-4. **References and rename** — Before renaming a tag, alias, or template path, `find_references` shows every location that will be affected. `plan_rename` then computes a `RenamePlan` — a list of `FileEdit` hunks (in unified-diff format) and `FileMove` records — which `apply_rename` executes atomically. If any step fails (missing file, target collision, content drift), `apply_rename` raises a `RenameError` subclass and leaves the corpus unchanged.
+| Interface | Role | Source file |
+|-----------|------|-------------|
+| `Diagnostic` | Lint result with location and severity | `src/attune_rag/editor/lint.py` |
+| `Reference` | Single corpus-wide reference to a name | `src/attune_rag/editor/references.py` |
+| `RenamePlan` | Diff preview before writing to disk | `src/attune_rag/editor/rename.py` |
+| `RenameError` / `RenameCollisionError` | Failure signals from `apply_rename` | `src/attune_rag/editor/rename.py` |
+| `Hunk` | Unified-diff fragment within a `FileEdit` | `src/attune_rag/editor/rename.py` |
 
-## Key data types
-
-| Type | Role |
-|---|---|
-| `Diagnostic` | A single lint finding: severity, code, message, and 1-indexed start/end position |
-| `FrontmatterIssue` | A single schema violation discovered during frontmatter parsing |
-| `Reference` | One occurrence of a name in the corpus: template path, line, column, and context |
-| `Hunk` | A single unified-diff hunk produced by `plan_rename` |
-| `FileEdit` | All hunks for one file: old text, new text, and the hunk list |
-| `FileMove` | A planned path rename for a template file |
-| `RenamePlan` | The complete rename operation: old name, new name, kind, edits, and moves |
-
-## When the editor matters
-
-You interact with editor primitives whenever you need to:
-
-- Validate that a template's frontmatter conforms to the `template_schema.json` contract before committing it.
-- Surface lint diagnostics in a text editor without coupling the lint logic to any particular UI toolkit.
-- Populate an autocomplete dropdown with tags or aliases that exist in the current corpus.
-- Safely rename a tag, alias, or template across hundreds of files and have the change applied as a single atomic operation.
+The attune-gui editor and the `attune-author edit` CLI are the primary consumers. Because every function accepts a `CorpusProtocol` value rather than a concrete corpus type, any component that satisfies the protocol can use the full feature set without additional glue code.

@@ -3,14 +3,14 @@ type: reference
 name: providers-reference
 feature: providers
 depth: reference
-generated_at: 2026-05-15T20:02:55.656803+00:00
+generated_at: 2026-05-20T03:27:22.832799+00:00
 source_hash: fbe19e4accf7e90a0aec29d23dcdabe3822e7458ce7ff5e4412a81d42aae02f9
 status: generated
 ---
 
 # Providers reference
 
-Use this module to send prompts to Claude or Gemini and receive text or cited responses. `LLMProvider` defines the async protocol; `ClaudeProvider` and `GeminiProvider` are the concrete implementations. Each provider lazy-imports its SDK, so the core package installs without requiring any provider SDK. `ClaudeProvider` requires the `attune-rag[claude]` extra; `GeminiProvider` requires `attune-rag[gemini]`.
+Async LLM provider adapters built around the `LLMProvider` protocol. Each adapter lazy-imports its SDK so the core package installs without optional dependencies. `ClaudeProvider` requires the `attune-rag[claude]` extra; `GeminiProvider` requires `attune-rag[gemini]`.
 
 ## Classes
 
@@ -22,7 +22,7 @@ Use this module to send prompts to Claude or Gemini and receive text or cited re
 | `ClaudeProvider` | Thin async wrapper over Anthropic's Messages API. |
 | `GeminiProvider` | Thin async wrapper over Google's genai models API. |
 
-### CitationDocument
+### `CitationDocument`
 
 `[dataclass]`
 
@@ -31,7 +31,7 @@ Use this module to send prompts to Claude or Gemini and receive text or cited re
 | `title` | `str` | — |
 | `text` | `str` | — |
 
-### CitedResponse
+### `CitedResponse`
 
 `[dataclass]`
 
@@ -40,49 +40,33 @@ Use this module to send prompts to Claude or Gemini and receive text or cited re
 | `text` | `str` | — |
 | `claim_citations` | `tuple[ClaimCitation, ...]` | — |
 
-### LLMProvider
+### `LLMProvider`
 
-Protocol defining the async interface all providers implement.
+Protocol defining the interface for all async LLM providers.
 
-**Methods**
+| Method | Parameters | Returns |
+|--------|------------|---------|
+| `generate` | `self, prompt: str, model: str \| None = None, max_tokens: int = 2048, cached_prefix: str \| None = None` | `str` |
+| `generate_with_citations` | `self, documents: list[CitationDocument], query: str, system: str \| None = None, model: str \| None = None, max_tokens: int = 2048` | `CitedResponse` |
 
-| Method | Parameters | Returns | Description |
-|--------|------------|---------|-------------|
-| `generate` | `self, prompt: str, model: str \| None = None, max_tokens: int = 2048, cached_prefix: str \| None = None` | `str` | Send a prompt and return the model's text response. |
-| `generate_with_citations` | `self, documents: list[CitationDocument], query: str, system: str \| None = None, model: str \| None = None, max_tokens: int = 2048` | `CitedResponse` | Answer a query grounded in the supplied documents and return the response with citations. |
+### `ClaudeProvider`
 
-### ClaudeProvider
+Thin async wrapper over Anthropic's Messages API. Requires `attune-rag[claude]`.
 
-Thin async wrapper over Anthropic's Messages API. Requires the `attune-rag[claude]` extra.
+| Method | Parameters | Returns |
+|--------|------------|---------|
+| `__init__` | `self, api_key: str \| None = None, client: AsyncAnthropic \| None = None` | `None` |
+| `generate` | `self, prompt: str, model: str \| None = None, max_tokens: int = 2048, cached_prefix: str \| None = None` | `str` |
+| `generate_with_citations` | `self, documents: list[CitationDocument], query: str, system: str \| None = None, model: str \| None = None, max_tokens: int = 2048` | `CitedResponse` |
 
-**Constructor**
+### `GeminiProvider`
 
-| Parameters | Returns |
-|------------|---------|
-| `self, api_key: str \| None = None, client: AsyncAnthropic \| None = None` | `None` |
+Thin async wrapper over Google's genai models API. Requires `attune-rag[gemini]`.
 
-**Methods**
-
-| Method | Parameters | Returns | Description |
-|--------|------------|---------|-------------|
-| `generate` | `self, prompt: str, model: str \| None = None, max_tokens: int = 2048, cached_prefix: str \| None = None` | `str` | Send a prompt and return the model's text response. |
-| `generate_with_citations` | `self, documents: list[CitationDocument], query: str, system: str \| None = None, model: str \| None = None, max_tokens: int = 2048` | `CitedResponse` | Answer a query grounded in the supplied documents and return the response with citations. |
-
-### GeminiProvider
-
-Thin async wrapper over Google's genai models API. Requires the `attune-rag[gemini]` extra.
-
-**Constructor**
-
-| Parameters | Returns |
-|------------|---------|
-| `self, api_key: str \| None = None, client: GenAIClient \| None = None` | `None` |
-
-**Methods**
-
-| Method | Parameters | Returns | Description |
-|--------|------------|---------|-------------|
-| `generate` | `self, prompt: str, model: str \| None = None, max_tokens: int = 2048, cached_prefix: str \| None = None` | `str` | Send a prompt and return the model's text response. |
+| Method | Parameters | Returns |
+|--------|------------|---------|
+| `__init__` | `self, api_key: str \| None = None, client: GenAIClient \| None = None` | `None` |
+| `generate` | `self, prompt: str, model: str \| None = None, max_tokens: int = 2048, cached_prefix: str \| None = None` | `str` |
 
 ## Functions
 
@@ -97,14 +81,6 @@ Thin async wrapper over Google's genai models API. Requires the `attune-rag[gemi
 |----------|--------|---------|
 | `get_provider` | `ValueError` | `'Unknown provider {...}. Known providers: {...}.'` |
 
-## Source files
-
-- `src/attune_rag/providers/__init__.py`
-- `src/attune_rag/providers/base.py`
-- `src/attune_rag/providers/claude.py`
-- `src/attune_rag/providers/openai.py`
-- `src/attune_rag/providers/gemini.py`
-
 ## Tags
 
-`providers`, `llm`, `claude`, `openai`, `gemini`
+`providers`, `llm`, `claude`, `gemini`
