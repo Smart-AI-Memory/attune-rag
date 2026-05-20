@@ -1,5 +1,5 @@
 {
-  "commit": "3149a0ccad7f9788aff1a9b92d8e80944c456289",
+  "commit": "28a329311fc7ebc01a1ca10eb502c95e3cca862c",
   "environment": {
     "ci_runner": "Linux",
     "machine": "x86_64",
@@ -9,57 +9,57 @@
     "python_version": "3.11.15"
   },
   "include_llm": true,
-  "measured_at": "2026-05-20T04:11:35Z",
+  "measured_at": "2026-05-20T21:47:48Z",
   "metrics": {
     "directory_corpus_load.cpu": {
-      "mean": 4.7e-05,
-      "n": 30,
-      "stdev": 1e-05,
+      "mean": 4.5e-05,
+      "n": 50,
+      "stdev": 7e-06,
       "threshold": 6.6e-05
     },
     "directory_corpus_load.wall": {
-      "mean": 4.6e-05,
-      "n": 30,
-      "stdev": 1e-05,
+      "mean": 4.5e-05,
+      "n": 50,
+      "stdev": 7e-06,
       "threshold": 6.6e-05
     },
     "keyword_retriever_retrieve.cpu": {
-      "mean": 0.003212,
-      "n": 30,
-      "stdev": 0.01564,
-      "threshold": 0.034493
+      "mean": 0.002079,
+      "n": 50,
+      "stdev": 0.012135,
+      "threshold": 0.038484
     },
     "keyword_retriever_retrieve.wall": {
-      "mean": 0.003212,
-      "n": 30,
-      "stdev": 0.015641,
-      "threshold": 0.034494
+      "mean": 0.002079,
+      "n": 50,
+      "stdev": 0.012135,
+      "threshold": 0.038484
     },
     "llm_reranker_rerank.cpu": {
-      "mean": 0.01919,
-      "n": 30,
-      "stdev": 0.092086,
-      "threshold": 0.203362
+      "mean": 0.012409,
+      "n": 50,
+      "stdev": 0.071402,
+      "threshold": 0.226615
     },
     "llm_reranker_rerank.wall": {
-      "mean": 0.727717,
-      "n": 30,
-      "stdev": 0.170489,
-      "threshold": 1.068696
+      "mean": 0.799094,
+      "n": 50,
+      "stdev": 0.520869,
+      "threshold": 2.361702
     },
     "rag_pipeline_run.cpu": {
-      "mean": 0.000537,
-      "n": 30,
-      "stdev": 4.4e-05,
-      "threshold": 0.000625
+      "mean": 0.00063,
+      "n": 50,
+      "stdev": 5.6e-05,
+      "threshold": 0.000799
     },
     "rag_pipeline_run.wall": {
-      "mean": 0.000536,
-      "n": 30,
-      "stdev": 4.4e-05,
-      "threshold": 0.000624
+      "mean": 0.00063,
+      "n": 50,
+      "stdev": 5.6e-05,
+      "threshold": 0.000799
     }
   },
-  "runs": 30,
-  "sigma": 2.0
+  "runs": 50,
+  "sigma": 3.0
 }
