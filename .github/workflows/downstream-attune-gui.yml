@@ -176,7 +176,13 @@ jobs:
               -F body=@"$COMMENT_PATH"
           else
             echo "Posting new comment on PR #$PR_NUMBER"
-            gh pr comment "$PR_NUMBER" --body-file "$COMMENT_PATH"
+            # `gh pr comment` derives the repo from cwd's git context.
+            # This workflow checks out attune-gui only (into a subdir);
+            # cwd has no attune-rag git repo, so `gh pr comment` fails
+            # with "not a git repository". Use `gh api` directly with
+            # an explicit URL — works regardless of cwd.
+            gh api -X POST "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+              -F body=@"$COMMENT_PATH"
           fi
         shell: bash
 
