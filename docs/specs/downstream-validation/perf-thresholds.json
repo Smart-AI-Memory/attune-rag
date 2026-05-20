@@ -1,5 +1,5 @@
 {
-  "commit": "3149a0ccad7f9788aff1a9b92d8e80944c456289",
+  "commit": "28a329311fc7ebc01a1ca10eb502c95e3cca862c",
   "environment": {
     "ci_runner": "Linux",
     "machine": "x86_64",
@@ -8,58 +8,46 @@
     "python_implementation": "CPython",
     "python_version": "3.11.15"
   },
-  "include_llm": true,
-  "measured_at": "2026-05-20T04:11:35Z",
+  "include_llm": false,
+  "measured_at": "2026-05-20T21:42:11Z",
   "metrics": {
     "directory_corpus_load.cpu": {
-      "mean": 4.7e-05,
-      "n": 30,
-      "stdev": 1e-05,
-      "threshold": 6.6e-05
+      "mean": 4.5e-05,
+      "n": 50,
+      "stdev": 9e-06,
+      "threshold": 7.1e-05
     },
     "directory_corpus_load.wall": {
-      "mean": 4.6e-05,
-      "n": 30,
-      "stdev": 1e-05,
-      "threshold": 6.6e-05
+      "mean": 4.5e-05,
+      "n": 50,
+      "stdev": 9e-06,
+      "threshold": 7.1e-05
     },
     "keyword_retriever_retrieve.cpu": {
-      "mean": 0.003212,
-      "n": 30,
-      "stdev": 0.01564,
-      "threshold": 0.034493
+      "mean": 0.002126,
+      "n": 50,
+      "stdev": 0.012443,
+      "threshold": 0.039454
     },
     "keyword_retriever_retrieve.wall": {
-      "mean": 0.003212,
-      "n": 30,
-      "stdev": 0.015641,
-      "threshold": 0.034494
-    },
-    "llm_reranker_rerank.cpu": {
-      "mean": 0.01919,
-      "n": 30,
-      "stdev": 0.092086,
-      "threshold": 0.203362
-    },
-    "llm_reranker_rerank.wall": {
-      "mean": 0.727717,
-      "n": 30,
-      "stdev": 0.170489,
-      "threshold": 1.068696
+      "mean": 0.002126,
+      "n": 50,
+      "stdev": 0.012443,
+      "threshold": 0.039454
     },
     "rag_pipeline_run.cpu": {
-      "mean": 0.000537,
-      "n": 30,
+      "mean": 0.000502,
+      "n": 50,
       "stdev": 4.4e-05,
-      "threshold": 0.000625
+      "threshold": 0.000635
     },
     "rag_pipeline_run.wall": {
-      "mean": 0.000536,
-      "n": 30,
+      "mean": 0.000501,
+      "n": 50,
       "stdev": 4.4e-05,
-      "threshold": 0.000624
+      "threshold": 0.000635
     }
   },
-  "runs": 30,
-  "sigma": 2.0
+  "runs": 50,
+  "sigma": 3.0
 }

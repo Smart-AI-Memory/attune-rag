@@ -7,11 +7,11 @@
 
 | Field | Value |
 |---|---|
-| Measured at | `2026-05-20T04:11:35Z` |
-| Commit | `3149a0ccad7f9788aff1a9b92d8e80944c456289` |
-| Runs (N) | 30 |
-| Sigma | 2.0 |
-| LLM benchmarks included | True |
+| Measured at | `2026-05-20T21:42:11Z` |
+| Commit | `28a329311fc7ebc01a1ca10eb502c95e3cca862c` |
+| Runs (N) | 50 |
+| Sigma | 3.0 |
+| LLM benchmarks included | False |
 | CI runner | `Linux` |
 | Platform | `Linux-6.17.0-1013-azure-x86_64-with-glibc2.39` |
 | Python | `CPython 3.11.15` |
@@ -20,12 +20,10 @@
 
 | Metric | Mean (s) | Stdev (s) | Threshold (s) | N |
 |---|---:|---:|---:|---:|
-| `directory_corpus_load.cpu` | 0.000047 | 0.000010 | 0.000066 | 30 |
-| `directory_corpus_load.wall` | 0.000046 | 0.000010 | 0.000066 | 30 |
-| `keyword_retriever_retrieve.cpu` | 0.003212 | 0.015640 | 0.034493 | 30 |
-| `keyword_retriever_retrieve.wall` | 0.003212 | 0.015641 | 0.034494 | 30 |
-| `llm_reranker_rerank.cpu` | 0.019190 | 0.092086 | 0.203362 | 30 |
-| `llm_reranker_rerank.wall` | 0.727717 | 0.170489 | 1.068696 | 30 |
-| `rag_pipeline_run.cpu` | 0.000537 | 0.000044 | 0.000625 | 30 |
-| `rag_pipeline_run.wall` | 0.000536 | 0.000044 | 0.000624 | 30 |
+| `directory_corpus_load.cpu` | 0.000045 | 0.000009 | 0.000071 | 50 |
+| `directory_corpus_load.wall` | 0.000045 | 0.000009 | 0.000071 | 50 |
+| `keyword_retriever_retrieve.cpu` | 0.002126 | 0.012443 | 0.039454 | 50 |
+| `keyword_retriever_retrieve.wall` | 0.002126 | 0.012443 | 0.039454 | 50 |
+| `rag_pipeline_run.cpu` | 0.000502 | 0.000044 | 0.000635 | 50 |
+| `rag_pipeline_run.wall` | 0.000501 | 0.000044 | 0.000635 | 50 |
 
