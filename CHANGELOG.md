@@ -6,6 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **README** rewritten with the eval-as-marketing thesis foregrounded.
+  New "Why attune-rag" section quotes the locked retrieval +
+  faithfulness thresholds plus the per-hot-path latency baseline
+  ([docs/specs/release-quality-baseline/baseline-1.md](docs/specs/release-quality-baseline/baseline-1.md),
+  [docs/specs/downstream-validation/perf-baseline.md](docs/specs/downstream-validation/perf-baseline.md))
+  as the primary differentiator. Added a comparison table vs
+  LangChain / LlamaIndex and a "What attune-rag is not" section
+  for honest self-disqualification. Status section bumped from
+  stale `v0.1.10` to `v0.1.19`; roadmap section repositioned as
+  post-freeze 0.2.0+ instead of "next minor release." No public
+  API change.
+
 ## [0.1.19] - 2026-05-16
 
 > **Phase 2 of the v1.0 roadmap** — the `--thinking` default
