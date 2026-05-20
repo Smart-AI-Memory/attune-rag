@@ -99,7 +99,14 @@ jobs:
             echo "::warning::Faithfulness gate SKIPPED — would qualify ($REASON) but ANTHROPIC_API_KEY is not in repo Secrets."
           else
             echo "mode=full" >> "$GITHUB_OUTPUT"
-            echo "reason=$REASON" >> "$GITHUB_OUTPUT"
+            # $REASON can contain newlines (multi-file diff). GitHub
+            # Actions rejects multi-line values written via "key=value";
+            # use the heredoc form instead.
+            {
+              echo "reason<<EOF_REASON"
+              printf '%s\n' "$REASON"
+              echo "EOF_REASON"
+            } >> "$GITHUB_OUTPUT"
             echo "Faithfulness gate: ENABLED ($REASON)."
           fi
 
