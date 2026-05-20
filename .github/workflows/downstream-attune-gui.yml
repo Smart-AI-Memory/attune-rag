@@ -1,0 +1,201 @@
+name: Downstream (attune-gui)
+
+# Phase 4 deliverable W0.8 — runs attune-gui's editor + RAG test
+# suite against this PR's HEAD SHA. The downstream gate per
+# Decision 2 of the v1.0 roadmap: a 0.2.x → 0.3.x bump in
+# attune-rag must not break attune-gui's editor + RAG paths.
+#
+# Mechanism:
+# 1. Check out attune-gui at the configured ref (default:
+#    `feature/attune-rag-0.2-editor-rename`, the M5.2-clean
+#    branch known-green for editor+RAG; see
+#    docs/specs/downstream-validation/requirements.md edge case
+#    table for the rationale).
+# 2. `pip install -e .[dev]` from attune-gui so the runner has
+#    its test deps + the published attune-rag pin.
+# 3. Force-reinstall attune-rag from THIS PR's HEAD SHA via
+#    `pip install ... attune-rag @ git+...@<sha>` so the test
+#    suite exercises the change under review.
+# 4. `pytest sidecar/tests -k 'editor or rag'` and capture the
+#    output. Comment the verdict on the PR.
+#
+# Severity: advisory through W3.2 (per design.md §4's promotion
+# ramp). Job stays green even on test failures; the PR comment
+# carries the signal. Promotes to blocking by removing the
+# `continue-on-error` on the test step.
+
+on:
+  pull_request:
+    branches: [main]
+
+# Default: read-only on contents. The job widens just enough to
+# post the PR comment.
+permissions:
+  contents: read
+
+concurrency:
+  group: downstream-attune-gui-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  attune-gui-tests:
+    name: attune-gui editor+rag tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write  # for posting / editing the advisory comment
+    env:
+      ATTUNE_GUI_REPO: Smart-AI-Memory/attune-gui
+      ATTUNE_GUI_REF: feature/attune-rag-0.2-editor-rename
+      ATTUNE_GUI_DIR: attune-gui
+      # Workspace-relative paths so hashFiles() works in step
+      # conditionals (it only matches files under GITHUB_WORKSPACE).
+      COMMENT_PATH: downstream-comment.md
+      PYTEST_LOG: pytest.log
+
+    steps:
+      - name: Check out attune-gui (downstream target)
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          repository: ${{ env.ATTUNE_GUI_REPO }}
+          ref: ${{ env.ATTUNE_GUI_REF }}
+          path: ${{ env.ATTUNE_GUI_DIR }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install attune-gui + dev deps
+        working-directory: ${{ env.ATTUNE_GUI_DIR }}
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          # This pulls in attune-rag>=0.1.18,<0.2 from PyPI; we
+          # override that with the PR SHA in the next step.
+          python -m pip install -e ".[dev]"
+        shell: bash
+
+      - name: Override attune-rag with this PR's HEAD SHA
+        env:
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          ATTUNE_RAG_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # --no-deps so attune-rag's existing deps (already
+          # satisfied via attune-gui's install) don't get
+          # re-resolved; --force-reinstall to swap out the PyPI
+          # version with the source build from the PR.
+          python -m pip install --force-reinstall --no-deps \
+            "attune-rag @ git+https://github.com/${ATTUNE_RAG_REPO}.git@${PR_SHA}"
+          # Sanity-check: confirm the installed attune-rag actually
+          # came from the PR SHA (pip can silently fail to upgrade
+          # if the package metadata didn't change — surface that
+          # here with a clear error rather than running tests
+          # against the PyPI version unawares).
+          python -c "import attune_rag; print('attune-rag installed:', attune_rag.__file__)"
+        shell: bash
+
+      - name: Run attune-gui editor+rag tests
+        id: tests
+        continue-on-error: true
+        working-directory: ${{ env.ATTUNE_GUI_DIR }}
+        run: |
+          set +e
+          pytest sidecar/tests -k 'editor or rag' --tb=short -q 2>&1 | tee "$PYTEST_LOG"
+          echo "rc=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - name: Compose comment
+        if: always()
+        env:
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          TEST_RC: ${{ steps.tests.outputs.rc }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TEST_RC" ]; then
+            # Tests step never ran — install or checkout failed.
+            STATUS="❓ setup error"
+            TITLE="Downstream attune-gui — setup error"
+          elif [ "$TEST_RC" = "0" ]; then
+            STATUS="✅ pass"
+            TITLE="Downstream attune-gui — green"
+          else
+            STATUS="⚠️ failures"
+            TITLE="Downstream attune-gui — failures (advisory)"
+          fi
+          {
+            echo '<!-- attune-rag-downstream-gate -->'
+            echo "## ${TITLE}"
+            echo ""
+            echo "**Advisory only** (Phase 4 W1–W2). Promotes to blocking in W3.2."
+            echo ""
+            echo "| Field | Value |"
+            echo "|---|---|"
+            echo "| attune-rag PR SHA | \`${PR_SHA}\` |"
+            echo "| attune-gui ref | \`${ATTUNE_GUI_REF}\` |"
+            echo "| Test selector | \`pytest sidecar/tests -k 'editor or rag'\` |"
+            echo "| Status | ${STATUS} |"
+            echo "| Workflow run | [link](${RUN_URL}) |"
+            echo ""
+            if [ -n "$TEST_RC" ] && [ "$TEST_RC" != "0" ] && [ -f "$PYTEST_LOG" ]; then
+              echo "### Pytest output (last 80 lines)"
+              echo ""
+              echo '```'
+              tail -80 "$PYTEST_LOG"
+              echo '```'
+            elif [ -z "$TEST_RC" ]; then
+              echo "_The test step did not run — the install or checkout step failed first. See the workflow run log for details._"
+            fi
+            echo ""
+            echo '<!-- attune-rag-downstream-gate -->'
+          } > "$COMMENT_PATH"
+        shell: bash
+
+      - name: Post or update PR comment
+        if: |
+          always()
+          && github.event_name == 'pull_request'
+          && hashFiles(env.COMMENT_PATH) != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          EXISTING=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --paginate \
+            --jq '.[] | select(.body | contains("<!-- attune-rag-downstream-gate -->")) | .id' \
+            | head -1 || true)
+          if [ -n "$EXISTING" ]; then
+            echo "Updating existing comment id=$EXISTING"
+            gh api -X PATCH "repos/${REPO}/issues/comments/${EXISTING}" \
+              -F body=@"$COMMENT_PATH"
+          else
+            echo "Posting new comment on PR #$PR_NUMBER"
+            # `gh pr comment` derives the repo from cwd's git context.
+            # This workflow checks out attune-gui only (into a subdir);
+            # cwd has no attune-rag git repo, so `gh pr comment` fails
+            # with "not a git repository". Use `gh api` directly with
+            # an explicit URL — works regardless of cwd.
+            gh api -X POST "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+              -F body=@"$COMMENT_PATH"
+          fi
+        shell: bash
+
+      - name: Summary
+        if: always()
+        env:
+          TEST_RC: ${{ steps.tests.outputs.rc }}
+        run: |
+          {
+            echo "### attune-rag downstream (attune-gui)"
+            echo ""
+            echo "- attune-gui ref: \`${ATTUNE_GUI_REF}\`"
+            echo "- pytest exit: ${TEST_RC:-(did not run)}"
+            echo "- Mode: advisory (Phase 4 W1–W2)"
+          } >> "$GITHUB_STEP_SUMMARY"
+        shell: bash
