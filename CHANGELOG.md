@@ -23,6 +23,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > the calendar's 2026-05-24. End of W4 (and the 0.2.0 SemVer cut)
 > targets 2026-06-17 if no regression resets the clock.
 
+> **Freeze override (Phase 4 of v1.0 roadmap).** The
+> `KeywordRetriever.MIN_ALIAS_OVERLAP` knob below is a new
+> public class attribute that lands inside the Phase 4
+> symbol-level freeze under the override mechanism
+> documented in
+> [`docs/specs/downstream-validation/tasks.md`](docs/specs/downstream-validation/tasks.md)
+> §"Freeze semantics". `[Override-rationale]`: the knob
+> changes the default ranking behavior for attune-help in a
+> structurally meaningful way (replaces a documented
+> semantic-tie miss with a corpus-side alias-tuning miss),
+> and gating its default behind a separate 0.2.0 cut would
+> have shipped the behavior change without the
+> user-controllable safety valve. Cadence clock not reset
+> per the spec's `Security`-scoped exception pattern,
+> applied here for an internal quality knob with comparable
+> reversibility — flipping `MIN_ALIAS_OVERLAP = 1` restores
+> pre-0.1.22 behavior exactly.
+
+### Added
+
+- **`KeywordRetriever.MIN_ALIAS_OVERLAP` class attribute
+  (default `2`).** Requires at least this many distinct
+  query tokens to overlap an entry's alias-token union
+  before crediting `aliases_hits`. Multi-token alias matches
+  (the design intent — `"CI pipeline failing"`,
+  `"publish to PyPI"`) still fire; single common tokens
+  riding in via one alias no longer dominate ties. Set to
+  `1` (via subclass or class-attribute override) to restore
+  pre-0.1.22 behavior. Trade-off measured on the locked
+  golden set: gq-020 ("write unit tests") now retrieves
+  `quickstarts/generate-tests.md` at top-1 (was
+  `concepts/tool-fix-test.md` — phantom `test` alias hit);
+  gq-026 ("version bump and changelog") drops from top-1
+  (`concepts/tool-release-prep.md` lost its single-token
+  `vers` alias hit). Net Precision@1 unchanged at 0.975;
+  remaining miss is now a corpus-side alias-content
+  question rather than a documented embedding-gap.
+
+### Changed
+
+- **`KeywordRetriever` stemming: collapse `-ity` / `-ities`
+  to a shared stem.** `_STEM_SUFFIXES` now includes `"ities"`
+  and `"ity"` (ordered before `"ies"` so plurals strip to the
+  same stem as the singular). Previously `vulnerability`
+  stayed unstemmed while `vulnerabilities` stemmed to
+  `vulnerabilit` via the `"ies"` suffix, so a singular query
+  token never overlapped the plural in summaries. Measured
+  delta on the locked 40-query golden set: Precision@1
+  lifted from **0.950 (38/40) to 0.975 (39/40)** — gq-011
+  ("vulnerability scan") now retrieves
+  `concepts/tool-security-audit.md` at top-1 instead of
+  `quickstarts/skill-security-audit.md`. Recall@3 holds at
+  1.00 (40/40). `_MIN_STEM_LEN = 3` continues to protect
+  short tokens (`city`, `pity`, `unity` left unchanged).
+  Rationale and per-query trace:
+  [`docs/specs/selection-criteria-robustness/proposal.md`](docs/specs/selection-criteria-robustness/proposal.md).
+
+- **Locked baseline lifted (20-run, with faithfulness).**
+  `docs/specs/release-quality-baseline/thresholds.json`
+  re-measured after the changes above. P@1 floor lifts
+  0.950 → 0.975 (stdev 0); mean_faithfulness floor lifts
+  0.9686 → 0.9698 (mean 0.9801, stdev 0.0052); R@3 holds at
+  1.0. `baseline-1.md` refreshed with the new per-run table.
+
 ## [0.1.21] - 2026-05-20
 
 > **Phase 4 W0 setup ships.** Twelve weeks of W0 machinery + four
@@ -180,7 +244,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   holds; LOWs are now zero open as well.
 
 - **`benchmark.yml` threshold-gate heredoc fix.** The mode-decision step used the `key=value` form to write `reason` to `$GITHUB_OUTPUT`, which GitHub Actions rejected with `Invalid format` when the PR's diff touched ≥ 2 faithfulness-affecting paths (multi-line value). Switched to the documented heredoc form (`reason<<EOF_REASON \n … \n EOF_REASON`). The gate now correctly emits `mode=full` with multi-line rationale. Surfaced on PR #68 which touched both `reranker.py` and `expander.py`.
-
 ## [0.1.19] - 2026-05-16
 
 > **Phase 2 of the v1.0 roadmap** — the `--thinking` default

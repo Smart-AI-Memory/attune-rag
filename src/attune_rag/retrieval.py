@@ -95,6 +95,12 @@ _STEM_SUFFIXES: tuple[str, ...] = (
     "ing",
     "ions",
     "ion",
+    # "ities" precedes "ies" / "ity" so plural/singular -ity nouns
+    # collapse to the same stem (e.g. ``vulnerabilities`` and
+    # ``vulnerability`` both → ``vulnerabil``). Without this, a
+    # singular query token never overlaps the plural in summaries.
+    "ities",
+    "ity",
     "ies",
     "ers",
     "ed",
@@ -196,6 +202,12 @@ class KeywordRetriever:
     # typical feature-name length; beyond that, path tokens are
     # usually lesson-title noise rather than relevance signal.
     PATH_HIT_CAP: int = 3
+    # Aliases are short multi-word synonyms (e.g. "CI pipeline failing").
+    # A single common token (e.g. "test") riding in via one alias is
+    # noise rather than synonym evidence — require at least this many
+    # distinct query tokens to overlap the alias-token union before
+    # crediting alias_hits. Set to 1 to restore pre-0.1.22 behavior.
+    MIN_ALIAS_OVERLAP: int = 2
 
     def _category_weight(self, entry: RetrievalEntry) -> float:
         return self.CATEGORY_WEIGHTS.get(entry.category, self.DEFAULT_CATEGORY_WEIGHT)
@@ -259,7 +271,8 @@ class KeywordRetriever:
         path_hits_raw = len(query_tokens & path_tokens)
         path_hits = min(path_hits_raw, self.PATH_HIT_CAP)
         summary_hits = len(query_tokens & summary_tokens)
-        aliases_hits = len(query_tokens & aliases_tokens)
+        aliases_overlap = len(query_tokens & aliases_tokens)
+        aliases_hits = aliases_overlap if aliases_overlap >= self.MIN_ALIAS_OVERLAP else 0
         content_hits = len(query_tokens & content_tokens)
         related_hits = len(query_tokens & related_summary_tokens)
 

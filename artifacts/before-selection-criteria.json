@@ -1,0 +1,647 @@
+{
+  "queries_path": "/Users/patrickroebuck/attune-rag/tests/golden/queries.yaml",
+  "retrieval": {
+    "corpus": "attune-help",
+    "k": 3,
+    "max_latency_ms": 365.30929198488593,
+    "mean_latency_ms": 10.121283336775377,
+    "per_query": [
+      {
+        "actual": [
+          "quickstarts/run-security-audit.md",
+          "quickstarts/skill-security-audit.md",
+          "concepts/tool-security-audit.md"
+        ],
+        "difficulty": "easy",
+        "expected": [
+          "concepts/tool-security-audit.md",
+          "quickstarts/run-security-audit.md"
+        ],
+        "id": "gq-001",
+        "query": "how do I run a security audit",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "quickstarts/generate-tests.md",
+          "concepts/tool-smart-test.md",
+          "quickstarts/skill-smart-test.md"
+        ],
+        "difficulty": "easy",
+        "expected": [
+          "concepts/tool-smart-test.md",
+          "quickstarts/generate-tests.md"
+        ],
+        "id": "gq-002",
+        "query": "generate tests for my code",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-fix-test.md",
+          "quickstarts/skill-fix-test.md",
+          "tasks/use-fix-test.md"
+        ],
+        "difficulty": "easy",
+        "expected": [
+          "concepts/tool-fix-test.md"
+        ],
+        "id": "gq-003",
+        "query": "fix failing tests",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-code-quality.md",
+          "quickstarts/run-code-review.md",
+          "quickstarts/skill-code-quality.md"
+        ],
+        "difficulty": "easy",
+        "expected": [
+          "concepts/tool-code-quality.md"
+        ],
+        "id": "gq-004",
+        "query": "review code quality",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "references/tool-deep-review.md",
+          "quickstarts/run-code-review.md",
+          "references/tool-code-review.md"
+        ],
+        "difficulty": "easy",
+        "expected": [
+          "references/tool-deep-review.md"
+        ],
+        "id": "gq-005",
+        "query": "deep review my PR",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-bug-predict.md",
+          "quickstarts/skill-bug-predict.md",
+          "references/tool-bug-predict.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-bug-predict.md",
+          "references/tool-bug-predict.md"
+        ],
+        "id": "gq-006",
+        "query": "predict bugs before they happen",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-refactor-plan.md",
+          "quickstarts/skill-refactor-plan.md",
+          "tasks/use-refactor-plan.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-refactor-plan.md",
+          "references/tool-refactor-plan.md"
+        ],
+        "id": "gq-007",
+        "query": "refactor my code",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-release-prep.md",
+          "quickstarts/skill-release-prep.md",
+          "references/skill-release-prep.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-release-prep.md",
+          "references/skill-release-prep.md"
+        ],
+        "id": "gq-008",
+        "query": "prepare a release",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "references/tool-doc-audit.md",
+          "quickstarts/run-security-audit.md",
+          "quickstarts/skill-security-audit.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "references/tool-doc-audit.md"
+        ],
+        "id": "gq-009",
+        "query": "audit documentation for staleness",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-planning.md",
+          "concepts/tool-refactor-plan.md",
+          "quickstarts/skill-refactor-plan.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-planning.md",
+          "quickstarts/skill-planning.md",
+          "references/skill-planning.md"
+        ],
+        "id": "gq-010",
+        "query": "plan a new feature",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "quickstarts/skill-security-audit.md",
+          "concepts/tool-security-audit.md",
+          "quickstarts/run-security-audit.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-security-audit.md",
+          "quickstarts/run-security-audit.md"
+        ],
+        "id": "gq-011",
+        "query": "vulnerability scan",
+        "top1_match": false,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-doc-gen.md",
+          "quickstarts/skill-doc-gen.md",
+          "references/skill-doc-gen.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-doc-gen.md",
+          "quickstarts/skill-doc-gen.md"
+        ],
+        "id": "gq-012",
+        "query": "write documentation for my module",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "references/tool-doc-orchestrator.md",
+          "concepts/tool-workflow-orchestration.md",
+          "concepts/meta-orchestration.md"
+        ],
+        "difficulty": "hard",
+        "expected": [
+          "references/tool-doc-orchestrator.md"
+        ],
+        "id": "gq-013",
+        "query": "orchestrate documentation workflow",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-bug-predict.md",
+          "errors/bug-predict-dangerous-eval-flags-subprocess-exec.md",
+          "references/tool-security-audit.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-bug-predict.md",
+          "references/tool-bug-predict.md"
+        ],
+        "id": "gq-014",
+        "query": "look for dangerous eval calls",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-bug-predict.md",
+          "concepts/task-ci-cd-pipeline.md",
+          "quickstarts/skill-bug-predict.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-bug-predict.md",
+          "references/tool-bug-predict.md"
+        ],
+        "id": "gq-015",
+        "query": "sniff out hard-to-catch bugs",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-bug-predict.md",
+          "quickstarts/skill-code-quality.md",
+          "concepts/tool-code-quality.md"
+        ],
+        "difficulty": "easy",
+        "expected": [
+          "concepts/tool-bug-predict.md",
+          "quickstarts/skill-bug-predict.md"
+        ],
+        "id": "gq-016",
+        "query": "find bugs in my code",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "quickstarts/skill-doc-gen.md",
+          "concepts/task-code-migration.md",
+          "concepts/tool-code-quality.md"
+        ],
+        "difficulty": "easy",
+        "expected": [
+          "concepts/tool-doc-gen.md",
+          "quickstarts/skill-doc-gen.md"
+        ],
+        "id": "gq-017",
+        "query": "create documentation for my code",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-code-quality.md",
+          "quickstarts/skill-code-quality.md",
+          "quickstarts/run-code-review.md"
+        ],
+        "difficulty": "easy",
+        "expected": [
+          "concepts/tool-code-quality.md",
+          "quickstarts/skill-code-quality.md"
+        ],
+        "id": "gq-018",
+        "query": "check code quality",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-release-prep.md",
+          "quickstarts/skill-release-prep.md",
+          "tasks/use-release-prep.md"
+        ],
+        "difficulty": "easy",
+        "expected": [
+          "concepts/tool-release-prep.md",
+          "references/skill-release-prep.md"
+        ],
+        "id": "gq-019",
+        "query": "create a release",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-fix-test.md",
+          "quickstarts/generate-tests.md",
+          "concepts/tool-smart-test.md"
+        ],
+        "difficulty": "easy",
+        "expected": [
+          "concepts/tool-smart-test.md",
+          "quickstarts/generate-tests.md"
+        ],
+        "id": "gq-020",
+        "query": "write unit tests",
+        "top1_match": false,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-refactor-plan.md",
+          "concepts/tool-coach.md",
+          "concepts/tool-fix-test.md"
+        ],
+        "difficulty": "hard",
+        "expected": [
+          "concepts/tool-refactor-plan.md",
+          "references/tool-refactor-plan.md"
+        ],
+        "id": "gq-021",
+        "query": "clean up technical debt",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-smart-test.md",
+          "concepts/tool-fix-test.md",
+          "quickstarts/generate-tests.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-smart-test.md",
+          "quickstarts/generate-tests.md"
+        ],
+        "id": "gq-022",
+        "query": "add test coverage to my project",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "quickstarts/run-security-audit.md",
+          "quickstarts/skill-security-audit.md",
+          "concepts/tool-security-audit.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-security-audit.md",
+          "quickstarts/run-security-audit.md"
+        ],
+        "id": "gq-023",
+        "query": "check for security vulnerabilities",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-fix-test.md",
+          "quickstarts/skill-fix-test.md",
+          "tasks/use-fix-test.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-fix-test.md",
+          "references/skill-fix-test.md"
+        ],
+        "id": "gq-024",
+        "query": "debug failing tests",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "references/tool-doc-audit.md",
+          "quickstarts/browse-help.md",
+          "references/tool-doc-orchestrator.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "references/tool-doc-audit.md"
+        ],
+        "id": "gq-025",
+        "query": "find stale documentation",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-release-prep.md",
+          "quickstarts/skill-release-prep.md",
+          "quickstarts/task-package-publishing.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-release-prep.md",
+          "references/tool-release-prep.md"
+        ],
+        "id": "gq-026",
+        "query": "version bump and changelog",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-bug-predict.md",
+          "references/tool-deep-review.md",
+          "references/tool-bug-predict.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-bug-predict.md",
+          "references/tool-bug-predict.md"
+        ],
+        "id": "gq-027",
+        "query": "spot risky code changes before merging",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-planning.md",
+          "concepts/task-git-workflow.md",
+          "tasks/use-planning.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-planning.md",
+          "quickstarts/skill-planning.md"
+        ],
+        "id": "gq-028",
+        "query": "architect a new feature",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-code-quality.md",
+          "quickstarts/skill-code-quality.md",
+          "quickstarts/run-code-review.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-code-quality.md",
+          "references/skill-code-quality.md"
+        ],
+        "id": "gq-029",
+        "query": "improve code quality metrics",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-refactor-plan.md",
+          "concepts/tool-bug-predict.md",
+          "references/tool-simplify-code.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-refactor-plan.md",
+          "references/skill-refactor-plan.md"
+        ],
+        "id": "gq-030",
+        "query": "reduce code complexity",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-fix-test.md",
+          "quickstarts/task-ci-cd-pipeline.md",
+          "concepts/task-ci-cd-pipeline.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-fix-test.md",
+          "quickstarts/skill-fix-test.md"
+        ],
+        "id": "gq-031",
+        "query": "my CI pipeline keeps failing",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-security-audit.md",
+          "quickstarts/run-security-audit.md",
+          "quickstarts/skill-security-audit.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-security-audit.md",
+          "quickstarts/run-security-audit.md"
+        ],
+        "id": "gq-032",
+        "query": "SAST scan my repository",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-doc-gen.md",
+          "concepts/task-dependency-management.md",
+          "quickstarts/skill-doc-gen.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-doc-gen.md",
+          "references/tool-doc-gen.md"
+        ],
+        "id": "gq-033",
+        "query": "add docstrings to all my functions",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "references/tool-doc-orchestrator.md",
+          "concepts/task-ci-cd-pipeline.md",
+          "quickstarts/task-ci-cd-pipeline.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "references/tool-doc-orchestrator.md"
+        ],
+        "id": "gq-034",
+        "query": "manage the documentation pipeline",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-release-prep.md",
+          "concepts/task-package-publishing.md",
+          "quickstarts/task-package-publishing.md"
+        ],
+        "difficulty": "hard",
+        "expected": [
+          "concepts/tool-release-prep.md",
+          "references/tool-release-prep.md"
+        ],
+        "id": "gq-035",
+        "query": "publish to PyPI",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-bug-predict.md",
+          "quickstarts/task-git-workflow.md",
+          "references/tool-bug-predict.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-bug-predict.md",
+          "references/tool-bug-predict.md"
+        ],
+        "id": "gq-036",
+        "query": "identify which files are most likely to break",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "references/tool-deep-review.md",
+          "concepts/tool-bug-predict.md",
+          "concepts/tool-planning.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "references/tool-deep-review.md"
+        ],
+        "id": "gq-037",
+        "query": "end-to-end review before merging a PR",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "references/tool-doc-orchestrator.md",
+          "concepts/tool-memory-and-context.md",
+          "quickstarts/skill-memory-and-context.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "references/tool-doc-orchestrator.md"
+        ],
+        "id": "gq-038",
+        "query": "coordinate documentation updates across the project",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-planning.md",
+          "concepts/tool-spec.md",
+          "concepts/task-code-migration.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-planning.md",
+          "references/skill-planning.md"
+        ],
+        "id": "gq-039",
+        "query": "scope out next sprint tasks",
+        "top1_match": true,
+        "topk_match": true
+      },
+      {
+        "actual": [
+          "concepts/tool-bug-predict.md",
+          "references/tool-bug-predict.md",
+          "concepts/task-error-handling-design.md"
+        ],
+        "difficulty": "medium",
+        "expected": [
+          "concepts/tool-bug-predict.md",
+          "references/tool-bug-predict.md"
+        ],
+        "id": "gq-040",
+        "query": "find potential runtime errors before deployment",
+        "top1_match": true,
+        "topk_match": true
+      }
+    ],
+    "precision_at_1": 0.95,
+    "recall_at_k": 1.0,
+    "retriever": "KeywordRetriever",
+    "total_queries": 40
+  }
+}

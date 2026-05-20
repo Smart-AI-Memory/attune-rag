@@ -1,16 +1,16 @@
 {
-  "commit": "d98fabe349210341ea7e1a1f357aba15164556e6",
-  "measured_at": "2026-05-16T08:11:25Z",
+  "commit": "07bdf3545d5bacd14384af270882f84d59c190e5",
+  "measured_at": "2026-05-20T05:42:59Z",
   "metrics": {
     "mean_faithfulness": {
-      "mean": 0.979,
+      "mean": 0.9801,
       "stdev": 0.0052,
-      "threshold": 0.9686
+      "threshold": 0.9698
     },
     "precision_at_1": {
-      "mean": 0.95,
+      "mean": 0.975,
       "stdev": 0.0,
-      "threshold": 0.95
+      "threshold": 0.975
     },
     "recall_at_3": {
       "mean": 1.0,
