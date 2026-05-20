@@ -206,7 +206,7 @@ def test_main_exit_0_when_clean(tmp_path: Path) -> None:
         ]
     )
     assert rc == 0
-    body = out.read_text()
+    body = out.read_text(encoding="utf-8")
     assert "within baseline" in body
 
 
@@ -248,7 +248,7 @@ def test_main_exit_0_when_baseline_missing(tmp_path: Path) -> None:
         ]
     )
     assert rc == 0
-    body = out.read_text()
+    body = out.read_text(encoding="utf-8")
     assert "Baseline" in body
     assert "W0.4" in body
 
@@ -313,5 +313,5 @@ def test_main_advisory_flag_propagates(tmp_path: Path) -> None:
     # the comment text; the workflow uses continue-on-error to absorb
     # the exit.
     assert rc == 1
-    body = out.read_text()
+    body = out.read_text(encoding="utf-8")
     assert "Advisory only" in body
