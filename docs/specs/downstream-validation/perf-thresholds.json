@@ -1,5 +1,5 @@
 {
-  "commit": "58a4b2a1dacbc2ccf6637aed95f9f10cff5d856b",
+  "commit": "3149a0ccad7f9788aff1a9b92d8e80944c456289",
   "environment": {
     "ci_runner": "Linux",
     "machine": "x86_64",
@@ -8,44 +8,56 @@
     "python_implementation": "CPython",
     "python_version": "3.11.15"
   },
-  "include_llm": false,
-  "measured_at": "2026-05-20T02:14:05Z",
+  "include_llm": true,
+  "measured_at": "2026-05-20T04:11:35Z",
   "metrics": {
     "directory_corpus_load.cpu": {
       "mean": 4.7e-05,
       "n": 30,
-      "stdev": 7e-06,
-      "threshold": 6.2e-05
+      "stdev": 1e-05,
+      "threshold": 6.6e-05
     },
     "directory_corpus_load.wall": {
-      "mean": 4.7e-05,
+      "mean": 4.6e-05,
       "n": 30,
-      "stdev": 7e-06,
-      "threshold": 6.2e-05
+      "stdev": 1e-05,
+      "threshold": 6.6e-05
     },
     "keyword_retriever_retrieve.cpu": {
-      "mean": 0.00073,
+      "mean": 0.003212,
       "n": 30,
-      "stdev": 0.003526,
-      "threshold": 0.007783
+      "stdev": 0.01564,
+      "threshold": 0.034493
     },
     "keyword_retriever_retrieve.wall": {
-      "mean": 0.00073,
+      "mean": 0.003212,
       "n": 30,
-      "stdev": 0.003527,
-      "threshold": 0.007783
+      "stdev": 0.015641,
+      "threshold": 0.034494
+    },
+    "llm_reranker_rerank.cpu": {
+      "mean": 0.01919,
+      "n": 30,
+      "stdev": 0.092086,
+      "threshold": 0.203362
+    },
+    "llm_reranker_rerank.wall": {
+      "mean": 0.727717,
+      "n": 30,
+      "stdev": 0.170489,
+      "threshold": 1.068696
     },
     "rag_pipeline_run.cpu": {
-      "mean": 0.00027,
+      "mean": 0.000537,
       "n": 30,
-      "stdev": 1.8e-05,
-      "threshold": 0.000307
+      "stdev": 4.4e-05,
+      "threshold": 0.000625
     },
     "rag_pipeline_run.wall": {
-      "mean": 0.00027,
+      "mean": 0.000536,
       "n": 30,
-      "stdev": 1.8e-05,
-      "threshold": 0.000307
+      "stdev": 4.4e-05,
+      "threshold": 0.000624
     }
   },
   "runs": 30,
