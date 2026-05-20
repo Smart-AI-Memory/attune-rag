@@ -8,30 +8,31 @@
 
 ## Headline
 
-- **CI perf-gate flagged a single-axis advisory regression on PR #72** (the 0.1.22 release): `rag_pipeline_run.cpu` and `.wall` both ~+34 % over threshold; `keyword_retriever_retrieve` axes well under threshold; `directory_corpus_load` axes well under threshold.
-- **Static review of the 0.1.22 diff finds no plausible mechanism** for a +182 µs CPU-time regression on `rag_pipeline_run`. The actual code change is ~2 extra suffix-endswith checks per query token (memoized once after first call) plus one new `if X >= Y` per scored entry.
-- **Working hypothesis:** noise on a sub-millisecond benchmark. The baseline `rag_pipeline_run.cpu.stdev` is 0.000044 s (8 % RSD) measured on a single CI run; one re-measurement is not a confirmed trend.
-- **Recommendation:** do **not** file as Phase-5 perf work yet. Re-measure on the next main-branch perf workflow run; if the regression persists across two consecutive readings, dig deeper. If we reach W3.1 (gate promotion to blocking on CPU-time) still over threshold, options are (a) real fix, (b) re-baseline, (c) widen N to dampen single-point noise.
+- **PR #72's advisory perf-gate flagged a single-axis regression on `rag_pipeline_run.cpu/.wall` (~+34 % over threshold). PR #74's second reading on the same code (no perf-relevant changes between them) showed `rag_pipeline_run.cpu` at +10.8 % — back under threshold.** Two consecutive readings on identical code, ±23 % swing on a sub-millisecond benchmark. **Verdict: noise, not regression.**
+- The ostensibly-changed code (0.1.22's two added stem suffixes + one new conditional) was inadequate to explain the +182 µs PR #72 magnitude; the second reading confirms the static-diff intuition.
 - **Reranker hot path is LLM-bound** (network dominates). Python overhead is negligible; no actionable findings.
-- **Static audit surfaces four Phase-5 micro-opt candidates** in `retrieval.py` (none would obviously close the ~+34 % advisory regression on its own).
+- **Static audit still surfaces four Phase-5 micro-opt candidates** in `retrieval.py` — independent of the false-alarm regression, they are real (small) wins.
+- **Persistent recommendation: widen `rag_pipeline_run` N from 30 → 50 before the W3.1 promotion to blocking.** The 23 % single-run swing makes the current gate unreliable: the same code crossed the threshold once and stayed under it the second time. If the perf workflow becomes blocking with the current noise floor, real PRs will eat false-positive blocks.
 - **Tooling note:** `attune-ai:performance_audit` MCP tool failed (`AttributeError: 'str' object has no attribute 'get'`) on both absolute and repo-relative paths. Filed as an attune-ai bug — not blocking; static audit substitutes.
 
 ## Cross-check vs perf-baseline.json
 
 Baseline locked at commit `3149a0c` (pre-0.1.22). Current HEAD is
-post-0.1.22 (commit `11afde1`). PR #72 ran the advisory perf workflow
-on the 0.1.22 retrieval diff and posted:
+post-0.1.22 (commit `99996fd`). Two advisory perf-workflow readings
+on the same code (no perf-relevant changes between PR #72 merge and
+PR #74's docs commits):
 
-| Metric | Baseline mean (s) | Current mean (s) | Δ | Threshold (s) | Status |
-|---|---:|---:|---:|---:|---|
-| `rag_pipeline_run.cpu` | 0.000537 | 0.000719 | **+33.9 %** | 0.000625 | ⚠️ **over** |
-| `rag_pipeline_run.wall` | 0.000536 | 0.000718 | **+34.0 %** | 0.000624 | ⚠️ **over** |
-| `keyword_retriever_retrieve.cpu` | 0.003212 | 0.010196 | +217 % | 0.034493 | ok (under threshold) |
-| `keyword_retriever_retrieve.wall` | 0.003212 | 0.010196 | +217 % | 0.034494 | ok (under threshold) |
-| `directory_corpus_load.cpu` | 0.000047 | 0.000053 | +12.8 % | 0.000066 | ok |
-| `directory_corpus_load.wall` | 0.000046 | 0.000053 | +15.2 % | 0.000066 | ok |
+| Metric | Baseline (s) | PR #72 (first) | PR #74 (second) | Threshold | PR #72 Δ | PR #74 Δ |
+|---|---:|---:|---:|---:|---:|---:|
+| `rag_pipeline_run.cpu` | 0.000537 | 0.000719 ⚠️ | **0.000595 ✅** | 0.000625 | +33.9 % | +10.8 % |
+| `rag_pipeline_run.wall` | 0.000536 | 0.000718 ⚠️ | **0.000595 ✅** | 0.000624 | +34.0 % | +11.0 % |
+| `keyword_retriever_retrieve.cpu` | 0.003212 | 0.010196 | 0.010355 | 0.034493 | +217 % | +222 % |
+| `keyword_retriever_retrieve.wall` | 0.003212 | 0.010196 | 0.010357 | 0.034494 | +217 % | +222 % |
+| `directory_corpus_load.cpu` | 0.000047 | 0.000053 | 0.000054 | 0.000066 | +12.8 % | +14.9 % |
+| `directory_corpus_load.wall` | 0.000046 | 0.000053 | 0.000054 | 0.000066 | +15.2 % | +17.4 % |
 
-Source: PR #72 advisory comment under marker `<!-- attune-rag-perf-gate -->`.
+Source: PR #72 + PR #74 advisory comments under marker
+`<!-- attune-rag-perf-gate -->` on issue-comments stream.
 
 ### Interpretation
 
@@ -43,22 +44,36 @@ cost, hence the loose threshold. This is the intended W0.5 behaviour:
 the loose retrieve threshold is documented in
 [`perf-baseline.md`](./perf-baseline.md).
 
-**Why `rag_pipeline_run` is concerning:** baseline `stdev = 0.000044 s`
-on a 0.000537 s mean — 8 % RSD, tight. Current 0.000719 s is **4.1 σ**
-above baseline mean. That's signal, *if* the new measurement was taken
-under the same conditions as the baseline. But:
+**Why the PR #72 `rag_pipeline_run` reading looked concerning, and why
+the PR #74 reading exonerates it:** baseline `stdev = 0.000044 s` on a
+0.000537 s mean — 8 % RSD, tight. The PR #72 reading of 0.000719 s was
+**4.1 σ** above baseline mean. That would have been signal *if it were
+repeatable*. It wasn't:
 
-- The benchmark shares `corpus`, `retriever`, and `pipeline` instances
-  with the previous benchmarks in the same process, so by the time
-  `pipeline.run` is timed the entry-token cache is fully warm. The
-  measurement is therefore mostly pipeline-orchestration overhead
-  (citation-record build, prompt formatting, structlog emit) plus a
-  cache-hit retrieve.
-- Baseline `N = 30` is fine for a millisecond-scale benchmark; for a
-  ~500 µs benchmark on a noisy cloud runner it's at the edge. Single
-  GC pauses, page faults, or co-tenancy noise on Azure dominate.
-- The 0.1.22 retrieval diff (3 ops, all upstream of the cache) is
-  inadequate to explain a +182 µs change on a warm-cache `pipeline.run`.
+- PR #72 reading: 0.000719 s (+33.9 %, over threshold)
+- PR #74 reading: 0.000595 s (+10.8 %, under threshold) — same code path
+- Spread between the two readings: 0.000124 s = ±23 % of mean
+
+The two readings are on identical perf-relevant code (PR #74 added only
+docs/markdown commits), yet they sit on opposite sides of the gate. The
+benchmark shares `corpus`, `retriever`, and `pipeline` instances with
+the previous benchmarks in the same process, so by the time
+`pipeline.run` is timed the entry-token cache is fully warm — the
+measurement is mostly orchestration overhead (citation-record build,
+prompt formatting, structlog emit) plus a cache-hit retrieve, all on
+the sub-millisecond scale where one GC pause / page fault / co-tenancy
+hiccup on Azure dominates.
+
+**Conclusion:** PR #72's flag was single-point noise. The 0.1.22
+retrieval diff (3 ops, all upstream of the cache) was already
+inadequate to explain a +182 µs change on a warm-cache `pipeline.run`;
+the second reading confirms the static-diff intuition.
+
+**Open issue:** the gate is currently unreliable for this metric. A
+±23 % run-to-run swing on a benchmark whose threshold sits at +16 %
+above mean means **the same code can flip the gate purely on runner
+noise.** This is fine while the gate is advisory, but if W3.1 promotes
+it to blocking unchanged, real PRs will eat false-positive blocks.
 
 ## Static perf audit — `retrieval.py`
 
@@ -104,12 +119,10 @@ No actionable findings.
 
 | # | Action | Class | Where |
 |---|---|---|---|
-| 1 | **Re-run perf workflow** on the current main-branch tip (commit `fed00f5` or later). If `rag_pipeline_run` is still over threshold, we have a confirmed regression; if it slips back under, the PR #72 reading was noise. | Verify | Trigger `.github/workflows/perf.yml` on a dummy PR or next merge |
-| 2 | If still over threshold after (1): **eliminate the structlog hypothesis first** — patch out the `logger.info` call in the benchmark and re-measure. If `rag_pipeline_run.cpu` drops back to baseline, the regression was a structlog renderer change, not retrieval. | Diagnose | scoped throwaway PR |
-| 3 | If still over threshold after (1) + (2): apply Phase-5 micro-opt #1 (lazy reason build) — the only one of the four that touches the per-entry hot loop in a visible way. Re-measure. | Fix-by-elimination | post-freeze `### Changed` |
-| 4 | Independent of the regression: **widen N from 30 → 50 for the rag_pipeline_run benchmark specifically.** Re-locked baseline would close the noise question at source. Document the change in `perf-baseline.md`. | Tighten gate | post-W3.1 or sooner if W3.1 promotion blocks on noise |
-| 5 | **File Phase-5 backlog ticket** capturing the four retrieval micro-opts above for the post-freeze housekeeping commit. Net wall-clock gain probably <50 µs aggregate, but the lazy-reason change is also a readability win. | Backlog | Phase-5 spec when opened |
-| 6 | **File attune-ai bug:** `mcp__plugin_attune-ai_attune-ai__performance_audit` raises `AttributeError: 'str' object has no attribute 'get'` on both absolute and repo-relative `path:` arguments. W2.2 succeeded via static audit; the official tool was unusable. | External | attune-ai issue tracker |
+| 1 | ✅ **DONE.** Second perf reading on PR #74 confirms PR #72's flag was noise; `rag_pipeline_run` back under threshold (+10.8 %). | Verified | — |
+| 2 | **Widen N from 30 → 50 for the `rag_pipeline_run` benchmark before W3.1 gate promotion.** Re-locked baseline with N=50 closes the ±23 % single-run swing at source. Update `perf-baseline.md` + `perf-thresholds.json`. *This is the only blocking remediation before W3.1.* | Tighten gate | scoped PR, pre-W3.1 (target ≤ 2026-06-01) |
+| 3 | **File Phase-5 backlog ticket** capturing the four retrieval micro-opts (lazy reason build, cache-key tuple constant, `heapq.nlargest`, inline category-weight). Aggregate net wall-clock gain probably <50 µs but the lazy-reason change is also a readability win. | Backlog | Phase-5 spec when opened |
+| 4 | **File attune-ai bug:** `mcp__plugin_attune-ai_attune-ai__performance_audit` raises `AttributeError: 'str' object has no attribute 'get'` on both absolute and repo-relative `path:` arguments. W2.2 succeeded via static audit; the official tool was unusable. | External | attune-ai issue tracker |
 
 ## Freeze-clock impact
 
@@ -123,6 +136,6 @@ clock is **not** reset.
 
 ## Hand-off
 
-- **W2 housekeeping commit** (optional, can bundle W2.1 + W2.2 fix-during-freeze items): docstring fixes from W2.1 + structlog elimination test from W2.2 rec #2 if pursued.
-- **W3.1 perf-gate promotion** depends on whether rec #1 + rec #4 land before then. If `rag_pipeline_run.cpu` is still over threshold at W3.1 start, the promotion should either be deferred for that one metric or block on a re-baseline.
-- **W3.3 `/test-audit`** can absorb the structlog-hypothesis test if it surfaces a real renderer change.
+- **Pre-W3.1 perf-gate prep:** rec #2 (widen N=30→50 for `rag_pipeline_run`) is the only blocker. Without it, the W3.1 promotion to blocking is unsafe — same code crossed the threshold once and slipped back under it on the very next run.
+- **W2 housekeeping commit** (optional, can bundle W2.1 + W2.2 items): the ~7 docstring/style nits from W2.1. W2.2 contributes no fix-during-freeze items — the advisory was noise.
+- **W3.1 perf-gate promotion** stays on schedule for `rag_pipeline_run.cpu` *provided rec #2 lands first*. Wall-clock axis stays advisory per the spec.
