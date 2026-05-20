@@ -19,10 +19,11 @@ name: Downstream (attune-gui)
 # 4. `pytest sidecar/tests -k 'editor or rag'` and capture the
 #    output. Comment the verdict on the PR.
 #
-# Severity: advisory through W3.2 (per design.md §4's promotion
-# ramp). Job stays green even on test failures; the PR comment
-# carries the signal. Promotes to blocking by removing the
-# `continue-on-error` on the test step.
+# Severity: BLOCKING from W3.2 onwards (per design.md §4's
+# promotion ramp). Test-step failure fails the job; the PR comment
+# still posts (the Compose-comment step runs under `if: always()`)
+# so reviewers see the verdict regardless. To re-enter advisory
+# mode (rollback), add `continue-on-error: true` to the test step.
 
 on:
   pull_request:
@@ -100,12 +101,16 @@ jobs:
 
       - name: Run attune-gui editor+rag tests
         id: tests
-        continue-on-error: true
+        # No `continue-on-error` — pytest failure fails the job, per W3.2
+        # blocking promotion. The Compose-comment step below runs under
+        # `if: always()` so the PR comment still posts on failure.
         working-directory: ${{ env.ATTUNE_GUI_DIR }}
         run: |
           set +e
           pytest sidecar/tests -k 'editor or rag' --tb=short -q 2>&1 | tee "$PYTEST_LOG"
-          echo "rc=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+          rc=${PIPESTATUS[0]}
+          echo "rc=${rc}" >> "$GITHUB_OUTPUT"
+          exit "${rc}"
         shell: bash
 
       - name: Compose comment
@@ -124,14 +129,14 @@ jobs:
             STATUS="✅ pass"
             TITLE="Downstream attune-gui — green"
           else
-            STATUS="⚠️ failures"
-            TITLE="Downstream attune-gui — failures (advisory)"
+            STATUS="❌ failures (blocking)"
+            TITLE="Downstream attune-gui — failures"
           fi
           {
             echo '<!-- attune-rag-downstream-gate -->'
             echo "## ${TITLE}"
             echo ""
-            echo "**Advisory only** (Phase 4 W1–W2). Promotes to blocking in W3.2."
+            echo "**Blocking gate** (Phase 4 W3.2 onwards). Failure here fails the job and blocks merge."
             echo ""
             echo "| Field | Value |"
             echo "|---|---|"
@@ -196,6 +201,6 @@ jobs:
             echo ""
             echo "- attune-gui ref: \`${ATTUNE_GUI_REF}\`"
             echo "- pytest exit: ${TEST_RC:-(did not run)}"
-            echo "- Mode: advisory (Phase 4 W1–W2)"
+            echo "- Mode: blocking (Phase 4 W3.2 onwards)"
           } >> "$GITHUB_STEP_SUMMARY"
         shell: bash
