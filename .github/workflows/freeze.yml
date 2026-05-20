@@ -1,0 +1,180 @@
+name: Feature freeze
+
+# Phase 4 deliverable from docs/specs/ROADMAP-v1.md / Phase 4
+# (Downstream Validation). Runs `scripts/check_freeze.py` on every
+# PR and fails when the PR adds public surface during the freeze.
+#
+# Override path: apply the `freeze-override` label AND include an
+# `[Override-rationale]` block in the PR body. With both present,
+# the script is invoked with `--allow-override` and the workflow
+# passes; without the rationale block the workflow fails with a
+# clear message.
+
+on:
+  pull_request:
+    branches: [main]
+    # Re-evaluate on label changes + body edits so the gate reflects
+    # the current PR state, not a stale snapshot from the first push.
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: write  # for posting / editing the gate comment
+
+concurrency:
+  group: freeze-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: Freeze gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      COMMENT_PATH: /tmp/freeze-comment.md
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          # Full history so we can diff PR head against the base ref.
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.11"
+          # check_freeze.py is pure stdlib — no pip install needed.
+
+      # ── Decide whether the override path applies ───────────────────
+      - name: Resolve override
+        id: override
+        env:
+          # PR body is user-controlled; pass via env, never interpolate
+          # ${{ }} directly into a shell line.
+          PR_BODY: ${{ github.event.pull_request.body }}
+          LABELS_JSON: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          set -euo pipefail
+
+          # Does the PR carry the freeze-override label?
+          HAS_LABEL=$(printf '%s' "$LABELS_JSON" | python3 -c \
+            'import json,sys; print("true" if "freeze-override" in json.load(sys.stdin) else "false")')
+
+          if [ "$HAS_LABEL" != "true" ]; then
+            echo "active=false" >> "$GITHUB_OUTPUT"
+            echo "reason=No freeze-override label on this PR." >> "$GITHUB_OUTPUT"
+            echo "Freeze override: NOT REQUESTED (running gate normally)."
+            exit 0
+          fi
+
+          # Label is set — body must contain a non-empty
+          # [Override-rationale] block. We match a literal
+          # [Override-rationale] line followed by at least one line of
+          # non-whitespace content on the next 20 lines.
+          HAS_RATIONALE=$(printf '%s' "${PR_BODY:-}" | python3 -c '
+          import re, sys
+          body = sys.stdin.read()
+          m = re.search(r"\[Override-rationale\]\s*\n", body)
+          if not m:
+              print("false")
+              raise SystemExit
+          tail = body[m.end():].splitlines()[:20]
+          has_content = any(line.strip() for line in tail)
+          print("true" if has_content else "false")
+          ')
+
+          if [ "$HAS_RATIONALE" != "true" ]; then
+            echo "active=false" >> "$GITHUB_OUTPUT"
+            echo "reason=freeze-override label set but [Override-rationale] block missing or empty in PR body." >> "$GITHUB_OUTPUT"
+            echo "::error::freeze-override label set, but the PR body is missing an [Override-rationale] block with content."
+            echo "Add a section to the PR description that starts with the literal line:"
+            echo ""
+            echo "    [Override-rationale]"
+            echo ""
+            echo "followed by 1-3 sentences explaining why the added surface is justified (e.g. security fix, vendored-dep upgrade)."
+            exit 1
+          fi
+
+          echo "active=true" >> "$GITHUB_OUTPUT"
+          echo "reason=freeze-override label present with [Override-rationale] block." >> "$GITHUB_OUTPUT"
+          echo "Freeze override: ACTIVE (violations will warn, not fail)."
+        shell: bash
+
+      # ── Run check_freeze.py ────────────────────────────────────────
+      - name: Run freeze enforcer
+        id: check
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          OVERRIDE_ACTIVE: ${{ steps.override.outputs.active }}
+        run: |
+          set +e
+          ARGS=(--base "origin/${BASE_REF}" --head HEAD --comment-out "$COMMENT_PATH")
+          if [ "$OVERRIDE_ACTIVE" = "true" ]; then
+            ARGS+=(--allow-override)
+          fi
+          python3 scripts/check_freeze.py "${ARGS[@]}"
+          RC=$?
+          echo "rc=$RC" >> "$GITHUB_OUTPUT"
+          exit $RC
+        shell: bash
+        continue-on-error: true
+
+      # ── Post or update the PR comment on violation ─────────────────
+      - name: Post or update PR comment on violation
+        # check_freeze.py writes the comment file on exit 1 even when
+        # --allow-override flips the final exit code to 0 — meaning
+        # the comment is also useful for documenting overridden
+        # violations. We post whenever the file exists.
+        if: |
+          github.event_name == 'pull_request'
+          && hashFiles('/tmp/freeze-comment.md') != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          EXISTING=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --paginate \
+            --jq '.[] | select(.body | contains("<!-- attune-rag-freeze-gate -->")) | .id' \
+            | head -1 || true)
+          if [ -n "$EXISTING" ]; then
+            echo "Updating existing comment id=$EXISTING"
+            gh api -X PATCH "repos/${REPO}/issues/comments/${EXISTING}" \
+              -F body=@"$COMMENT_PATH"
+          else
+            echo "Posting new comment on PR #$PR_NUMBER"
+            gh pr comment "$PR_NUMBER" --body-file "$COMMENT_PATH"
+          fi
+        shell: bash
+
+      # ── Always disclose the verdict in the run summary ─────────────
+      - name: Summary
+        if: always()
+        env:
+          OVERRIDE_ACTIVE: ${{ steps.override.outputs.active }}
+          OVERRIDE_REASON: ${{ steps.override.outputs.reason }}
+          CHECK_RC: ${{ steps.check.outputs.rc }}
+        run: |
+          {
+            echo "### attune-rag feature-freeze gate"
+            echo ""
+            echo "- Override active: \`${OVERRIDE_ACTIVE:-n/a}\`"
+            echo "- Override reason: ${OVERRIDE_REASON:-n/a}"
+            echo "- check_freeze.py exit: ${CHECK_RC:-skipped}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # ── Fail the job iff check_freeze.py reported a violation ──────
+      - name: Fail on violation
+        if: steps.check.outputs.rc == '1'
+        run: |
+          echo "::error::Feature-freeze gate failed — see the PR comment and the FAIL lines above. If this addition is justified (e.g. security fix), apply the freeze-override label and add an [Override-rationale] block to the PR body."
+          exit 1
+        shell: bash
+
+      - name: Fail on validation error
+        if: steps.check.outputs.rc == '2'
+        run: |
+          echo "::error::Feature-freeze gate hit a validation error — see the error lines above. Common causes: missing CHANGELOG.md or template_schema.json at HEAD, malformed JSON in the schema, or git failure resolving the base ref. Validation errors are not maskable by freeze-override."
+          exit 1
+        shell: bash
