@@ -60,11 +60,12 @@ class RenameCollisionError(RenameError):
 class Hunk:
     """A single unified-diff hunk."""
 
-    hunk_id: str  # stable sha256-based identifier
+    hunk_id: str  # non-cryptographic content hash; see _make_hunk
     header: str  # canonical @@ hunk header
     lines: list[str] = field(default_factory=list)  # `' ' / '-' / '+'` prefixed
 
     def to_dict(self) -> dict[str, Any]:
+        """Plain-dict view for JSON serialisation (CLI / sidecar I/O)."""
         return asdict(self)
 
 
@@ -78,6 +79,7 @@ class FileEdit:
     hunks: list[Hunk] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
+        """Plain-dict view for JSON serialisation (CLI / sidecar I/O)."""
         return {
             "path": self.path,
             "old_text": self.old_text,
@@ -99,6 +101,7 @@ class FileMove:
     new_path: str
 
     def to_dict(self) -> dict[str, Any]:
+        """Plain-dict view for JSON serialisation (CLI / sidecar I/O)."""
         return {"old_path": self.old_path, "new_path": self.new_path}
 
 
@@ -217,9 +220,11 @@ def _normalize_corpus_relpath(root: Path, raw: str) -> str:
     candidate = Path(raw)
     if candidate.is_absolute():
         raise ValueError(f"Template path must be relative to the corpus root: {raw!r}")
-    # Resolve relative to root WITHOUT following symlinks so we can
-    # check containment. ``Path.resolve(strict=False)`` works on
-    # nonexistent targets (we need that — target is a future file).
+    # Resolve both candidate and root so containment is checked on
+    # canonical paths (``Path.resolve`` follows symlinks; symlink
+    # targets that escape ``root`` are correctly rejected).
+    # ``strict=False`` is required because the target is a future file
+    # — it doesn't exist on disk yet.
     resolved = (root / candidate).resolve(strict=False)
     try:
         resolved.relative_to(root.resolve(strict=False))
@@ -416,6 +421,10 @@ def _hunks(path: str, old_text: str, new_text: str) -> list[Hunk]:
 
 
 def _make_hunk(header: str, lines: list[str], path: str) -> Hunk:
+    # Non-cryptographic content hash — sha256 used solely as a stable
+    # 64-bit identifier for editor UIs to key hunks across edits.
+    # Truncated to 16 hex chars (~64 bits) because collision risk on a
+    # single-rename hunk set is irrelevant.
     digest = hashlib.sha256(("\0".join([path, header, *lines])).encode("utf-8")).hexdigest()[:16]
     return Hunk(hunk_id=digest, header=header, lines=lines)
 

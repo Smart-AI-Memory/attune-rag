@@ -112,6 +112,17 @@ _MIN_STEM_LEN: int = 3
 
 
 def _stem(token: str) -> str:
+    """Strip the longest matching suffix from ``_STEM_SUFFIXES``.
+
+    Contract: ``_STEM_SUFFIXES`` is ordered **longest-match-first**
+    so plural/singular pairs collapse to the same stem (e.g.
+    ``vulnerabilities`` and ``vulnerability`` both → ``vulnerabil``
+    via the ``"ities"``/``"ity"`` entries that precede ``"ies"``).
+    Re-ordering the tuple alphabetically silently breaks ranking.
+    ``_MIN_STEM_LEN = 3`` keeps short tokens (``city``, ``pity``,
+    ``unity``) intact so unrelated tokens don't collide on a
+    two-letter stem.
+    """
     for suffix in _STEM_SUFFIXES:
         if token.endswith(suffix) and len(token) - len(suffix) >= _MIN_STEM_LEN:
             return token[: -len(suffix)]

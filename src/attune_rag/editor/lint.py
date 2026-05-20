@@ -48,6 +48,7 @@ class Diagnostic:
     end_col: int
 
     def to_dict(self) -> dict[str, Any]:
+        """Plain-dict view for JSON serialisation (CLI / editor I/O)."""
         return asdict(self)
 
 
@@ -59,7 +60,16 @@ _ALIAS_REF_RE = re.compile(r"(?<!\\)\[\[([^\[\]\n]+?)\]\]")
 _DEPTH_RE = re.compile(r"^(#{1,6})\s+Depth\s+(\d+)\b", re.IGNORECASE)
 _TOP_LEVEL_KEY_RE = re.compile(r"^([A-Za-z_][\w-]*)\s*:")
 
-_KNOWN_FRONTMATTER_KEYS = set(load_schema()["properties"].keys())
+
+@lru_cache(maxsize=1)
+def _known_frontmatter_keys() -> frozenset[str]:
+    """Top-level keys defined by the template frontmatter schema.
+
+    Cached lazily so importing this module doesn't pay schema-load
+    cost (and doesn't crash on a missing/malformed schema resource);
+    parallels ``_validator()`` in :mod:`.schema`.
+    """
+    return frozenset(load_schema()["properties"].keys())
 
 
 def lint_template(text: str, rel_path: str, corpus: Any) -> list[Diagnostic]:
@@ -152,7 +162,7 @@ def _lint_frontmatter(fm_lines: list[str], fm_start_line: int) -> list[Diagnosti
 
     # Info-level: unknown top-level keys (forward-compat)
     for key in data:
-        if key not in _KNOWN_FRONTMATTER_KEYS:
+        if key not in _known_frontmatter_keys():
             line = _find_key_line(fm_lines, key, fm_start_line)
             diagnostics.append(
                 Diagnostic(

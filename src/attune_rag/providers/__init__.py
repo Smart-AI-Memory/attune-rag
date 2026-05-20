@@ -12,6 +12,7 @@ cleanly without any provider SDK.
 from __future__ import annotations
 
 from importlib import import_module
+from typing import Any
 
 from .base import LLMProvider
 
@@ -38,7 +39,7 @@ def list_available() -> list[str]:
     return available
 
 
-def get_provider(name: str, **kwargs) -> LLMProvider:
+def get_provider(name: str, **kwargs: Any) -> LLMProvider:
     """Return an instance of the named provider.
 
     Raises ``ValueError`` for unknown names and ``RuntimeError``
