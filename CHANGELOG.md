@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.20] - 2026-05-20
+
+> **Phase 4 W0 setup ships.** Twelve weeks of W0 machinery + two
+> security fixes + the polished `.help/` corpus + the locked perf
+> baseline. No public API change — every CHANGELOG bullet below is
+> either `Security` (hardening), `Fixed` (CDN-supply-chain + XSS),
+> or `Changed` (docs, internal tooling, freeze workflows). Phase 4
+> W1–W4 burn-in starts from this commit; the formal `0.2.0`
+> SemVer cut follows once the four-week soak completes cleanly.
+
 ### Security
 
 - **Close macOS direct-path bypass in `_SYSTEM_DIRS` denylist**
