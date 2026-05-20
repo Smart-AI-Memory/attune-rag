@@ -447,3 +447,46 @@ def test_pipeline_request_carries_both_cache_control_and_citations(
         "no document block carries cache_control={'type':'ephemeral'} — "
         "prompt caching has silently regressed on the citations path"
     )
+
+
+# --- W3.3 coverage gap (from W2.1 deep-review): pipeline.py:408 -------------
+
+
+def test_native_path_uses_join_context_when_baseline_variant(corpus: FakeCorpus) -> None:
+    """Native-citations path: ``prompt_variant='baseline'`` renders context
+    via :func:`join_context` (un-numbered), not :func:`join_context_numbered`.
+
+    Covers ``pipeline.py:408`` (the ``else`` branch of the
+    ``prompt_variant == "citation"`` selector inside
+    ``_run_native_citations``). The native path renders ``context``
+    for eval parity even though the model receives structured
+    ``CitationDocument`` blocks rather than a prompt — so the
+    rendered context must still match what the *legacy* path would
+    produce for the same variant. A regression here silently breaks
+    eval-time parity between paths.
+    """
+    from attune_rag.prompts import join_context, join_context_numbered
+
+    pipeline = RagPipeline(corpus=corpus)
+    provider = StubCitationsProvider()
+    _, result = asyncio.run(
+        pipeline.run_and_generate(
+            "security audit",
+            provider=provider,
+            use_native_citations=True,
+            prompt_variant="baseline",
+        )
+    )
+
+    # Native path actually engaged (provider supports + hits exist).
+    assert result.used_native_citations is True
+    assert len(provider.citations_calls) == 1
+    # Numbered-passage markers are the "citation" variant's signature;
+    # the baseline variant must not include them.
+    assert result.context
+    assert "[P1]" not in result.context
+
+    # Parity with the legacy path's renderer for the same variant.
+    hits = pipeline._retrieve("security audit", k=3)
+    assert result.context == join_context(hits)
+    assert result.context != join_context_numbered(hits)

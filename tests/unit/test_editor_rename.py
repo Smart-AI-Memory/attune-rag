@@ -352,3 +352,115 @@ def test_plan_to_dict_round_trip(trio: Path) -> None:
     assert dumped["kind"] == "alias"
     assert isinstance(dumped["edits"], list)
     assert all("hunks" in e for e in dumped["edits"])
+
+
+# -- W3.3 coverage gaps (from W2.1 deep-review) ---------------------
+
+
+def test_apply_rolls_back_edits_when_commit_replace_fails(
+    trio: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Stage-3 commit (``os.replace``) failure mid-loop restores prior edits.
+
+    Covers ``rename.py:498-512``: when the sequential rename of a
+    staged tempfile fails after at least one earlier rename has
+    already succeeded, the earlier target must be rewritten with its
+    pre-apply text and any remaining staged tempfiles must be
+    unlinked. Re-raises the original ``OSError``.
+    """
+    import attune_rag.editor.rename as rmod
+
+    corpus = DirectoryCorpus(trio)
+    plan = plan_rename(corpus, "beta-spec", "beta", kind="alias")
+    # The fixture is constructed so two files participate (alpha.md +
+    # gamma.md). The mid-flight rollback path only fires when the
+    # failing index is > 0, so the test's whole premise depends on this.
+    assert len(plan.edits) == 2
+
+    originals = {e.path: (trio / e.path).read_text(encoding="utf-8") for e in plan.edits}
+
+    real_replace = rmod.os.replace
+    calls: list[tuple[str, str]] = []
+
+    def failing_replace(src, dst):
+        calls.append((str(src), str(dst)))
+        if len(calls) >= 2:
+            raise OSError("simulated disk fault on second commit")
+        return real_replace(src, dst)
+
+    monkeypatch.setattr(rmod.os, "replace", failing_replace)
+
+    with pytest.raises(OSError, match="simulated disk fault"):
+        apply_rename(corpus, plan)
+
+    for path, original_text in originals.items():
+        assert (trio / path).read_text(
+            encoding="utf-8"
+        ) == original_text, f"{path} was not restored to its pre-apply state after rollback"
+    # No staging tempfiles left behind in the corpus root.
+    leftovers = [p for p in trio.iterdir() if p.name.startswith(".") and p.suffix == ".tmp"]
+    assert leftovers == [], f"leftover tempfiles: {leftovers}"
+
+
+def test_rewrite_yaml_block_value_handles_quoted_list_items() -> None:
+    """Block-style list items in single/double quotes are detected and rewritten.
+
+    Covers the ``token.strip("'\\"")`` branch in
+    ``_rewrite_yaml_block_value`` (``rename.py:323-329``). The current
+    contract drops the surrounding quotes in the rewritten output —
+    pinned here so a future refactor that "helpfully" preserves the
+    quote style is caught.
+    """
+    from attune_rag.editor.rename import _rewrite_yaml_block_value
+
+    fm_body = (
+        "type: concept\n"
+        "aliases:\n"
+        "  - 'beta-spec'\n"
+        '  - "beta-spec"\n'
+        "  - beta-spec\n"
+        "tags: [api]\n"
+    )
+    rewritten = _rewrite_yaml_block_value(fm_body, "aliases", "beta-spec", "beta")
+    # All three list items rewrote to the bare new value, quote chars dropped.
+    assert "beta-spec" not in rewritten
+    assert rewritten.count("  - beta") == 3
+    # Block terminator (the next top-level key) is preserved verbatim.
+    assert "tags: [api]" in rewritten
+
+
+def test_sidecar_corrupt_json_is_skipped_silently(trio: Path) -> None:
+    """Malformed sidecars are skipped without raising or emitting an edit.
+
+    Covers ``_plan_sidecar_path_rename_edits`` lines 245-254 in
+    ``rename.py``: the ``except (OSError, json.JSONDecodeError):
+    continue`` arm and the ``if not isinstance(data, dict) or old_rel
+    not in data: continue`` arm. Both must leave the move intact and
+    produce no sidecar edit.
+    """
+    import json as _json
+
+    # Case 1: malformed JSON → JSONDecodeError → skipped.
+    sidecar = trio / "summaries.json"
+    sidecar.write_text("{this is not valid JSON", encoding="utf-8")
+    corpus = DirectoryCorpus(trio)
+    plan = plan_rename(corpus, "alpha.md", "alpha-renamed.md", kind="template_path")
+    assert all(e.path != "summaries.json" for e in plan.edits)
+    assert len(plan.moves) == 1
+    # Corrupt sidecar untouched on disk.
+    assert sidecar.read_text(encoding="utf-8") == "{this is not valid JSON"
+
+    # Case 2: valid JSON but ``old_rel`` not a top-level key → skipped.
+    sidecar.write_text(
+        _json.dumps({"someone-else.md": "summary"}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    corpus2 = DirectoryCorpus(trio)
+    plan2 = plan_rename(corpus2, "alpha.md", "alpha-renamed.md", kind="template_path")
+    assert all(e.path != "summaries.json" for e in plan2.edits)
+
+    # Case 3: valid JSON but not a dict (a list at the top level) → skipped.
+    sidecar.write_text(_json.dumps(["alpha.md"]) + "\n", encoding="utf-8")
+    corpus3 = DirectoryCorpus(trio)
+    plan3 = plan_rename(corpus3, "alpha.md", "alpha-renamed.md", kind="template_path")
+    assert all(e.path != "summaries.json" for e in plan3.edits)
