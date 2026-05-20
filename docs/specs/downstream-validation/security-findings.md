@@ -13,8 +13,9 @@
 
 ## Source 1 — stdlib scan (`scripts/security_scan.py`)
 
-**Status:** complete — run repo-wide against `src/attune_rag/**` on
-2026-05-20 against commit `58a4b2a` (post #54).
+**Status:** complete + triaged (W0.11) — run repo-wide against
+`src/attune_rag/**` on 2026-05-20 against commit `58a4b2a` (post #54);
+triage confirmed against `c6c911d` on 2026-05-19.
 
 **Coverage:** four check classes from the per-PR scanner:
 `dynamic-code`, `path-traversal`, `secret`, `deserialization`.
@@ -32,17 +33,18 @@ patterns for human review, not actual exploits.
 
 ### Findings
 
-All dispositions below are **PROPOSED** based on a one-pass read
-of the surrounding code; W0.11 confirms or revises each.
+All 11 dispositions were confirmed in W0.11 (2026-05-19) against
+the code at `c6c911d`. No revisions; no fix-now items; no
+Phase-5 tickets opened from this source.
 
-| ID | Severity | Location | Detail | Proposed disposition |
+| ID | Severity | Location | Detail | Disposition |
 |---|---|---|---|---|
 | W09.S.001 | medium | `src/attune_rag/benchmark.py:49` | `Path(__file__).resolve().parent.../queries.yaml` | non-issue: `__file__`-derived path, no user input |
 | W09.S.002 | medium | `src/attune_rag/corpus/attune_help.py:42` | `_OVERRIDES_PATH = Path(__file__).parent / "summaries_override.json"` | non-issue: `__file__`-derived module-internal path |
 | W09.S.003 | medium | `src/attune_rag/corpus/attune_help.py:117` | `Path(templates_path)` from `importlib.resources.files()` | non-issue: `importlib.resources` internal path |
 | W09.S.004 | medium | `src/attune_rag/corpus/directory.py:121` | `Path(root).resolve()` — `root` is the library API caller's corpus directory | non-issue: library API contract; caller chooses corpus root, validated with `is_dir()` immediately after |
 | W09.S.005 | medium | `src/attune_rag/dashboard/refresh.py:25` | `Path(str(_ilr.files(corpus_package).joinpath("templates")))` | non-issue: `importlib.resources` internal path |
-| W09.S.006 | medium | `src/attune_rag/editor/rename.py:217` | `candidate = Path(raw)` inside `_validate_template_path` (THE sanitizer) | non-issue: scanner flagged input to the validator itself; the surrounding code rejects absolute paths, `..` escapes, and empty strings |
+| W09.S.006 | medium | `src/attune_rag/editor/rename.py:217` | `candidate = Path(raw)` inside `_normalize_corpus_relpath` (THE sanitizer) | non-issue: scanner flagged input to the validator itself; the surrounding code rejects absolute paths, `..` escapes, and empty strings |
 | W09.S.007 | medium | `src/attune_rag/editor/rename.py:567` | `Path(tmp_path).unlink(missing_ok=True)` | non-issue: `tmp_path` is from `tempfile.mkstemp()` — system-allocated, not user input |
 | W09.S.008 | medium | `src/attune_rag/editor/rename.py:569` | `return Path(tmp_path)` (atomic-write tmp path) | non-issue: same `tempfile.mkstemp()` return as W09.S.007 |
 | W09.S.009 | medium | `src/attune_rag/eval/bench_prompts.py:50` | `Path(__file__).resolve()...queries.yaml` (default queries path) | non-issue: `__file__`-derived default |
@@ -94,9 +96,14 @@ stdlib pass and is re-opened when the deep sweep lands._
   brief rationale required.
 - **Phase-5-ticket** — deferred; link the tracked issue.
 
-## W0.11 entry conditions
+## W0.11 triage outcome
 
-W0.11 (triage) can start now against Source 1's PROPOSED dispositions.
-Source 2 findings, when added, are folded into the same triage pass.
-The hard gate (`zero severity: high open`) is checked at end of W0
-against the union of both sources.
+| Source | Triaged on | fix-now | non-issue | Phase-5-ticket |
+|---|---|---:|---:|---:|
+| 1 (stdlib) | 2026-05-19 | 0 | 11 | 0 |
+| 2 (attune-ai deep sweep) | pending | — | — | — |
+
+Source 1 triage is complete. Source 2 findings, when the deep
+sweep lands, are folded into a follow-up pass and amended above.
+The hard gate (`zero severity: high open`) holds on the Source 1
+side; recheck at end of W0 against the union of both sources.
