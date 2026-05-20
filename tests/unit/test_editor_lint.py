@@ -196,3 +196,33 @@ def test_diagnostic_to_dict_round_trip(corpus: DirectoryCorpus) -> None:
     diags = lint_template(text, "x.md", corpus)
     dumped = [d.to_dict() for d in diags]
     assert all(set(d.keys()) >= {"severity", "code", "message", "line", "col"} for d in dumped)
+
+
+def test_lint_yaml_error_without_problem_mark_returns_fallback_line(
+    corpus: DirectoryCorpus, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`_yaml_error_position` falls back when `problem_mark is None`.
+
+    Most PyYAML errors carry a `problem_mark` with line/column info. A
+    bare `yaml.YAMLError` (or one raised during tag-resolve / construct
+    paths that don't set the mark) does not. The diagnostic must still
+    point at *some* line — the first line inside the frontmatter — so
+    the editor's gutter has a place to render the marker.
+    """
+    import yaml
+
+    def _raise(*_args: object, **_kwargs: object) -> object:
+        raise yaml.YAMLError("synthetic mark-less error")
+
+    monkeypatch.setattr("attune_rag.editor.lint.yaml.safe_load", _raise)
+
+    text = "---\ntype: concept\nname: X\n---\nbody\n"
+    diags = lint_template(text, "x.md", corpus)
+    malformed = [d for d in diags if d.code == "malformed-yaml"]
+    assert len(malformed) == 1
+    # Fallback line is `fm_start_line + 1` (first content line *inside*
+    # the `---` block). The opening `---` is line 1; first content
+    # line is line 2.
+    assert malformed[0].line == 2
+    assert malformed[0].col == 1
+    assert "synthetic mark-less error" in malformed[0].message
