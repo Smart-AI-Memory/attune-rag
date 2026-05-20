@@ -87,7 +87,11 @@ class QueryExpander:
                 expansions = []
             expansions = [str(e) for e in expansions if e]
         except Exception as exc:  # noqa: BLE001
-            logger.debug("QueryExpander.expand failed: %s", exc, exc_info=True)
+            # Log type + message only — avoid exc_info=True so the captured
+            # traceback frames (which may include locals from the Anthropic
+            # SDK) never reach the log. Mirrors the same guard in
+            # LLMReranker.rerank.
+            logger.debug("QueryExpander.expand failed: %s: %s", type(exc).__name__, exc)
             expansions = []
 
         if self._cache is not None:

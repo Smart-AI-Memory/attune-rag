@@ -70,6 +70,18 @@ def test_rejects_dev_path():
         _validate_output_path(__import__("pathlib").Path("/dev/null"))
 
 
+def test_rejects_macos_private_etc_path():
+    # On macOS, /etc resolves to /private/etc via symlink — without the
+    # /private/etc mirror in the denylist, a resolved path would slip past.
+    with pytest.raises(ValueError, match="system directory"):
+        _validate_output_path(__import__("pathlib").Path("/private/etc/dash.html"))
+
+
+def test_rejects_macos_private_sys_path():
+    with pytest.raises(ValueError, match="system directory"):
+        _validate_output_path(__import__("pathlib").Path("/private/sys/x"))
+
+
 def test_rejects_null_byte():
     with pytest.raises(ValueError, match="null byte"):
         _validate_output_path(__import__("pathlib").Path("/tmp/dash\x00board.html"))

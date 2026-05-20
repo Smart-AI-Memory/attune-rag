@@ -1,4 +1,5 @@
 """Terminal display of the attune-rag dashboard using Rich."""
+
 from __future__ import annotations
 
 import sys
@@ -7,6 +8,7 @@ from typing import Any
 
 from rich import box
 from rich.console import Console
+from rich.markup import escape as _esc
 from rich.rule import Rule
 from rich.table import Table
 from rich.text import Text
@@ -45,20 +47,23 @@ def display(snapshot: dict[str, Any], console: Console | None = None) -> None:
     # ── header ──────────────────────────────────────────────────────────────
     con.print()
     con.print("[bold]attune-rag dashboard[/bold]")
+    # Snapshot fields land inside Rich markup strings; escape any value
+    # that could contain `[…]` so a corpus/feature/path name cannot
+    # smuggle in terminal styling (rich.markup injection).
     if r and not r.get("error"):
         parts = [
-            f"[dim]{r.get('retriever', '?')}[/dim]",
-            f"[dim]corpus: {r.get('corpus', '?')}[/dim]",
-            f"[green]{pkg} {ver}[/green]" if pkg else "",
-            f"[dim]k={r.get('k', '?')}[/dim]",
+            f"[dim]{_esc(str(r.get('retriever', '?')))}[/dim]",
+            f"[dim]corpus: {_esc(str(r.get('corpus', '?')))}[/dim]",
+            f"[green]{_esc(pkg)} {_esc(str(ver))}[/green]" if pkg else "",
+            f"[dim]k={_esc(str(r.get('k', '?')))}[/dim]",
         ]
         con.print("  " + "  ·  ".join(p for p in parts if p))
     if ts:
-        con.print(f"  [dim]Snapshot: {_ts(ts)}[/dim]")
+        con.print(f"  [dim]Snapshot: {_esc(_ts(ts))}[/dim]")
     con.print()
 
     if r.get("error"):
-        con.print(f"[yellow]⚠  Partial snapshot:[/yellow] {r['error']}")
+        con.print(f"[yellow]⚠  Partial snapshot:[/yellow] {_esc(str(r['error']))}")
         con.print()
         return
 
@@ -88,10 +93,17 @@ def display(snapshot: dict[str, Any], console: Console | None = None) -> None:
         con.print(f"  {label:<10} {val}   [dim]{sub}[/dim]")
 
     con.print()
-    con.print(f"  {(pkg.upper() or 'CORPUS'):<10} [bold]{ver}[/bold]   [dim]{summ} path-keyed summaries[/dim]")
-    con.print(f"  {'Templates':<10} [bold]{k_total}[/bold]   [dim]{n_feat} features · {n_kinds} kinds[/dim]")
+    con.print(
+        f"  {_esc(pkg.upper() or 'CORPUS'):<10} [bold]{_esc(str(ver))}[/bold]   "
+        f"[dim]{summ} path-keyed summaries[/dim]"
+    )
+    con.print(
+        f"  {'Templates':<10} [bold]{k_total}[/bold]   [dim]{n_feat} features · {n_kinds} kinds[/dim]"
+    )
     gap_color = "yellow" if n_gaps else "green"
-    con.print(f"  {'Gaps':<10} [{gap_color} bold]{n_gaps}[/{gap_color} bold]   [dim]features with < 4 templates[/dim]")
+    con.print(
+        f"  {'Gaps':<10} [{gap_color} bold]{n_gaps}[/{gap_color} bold]   [dim]features with < 4 templates[/dim]"
+    )
     con.print()
 
     # ── coverage gaps ────────────────────────────────────────────────────────
@@ -103,9 +115,14 @@ def display(snapshot: dict[str, Any], console: Console | None = None) -> None:
         )
         for feat, info in gaps:
             by_kind = info.get("by_kind") or {}
-            kinds_str = "  ".join(f"[dim]{kk}[/dim] ×{n}" for kk, n in by_kind.items() if n)
+            kinds_str = "  ".join(
+                f"[dim]{_esc(str(kk))}[/dim] ×{n}" for kk, n in by_kind.items() if n
+            )
             total = info.get("total", 0)
-            con.print(f"     [bold]{feat}[/bold]  {total} template{'s' if total != 1 else ''}  {kinds_str}")
+            con.print(
+                f"     [bold]{_esc(str(feat))}[/bold]  {total} "
+                f"template{'s' if total != 1 else ''}  {kinds_str}"
+            )
         con.print()
 
     # ── retrieval quality ────────────────────────────────────────────────────
@@ -113,7 +130,9 @@ def display(snapshot: dict[str, Any], console: Console | None = None) -> None:
     con.print()
 
     pd = r.get("per_difficulty") or {}
-    diff_tbl = Table(box=box.SIMPLE_HEAVY, show_header=True, header_style="bold dim", padding=(0, 1))
+    diff_tbl = Table(
+        box=box.SIMPLE_HEAVY, show_header=True, header_style="bold dim", padding=(0, 1)
+    )
     diff_tbl.add_column("Difficulty")
     diff_tbl.add_column("Top-1", justify="right")
     diff_tbl.add_column("Top-3", justify="right")
@@ -134,11 +153,13 @@ def display(snapshot: dict[str, Any], console: Console | None = None) -> None:
         ],
         key=lambda x: x[1],
     )
-    feat_tbl = Table(box=box.SIMPLE_HEAVY, show_header=True, header_style="bold dim", padding=(0, 1))
+    feat_tbl = Table(
+        box=box.SIMPLE_HEAVY, show_header=True, header_style="bold dim", padding=(0, 1)
+    )
     feat_tbl.add_column("Feature")
     feat_tbl.add_column("P@1", justify="right")
     for feat, p1v in feat_rows:
-        feat_tbl.add_row(feat, _fmt_pct(p1v))
+        feat_tbl.add_row(_esc(str(feat)), _fmt_pct(p1v))
     con.print("  [bold]By feature (P@1) — sorted worst-first[/bold]")
     con.print(feat_tbl)
 
@@ -180,7 +201,9 @@ def display(snapshot: dict[str, Any], console: Console | None = None) -> None:
 
         t1 = "[green]✓[/green]" if q.get("top1_match") else "[red]✕[/red]"
         tk = "[green]✓[/green]" if q.get("topk_match") else "[red]✕[/red]"
-        q_tbl.add_row(str(i), cell, q.get("feature") or "", f"[{dc}]{diff}[/{dc}]", t1, tk)
+        q_tbl.add_row(
+            str(i), cell, _esc(str(q.get("feature") or "")), f"[{dc}]{_esc(diff)}[/{dc}]", t1, tk
+        )
 
     con.print(q_tbl)
 
@@ -188,17 +211,19 @@ def display(snapshot: dict[str, Any], console: Console | None = None) -> None:
     con.print(Rule("CORPUS FRESHNESS", style="dim"))
     con.print()
     con.print(
-        f"  [bold]{pkg.upper() or 'CORPUS'} {ver}[/bold]"
+        f"  [bold]{_esc(pkg.upper() or 'CORPUS')} {_esc(str(ver))}[/bold]"
         f"   [dim]{summ} path-keyed summaries[/dim]"
     )
     con.print()
 
     if kt:
-        kind_tbl = Table(box=box.SIMPLE_HEAVY, show_header=True, header_style="bold dim", padding=(0, 1))
+        kind_tbl = Table(
+            box=box.SIMPLE_HEAVY, show_header=True, header_style="bold dim", padding=(0, 1)
+        )
         kind_tbl.add_column("Kind")
         kind_tbl.add_column("Count", justify="right")
         for kind in sorted(kt, key=lambda kk: -kt[kk]):
-            kind_tbl.add_row(kind, str(kt[kind]))
+            kind_tbl.add_row(_esc(str(kind)), str(kt[kind]))
         con.print("  [bold]Total templates by kind[/bold]")
         con.print(kind_tbl)
 
@@ -207,14 +232,17 @@ def display(snapshot: dict[str, Any], console: Console | None = None) -> None:
         kinds_all = f.get("kinds") or []
         # Only include kinds that appear in at least one feature
         active_kinds = [
-            kk for kk in kinds_all
+            kk
+            for kk in kinds_all
             if any((pf.get(feat, {}).get("by_kind") or {}).get(kk, 0) > 0 for feat in pf)
         ]
-        cov_tbl = Table(box=box.SIMPLE_HEAVY, show_header=True, header_style="bold dim", padding=(0, 1))
+        cov_tbl = Table(
+            box=box.SIMPLE_HEAVY, show_header=True, header_style="bold dim", padding=(0, 1)
+        )
         cov_tbl.add_column("Feature")
         cov_tbl.add_column("Total", justify="right")
         for kk in active_kinds:
-            cov_tbl.add_column(kk[:4], justify="right")  # abbreviated header
+            cov_tbl.add_column(_esc(str(kk)[:4]), justify="right")  # abbreviated header
         for feat in sorted(pf, key=lambda fn: -(pf[fn].get("total", 0))):
             info = pf[feat]
             by_kind = info.get("by_kind") or {}
@@ -224,7 +252,10 @@ def display(snapshot: dict[str, Any], console: Console | None = None) -> None:
                 Text(feat),
                 Text(str(total), style=total_style),
             ] + [
-                Text(str(by_kind.get(kk, 0)) if by_kind.get(kk, 0) else "·", style="dim" if not by_kind.get(kk, 0) else "")
+                Text(
+                    str(by_kind.get(kk, 0)) if by_kind.get(kk, 0) else "·",
+                    style="dim" if not by_kind.get(kk, 0) else "",
+                )
                 for kk in active_kinds
             ]
             cov_tbl.add_row(*cells)

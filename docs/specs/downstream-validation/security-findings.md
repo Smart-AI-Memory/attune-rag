@@ -107,13 +107,27 @@ trio remain unaudited until the MCP can stream full output.
 | W09.A.002 | high → fixed | `src/attune_rag/dashboard/render.py` + `dashboard/templates/dashboard.html:6` (title) | `title` parameter was interpolated raw into `<title>…</title>`. A title like `</title><script>alert(1)</script>` would break out of the title element and execute. | fix-now: title now passes through `html.escape(title, quote=True)`. Tests `test_title_html_escaped`, `test_title_ampersand_escaped`. |
 | W09.A.003 | high → fixed | `src/attune_rag/dashboard/templates/dashboard.html:7` (Chart.js CDN tag) | External script loaded from `cdn.jsdelivr.net` without Subresource Integrity. A CDN compromise would execute attacker JS in the dashboard origin. | fix-now: added `integrity="sha384-NrKB+u6Ts6AtkIhwPixiKTzgSKNblyhlk0Sohlgar9UHUBzai/sgnNNWWd291xqt"` + `crossorigin="anonymous"` + `referrerpolicy="no-referrer"`. SRI computed via `openssl dgst -sha384` against the locked `chart.js@4.4.4` URL. Test `test_dashboard_template_has_sri_on_cdn_script` enforces SRI on any future external `<script>`. |
 | W09.A.004 | high (as flagged) → non-issue | `src/attune_rag/cli.py` → `dashboard/refresh.py:23` | `importlib.import_module(corpus_package)` where `corpus_package` comes from `--corpus-package` CLI arg. Flagged as arbitrary-import surface. | non-issue: developer-run library CLI; the operator already has shell + Python execution rights on the host, so importing an installed module is not a privilege escalation. Documenting the threat-model boundary here; if a server-side caller materializes later, re-evaluate. |
+| W09.A.005 | low → fixed | `src/attune_rag/dashboard/show.py` (multiple sites) | Rich-markup injection: snapshot fields (error message, retriever / corpus name, feature labels, kind names) were interpolated raw into Rich markup strings. A corpus value containing `[blink]X[/blink]` would alter terminal styling. | fix-now: every untrusted field now flows through `rich.markup.escape`. Tests `test_error_field_rich_markup_escaped`, `test_per_feature_rich_markup_escaped`, `test_per_query_feature_rich_markup_escaped`, `test_freshness_kind_rich_markup_escaped`, `test_no_markup_consumed_when_input_has_it`. |
+| W09.A.006 | low → fixed | `src/attune_rag/cli.py:170` | `print(f"error: {exc}", file=sys.stderr)` echoes a `ValueError` whose message interpolates the user-supplied `--out` path. A path with raw ANSI bytes would repaint the terminal. | fix-now: new `_safe_stderr(msg)` helper strips C0/C1 control characters (preserves tab/newline/CR) before printing. Tests `test_safe_stderr_strips_ansi_control_chars`, `test_safe_stderr_strips_bel_and_backspace`, `test_safe_stderr_preserves_tab_newline_cr`, `test_dashboard_render_error_stderr_is_sanitized`. |
+| W09.A.007 | low → fixed | `src/attune_rag/reranker.py:139`, `src/attune_rag/expander.py:90` | `logger.debug(..., exc_info=True)` on Anthropic-SDK exceptions. Traceback frames may capture SDK locals that could carry secret-adjacent material under future SDK changes. Debug-level only, but defense-in-depth. | fix-now: now logs `type(exc).__name__` + message instead of full traceback. Tests `test_reranker_failure_does_not_log_with_exc_info`, `test_expander_failure_does_not_log_with_exc_info`. |
+| W09.A.008 | low → fixed | `src/attune_rag/dashboard/render.py` (`_SYSTEM_DIRS`) | Same class as W09.S.011 but in the dashboard write path. `Path("/etc/foo").resolve()` returns `/private/etc/foo` on macOS — the resolved form bypassed the `/etc` denylist entry. Discovered during W09.A.006 test scaffolding. | fix-now: added `/private/etc`, `/private/sys`, `/private/dev` mirrors. Tests `test_rejects_macos_private_etc_path`, `test_rejects_macos_private_sys_path`. |
 
-**MEDIUM / LOW findings.** The MCP summary mentions 4 MEDIUM + 3 LOW
-across "localized duplication, mixed logging backends, and a few
-API-lie parameters" (quality) and unspecified security mediums. Defer
-to a follow-up sweep that captures the full output (tracked as a
-Phase 5 ticket once the `security_audit` MCP `AttributeError` is
-fixed upstream).
+**MEDIUM / LOW capture status.** The MCP summary counted 4 MEDIUM +
+3 LOW security findings but didn't surface detail. A read-only
+security-review subagent was dispatched on 2026-05-20 against
+commit `4681ac6` with explicit category hints (TLS verification
+disable, secret-logging, ANSI injection, ReDoS, timing channels)
+and produced: **0 MEDIUM, 3 LOW** (W09.A.005..007 above). All
+deep_review's MEDIUM-counted categories — TLS verification,
+secret-logging, timing-channel `==`, ReDoS — were searched and
+cleared with explicit negative findings. The 4 MEDIUM count from
+the summary appears to have been heuristic over-counting; the real
+residual surface is the 3 LOW items, all addressed in this PR. A
+fresh capture against the original `security_audit` MCP remains a
+Phase 5 ticket pending the `AttributeError` fix, but is no longer
+blocking W0 close. Bonus finding W09.A.008 (macOS denylist bypass
+in `dashboard/render.py`) surfaced from W09.A.006 test scaffolding
+and was closed in the same PR.
 
 ## Disposition codes
 
@@ -127,7 +141,7 @@ fixed upstream).
 | Source | Triaged on | fix-now | non-issue | Phase-5-ticket |
 |---|---|---:|---:|---:|
 | 1 (stdlib) | 2026-05-19 + 2026-05-20 (W09.S.011 re-opened, fix landed) | 1 (closed in #60) | 10 | 0 |
-| 2 (attune-ai deep sweep, partial) | 2026-05-19 | 3 (all closed in this PR) | 1 | 1 (deferred full-report capture) |
+| 2 (attune-ai deep sweep) | 2026-05-19 + 2026-05-20 (LOW capture via read-only agent) | 7 (3 HIGH in #62 + 4 LOW in follow-up PR) | 1 | 0 |
 
 Source 1 triage is complete; W09.S.011 surfaced a real macOS direct-path
 bypass and was closed via the `_SYSTEM_DIRS` extension in PR #60. Source 2

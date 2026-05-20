@@ -399,3 +399,55 @@ class TestPipelineWithReranker:
             assert api_thread["tid"] != main_tid
 
         asyncio.run(runner())
+
+
+# ── logging hygiene: no traceback frames from LLM-call exceptions ──
+
+
+def test_reranker_failure_does_not_log_with_exc_info(caplog: pytest.LogCaptureFixture) -> None:
+    """A failing LLM call should log type+message only — never the full
+    traceback. ``exc_info=True`` captures local-variable frames which
+    might include SDK internals carrying secret-adjacent material under
+    future SDK changes.
+    """
+    import logging
+
+    hits = [_make_hit("a.md"), _make_hit("b.md")]
+    reranker = LLMReranker()
+    bad_client = MagicMock()
+    bad_client.messages.create.side_effect = RuntimeError("boom-token-leak-canary")
+    reranker._client = bad_client
+
+    with caplog.at_level(logging.DEBUG, logger="attune_rag.reranker"):
+        result = reranker.rerank("q", hits)
+
+    # Function still returns the original hits on failure.
+    assert result == hits
+    # The single debug record must NOT carry exc_info (i.e. no traceback).
+    failure_records = [r for r in caplog.records if "rerank failed" in r.message]
+    assert len(failure_records) == 1
+    rec = failure_records[0]
+    assert rec.exc_info is None
+    assert "RuntimeError" in rec.message  # exception TYPE is recorded
+    assert "boom-token-leak-canary" in rec.message  # message is recorded
+
+
+def test_expander_failure_does_not_log_with_exc_info(caplog: pytest.LogCaptureFixture) -> None:
+    """Same guarantee as the reranker, for QueryExpander.expand."""
+    import logging
+
+    expander = QueryExpander(cache=False)
+    bad_client = MagicMock()
+    bad_client.messages.create.side_effect = RuntimeError("boom-token-leak-canary")
+    expander._client = bad_client
+
+    with caplog.at_level(logging.DEBUG, logger="attune_rag.expander"):
+        result = expander.expand("q")
+
+    assert result == []
+    failure_records = [r for r in caplog.records if "expand failed" in r.message]
+    assert len(failure_records) == 1
+    rec = failure_records[0]
+    assert rec.exc_info is None
+    assert "RuntimeError" in rec.message
+    assert "boom-token-leak-canary" in rec.message
