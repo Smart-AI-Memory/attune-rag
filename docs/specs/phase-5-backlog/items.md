@@ -3,7 +3,7 @@
 Eleven items deferred during the Phase 4 freeze. Provenance:
 
 - **W2.1 deep-review** ([docs/specs/downstream-validation/w2-deep-review.md](../downstream-validation/w2-deep-review.md)) — Disposition table "Phase-5 ticket" + "W3.3 `/test-audit` follow-up" rows.
-- **W2.2 perf audit** — items surfaced during the audit but not captured in a committed doc; sourced from the Phase-5 capture prompt (2026-05-20).
+- **W2.2 perf audit** ([docs/specs/downstream-validation/w2-perf-audit.md](../downstream-validation/w2-perf-audit.md)) — Disposition table "Phase-5 ticket" row.
 - **Methodology gap** — inter-run noise observation from PRs [#72](https://github.com/Smart-AI-Memory/attune-rag/pull/72) vs [#74](https://github.com/Smart-AI-Memory/attune-rag/pull/74), only partially addressed by [#75](https://github.com/Smart-AI-Memory/attune-rag/pull/75) + [#77](https://github.com/Smart-AI-Memory/attune-rag/pull/77).
 
 Effort: **S** ≤ 1 hr, **M** ≤ 4 hr, **L** > 4 hr.
