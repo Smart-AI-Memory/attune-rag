@@ -402,14 +402,19 @@ def scan_file(path: Path, *, repo_root: Path | None = None) -> list[Finding]:
     except (OSError, UnicodeDecodeError):
         return []
 
+    # Always emit POSIX-style file labels. Findings end up in PR
+    # markdown comments and JSON sidecar files — both contexts
+    # expect forward slashes regardless of which OS produced them.
+    # ``str(PathWindows(...))`` would otherwise leak backslashes
+    # into output that downstream tooling can't grep cleanly.
     if repo_root is not None:
         try:
             rel = path.resolve().relative_to(repo_root.resolve())
-            file_label = str(rel)
+            file_label = rel.as_posix()
         except ValueError:
-            file_label = str(path)
+            file_label = path.as_posix()
     else:
-        file_label = str(path)
+        file_label = path.as_posix()
 
     findings: list[Finding] = []
     # Secret scanning runs on the raw source — no AST parse needed
