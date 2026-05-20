@@ -1,0 +1,188 @@
+name: Security scan
+
+# Phase 4 deliverable W0.10. Runs `scripts/security_scan.py` on
+# PRs that touch sensitive subtrees:
+#
+# - src/attune_rag/editor/   (rename + lint walk user paths)
+# - src/attune_rag/providers/ (handles API tokens; may log requests)
+# - src/attune_rag/dashboard/ (emits snapshots; secret-leakage surface)
+# - src/attune_rag/cli.py    (user-facing argv parsing)
+# - scripts/security_scan.py (also re-scan when the scanner changes)
+#
+# Conservative: false positives are OK, false negatives are not.
+# attune-ai's deeper `/security-audit` pass (W0.9) is the secondary
+# sweep on real signals.
+#
+# Severity semantics:
+# - `high` findings (dynamic code, hardcoded secrets, unsafe
+#   deserialization) FAIL the gate from day one — security is too
+#   important to ramp.
+# - `medium` findings (path-traversal heuristic) are reported but
+#   non-blocking; W0.11 triages them.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/attune_rag/editor/**'
+      - 'src/attune_rag/providers/**'
+      - 'src/attune_rag/dashboard/**'
+      - 'src/attune_rag/cli.py'
+      - 'scripts/security_scan.py'
+
+# Default: read-only. Job widens just enough to post the gate comment.
+permissions:
+  contents: read
+
+concurrency:
+  group: security-scan-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Security scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      # Workspace-relative so hashFiles() in the post-step guard works.
+      COMMENT_PATH: security-comment.md
+      FINDINGS_JSON: security-findings.json
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0  # full history so we can diff against base
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.11"
+
+      # ── Identify changed files in sensitive subtrees ─────────────
+      - name: List changed sensitive files
+        id: changed
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          # --diff-filter=AMR catches added, modified, renamed files;
+          # deletions can't have new findings.
+          CHANGED=$(git diff --name-only --diff-filter=AMR \
+            "origin/${BASE_REF}...HEAD" -- \
+            'src/attune_rag/editor/' \
+            'src/attune_rag/providers/' \
+            'src/attune_rag/dashboard/' \
+            'src/attune_rag/cli.py' \
+            'scripts/security_scan.py' \
+            | grep -E '\.py$' || true)
+          if [ -z "$CHANGED" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::No Python files in sensitive subtrees changed; skipping scan."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            # Multi-line via heredoc per GH Actions output convention
+            {
+              echo "files<<__EOF__"
+              printf '%s\n' "$CHANGED"
+              echo "__EOF__"
+            } >> "$GITHUB_OUTPUT"
+          fi
+        shell: bash
+
+      # ── Run the scanner ──────────────────────────────────────────
+      - name: Run security scanner
+        if: steps.changed.outputs.skip != 'true'
+        id: scan
+        continue-on-error: true
+        run: |
+          set +e
+          # Read the multi-line `files` output into a bash array.
+          mapfile -t FILES <<< "${{ steps.changed.outputs.files }}"
+          # Filter out any empty entries (mapfile preserves them on
+          # trailing newlines).
+          ARGS=()
+          for f in "${FILES[@]}"; do
+            if [ -n "$f" ]; then
+              ARGS+=("$f")
+            fi
+          done
+          echo "Scanning ${#ARGS[@]} file(s):"
+          printf '  %s\n' "${ARGS[@]}"
+          python3 scripts/security_scan.py \
+            --paths "${ARGS[@]}" \
+            --repo-root . \
+            --comment-out "$COMMENT_PATH" \
+            --json-out "$FINDINGS_JSON"
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      # ── Post or update the PR comment ────────────────────────────
+      - name: Post or update PR comment
+        if: |
+          always()
+          && github.event_name == 'pull_request'
+          && hashFiles(env.COMMENT_PATH) != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          EXISTING=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --paginate \
+            --jq '.[] | select(.body | contains("<!-- attune-rag-security-scan -->")) | .id' \
+            | head -1 || true)
+          if [ -n "$EXISTING" ]; then
+            echo "Updating existing comment id=$EXISTING"
+            gh api -X PATCH "repos/${REPO}/issues/comments/${EXISTING}" \
+              -F body=@"$COMMENT_PATH"
+          else
+            echo "Posting new comment on PR #$PR_NUMBER"
+            gh api -X POST "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+              -F body=@"$COMMENT_PATH"
+          fi
+        shell: bash
+
+      - name: Summary
+        if: always()
+        env:
+          SKIP: ${{ steps.changed.outputs.skip }}
+          SCAN_RC: ${{ steps.scan.outputs.rc }}
+        run: |
+          {
+            echo "### attune-rag security scan"
+            echo ""
+            if [ "$SKIP" = "true" ]; then
+              echo "- Skipped: no Python files in sensitive subtrees changed."
+            else
+              echo "- security_scan.py exit: ${SCAN_RC:-(did not run)}"
+              if [ "${SCAN_RC:-}" = "0" ]; then
+                echo "- Verdict: ✅ no high-severity findings"
+              elif [ "${SCAN_RC:-}" = "1" ]; then
+                echo "- Verdict: ⚠️ high-severity findings present — see PR comment"
+              else
+                echo "- Verdict: ❓ scanner errored — see logs"
+              fi
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+        shell: bash
+
+      # ── Fail the job iff scanner reported high-severity findings ─
+      # Security is too important to ramp — high-severity findings
+      # block from day one, unlike perf/downstream which advise W1-W2.
+      - name: Fail on high-severity findings
+        if: steps.scan.outputs.rc == '1'
+        run: |
+          echo "::error::Security scan found high-severity issues. See the PR comment + the FAIL lines above. If a finding is a false positive, document why in the PR description; the scanner is intentionally conservative."
+          exit 1
+        shell: bash
+
+      - name: Fail on scanner validation error
+        if: steps.scan.outputs.rc == '2'
+        run: |
+          echo "::error::Security scanner hit a validation error — likely a missing path. Re-run the workflow."
+          exit 1
+        shell: bash
