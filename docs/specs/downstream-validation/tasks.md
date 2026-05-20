@@ -2,7 +2,7 @@
 
 ## Phase 3: Tasks
 
-**Status**: approved 2026-05-19, not started (W0 scheduled to begin 2026-05-23)
+**Status**: W0 complete 2026-05-20 (4 days ahead of the 2026-05-23 calendar end-date); W1 freeze clock starts 2026-05-20 against `attune-rag==0.1.21`.
 
 ### Freeze semantics — what counts as "Added"
 
@@ -42,7 +42,7 @@ enforcer + downstream gates are both live + green on main.
 | W0.10 | Write `.github/workflows/security-scan.yml` — stdlib eval/exec/path-traversal/secrets/deserialization checks on PRs touching `editor/`, `providers/`, `dashboard/`, `cli.py`. | attune-rag | Per-PR; lighter than the full audit. |
 | W0.11 | Triage W0.9 findings: fix-now / non-issue-with-rationale / Phase-5-ticket. | attune-rag | Gate: zero `severity: high` open at end of W0. |
 | **W1–W4 — Burn-in** | | | |
-| W1.1 | Tag start of freeze in CHANGELOG (e.g. `> Feature freeze begins YYYY-MM-DD.`). First weekly cadence report runs Monday W1. | attune-rag | Reset clock if any `Added` slips in. |
+| W1.1 | ✅ done 2026-05-20 — freeze marker added to `[Unreleased]` in CHANGELOG against `attune-rag==0.1.21`. First weekly cadence report fires Monday 2026-05-25 (next `cadence-report.yml` cron). | attune-rag | Reset clock if any `Added` slips in. |
 | W1.2 | Attune-gui M5.3 follow-up: run the editor + rag contract tests against installed 0.1.19 weekly. Track in cadence reports. | attune-gui | Surfaces regressions during the freeze. |
 | W2.1 | Mid-phase `/deep-review` pass on `editor/`, `providers/`, `pipeline.py`, `retrieval.py`. | attune-rag | Findings either fixed or downgraded. |
 | W2.2 | Run `attune-ai:performance_audit` on retrieval + reranker hot paths. Cross-check vs `perf-baseline.json`. | attune-rag | If audit finds optimizations, file as Phase 5 work; no Adding during freeze. |
