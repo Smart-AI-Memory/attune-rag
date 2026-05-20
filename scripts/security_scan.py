@@ -122,11 +122,21 @@ _PATH_CTOR_NAMES = frozenset({"Path"})
 
 
 def check_path_traversal(tree: ast.AST, file: str) -> list[Finding]:
+    """Flag bare ``open()`` / ``Path()`` calls with non-literal path arg.
+
+    Only bare ``Name``-form calls are flagged. Attribute-form like
+    ``webbrowser.open(url)``, ``ssl.Path``, ``obj.open(mode)``, etc.
+    are different functions that share a name with the builtins —
+    flagging them produces noisy false positives (same class of bug
+    as the dynamic-code check; same fix).
+    """
     findings: list[Finding] = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
-        name = _call_name(node.func)
+        if not isinstance(node.func, ast.Name):
+            continue
+        name = node.func.id
         if name in _FILE_OPEN_NAMES or name in _PATH_CTOR_NAMES:
             if not node.args:
                 continue

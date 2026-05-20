@@ -108,6 +108,24 @@ def test_path_constructor_with_var_flagged() -> None:
     assert findings
 
 
+@pytest.mark.parametrize(
+    "snippet",
+    [
+        "import webbrowser\nwebbrowser.open(url)",
+        "obj.open('r')",
+        "tarfile.open(filename)",
+    ],
+)
+def test_path_traversal_attribute_form_not_flagged(snippet: str) -> None:
+    """``webbrowser.open()`` and friends share a NAME with the
+    pathlib/builtin functions but are different functions. Flagging
+    them produces false positives that train reviewers to ignore the
+    gate (same class of bug as the re.compile() exclusion in
+    check_dynamic_code)."""
+    tree = ast.parse(snippet)
+    assert ss.check_path_traversal(tree, "fake.py") == []
+
+
 def test_path_open_no_args_ignored() -> None:
     """Pathological case: open() with no positional args — don't crash."""
     tree = ast.parse("open()")  # would error at runtime, but we shouldn't crash
