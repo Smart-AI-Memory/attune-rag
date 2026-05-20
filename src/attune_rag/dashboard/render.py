@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html as _html
 import importlib.resources as _ilr
 import json
 from pathlib import Path
@@ -11,6 +12,14 @@ _SENTINEL_SNAPSHOT = "__ATTUNE_SNAPSHOT__"
 _SENTINEL_TITLE = "__ATTUNE_TITLE__"
 
 _SYSTEM_DIRS = frozenset({"/etc", "/sys", "/proc", "/dev", "/boot", "/sbin", "/bin", "/usr/bin"})
+
+
+def _json_for_script_block(obj: Any) -> str:
+    # A literal ``</script>`` inside a JSON string value would terminate
+    # the surrounding ``<script>`` block in the browser. Escape ``<`` (and
+    # the U+2028 / U+2029 line separators that some older JS parsers
+    # stumble on) using ``\u`` escapes, which remain valid JSON.
+    return json.dumps(obj).replace("<", "\\u003c").replace(" ", "\\u2028").replace(" ", "\\u2029")
 
 
 def _validate_output_path(out: Path) -> None:
@@ -43,6 +52,12 @@ def render(
         .joinpath("templates/dashboard.html")
         .read_text(encoding="utf-8")
     )
-    html = tmpl.replace(_SENTINEL_SNAPSHOT, json.dumps(snapshot)).replace(_SENTINEL_TITLE, title)
-    out.write_text(html, encoding="utf-8")
+    # ``title`` lands inside ``<title>…</title>``; HTML-escape so a value
+    # like ``</title><script>…`` can't break out. ``snapshot`` lands inside
+    # ``<script>window.__SNAPSHOT__ = …;</script>``; JSON-encode and then
+    # neutralize the script-terminator vector via ``_json_for_script_block``.
+    rendered = tmpl.replace(_SENTINEL_SNAPSHOT, _json_for_script_block(snapshot)).replace(
+        _SENTINEL_TITLE, _html.escape(title, quote=True)
+    )
+    out.write_text(rendered, encoding="utf-8")
     return out

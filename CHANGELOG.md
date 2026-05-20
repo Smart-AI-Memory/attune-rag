@@ -23,6 +23,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `tests/unit/test_eval_bench_prompts.py`. Threat model is
   developer-typo, not a hardened jail.
 
+### Fixed
+
+- **Dashboard XSS hardening** (Phase 4 W0.9 / W0.11). Three HIGH-severity
+  findings closed against `dashboard/render.py` and
+  `dashboard/templates/dashboard.html`:
+  - The embedded `snapshot` JSON now goes through `_json_for_script_block()`,
+    which `\u`-escapes the less-than byte and the U+2028 / U+2029 line
+    separators so a corpus value containing a literal `</script>` cannot
+    terminate the inline `<script>` block.
+  - The `title` argument is HTML-escaped via `html.escape(…, quote=True)`
+    before substitution into `<title>…</title>`, so values containing
+    `</title><script>…` cannot break out of the title element.
+  - The Chart.js CDN `<script>` tag now carries
+    `integrity="sha384-…"` (Subresource Integrity) plus
+    `crossorigin="anonymous"` and `referrerpolicy="no-referrer"`,
+    closing the CDN-compromise vector.
+  Tests under `tests/unit/test_dashboard_render.py` cover all three.
+  No public API change; freeze-compatible.
+
 ### Changed
 
 - **`.help/` corpus repolished for release readiness.** Cache cleared,
