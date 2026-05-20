@@ -283,3 +283,23 @@ def test_run_and_generate_with_provider_name(corpus: FakeCorpus) -> None:
         )
     assert response == "ok"
     assert result is not None
+
+
+def test_run_propagates_retriever_exception(corpus: FakeCorpus) -> None:
+    """Retriever exceptions propagate through `RagPipeline.run`.
+
+    Contract: a retriever raising during `retrieve()` is *not* swallowed.
+    The pipeline lets the exception bubble so callers can distinguish
+    a transient retriever fault from "no matches" (which surfaces as
+    `fallback_used=True`, a different observable state).
+    """
+
+    class RaisingRetriever:
+        MIN_SCORE = 1.0
+
+        def retrieve(self, query, corpus, k=3):  # noqa: ARG002 — protocol parity
+            raise RuntimeError("retriever fault")
+
+    pipeline = RagPipeline(corpus=corpus, retriever=RaisingRetriever())
+    with pytest.raises(RuntimeError, match="retriever fault"):
+        pipeline.run("security audit")
