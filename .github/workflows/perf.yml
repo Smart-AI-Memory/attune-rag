@@ -36,9 +36,12 @@ on:
         type: choice
         options: ["false", "true"]
 
+# Default: read-only. Each job widens only what it needs.
+# This narrows the blast radius of the delta-check job, which
+# executes PR-author-modified scripts on every PR — it must not
+# inherit contents:write from the workflow-level scope.
 permissions:
-  contents: write  # lock-baseline job commits the locked files
-  pull-requests: write  # delta-check posts a comment
+  contents: read
 
 concurrency:
   group: perf-${{ github.event.pull_request.number || github.ref }}
@@ -51,6 +54,8 @@ jobs:
     name: Lock baseline
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: write  # commits the locked files back to main
     env:
       BASELINE_MD: docs/specs/downstream-validation/perf-baseline.md
       THRESHOLDS_JSON: docs/specs/downstream-validation/perf-thresholds.json
@@ -132,6 +137,11 @@ jobs:
     name: Perf delta (advisory)
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      # Runs PR-author code. Read-only on contents; only the bot
+      # comment needs write.
+      contents: read
+      pull-requests: write
     env:
       BASELINE_JSON: docs/specs/downstream-validation/perf-thresholds.json
       CURRENT_JSON: /tmp/perf-current.json
@@ -156,7 +166,12 @@ jobs:
         shell: bash
 
       # ── Measure current HEAD on this runner (no LLM, N=10) ────
+      # continue-on-error so a script crash doesn't kill the
+      # whole job silently — the next step branches on outcome
+      # and emits a "measurement failed" comment instead.
       - name: Measure current
+        id: measure
+        continue-on-error: true
         run: |
           set -euo pipefail
           python scripts/measure_perf_baseline.py \
@@ -166,16 +181,39 @@ jobs:
         shell: bash
 
       # ── Format the delta comment ─────────────────────────────
+      # Branches on the measure step's outcome:
+      # - success → run format_perf_delta.py as usual.
+      # - failure → emit a static "measurement failed" comment
+      #   directly so the PR still gets a visible signal that
+      #   the gate plumbing is broken (rather than silent CI red).
       - name: Format delta
         id: delta
         run: |
           set +e
-          python scripts/format_perf_delta.py \
-            --baseline "$BASELINE_JSON" \
-            --current "$CURRENT_JSON" \
-            --comment-out "$COMMENT_PATH" \
-            --advisory
-          RC=$?
+          if [ "${{ steps.measure.outcome }}" = "failure" ]; then
+            cat > "$COMMENT_PATH" <<'EOF'
+          <!-- attune-rag-perf-gate -->
+          ## Perf delta — measurement failed
+
+          The per-PR perf measurement step crashed before producing
+          data. See the workflow run log for details (top-level CI
+          summary links the failing step).
+
+          Advisory check is non-blocking; merging is not affected,
+          but a real perf regression would be invisible until the
+          measurement step is fixed.
+
+          <!-- attune-rag-perf-gate -->
+          EOF
+            RC=0
+          else
+            python scripts/format_perf_delta.py \
+              --baseline "$BASELINE_JSON" \
+              --current "$CURRENT_JSON" \
+              --comment-out "$COMMENT_PATH" \
+              --advisory
+            RC=$?
+          fi
           echo "rc=$RC" >> "$GITHUB_OUTPUT"
           # Advisory mode: even on regression (exit 1), the job
           # stays green. Promotes to blocking in W3.1.
