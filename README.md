@@ -4,16 +4,66 @@ Lightweight, LLM-agnostic RAG pipeline with pluggable
 corpora. Works with Claude, Gemini, or any LLM.
 
 - **No LLM SDK at install time.** All provider deps are
-  optional extras.
+  optional extras. Two required runtime deps: `structlog`,
+  `jinja2`.
 - **Pluggable corpus.** Use attune-help (the default), any
   markdown directory, or your own `CorpusProtocol`.
-- **Returns a prompt string** by default — send it to
-  whatever LLM you like. Optional provider adapters ship
-  convenience wrappers.
+- **Returns a prompt string + citation records** by default
+  — `pipeline.run()` never opens a network connection. You
+  call your own LLM however you like. Optional provider
+  adapters ship convenience wrappers.
 - **Optional hybrid retrieval.** `QueryExpander` and
   `LLMReranker` layer Claude Haiku on top of keyword
   retrieval to improve recall and precision — both opt-in,
   both fail-safe.
+
+## Why attune-rag
+
+Most RAG libraries ship features. attune-rag ships **measured
+quality numbers** and gates merges against them. The CI badge
+isn't "tests pass" — it's `P@1 ≥ 0.95, R@3 = 1.00, mean
+faithfulness ≥ 0.9686` (locked at
+[`docs/specs/release-quality-baseline/baseline-1.md`](docs/specs/release-quality-baseline/baseline-1.md))
+plus per-axis CPU + wall-clock perf thresholds (locked at
+[`docs/specs/downstream-validation/perf-baseline.md`](docs/specs/downstream-validation/perf-baseline.md)).
+
+A PR that drops `mean_faithfulness` below `0.9686` fails CI
+automatically. Same for any latency hot-path regressing past
+`mean + 2σ`. That's the differentiator.
+
+### vs LangChain / LlamaIndex
+
+| | attune-rag | LangChain | LlamaIndex |
+|---|---|---|---|
+| Required runtime deps | 2 | many (transitively, ~30+) | many (~25+) |
+| LLM SDK at install | none | bundled | bundled |
+| Published quality regression thresholds | yes (P@1, R@3, faithfulness) | no | no |
+| Published perf thresholds (wall + CPU) | yes | no | no |
+| Citation primitives built-in | yes | add-on | add-on |
+| "Get a string back, call your own LLM" | default | possible w/ effort | possible w/ effort |
+
+LangChain and LlamaIndex are fantastic frameworks if you want
+batteries-included orchestration. attune-rag is the alternative
+when you want a RAG component you can drop into an existing app
+without buying into a framework — and want the quality bar
+quantified, not implied.
+
+### What attune-rag is **not**
+
+Honest exclusions, so you can self-disqualify if you need any
+of these:
+
+- **Not an agent framework.** No multi-step chains, no tool-use
+  orchestration, no agent loops.
+- **Not a document-parsing toolkit.** Bring your markdown
+  already-parsed; use `unstructured.io` or similar upstream.
+- **Not a vector DB integration.** Keyword retrieval is the
+  default; you wire your own vector store if you need one (an
+  `EmbeddingRetriever` is on the post-freeze roadmap — see
+  below).
+- **Not a one-line-install batteries-included framework.** That's
+  LangChain / LlamaIndex. attune-rag is for the case where that's
+  too much.
 
 ## Install
 
@@ -141,27 +191,51 @@ attune-rag dashboard show    # live terminal dashboard
 attune-rag dashboard render --out report.html  # HTML snapshot
 ```
 
-## Quality baseline
+## Quality baselines
 
-Every PR is gated against a locked retrieval + faithfulness
-baseline. Thresholds are set at `mean − 2σ` per metric,
-measured from 20 back-to-back benchmark runs on an unchanged
-HEAD — empirically grounded rather than guessed.
+attune-rag locks two baselines, both gated by CI. Thresholds
+are empirically derived (`mean ± 2σ`) from back-to-back
+benchmark runs on an unchanged HEAD — grounded, not guessed.
+
+### Retrieval + faithfulness
 
 | Metric | Threshold (current) | Source |
 |---|---:|---|
-| `precision_at_1` | **0.95** | retrieval, deterministic |
-| `recall_at_3` | **1.00** | retrieval, deterministic |
-| `mean_faithfulness` | **0.9686** | Claude judge, σ ≈ 0.005 |
+| `precision_at_1` | **≥ 0.95** | retrieval, deterministic |
+| `recall_at_3` | **= 1.00** | retrieval, deterministic |
+| `mean_faithfulness` | **≥ 0.9686** | Claude judge, σ ≈ 0.005 |
 
-The CI workflow at
-[.github/workflows/benchmark.yml](https://github.com/Smart-AI-Memory/attune-rag/blob/main/.github/workflows/benchmark.yml)
-runs the benchmark on every PR. Faithfulness gating engages
-when the PR touches retrieval, reranker, expander, pipeline,
-prompts, or eval paths, or when the PR title contains
-`[full-bench]`. Methodology, raw numbers, and the
-re-measurement procedure live under
-[`docs/specs/release-quality-baseline/`](https://github.com/Smart-AI-Memory/attune-rag/blob/main/docs/specs/release-quality-baseline/baseline-1.md).
+Gated by [`.github/workflows/benchmark.yml`](.github/workflows/benchmark.yml).
+Faithfulness gating engages when the PR touches retrieval,
+reranker, expander, pipeline, prompts, or eval paths, or when
+the PR title contains `[full-bench]`. Methodology + raw numbers
+in [`docs/specs/release-quality-baseline/`](docs/specs/release-quality-baseline/baseline-1.md).
+
+### Per-hot-path latency
+
+Locked dual-axis (wall-clock + CPU-time) thresholds on the four
+benchmarks. CPU-time is the gating axis (deterministic);
+wall-clock is advisory through Phase 4 burn-in, then revisited.
+
+| Benchmark | Axis | Mean (µs) | Threshold (µs) |
+|---|---|---:|---:|
+| `keyword_retriever_retrieve` | cpu | see baseline | see baseline |
+| `directory_corpus_load` | cpu | ~47 | ~62 |
+| `rag_pipeline_run` (retrieval-only) | cpu | see baseline | see baseline |
+| `llm_reranker_rerank` | wall | re-lock pending | re-lock pending |
+
+Gated by [`.github/workflows/perf.yml`](.github/workflows/perf.yml)
+per-PR (advisory comment in Phase 4 W1–W2, blocking in W3.1).
+Reranker numbers ship once `ANTHROPIC_API_KEY` is configured
+and a full lock is run. Raw numbers + hardware fingerprint:
+[`docs/specs/downstream-validation/perf-baseline.md`](docs/specs/downstream-validation/perf-baseline.md).
+
+### Why this is the differentiator
+
+Most RAG libraries A/B-test internally and ship the result.
+attune-rag publishes the thresholds, gates merges against them,
+and re-measures whenever the corpus, judge prompt, or hardware
+changes. The receipts are checked in.
 
 ### What faithfulness measures
 
@@ -204,20 +278,25 @@ For the methodology behind the `0.9686` threshold, the v1/v2 ground-truth
 calibration runs, and the extended-thinking-vs-default decision record, see
 [`docs/rag/faithfulness-thinking-calibration.md`](https://github.com/Smart-AI-Memory/attune-rag/blob/main/docs/rag/faithfulness-thinking-calibration.md).
 
-## Roadmap — embeddings (next minor release)
+## Roadmap — embeddings (post-freeze 0.2.0+)
 
-Keyword retrieval + optional Claude reranker currently carry
-attune-rag past 87% P@1 on the attune-help golden set. The
-remaining misses are queries with zero token overlap against
-their target doc (e.g. "vulnerability scan" →
-`tool-security-audit.md`). Closing that gap needs vector search.
+Keyword retrieval + optional Claude reranker currently meet
+the locked `P@1 ≥ 0.95, R@3 = 1.00` thresholds against the
+attune-help golden set. The remaining hard queries
+(3 of 28, currently `xpass`-gated under `[no-embeddings]`)
+have zero token overlap against their target doc (e.g.
+"vulnerability scan" → `tool-security-audit.md`). Closing
+that gap needs vector search.
 
-Next minor release will ship `attune-rag[embeddings]` using
+The plan is to ship `attune-rag[embeddings]` using
 [`fastembed`](https://github.com/qdrant/fastembed) for local,
 CPU-only embeddings — no new network dependency, no API key
 required at retrieval time. Keyword retrieval stays the default;
 embeddings layer in opt-in, same shape as `QueryExpander` and
-`LLMReranker`.
+`LLMReranker`. Shipping is paced by the
+[Phase 4 feature-freeze](docs/specs/downstream-validation/)
+currently in progress — public surface additions wait for the
+0.2.0 cut.
 
 See
 [CHANGELOG.md](https://github.com/Smart-AI-Memory/attune-rag/blob/main/CHANGELOG.md)
@@ -276,10 +355,18 @@ They are removed in 0.3.0.
 
 ## Status
 
-v0.1.10. Part of the attune ecosystem
+v0.1.19 (alpha). In
+[Phase 4 of the v1.0 roadmap](docs/specs/ROADMAP-v1.md) — a
+four-week feature freeze + downstream validation soak; formal
+`0.2.0` SemVer cut follows. Until then the public surface is
+honor-system + lock-tested; deprecation policy at
+[`docs/POLICY.md`](docs/POLICY.md).
+
+Part of the attune ecosystem
 ([attune-ai](https://github.com/Smart-AI-Memory/attune-ai),
 [attune-help](https://github.com/Smart-AI-Memory/attune-help),
-[attune-author](https://github.com/Smart-AI-Memory/attune-author)).
+[attune-author](https://github.com/Smart-AI-Memory/attune-author),
+[attune-gui](https://github.com/Smart-AI-Memory/attune-gui)).
 
 ## License
 
