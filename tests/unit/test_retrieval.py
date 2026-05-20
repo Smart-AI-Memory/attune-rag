@@ -385,6 +385,51 @@ def test_min_alias_overlap_respects_multi_token_match() -> None:
     ), f"expected aliases:2 in match_reason, got {hits[0].match_reason!r}"
 
 
+def test_min_alias_overlap_boundary() -> None:
+    """Crosses the ``MIN_ALIAS_OVERLAP=2`` threshold below → at → above.
+
+    Locks in the 0.1.22 escape-hatch contract: ``aliases:N`` credits
+    iff query/alias-token overlap meets the configured threshold, and
+    the threshold is honored from a subclass override (the documented
+    knob, not a hard-coded constant). Three existing tests cover the
+    1-token and 2-token cases; this one pins all three points on the
+    same entry so a future refactor that changes the inequality
+    direction (e.g. ``>`` instead of ``>=``) is caught.
+    """
+    from attune_rag.retrieval import KeywordRetriever as KR
+    from attune_rag.retrieval import _tokenize
+
+    entry = _entry(
+        path="concepts/canon.md",
+        category="concepts",
+        aliases=("alpha bravo charlie",),
+    )
+    corpus = FakeCorpus([entry])
+    retriever = KR()
+    assert retriever.MIN_ALIAS_OVERLAP == 2
+
+    # Below threshold (overlap = 1): alias signal must NOT credit.
+    _, reason1 = retriever._score_entry(_tokenize("alpha"), entry, corpus)
+    assert "aliases" not in reason1, f"1-token overlap should not credit, got {reason1!r}"
+
+    # At threshold (overlap = 2): credit fires.
+    _, reason2 = retriever._score_entry(_tokenize("alpha bravo"), entry, corpus)
+    assert "aliases:2" in reason2, f"2-token overlap should credit, got {reason2!r}"
+
+    # Above threshold (overlap = 3): full overlap credits.
+    _, reason3 = retriever._score_entry(_tokenize("alpha bravo charlie"), entry, corpus)
+    assert "aliases:3" in reason3, f"3-token overlap should credit, got {reason3!r}"
+
+    # Subclass override restores pre-0.1.22 behavior (the documented escape hatch).
+    class Permissive(KR):
+        MIN_ALIAS_OVERLAP = 1
+
+    _, reason_perm = Permissive()._score_entry(_tokenize("alpha"), entry, corpus)
+    assert (
+        "aliases:1" in reason_perm
+    ), f"with MIN_ALIAS_OVERLAP=1, single-token overlap must credit, got {reason_perm!r}"
+
+
 def test_stemming_collapses_ity_and_ities() -> None:
     """``vulnerability`` (singular) and ``vulnerabilities`` (plural) must
     collapse to the same stem so a singular query overlaps a doc that

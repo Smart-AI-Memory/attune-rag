@@ -162,3 +162,44 @@ def test_to_dict_round_trip(corpus: DirectoryCorpus) -> None:
     refs = find_references(corpus, "api", kind="tag")
     dumped = [r.to_dict() for r in refs]
     assert all(set(d) == {"template_path", "line", "col", "context"} for d in dumped)
+
+
+# -- W3.3 coverage gap (from W2.1 deep-review) ----------------------
+
+
+def test_find_references_skips_aliases_inside_fenced_code_blocks(tmp_path: Path) -> None:
+    """``[[alias]]`` references that appear ONLY inside fenced code blocks
+    must not be reported as body refs.
+
+    Covers ``references.py:101-107`` — the ``in_fence`` toggle and the
+    ``if in_fence: continue`` skip in ``_alias_body_refs``. The
+    existing exclusion test interleaves fenced and prose refs in the
+    same fixture; this one isolates the fenced-only case so the
+    exclusion is the sole reason the count is zero, and exercises
+    both fence flavors (``\\`\\`\\``` and ``~~~``).
+    """
+    root = tmp_path / "docs"
+    root.mkdir(parents=True)
+    # Two fenced blocks, one backtick and one tilde, both containing
+    # the same alias reference. No prose references anywhere.
+    (root / "alpha.md").write_text(
+        "---\n"
+        "type: concept\n"
+        "name: Alpha\n"
+        "aliases: [a]\n"
+        "---\n\n"
+        "# Body\n\n"
+        "```\n"
+        "Backtick-fenced: [[beta-spec]] (must be skipped)\n"
+        "Still fenced:    [[beta-spec]] (must be skipped)\n"
+        "```\n\n"
+        "Plain prose with no refs at all.\n\n"
+        "~~~\n"
+        "Tilde-fenced: [[beta-spec]] (must be skipped)\n"
+        "~~~\n",
+        encoding="utf-8",
+    )
+    corpus = DirectoryCorpus(root)
+    refs = find_references(corpus, "beta-spec", kind="alias")
+    body_refs = [r for r in refs if r.context == "body"]
+    assert body_refs == [], f"expected zero body refs, got {body_refs!r}"
