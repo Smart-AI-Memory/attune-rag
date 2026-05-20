@@ -25,6 +25,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **W3.2: downstream-attune-gui gate promoted from advisory to blocking
+  (internal CI only — no public API impact).** Removed
+  `continue-on-error: true` from the test step in
+  `.github/workflows/downstream-attune-gui.yml` so an attune-gui
+  editor + RAG test failure now fails the workflow and blocks merge.
+  The PR-comment step still runs under `if: always()` so reviewers
+  see the verdict regardless. Per [`docs/specs/downstream-validation/design.md`](docs/specs/downstream-validation/design.md)
+  §4's promotion ramp + Decision 2 of the v1.0 roadmap (attune-gui is
+  the gating downstream for Phase 4). Rollback: re-add
+  `continue-on-error: true` to the test step.
 - **Perf-gate noise tolerance widened pre-W3.1 (internal tooling
   only — no public API impact).** Three coordinated changes to
   `scripts/measure_perf_baseline.py` and `.github/workflows/perf.yml`:
