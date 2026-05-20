@@ -3,44 +3,57 @@ type: task
 name: benchmark-task
 feature: benchmark
 depth: task
-generated_at: 2026-05-15T18:40:20.593069+00:00
+generated_at: 2026-05-20T03:30:01.573803+00:00
 source_hash: 82975cf88c844b87657deb87845f45f4f5fbc32319ccba10e0eb8a798867630f
 status: generated
 ---
 
-# Run the benchmark suite
+# Run the retrieval and faithfulness benchmark
 
-Use the benchmark runner when you want to measure retrieval and faithfulness quality, gate CI on configurable thresholds, or evaluate a custom set of queries.
+Use the benchmark runner when you need to measure retrieval precision and recall — or optionally faithfulness — and enforce pass/fail thresholds in CI.
 
 ## Prerequisites
 
 - Access to the project source code
-- `pytest` available in your environment
+- A query file if you intend to supply custom queries
+- Python dependencies installed so that `pytest` is available on your path
 
 ## Run the benchmark
 
-1. **Open the benchmark entry point.**
-   Open `src/attune_rag/benchmark.py` and read the `main()` function signature, its parameters, and its docstring. This tells you which flags are available and what exit code `0` signals (a passing run).
+1. **Start a basic retrieval benchmark.**
+   Call `main()` in `src/attune_rag/benchmark.py` with no extra flags to evaluate retrieval precision and recall against the default query file:
 
-2. **Invoke the runner.**
-   Call `main()` directly or run it from the command line. Pass `--with-faithfulness` to enable optional faithfulness scoring in addition to the default precision/recall metrics.
+   ```bash
+   python -m attune_rag.benchmark
+   ```
 
-3. **Supply a custom query file if needed.**
-   Pass your query file as an argument to target a specific dataset instead of the default one. Confirm the file path is correct before running.
+2. **Supply a custom query file.**
+   Pass your query file path to override the default inputs:
 
-4. **Set your threshold values.**
-   Configure the minimum acceptable scores for precision, recall, and (if enabled) faithfulness. The runner exits with a non-zero code when any metric falls below its threshold, which causes a CI job to fail.
+   ```bash
+   python -m attune_rag.benchmark --queries path/to/queries.yaml
+   ```
 
-5. **Run the suite and check results.**
-   Execute the runner with `pytest -k "benchmark"` or call `main()` programmatically. Review the output for per-metric scores and the final exit code.
+3. **Enable faithfulness scoring.**
+   Add `--with-faithfulness` to include faithfulness evaluation alongside retrieval metrics:
 
-## Verify success
+   ```bash
+   python -m attune_rag.benchmark --with-faithfulness
+   ```
 
-The benchmark run succeeds when:
+4. **Configure CI thresholds.**
+   Set the threshold flags to the minimum acceptable scores. The runner exits with code `0` when all metrics meet or exceed the thresholds, and a non-zero code otherwise — making it suitable as a CI gate.
 
-- `main()` returns `0`
-- All reported metrics meet or exceed your configured thresholds
-- No assertion errors appear in the `pytest` output
+5. **Run the related tests.**
+   Verify that your configuration changes have not introduced regressions:
+
+   ```bash
+   pytest -k "benchmark"
+   ```
+
+## Confirm success
+
+The benchmark run succeeded when `main()` returns `0`. In CI, a `0` exit code tells the pipeline that all configured precision, recall, and faithfulness thresholds passed.
 
 ## Key files
 

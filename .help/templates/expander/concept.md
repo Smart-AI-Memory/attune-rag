@@ -3,45 +3,53 @@ type: concept
 name: expander-concept
 feature: expander
 depth: concept
-generated_at: 2026-05-20T02:45:15.467956+00:00
+generated_at: 2026-05-20T03:34:53.251463+00:00
 source_hash: 8d3d8b3b23e7c8dfce64df28069feb915c0f099b70568ec577cb0a58dddf9b78
 status: generated
 ---
 
-# Expander
+# Query Expander
 
-`QueryExpander` is a retrieval preprocessing step that uses Claude Haiku to rewrite a single user query into 3–5 alternative phrasings, improving the chances that at least one phrasing matches the surface form of relevant documents.
+`QueryExpander` is an LLM-powered component that rewrites a single user query into 3–5 alternative phrasings, improving retrieval recall when the user's wording differs from the terminology used in your documentation.
 
 ## The problem it solves
 
-Keyword and vector retrieval both depend on surface-level overlap between the query and the indexed content. When a user asks "how do I roll back a deploy?" but the documentation says "revert a release," a direct lookup may return nothing useful. Query expansion bridges that gap by generating synonyms, feature names, tool-category terms, and developer jargon before the retrieval step runs.
+Keyword-based retrieval fails when the user's vocabulary doesn't match the documents. For example, a developer asking "how do I set up auth" might miss documents that use "authentication configuration" or "OAuth integration." `QueryExpander` bridges this gap by generating synonyms, feature names, tool categories, and developer jargon that expose the user's actual intent before the retrieval step runs.
 
 ## How query expansion works
 
-When you call `expand()` or `expand_async()`, `QueryExpander` sends the original query to Claude Haiku with a fixed system prompt. That prompt instructs the model to return **only** a JSON array of 3–5 alternative phrasings — no prose, no markdown fences. The caller receives the array of strings and can feed each phrasing into the retrieval pipeline independently.
+When you call `expand()` or `expand_async()` on a query string, `QueryExpander` sends the query to Claude Haiku with a system prompt that instructs the model to return a JSON array of alternative phrasings — nothing else, no explanation or markdown. The result is a list of strings you can pass to your retrieval pipeline alongside or instead of the original query.
 
-If the Claude API call fails for any reason, `QueryExpander` falls back to the original query, so retrieval still runs rather than erroring out.
+For instance, a query like `"CI pipeline caching"` might expand to:
 
-Caching is enabled by default. Repeated calls with the same query string return the cached expansion without a second API round-trip.
+```json
+["CI cache configuration", "build cache in GitHub Actions", "pipeline dependency caching", "cache layers in CI/CD", "speed up CI with caching"]
+```
 
-## The `QueryExpander` class
+Each alternative targets a different surface form of the same underlying intent.
 
-`QueryExpander` is the single public interface in this module.
+## Component overview
 
-| Member | Signature | What it does |
-|---|---|---|
-| `__init__` | `(model='claude-haiku-4-5-20251001', api_key=None, cache=True)` | Configures the model, optional API key, and whether to cache expansions |
-| `expand` | `(query: str) -> list[str]` | Synchronously returns a list of alternative phrasings |
-| `expand_async` | `(query: str) -> list[str]` | Asynchronous equivalent of `expand` |
+`QueryExpander` (defined in `src/attune_rag/expander.py`) is the single class in this module. Its constructor accepts three parameters:
 
-The default model is `claude-haiku-4-5-20251001`. You can substitute a different model string at construction time if your deployment uses a different Claude variant.
+| Parameter | Default | Effect |
+|-----------|---------|--------|
+| `model` | `claude-haiku-4-5-20251001` | The Claude model used for expansion |
+| `api_key` | `None` | Anthropic API key; falls back to environment variable if omitted |
+| `cache` | `True` | Caches expansion results to avoid redundant API calls for repeated queries |
 
-## When expansion matters most
+Both `expand()` and `expand_async()` accept a query string and return `list[str]`. Use `expand_async()` in async retrieval pipelines to avoid blocking.
 
-Query expansion has the highest impact when:
+## Failure behavior
 
-- The user's vocabulary differs from the documentation's vocabulary (for example, a user asking about "feature flags" when docs say "toggles")
-- Queries are short or ambiguous, giving retrieval little signal to work with
-- The indexed corpus uses precise technical terminology that users are unlikely to reproduce exactly
+`QueryExpander` is designed to be fail-safe. If the API call fails or the model returns malformed output, the expander falls back gracefully so your retrieval pipeline continues with the original query rather than raising an exception.
 
-For queries that already use exact identifiers — class names, CLI flags, error codes — expansion adds less value, but the cache prevents it from adding latency on repeated lookups.
+## When query expansion matters
+
+Query expansion is most valuable when:
+
+- Your documentation uses precise technical terminology that users are unlikely to reproduce verbatim.
+- You are running hybrid or semantic retrieval and want to increase candidate recall before a reranking step.
+- Users are exploring unfamiliar tooling and may not yet know the canonical names for features they need.
+
+It adds latency and an API call for each unique query, so consider whether the recall improvement justifies the cost for your use case, particularly if your queries are already highly structured.

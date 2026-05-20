@@ -3,14 +3,14 @@ type: reference
 name: eval-reference
 feature: eval
 depth: reference
-generated_at: 2026-05-15T20:03:10.208788+00:00
-source_hash: 9d4d7626c287ef8da26b5caa6bc9f43
+generated_at: 2026-05-20T03:28:38.726662+00:00
+source_hash: 9d4d7626c287ef8da26b5caa6cd8470542d6e7b12acbf7d3e678d0c442cc9f43
 status: generated
 ---
 
 # Eval reference
 
-Use this API to score RAG answer faithfulness and run prompt A/B benchmarks. `FaithfulnessJudge` calls Claude with a tool-use protocol to classify each claim in an answer as supported or unsupported by the retrieved passages.
+Use this module to score RAG answers for faithfulness and run prompt A/B benchmarks against a golden set. `FaithfulnessJudge` calls Claude with tool use to decompose each answer into atomic claims and label each one as supported or unsupported by the retrieved passages.
 
 ## Classes
 
@@ -19,9 +19,11 @@ Use this API to score RAG answer faithfulness and run prompt A/B benchmarks. `Fa
 | `FaithfulnessResult` | Per-answer faithfulness verdict. |
 | `FaithfulnessJudge` | Scores RAG answers for grounding in retrieved context. |
 
+---
+
 ### `FaithfulnessResult`
 
-Per-answer faithfulness verdict. Dataclass returned by `FaithfulnessJudge.score`.
+Dataclass that holds the verdict for a single scored answer.
 
 #### Fields
 
@@ -38,28 +40,28 @@ Per-answer faithfulness verdict. Dataclass returned by `FaithfulnessJudge.score`
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `total_claims` | `int` | Total number of claims (supported + unsupported). |
+| `total_claims` | `int` | Total number of claims (supported plus unsupported). |
 
 #### Methods
 
 | Method | Parameters | Returns | Description |
 |--------|------------|---------|-------------|
-| `to_dict` | `self` | `dict[str, Any]` | Serializes the verdict to a plain dictionary. |
+| `to_dict` | `self` | `dict[str, Any]` | Serializes the result to a plain dictionary. |
 
 ---
 
 ### `FaithfulnessJudge`
 
-Scores RAG answers for grounding in retrieved context using Claude tool-use.
+Scores RAG answers by checking each factual claim against the retrieved passages. Uses Claude's tool-use API to decompose answers into atomic claims and classify each as supported or unsupported.
 
 #### Constructor
 
-| Parameter | Type | Default |
-|-----------|------|---------|
-| `client` | `AsyncAnthropic \| None` | `None` |
-| `api_key` | `str \| None` | `None` |
-| `model` | `str` | `DEFAULT_JUDGE_MODEL` |
-| `timeout` | `float` | `DEFAULT_JUDGE_TIMEOUT_SECONDS` |
+| Parameters | Type | Default | Description |
+|------------|------|---------|-------------|
+| `client` | `AsyncAnthropic \| None` | `None` | An existing `AsyncAnthropic` client to reuse. |
+| `api_key` | `str \| None` | `None` | Anthropic API key; used when `client` is `None`. |
+| `model` | `str` | `DEFAULT_JUDGE_MODEL` | Claude model to use as judge. |
+| `timeout` | `float` | `DEFAULT_JUDGE_TIMEOUT_SECONDS` | Request timeout in seconds. |
 
 #### Properties
 
@@ -71,7 +73,7 @@ Scores RAG answers for grounding in retrieved context using Claude tool-use.
 
 | Method | Parameters | Returns | Description |
 |--------|------------|---------|-------------|
-| `score` | `self, query: str, answer: str, passages: str \| list[str], max_tokens: int = 2048, *, use_thinking: bool = False, thinking_budget_tokens: int = DEFAULT_THINKING_BUDGET_TOKENS` | `FaithfulnessResult` | Judges each factual claim in `answer` against `passages` and returns a verdict. |
+| `score` | `self, query: str, answer: str, passages: str \| list[str], max_tokens: int = 2048, *, use_thinking: bool = False, thinking_budget_tokens: int = DEFAULT_THINKING_BUDGET_TOKENS` | `FaithfulnessResult` | Scores one answer against its retrieved passages and returns a per-claim verdict. |
 
 ---
 
@@ -79,13 +81,17 @@ Scores RAG answers for grounding in retrieved context using Claude tool-use.
 
 | Function | Parameters | Returns | Description |
 |----------|------------|---------|-------------|
-| `main` | `argv: list[str] \| None = None` | `int` | Runs the prompt A/B benchmark harness; returns `0` on success. |
+| `main` | `argv: list[str] \| None = None` | `int` | Runs the prompt A/B benchmark CLI; returns `0` on success. |
+
+---
 
 ## Constants
 
 | Constant | Type | Value |
 |----------|------|-------|
 | `DEFAULT_JUDGE_MODEL` | `str` | `'claude-sonnet-4-6'` |
+
+---
 
 ## Source files
 

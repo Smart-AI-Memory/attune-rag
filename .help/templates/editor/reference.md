@@ -3,14 +3,14 @@ type: reference
 name: editor-reference
 feature: editor
 depth: reference
-generated_at: 2026-05-20T02:44:35.490536+00:00
+generated_at: 2026-05-20T03:31:44.061780+00:00
 source_hash: 1781a70216d482b69e33e146fcc3a1f37451550a76ce813bd81d0e3694790e4a
 status: generated
 ---
 
 # Editor reference
 
-Headless primitives for schema validation, linting, autocomplete, reference lookup, and cross-template rename refactoring. Use these functions and dataclasses directly from `attune-rag` to power editor tooling or the `attune-author edit` CLI without loading a GUI.
+Headless primitives for building template-editor tooling. Use these functions and classes to validate frontmatter, lint template text, prefix-match tags and aliases against a corpus, locate all references to an alias, tag, or path, and plan or apply cross-template renames with per-file diff hunks and atomic rollback. All functions accept a `CorpusProtocol` value and are used directly by the attune-gui editor and the `attune-author edit` CLI.
 
 ## Classes
 
@@ -23,116 +23,194 @@ Headless primitives for schema validation, linting, autocomplete, reference look
 | `Hunk` | A single unified-diff hunk. |
 | `FileEdit` | A planned edit to a single template file. |
 | `FileMove` | A planned file move (rename of a template's rel-path). |
-| `RenamePlan` | A complete rename plan, containing per-file edits and file moves. |
+| `RenamePlan` | A complete rename plan, including all file edits and moves. |
 | `SchemaError` | Raised when the frontmatter cannot be parsed at all (malformed YAML). |
 | `FrontmatterIssue` | A single schema violation. Line and column are 1-indexed within the frontmatter block. |
 
-### `Diagnostic` fields
+### `Diagnostic`
+
+`[dataclass]` — `src/attune_rag/editor/lint.py`
+
+A single lint diagnostic.
+
+#### Fields
 
 | Field | Type | Default |
 |-------|------|---------|
-| `severity` | `Severity` | — |
-| `code` | `str` | — |
-| `message` | `str` | — |
-| `line` | `int` | — |
-| `col` | `int` | — |
-| `end_line` | `int` | — |
-| `end_col` | `int` | — |
+| `severity` | `Severity` | |
+| `code` | `str` | |
+| `message` | `str` | |
+| `line` | `int` | |
+| `col` | `int` | |
+| `end_line` | `int` | |
+| `end_col` | `int` | |
 
 #### Methods
 
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `to_dict(self)` | `dict[str, Any]` | Serialize this diagnostic to a plain dictionary. |
+| Method | Parameters | Returns | Description |
+|--------|------------|---------|-------------|
+| `to_dict` | `self` | `dict[str, Any]` | Serialize the diagnostic to a dictionary. |
 
-### `Reference` fields
+---
+
+### `Reference`
+
+`[dataclass]` — `src/attune_rag/editor/references.py`
+
+A single reference to a name in a corpus.
+
+#### Fields
 
 | Field | Type | Default |
 |-------|------|---------|
-| `template_path` | `str` | — |
-| `line` | `int` | — |
-| `col` | `int` | — |
-| `context` | `ReferenceContext` | — |
+| `template_path` | `str` | |
+| `line` | `int` | |
+| `col` | `int` | |
+| `context` | `ReferenceContext` | |
 
 #### Methods
 
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `to_dict(self)` | `dict[str, Any]` | Serialize this reference to a plain dictionary. |
+| Method | Parameters | Returns | Description |
+|--------|------------|---------|-------------|
+| `to_dict` | `self` | `dict[str, Any]` | Serialize the reference to a dictionary. |
 
-### `Hunk` fields
+---
+
+### `RenameError`
+
+`src/attune_rag/editor/rename.py`
+
+Base class for rename refactor failures.
+
+---
+
+### `RenameCollisionError`
+
+`src/attune_rag/editor/rename.py`
+
+Raised when the proposed new name already exists.
+
+#### Constructor
+
+| Parameters | Returns |
+|------------|---------|
+| `name: str, owning_path: str` | `None` |
+
+---
+
+### `Hunk`
+
+`[dataclass]` — `src/attune_rag/editor/rename.py`
+
+A single unified-diff hunk.
+
+#### Fields
 
 | Field | Type | Default |
 |-------|------|---------|
-| `hunk_id` | `str` | — |
-| `header` | `str` | — |
+| `hunk_id` | `str` | |
+| `header` | `str` | |
 | `lines` | `list[str]` | `field(default_factory=list)` |
 
 #### Methods
 
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `to_dict(self)` | `dict[str, Any]` | Serialize this hunk to a plain dictionary. |
+| Method | Parameters | Returns | Description |
+|--------|------------|---------|-------------|
+| `to_dict` | `self` | `dict[str, Any]` | Serialize the hunk to a dictionary. |
 
-### `FileEdit` fields
+---
+
+### `FileEdit`
+
+`[dataclass]` — `src/attune_rag/editor/rename.py`
+
+A planned edit to a single template file.
+
+#### Fields
 
 | Field | Type | Default |
 |-------|------|---------|
-| `path` | `str` | — |
-| `old_text` | `str` | — |
-| `new_text` | `str` | — |
+| `path` | `str` | |
+| `old_text` | `str` | |
+| `new_text` | `str` | |
 | `hunks` | `list[Hunk]` | `field(default_factory=list)` |
 
 #### Methods
 
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `to_dict(self)` | `dict[str, Any]` | Serialize this file edit to a plain dictionary. |
+| Method | Parameters | Returns | Description |
+|--------|------------|---------|-------------|
+| `to_dict` | `self` | `dict[str, Any]` | Serialize the file edit to a dictionary. |
 
-### `FileMove` fields
+---
+
+### `FileMove`
+
+`[dataclass]` — `src/attune_rag/editor/rename.py`
+
+A planned file move (rename of a template's rel-path).
+
+#### Fields
 
 | Field | Type | Default |
 |-------|------|---------|
-| `old_path` | `str` | — |
-| `new_path` | `str` | — |
+| `old_path` | `str` | |
+| `new_path` | `str` | |
 
 #### Methods
 
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `to_dict(self)` | `dict[str, Any]` | Serialize this file move to a plain dictionary. |
+| Method | Parameters | Returns | Description |
+|--------|------------|---------|-------------|
+| `to_dict` | `self` | `dict[str, Any]` | Serialize the file move to a dictionary. |
 
-### `RenamePlan` fields
+---
+
+### `RenamePlan`
+
+`[dataclass]` — `src/attune_rag/editor/rename.py`
+
+A complete rename plan, including all file edits and moves.
+
+#### Fields
 
 | Field | Type | Default |
 |-------|------|---------|
-| `old` | `str` | — |
-| `new` | `str` | — |
-| `kind` | `ReferenceKind` | — |
+| `old` | `str` | |
+| `new` | `str` | |
+| `kind` | `ReferenceKind` | |
 | `edits` | `list[FileEdit]` | `field(default_factory=list)` |
 | `moves` | `list[FileMove]` | `field(default_factory=list)` |
 
 #### Methods
 
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `to_dict(self)` | `dict[str, Any]` | Serialize this rename plan to a plain dictionary. |
+| Method | Parameters | Returns | Description |
+|--------|------------|---------|-------------|
+| `to_dict` | `self` | `dict[str, Any]` | Serialize the rename plan to a dictionary. |
 
-### `FrontmatterIssue` fields
+---
+
+### `SchemaError`
+
+`src/attune_rag/editor/schema.py`
+
+Raised when the frontmatter cannot be parsed at all (malformed YAML).
+
+---
+
+### `FrontmatterIssue`
+
+`[dataclass]` — `src/attune_rag/editor/schema.py`
+
+A single schema violation. Line and column are 1-indexed within the frontmatter block.
+
+#### Fields
 
 | Field | Type | Default |
 |-------|------|---------|
-| `code` | `str` | — |
-| `message` | `str` | — |
+| `code` | `str` | |
+| `message` | `str` | |
 | `path` | `tuple[str \| int, ...]` | `()` |
 
-### `RenameCollisionError`
-
-```
-RenameCollisionError(name: str, owning_path: str) -> None
-```
-
-Raised when the proposed new name already exists. Subclass of `RenameError`.
+---
 
 ## Functions
 
@@ -148,36 +226,65 @@ Raised when the proposed new name already exists. Subclass of `RenameError`.
 | `validate_frontmatter` | `data: Any` | `list[FrontmatterIssue]` | Validate already-parsed frontmatter against the schema. |
 | `parse_frontmatter` | `yaml_text: str` | `tuple[dict[str, Any], list[FrontmatterIssue]]` | Parse a YAML frontmatter block and validate it. |
 
-### Raises
+### `find_references`
 
-#### `find_references`
+`src/attune_rag/editor/references.py`
 
-| Raises | Message |
-|--------|---------|
+#### Raises
+
+| Exception | Message |
+|-----------|---------|
 | `ValueError` | `'Unsupported reference kind: {...}'` |
 
-#### `plan_rename`
+---
 
-| Raises | Message |
-|--------|---------|
+### `plan_rename`
+
+`src/attune_rag/editor/rename.py`
+
+#### Raises
+
+| Exception | Message |
+|-----------|---------|
 | `ValueError` | `'Unsupported rename kind: {...}'` |
 
-#### `apply_rename`
+---
 
-| Raises | Message |
-|--------|---------|
+### `apply_rename`
+
+`src/attune_rag/editor/rename.py`
+
+#### Raises
+
+| Exception | Message |
+|-----------|---------|
 | `RenameError` | `'Corpus has no resolvable root path; apply is not supported.'` |
 | `RenameError` | `'Move source missing at apply time: {...}'` |
-| `RenameCollisionError` | — |
+| `RenameCollisionError` | |
 | `RenameError` | `'Failed to move {...} -> {...}: {...}'` |
 | `RenameError` | `'Planned target does not exist: {...}'` |
 | `RenameError` | `'File {...} drifted from the planned base; rebuild plan.'` |
 
-#### `parse_frontmatter`
+---
 
-| Raises | Message |
-|--------|---------|
+### `parse_frontmatter`
+
+`src/attune_rag/editor/schema.py`
+
+#### Raises
+
+| Exception | Message |
+|-----------|---------|
 | `SchemaError` | `'Malformed YAML in frontmatter: {...}'` |
+
+---
+
+## Constants
+
+| Constant | Type | Members |
+|----------|------|---------|
+| `_PATH_KEYED_SIDECARS` | `tuple` | `'summaries.json'`, `'summaries_by_path.json'` |
+| `_SCHEMA_RESOURCE` | `str` | `'template_schema.json'` |
 
 ## Source files
 

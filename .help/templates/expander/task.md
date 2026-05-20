@@ -3,71 +3,70 @@ type: task
 name: expander-task
 feature: expander
 depth: task
-generated_at: 2026-05-20T02:45:15.476035+00:00
+generated_at: 2026-05-20T03:34:53.257151+00:00
 source_hash: 8d3d8b3b23e7c8dfce64df28069feb915c0f099b70568ec577cb0a58dddf9b78
 status: generated
 ---
 
-# Work with the QueryExpander
+# Expand queries with QueryExpander
 
-Use `QueryExpander` when you want to improve retrieval recall by expanding a user's query into 3–5 alternative phrasings before keyword search — particularly for queries with low surface-level overlap against your target documents.
+Use `QueryExpander` when you want to improve retrieval recall by automatically broadening a user's query into 3–5 alternative phrasings before searching your documentation.
 
 ## Prerequisites
 
+- A valid Anthropic API key (or set the `ANTHROPIC_API_KEY` environment variable)
 - Access to `src/attune_rag/expander.py`
-- A Claude Haiku API key (set as `ANTHROPIC_API_KEY` or passed directly to the constructor)
 
-## Steps
+## Expand a query
 
 1. **Instantiate `QueryExpander`.**
-   Import and create a `QueryExpander` instance. Pass your API key explicitly or let the class read it from the environment. Enable caching (the default) to avoid redundant API calls for repeated queries:
+   Create an instance with your desired configuration. All parameters are optional:
 
    ```python
    from attune_rag.expander import QueryExpander
 
    expander = QueryExpander(
-       model="claude-haiku-4-5-20251001",
-       api_key="YOUR_API_KEY",  # or omit to use the environment variable
-       cache=True,
+       model="claude-haiku-4-5-20251001",  # default
+       api_key="YOUR_API_KEY",             # or set via environment variable
+       cache=True,                         # cache results for repeated queries
    )
    ```
 
-2. **Expand a query.**
-   Call `expand()` with the user's raw query string. The method returns a list of alternative phrasings as strings. If the API call fails, it falls back to the original query so retrieval is never blocked:
+2. **Call `expand()` with your query string.**
+   Pass the user's raw query. The method returns a list of alternative phrasings as strings:
 
    ```python
-   variants = expander.expand("how do I configure logging?")
-   # Example result:
-   # ["how do I configure logging?",
-   #  "set up log output",
-   #  "logging configuration options",
-   #  "enable debug logs",
-   #  "adjust log level settings"]
+   results = expander.expand("how do I configure logging")
    ```
 
-   Use `expand_async()` instead if your retrieval pipeline is async.
+   If your application is async, use `expand_async()` instead:
 
-3. **Feed the expanded variants into your retrieval step.**
-   Pass the returned list to your keyword or vector search function. Each variant is a standalone query string ready for retrieval.
+   ```python
+   results = await expander.expand_async("how do I configure logging")
+   ```
 
-4. **Extend `QueryExpander` for custom behavior.**
-   If you need a different model, prompt, or output format, subclass `QueryExpander` rather than editing the base class directly. Override `expand()` or `expand_async()` and match the existing return type (`list[str]`).
+3. **Pass the expanded queries to your retrieval pipeline.**
+   Use the returned list to query your documentation index. Each string is a standalone alternative phrasing of the original query, surfacing feature names, tool categories, workflow synonyms, and developer jargon:
 
-5. **Run the tests.**
-   Confirm your changes work without regressions:
+   ```python
+   # results might look like:
+   # ["set up logging", "configure log output", "logging configuration options", ...]
+
+   all_hits = []
+   for phrase in results:
+       all_hits.extend(index.search(phrase))
+   ```
+
+4. **Verify the output.**
+   Confirm the task succeeded: `expand()` returns a Python `list` of 3–5 strings. If the API call fails for any reason, `QueryExpander` falls back to returning the original query, so your retrieval pipeline continues without interruption.
+
+5. **Run the related tests.**
+   Confirm nothing is broken after any changes:
 
    ```bash
    pytest -k "expander"
    ```
 
-## Verify success
-
-Your setup is working correctly when:
-
-- `expand()` returns a list of 3–5 strings for a well-formed query.
-- Passing an invalid API key causes `expand()` to return a list containing only the original query string, with no exception raised.
-- `pytest -k "expander"` passes with no failures.
-
 ## Key files
 
-- `src/attune_rag/expander.py` — contains `QueryExpander`, the `expand()` and `expand_async()` methods, and the system prompt used to instruct Claude Haiku.
+- `src/attune_rag/expander.py` — contains `QueryExpander`, the only public class in this module

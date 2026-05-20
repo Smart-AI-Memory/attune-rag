@@ -3,50 +3,61 @@ type: concept
 name: prompts-concept
 feature: prompts
 depth: concept
-generated_at: 2026-05-15T20:02:27.251670+00:00
+generated_at: 2026-05-20T03:24:51.993011+00:00
 source_hash: eb6d61656b11230b111f643d8856103251dedb5b5d717c16d6107954b12867f6
 status: generated
 ---
 
 # Prompts
 
-The `prompts` module assembles the final text that attune-rag sends to an LLM — combining a user query, retrieved documentation passages, and a prompt variant into a single, grounded request.
+The `prompts` module assembles augmented prompt templates that combine a user query with retrieved documentation passages before sending them to an LLM.
 
-## How prompt assembly works
+## Mental model
 
-When you call `build_augmented_prompt(query, context, variant)`, the module takes three inputs and renders them into one prompt string:
+Retrieval-augmented generation works by inserting retrieved text into the prompt so the LLM can ground its answer in your documentation. The `prompts` module sits between your retrieval results and the LLM call: it takes a list of `RetrievalHit` objects, formats them into a context block, and then renders a complete prompt string that the LLM receives.
 
-1. **The query** — a non-empty string representing what the user asked. Passing an empty string raises a `ValueError`.
-2. **The context** — a block of retrieved passages produced by `join_context()` or `join_context_numbered()`, wrapped in sentinel tags so the LLM can distinguish documentation from instructions.
-3. **The variant** — a named prompt style (such as `baseline`, `citation`, or `grounded`). Passing an unrecognised variant raises a `ValueError` listing the valid options.
-
-The context block itself is built by one of two helpers:
-
-- `join_context()` wraps each retrieved hit in `<passage>...</passage>` tags and concatenates them up to a character limit (`DEFAULT_MAX_CONTEXT_CHARS`). Use this when you need a clean, unmarked block.
-- `join_context_numbered()` does the same but labels each passage `[P1]`, `[P2]`, and so on. Use this when the prompt variant needs the LLM to cite specific passages by number.
-
-Both helpers accept an optional `CorpusProtocol` to resolve hit contents, and both silently stop adding passages once the character budget is reached.
-
-## Injection defense
-
-Every assembled context block carries `_INJECTION_DEFENSE_CLAUSE` — a standing instruction that tells the LLM to treat anything inside `<passage>...</passage>` tags as retrieved documentation, never as a command. This means even if a retrieved document contains text that looks like a system message or an attempt to break out of the wrapper, the LLM is instructed to read it as content about that technique, not as a directive to follow.
-
-## How the pieces fit together
+The flow looks like this:
 
 ```
-user query
-    │
-    ▼
+RetrievalHit list
+      │
+      ▼
+join_context() or join_context_numbered()
+      │  wraps each passage in <passage>…</passage>
+      ▼
 build_augmented_prompt(query, context, variant)
-    │                        │
-    │              join_context()          ← plain sentinel-wrapped passages
-    │              join_context_numbered() ← [P1]/[P2]-labelled passages
-    │                        │
-    │              <passage>...</passage> blocks
-    │              + _INJECTION_DEFENSE_CLAUSE
-    │
-    ▼
-rendered prompt string → LLM
+      │  selects a prompt style and injects the context
+      ▼
+Rendered prompt string → LLM
 ```
 
-The variant controls which prompt template wraps the query and context. Choosing `citation` or `grounded` (versus `baseline`) changes the instructions the LLM receives, but the context-assembly step is the same regardless of variant.
+## Passage wrapping and prompt injection defense
+
+Both context-building functions wrap passage content in `<passage>` … `</passage>` sentinel tags. This structure does two things:
+
+1. **Signals source boundaries** — the LLM can clearly distinguish retrieved documentation from the instruction text.
+2. **Defends against prompt injection** — every rendered prompt includes a built-in defense clause that instructs the LLM to treat anything inside `<passage>` tags as documentation content, never as instructions, even if that content contains text that looks like directives or system messages.
+
+## Core functions
+
+### `join_context(hits, corpus, max_chars)`
+
+Concatenates the contents of each `RetrievalHit` into a single string, separating passages with `\n\n` and wrapping each one in `<passage>…</passage>` tags. The `max_chars` limit (defaulting to `DEFAULT_MAX_CONTEXT_CHARS`) prevents the context block from exceeding a safe token budget.
+
+### `join_context_numbered(hits, corpus, max_chars)`
+
+Works the same way as `join_context()`, but prefixes each passage with a citation label — `[P1]`, `[P2]`, and so on — inside the `<passage>` wrapper. Use this variant when your prompt style needs the LLM to cite specific passages by number in its response.
+
+### `build_augmented_prompt(query, context, variant)`
+
+Renders the final prompt string from a query, a pre-built context block, and a named variant. The `variant` parameter selects among the supported prompt styles (for example `'baseline'`). The function raises `ValueError` if `query` is empty or if you pass an unrecognized variant name, so callers can catch configuration errors before making an LLM call.
+
+## Prompt variants
+
+The `variant` argument to `build_augmented_prompt()` controls which template structure the LLM receives. Valid variant names are enforced at runtime — passing an unknown name raises:
+
+```
+ValueError: unknown prompt variant {…}; valid: {…}
+```
+
+This makes it straightforward to add or restrict styles without silent fallbacks.

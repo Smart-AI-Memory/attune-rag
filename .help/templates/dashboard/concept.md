@@ -3,39 +3,51 @@ type: concept
 name: dashboard-concept
 feature: dashboard
 depth: concept
-generated_at: 2026-05-20T02:45:03.105087+00:00
+generated_at: 2026-05-20T03:33:38.785145+00:00
 source_hash: 48be0a4fd811c784bc44e073b2ac5906c205487b317ef813d32ca7c5e3b936cc
 status: generated
 ---
 
 # Dashboard
 
-The attune-rag dashboard is a living-docs health monitor that benchmarks a registered corpus and surfaces the results as either a packaged HTML report or a terminal summary.
+## Overview
+
+The attune-rag dashboard is a living-docs view of a registered corpus that moves data through three stages — snapshot, render, and display — to give you both a shareable HTML report and an at-a-glance terminal summary.
 
 ## Three-stage pipeline
 
-The dashboard runs as a sequential pipeline. Each stage has a dedicated module and its own CLI entry point under `attune-rag dashboard`:
+Each stage is independent and has its own entry point, so you can run them individually or chain them together.
 
-1. **Refresh** — `build_snapshot()` runs the benchmark against the corpus and returns a snapshot dictionary. If `queries.yaml` is missing, it returns a partial snapshot with an error field rather than failing hard.
-2. **Render** — `render()` writes the dashboard HTML file to a path you specify, embedding the snapshot as JSON between the `__ATTUNE_SNAPSHOT__` and `__ATTUNE_TITLE__` sentinels in the template.
-3. **Show** — `display()` pretty-prints the snapshot to the terminal using Rich, so you can inspect results without opening a browser.
+**1. Snapshot (`refresh`)**
+`build_snapshot(corpus_package)` benchmarks the corpus against your `queries.yaml` file and returns a plain Python dict. If `queries.yaml` is missing, the function still returns a partial snapshot that includes an error field rather than raising an exception. This dict is the single source of truth that the other two stages consume.
 
-Because each stage consumes the snapshot dict produced by the previous one, you can also run them independently — for example, loading a previously saved snapshot into `display()` without re-running the benchmark.
+**2. Render (`render`)**
+`render(out, snapshot, title)` takes the snapshot dict, serializes it as JSON, and injects it into an HTML template by replacing the sentinel strings `__ATTUNE_SNAPSHOT__` and `__ATTUNE_TITLE__`. The result is a self-contained HTML file written to `out` — no external data files required to open it in a browser.
 
-## The snapshot as shared currency
+**3. Display (`show`)**
+`display(snapshot, console)` pretty-prints the same snapshot dict to the terminal using [Rich](https://github.com/Textualize/rich). Pass your own `Console` instance to control output destination, or omit it to use the default.
 
-The snapshot dictionary is what flows between stages. `build_snapshot()` produces it; `render()` and `display()` consume it. This design means the HTML report and the terminal view always reflect the same data, and you can serialize the snapshot to disk to version or diff corpus health over time.
+## How the pieces fit together
+
+```
+queries.yaml
+     │
+     ▼
+build_snapshot()  ──►  snapshot dict  ──►  render()   ──►  report.html
+                                      │
+                                      └──►  display()  ──►  terminal
+```
+
+The snapshot dict is the interface between stages. Because `render()` and `display()` both accept an arbitrary dict, you can supply a snapshot from any source — not only from `build_snapshot()`.
+
+## Entry points
+
+| Function | Stage | Key behaviour |
+|---|---|---|
+| `build_snapshot(corpus_package)` | Snapshot | Returns a dict; degrades gracefully on missing `queries.yaml` |
+| `render(out, snapshot, title)` | Render | Writes a self-contained HTML file to `out` |
+| `display(snapshot, console)` | Display | Pretty-prints to the terminal via Rich |
 
 ## When the dashboard matters
 
-Use the dashboard when you need to answer "is the corpus still accurate?" after code or content changes. Because `build_snapshot()` returns a partial result on missing configuration rather than raising an exception, the dashboard stays useful even in incomplete environments — you get whatever signal is available along with a clear error indicating what is missing.
-
-## Source layout
-
-The four source files map directly onto the pipeline stages:
-
-| File | Responsibility |
-|------|---------------|
-| `src/attune_rag/dashboard/refresh.py` | `build_snapshot()` — benchmark the corpus and emit the snapshot dict |
-| `src/attune_rag/dashboard/render.py` | `render()` — write the HTML report with the snapshot embedded |
-| `src/attune_rag/dashboard/show.py` | `display()` — print the snapshot to the terminal via Rich |
+Use the dashboard when you need to verify that a corpus is answering its benchmark queries correctly, share a point-in-time report with teammates (use the rendered HTML), or spot freshness regressions quickly without leaving the terminal (use `display`).

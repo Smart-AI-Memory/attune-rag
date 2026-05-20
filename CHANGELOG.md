@@ -25,6 +25,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`.help/` corpus repolished for release readiness.** Cache cleared,
+  every feature re-run through `attune-author generate --no-rag
+  --all-kinds --fact-check strict`. Each of the 13 features now ships
+  all 11 `.help/` template kinds (concept, task, reference, quickstart,
+  faq, error, warning, tip, note, comparison, troubleshooting) — up
+  from 3 kinds per feature in #58. 143 polished templates total (39
+  pre-existing refreshed; 104 new). The `--no-rag` flag was needed
+  because the default RAG-grounded polish was cross-contaminating
+  attune-rag templates with attune-help vocabulary (function names,
+  file paths, command names that don't exist in this repo); switching
+  to no-RAG keeps polish doing its prose-rewriting work without
+  pulling in foreign references. The `--fact-check strict` enforces
+  that every reference (function, class, file path, link) resolves
+  in the repo; the pass shipped here cleared strict on all 143 files.
+  Project-doc kinds (docs/how-to, docs/tutorials) were attempted but
+  systematically failed strict — wrong package paths and dead
+  cross-doc links — and reverted; the dedicated `attune-author docs`
+  three-stage pipeline is tracked as a follow-up.
 - **`docs/specs/downstream-validation/security-findings.md`** —
   W0.11 partial triage: 10 of 11 stdlib findings confirmed
   `non-issue` after deeper code reads; the 11th (W09.S.011)

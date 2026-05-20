@@ -3,71 +3,100 @@ type: task
 name: dashboard-task
 feature: dashboard
 depth: task
-generated_at: 2026-05-20T02:45:03.110698+00:00
+generated_at: 2026-05-20T03:33:38.790777+00:00
 source_hash: 48be0a4fd811c784bc44e073b2ac5906c205487b317ef813d32ca7c5e3b936cc
 status: generated
 ---
 
-# Work with the dashboard
+# Work with the attune-rag dashboard
 
-Use the dashboard when you need to inspect the health of a registered corpus by running the three-stage pipeline: **refresh** benchmarks the corpus and emits a snapshot JSON, **render** packages that snapshot into an HTML report, and **show** pretty-prints the snapshot to the terminal via Rich.
+Use the dashboard when you want to benchmark a registered corpus, inspect retrieval quality as an HTML report, or review results directly in the terminal.
+
+The dashboard runs as a three-stage pipeline:
+
+1. **Refresh** — runs the benchmark against the corpus and writes a JSON snapshot.
+2. **Render** — embeds the snapshot in an HTML report.
+3. **Show** — pretty-prints the snapshot to the terminal using Rich.
+
+Each stage has its own CLI entry point under `attune-rag dashboard`.
 
 ## Prerequisites
 
-- Access to the project source code
-- Read access to the files under `src/attune_rag/dashboard/`
+- A registered corpus package (default: `attune_help`)
+- A `queries.yaml` file accessible to `build_snapshot()`. Without it, the snapshot is returned in a partial state with an error field.
 
-## Identify which stage to work in
+## Run the full pipeline
 
-The pipeline has three independent stages, each with its own entry point under `attune-rag dashboard`. Choose the stage that owns the behavior you need:
+### 1. Build the snapshot
 
-| Stage | File | Key functions |
-|---|---|---|
-| Refresh | `src/attune_rag/dashboard/refresh.py` | `build_snapshot()`, `main()` |
-| Render | `src/attune_rag/dashboard/render.py` | `render()` |
-| Show | `src/attune_rag/dashboard/show.py` | `display()`, `main()` |
+Call `build_snapshot()` to benchmark your corpus and produce a snapshot dictionary:
 
-## Run the dashboard pipeline
+```python
+from attune_rag.dashboard.refresh import build_snapshot
 
-1. **Run the refresh stage** to benchmark the corpus and produce a snapshot:
+snapshot = build_snapshot(corpus_package='attune_help')
+```
 
-   ```
-   attune-rag dashboard refresh
-   ```
+To use a custom queries file, pass its path:
 
-   `build_snapshot()` queries the corpus package (default: `attune_help`) and writes a snapshot dict. If `queries.yaml` is missing, it returns a partial result with an error field — check the output for that field before continuing.
+```python
+from pathlib import Path
+snapshot = build_snapshot(corpus_package='attune_help', queries_path=Path('path/to/queries.yaml'))
+```
 
-2. **Run the render stage** to produce an HTML report from the snapshot:
+If `queries.yaml` is missing, `build_snapshot()` still returns a dict — check it for an `"error"` key before proceeding.
 
-   ```
-   attune-rag dashboard render
-   ```
+### 2. Render the HTML report
 
-   `render()` writes the HTML file to the path you specify via `--out` and embeds the snapshot as JSON using the `__ATTUNE_SNAPSHOT__` sentinel.
+Pass the snapshot to `render()` with an output path and an optional title:
 
-3. **Run the show stage** to inspect the snapshot in your terminal:
+```python
+from pathlib import Path
+from attune_rag.dashboard.render import render
 
-   ```
-   attune-rag dashboard show
-   ```
+out_path = render(
+    out=Path('dashboard_report.html'),
+    snapshot=snapshot,
+    title='attune-rag dashboard',
+)
+```
 
-   `display()` pretty-prints the snapshot using Rich. Pass a `Console` instance via `--console` to redirect output.
+`render()` embeds the snapshot as JSON inside the HTML template and returns the resolved output path.
 
-## Modify a stage
+### 3. Display results in the terminal
 
-1. **Open the file for the stage you identified** in the table above. Read the target function's docstring, parameters, and return type to confirm it owns the behavior you need.
+Pass the snapshot to `display()` to print a Rich-formatted summary:
 
-2. **Edit the function.** Keep naming conventions, error-handling style, and logging consistent with the rest of the file.
+```python
+from attune_rag.dashboard.show import display
 
-3. **Run the dashboard tests** to catch regressions before they affect other developers:
+display(snapshot)
+```
 
-   ```
-   pytest -k "dashboard"
-   ```
+To direct output to a specific Rich `Console` instance, pass it as the `console` argument.
+
+## Run from the CLI
+
+Each stage also exposes a `main()` entry point. A successful run returns exit code `0`.
+
+```bash
+attune-rag dashboard refresh
+attune-rag dashboard render
+attune-rag dashboard show
+```
 
 ## Verify success
 
-- The refresh stage exits without an `error` key in the snapshot dict.
-- The render stage writes a valid HTML file to the path you specified, with the snapshot JSON embedded (search the file for `__ATTUNE_SNAPSHOT__` to confirm).
-- The show stage prints a formatted snapshot table to the terminal with no traceback.
-- `pytest -k "dashboard"` reports zero failures.
+- `build_snapshot()` returns a dict with no `"error"` key when `queries.yaml` is found and the benchmark completes.
+- `render()` returns the output `Path` and the file exists at that location containing embedded JSON (look for the sentinel value `__ATTUNE_SNAPSHOT__` replaced with your snapshot data).
+- `display()` prints the snapshot table to the terminal without raising an exception.
+- CLI entry points exit with code `0`.
+
+## Key files
+
+| File | Purpose |
+|------|---------|
+| `src/attune_rag/dashboard/__init__.py` | Package entry point |
+| `src/attune_rag/dashboard/refresh.py` | `build_snapshot()` and `main()` — corpus benchmarking |
+| `src/attune_rag/dashboard/render.py` | `render()` — HTML report generation |
+| `src/attune_rag/dashboard/show.py` | `display()` and `main()` — terminal display |

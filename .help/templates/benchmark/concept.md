@@ -3,36 +3,31 @@ type: concept
 name: benchmark-concept
 feature: benchmark
 depth: concept
-generated_at: 2026-05-15T18:40:20.588450+00:00
+generated_at: 2026-05-20T03:30:01.567597+00:00
 source_hash: 82975cf88c844b87657deb87845f45f4f5fbc32319ccba10e0eb8a798867630f
 status: generated
 ---
 
 # Benchmark
 
-The benchmark feature is a retrieval and faithfulness quality gate that measures how well the RAG pipeline performs and fails CI when results fall below configurable thresholds.
+## Overview
 
-## What it measures
+The benchmark module is a retrieval quality runner that measures precision and recall against a query set, optionally scores faithfulness, and fails CI when results fall below configurable thresholds.
 
-The benchmark runner evaluates two dimensions of RAG output:
+## How it works
 
-- **Retrieval quality** — precision and recall scores that reflect whether the right documents are being surfaced for a given query.
-- **Faithfulness** — an optional check (enabled with `--with-faithfulness`) that scores whether generated answers stay grounded in the retrieved content.
+At its core, the benchmark runs a retrieval pipeline against a set of queries, computes precision and recall for each result, and exits with a non-zero status code if any metric falls below the thresholds you configure. When you pass `--with-faithfulness`, the runner also evaluates how faithfully the retrieved content supports the generated answers.
 
-You can supply a custom query file to target specific domains or edge cases rather than relying on defaults.
+The single entry point is **`main()`**, which parses arguments, executes the benchmark suite, and returns `0` on success. This return value is what CI systems use to determine whether the quality gate passed.
 
-## How the pieces fit together
+## Key concepts
 
-At the center is `main()` in `src/attune_rag/benchmark.py`. When called, it runs the configured benchmark suite, computes scores, and returns an exit code — `0` for pass, non-zero for fail. That exit code is what CI uses to gate a build: if precision, recall, or faithfulness drops below a threshold, the pipeline stops.
+**Precision and recall** are the primary retrieval metrics. Precision measures how many retrieved results are relevant; recall measures how many relevant results were retrieved. The benchmark gates on both, so a retrieval change that improves recall at the cost of precision will still fail if either metric drops below its threshold.
 
-The flow looks like this:
+**Faithfulness scoring** is optional and enabled with `--with-faithfulness`. It evaluates whether the content retrieved actually supports the answers produced, which is a separate concern from whether the right documents were retrieved at all.
 
-1. `main()` loads queries (default or from a custom file).
-2. It runs retrieval and scores precision and recall.
-3. If `--with-faithfulness` is set, it also scores answer grounding.
-4. It compares each score against its configured threshold.
-5. It exits `0` if all thresholds pass, non-zero otherwise.
+**Custom query files** let you benchmark against a domain-specific query set rather than a default one, so you can target the benchmark at the workload that matters for your use case.
 
 ## When it matters
 
-Run the benchmark when you want confidence that a change to the retrieval pipeline — new chunking strategy, updated embeddings, adjusted ranking — hasn't degraded quality. Because `main()` returns a standard exit code, plugging it into CI is straightforward: a regression fails the build before it reaches production.
+Run the benchmark when you change retrieval logic, re-index your corpus, or update embedding models. Because `main()` returns `0` only on success, you can wire it directly into a CI step and treat a non-zero exit as a build failure.

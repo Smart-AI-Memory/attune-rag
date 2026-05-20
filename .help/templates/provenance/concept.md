@@ -3,34 +3,44 @@ type: concept
 name: provenance-concept
 feature: provenance
 depth: concept
-generated_at: 2026-05-15T20:02:41.238560+00:00
+generated_at: 2026-05-20T03:26:07.269328+00:00
 source_hash: 2ad01dedc91108386ca6445b49decedb0fa3b58762c00286b0a0e45fed8409a7
 status: generated
 ---
 
 # Provenance
 
-Provenance is the RAG pipeline's answer to "where did this come from?" — it records which corpus entries grounded each response and renders that attribution as readable markdown.
+Provenance is the system that records which source documents grounded a RAG pipeline's answer and renders those sources as citable, human-readable output.
 
-## How the pieces fit together
+## Mental model
 
-When the pipeline answers a query, it produces two kinds of attribution data that work at different levels of granularity:
+When a user submits a query, the RAG pipeline retrieves document chunks and generates a response. Provenance captures a snapshot of that retrieval — what was queried, which documents were returned, and how confidently each one ranked — then attaches that snapshot to the response so readers can trace every claim back to its source.
 
-**Run-level provenance** captures everything about a single retrieval: the original query, the timestamp, the retriever that ran, and the ranked set of sources that contributed. `CitationRecord` is the container for this data. Each entry in its `hits` tuple is a `CitedSource` — a pointer to a specific template file, with its relevance score, category, and an optional excerpt of up to 200 characters.
+The flow looks like this:
 
-**Claim-level provenance** goes finer. When the Anthropic Citations API attributes a specific span of the generated response to a specific passage, that link is captured in a `ClaimCitation`. Each `ClaimCitation` records the character offsets of the claim in the response (`response_span`), the index and title of the source document, the exact text that was cited, and which block within that document the citation came from.
+1. `build_citation_record` converts raw `RetrievalHit` objects into a `CitationRecord`, capturing the query text, retriever name, retrieval timestamp, and up to `excerpt_chars` characters of each hit's content.
+2. The `CitationRecord` holds one `CitedSource` per retrieved document, each carrying the template path, category, relevance score, and optional excerpt.
+3. Optionally, the Anthropic Citations API produces `ClaimCitation` objects that link specific spans of the response text to specific documents by index.
+4. `format_citations_markdown` renders a full `CitationRecord` as a markdown section. `format_claim_citations_markdown` renders the response text with inline footnote-style callouts for each `ClaimCitation`.
 
-The two rendering functions turn these data structures into output:
+## Core data structures
 
-- `format_citations_markdown` takes a `CitationRecord` and renders the full source list as a markdown section — useful for appending a "Sources" block to any response.
-- `format_claim_citations_markdown` takes the response text alongside a sequence of `ClaimCitation` objects and produces footnote-style inline attribution, linking each claim back to its source passage.
+**`CitationRecord`** — the top-level provenance snapshot for one pipeline run. It records:
+- `query` — the original user query string
+- `hits` — an ordered tuple of `CitedSource` objects
+- `retrieved_at` — the timestamp of retrieval
+- `retriever_name` — which retriever produced the hits
 
-`build_citation_record` is the entry point that bridges raw retrieval results and the structured record. It converts `RetrievalHit` objects from the retriever into a fully populated `CitationRecord`, trimming each excerpt to the configured character limit.
+**`CitedSource`** — one document returned by the retriever. It records:
+- `template_path` — the document's path in the corpus
+- `category` — the document's classification
+- `score` — the retriever's relevance score for this hit
+- `excerpt` — an optional short extract of the source text (truncated to `excerpt_chars` by `build_citation_record`)
+
+**`ClaimCitation`** — a finer-grained citation produced by the Anthropic Citations API, linking a span of the response text (`response_span`) to a specific document (`document_index`, `document_title`, `cited_text`, `cited_block_index`). Use these when you need to attribute individual sentences or phrases rather than the response as a whole.
 
 ## When provenance matters
 
-Provenance matters any time a user or downstream system needs to verify or audit an answer:
-
-- **Trust** — A response with rendered citations lets readers follow the chain from claim to source document.
-- **Debugging** — `CitationRecord.retriever_name` and `retrieved_at` tell you exactly which retriever ran and when, making retrieval regressions easier to isolate.
-- **Claim traceability** — Claim-level citations narrow attribution to the block level inside a document, not just the document itself.
+- **Auditability** — `CitationRecord` gives you a durable, timestamped record of exactly which documents were in scope when an answer was generated, making it straightforward to replay or audit a pipeline run.
+- **User-facing transparency** — `format_citations_markdown` and `format_claim_citations_markdown` turn that record into output readers can inspect, with optional `base_url` support for linking directly to source documents.
+- **Claim-level traceability** — when the Anthropic Citations API is in use, `ClaimCitation` objects let you show which sentence in the response came from which block of which document, rather than citing sources only at the response level.
