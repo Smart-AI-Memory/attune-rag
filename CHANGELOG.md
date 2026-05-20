@@ -25,6 +25,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **README task #6 partial pass.** Filled real locked numbers into 3
+  of the 4 perf-table rows (`keyword_retriever_retrieve`,
+  `directory_corpus_load`, `rag_pipeline_run` — all `.cpu` axis,
+  measured at N=30 on `ubuntu-latest` / CPython 3.11.15). Added a
+  one-sentence note that the `keyword_retriever_retrieve` threshold
+  is wide because cold-cache σ ≈ 3.5 ms dominates the `mean+2σ`
+  formula. Added a "Bundled `.help/` corpus" section calling out the
+  143 polished templates (13 features × 11 kinds) that landed in
+  #58 + #61. Reranker row still placeholder — drops once the
+  full lock runs with `include_llm=true`.
 - **`.help/` corpus repolished for release readiness.** Cache cleared,
   every feature re-run through `attune-author generate --no-rag
   --all-kinds --fact-check strict`. Each of the 13 features now ships
