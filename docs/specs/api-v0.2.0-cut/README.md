@@ -25,7 +25,7 @@ spec is the SemVer-level event that ratifies that surface into a frozen
 | Public surface enumerated | ✓ | unchanged |
 | Snapshot test gating drift | ✓ | unchanged |
 | `docs/POLICY.md` published | ✓ | unchanged |
-| SemVer commitment binding | honor-system (0.1.x is still-evolving per [POLICY.md §2](../../POLICY.md)) | **binding from 0.2.0 onward** |
+| SemVer commitment binding | honor-system (0.1.x is still-evolving per [POLICY.md §2](../../POLICY.md#2-semver-commitment)) | **binding from 0.2.0 onward** |
 | `pyproject.toml` Development Status classifier | `3 - Alpha` | **stays at `3 - Alpha`** |
 | Production/Stable claim | — | deferred to Phase 5 / v1.0.0 |
 
@@ -33,7 +33,7 @@ spec is the SemVer-level event that ratifies that surface into a frozen
 classifier flip (Alpha → Production/Stable) is Phase 5's job — see
 [ROADMAP-v1.md Phase 5](../ROADMAP-v1.md). 0.2.0 ratifies that "what
 is PUBLIC today stays through every 0.2.z" per the policy already
-documented in [POLICY.md §2](../../POLICY.md).
+documented in [POLICY.md §2](../../POLICY.md#2-semver-commitment).
 
 ## Activation criteria (W4.2 → this spec)
 

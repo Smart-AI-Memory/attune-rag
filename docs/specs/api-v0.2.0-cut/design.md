@@ -96,7 +96,7 @@ the policy itself defers to 0.2.0:
 
 `docs/POLICY.md` may need a minor wording change at the cut to
 replace "**formal SemVer commitments take effect with 0.2.0** (gated
-on Phase 2…)" with "took effect at 0.2.0 on `<date>`". That copy edit
+on Phase 4…)" with "took effect at 0.2.0 on `<date>`". That copy edit
 is the only POLICY.md touch in scope for this spec.
 
 ### Risks & mitigations (sketch)
