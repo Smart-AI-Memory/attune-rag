@@ -1,7 +1,7 @@
 # Proposal: More robust selection criteria for KeywordRetriever
 
-> **Status:** draft — for review
-> **Workstream:** A (internal retriever tuning)
+> **Status:** Workstream A shipped in 0.1.22 (`-ity`/`-ities` stemming + `MIN_ALIAS_OVERLAP=2` default, under `freeze-override`). Workstream B (embedding co-signal) deferred to 0.2.0+ semantic-floor lift — see [api-v0.2-public-surface follow-ups](../api-v0.2-public-surface/tasks.md#follow-ups-post-0118).
+> **Workstream:** A (internal retriever tuning) — shipped. B (embeddings) — deferred.
 > **Freeze posture:** `### Changed`, no `__all__` delta, no new public surface, no new dependency. Compatible with the Phase 4 symbol-level freeze.
 
 ## Problem

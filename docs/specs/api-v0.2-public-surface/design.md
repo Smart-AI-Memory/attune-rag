@@ -2,7 +2,7 @@
 
 ## Phase 2: Design
 
-**Status**: 0.1.18 candidate (M1–M3 + M4.1–M4.4 + M5.1 realized; framing softened from "freeze" to "groundwork toward the 0.2.0 freeze")
+**Status**: complete (shipped as 0.1.18 groundwork on 2026-05-16; the formal 0.2.0 freeze is queued for the [api-v0.2.0-cut](../api-v0.2.0-cut/) successor spec after Phase 4 W4.2)
 
 ### Surface principle
 

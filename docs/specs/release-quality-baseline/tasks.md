@@ -2,7 +2,7 @@
 
 ## Phase 3: Tasks
 
-**Status**: draft
+**Status**: complete (all milestones done 2026-05-16; M3.5 verified via throwaway PR [#34](https://github.com/Smart-AI-Memory/attune-rag/pull/34))
 
 ### Implementation order
 
