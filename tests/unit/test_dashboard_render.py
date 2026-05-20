@@ -1,11 +1,16 @@
 """Tests for attune_rag.dashboard.render."""
+
 from __future__ import annotations
 
 import json
 
 import pytest
 
-from attune_rag.dashboard.render import _validate_output_path, render
+from attune_rag.dashboard.render import (
+    _json_for_script_block,
+    _validate_output_path,
+    render,
+)
 
 _SNAP = {"timestamp": "2026-04-23T00:00:00Z", "retrieval": {}, "freshness": {}}
 
@@ -73,3 +78,73 @@ def test_rejects_null_byte():
 def test_rejects_nonexistent_parent(tmp_path):
     with pytest.raises(ValueError, match="Parent directory does not exist"):
         _validate_output_path(tmp_path / "no_such_dir" / "dash.html")
+
+
+# ── XSS hardening ──
+
+
+def test_snapshot_script_terminator_escaped(tmp_path):
+    out = tmp_path / "dash.html"
+    render(out, {"k": "</script><img onerror=alert(1)>"})
+    html = out.read_text()
+    # The script-block sentinel landed inside <script>…</script>;
+    # a literal "</script>" in the embedded JSON would break out.
+    assert "</script><img" not in html
+    assert "\\u003c/script>" in html
+
+
+def test_snapshot_line_separators_escaped(tmp_path):
+    out = tmp_path / "dash.html"
+    render(out, {"k": "a b c"})
+    html = out.read_text()
+    # Older JS parsers stumble on raw U+2028/U+2029 inside JSON strings
+    # that live in a <script> block. Escaped form keeps the JSON valid.
+    assert " " not in html.split("window.__SNAPSHOT__")[1].split(";")[0]
+    assert " " not in html.split("window.__SNAPSHOT__")[1].split(";")[0]
+    assert "\\u2028" in html
+    assert "\\u2029" in html
+
+
+def test_title_html_escaped(tmp_path):
+    out = tmp_path / "dash.html"
+    render(out, _SNAP, title="</title><script>alert('xss')</script>")
+    html = out.read_text()
+    # Title lands inside <title>…</title>; the closing tag must not survive verbatim.
+    assert "</title><script>" not in html
+    assert "&lt;/title&gt;&lt;script&gt;" in html
+
+
+def test_title_ampersand_escaped(tmp_path):
+    out = tmp_path / "dash.html"
+    render(out, _SNAP, title="A & B")
+    html = out.read_text()
+    assert "<title>A &amp; B</title>" in html
+
+
+def test_json_for_script_block_escapes_lt():
+    out = _json_for_script_block({"k": "<a>"})
+    assert "<a>" not in out
+    assert "\\u003c" in out
+
+
+def test_json_for_script_block_remains_valid_json():
+    payload = {"k": "</script>  <b>"}
+    out = _json_for_script_block(payload)
+    assert json.loads(out) == payload
+
+
+def test_dashboard_template_has_sri_on_cdn_script():
+    import importlib.resources as _ilr
+    import re
+
+    tmpl = (
+        _ilr.files("attune_rag.dashboard")
+        .joinpath("templates/dashboard.html")
+        .read_text(encoding="utf-8")
+    )
+    # Every external CDN <script src=…> tag (which may span multiple lines)
+    # must carry an integrity hash so a compromised CDN cannot inject code.
+    for tag in re.findall(r"<script\b[^>]*src=[^>]*>", tmpl, flags=re.DOTALL):
+        if "//" in tag:  # external — skip inline scripts
+            assert "integrity=" in tag, f"CDN script missing SRI:\n{tag}"
+            assert "crossorigin=" in tag, f"CDN script missing crossorigin:\n{tag}"

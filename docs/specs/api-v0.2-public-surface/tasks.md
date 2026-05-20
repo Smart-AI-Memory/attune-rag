@@ -113,3 +113,17 @@ are both backward-compatible.
 - **Yanked `attune-help==0.10.0` pin** — being addressed in the
   same commit as the polished regen (pyproject floor bumped to
   `>=0.10.1`).
+- **Dashboard preview-pane render mode (post-freeze 0.2.0).** Add a
+  `--open=preview|browser|none` flag to `attune-rag dashboard render`.
+  Default behavior unchanged (file-only output). When `CLAUDECODE=1`
+  is set and `--open=preview` is selected (or auto-detected), surface
+  the rendered HTML via the Claude Code preview MCP so it appears in
+  the Cowork preview pane instead of opening a separate browser
+  window. File-output stays canonical — preview is an additive UX
+  layer, not a replacement, so CI / cron / headless contexts are
+  unaffected. Blocked during Phase 4 freeze: a new CLI flag fails the
+  W0.1 enforcer's `### Added` check and resets the cadence clock.
+  Land in the 0.2.0 cut as `### Added`. Note: distinct from the
+  attune-gui Cowork live-dashboard surface — this is the static
+  snapshot dashboard from `dashboard/render.py`, embedded in the
+  preview pane for in-conversation review.

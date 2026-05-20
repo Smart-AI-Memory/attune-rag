@@ -59,7 +59,14 @@ similar pattern, and the maintainer's eye confirms or denies.
 
 ## Source 2 — attune-ai `/security-audit` deep sweep
 
-**Status:** PENDING — needs a human-driven Claude Code session.
+**Status:** partial-pass + triaged (W0.11) for the 3 HIGH findings.
+The original `/security-audit` MCP errors with `AttributeError: 'str'
+object has no attribute 'get'`; the partial pass used
+`mcp__plugin_attune-ai_attune-ai__deep_review` on 2026-05-19 against
+commit `4226ab2` (post #59), but it returned summary-only output. The
+3 HIGH findings below were extracted by directly inspecting the
+named hot paths; remaining MEDIUM / LOW findings are deferred to a
+follow-up sweep that streams the full report.
 
 **Why this is separate from Source 1.** attune-ai's deeper sweep
 catches issues the stdlib scanner can't:
@@ -84,9 +91,29 @@ findings — keeps them distinct from `W09.S.XXX` stdlib-sourced).
 
 ### Findings
 
-_To be populated by the deep-sweep operator. Until then, this
-section is intentionally empty — W0.11 triage proceeds on the
-stdlib pass and is re-opened when the deep sweep lands._
+Sweep run 2026-05-19 via `mcp__plugin_attune-ai_attune-ai__deep_review`
+against `src/attune_rag/` at commit `4226ab2`. The MCP returned a
+summary only (Health score 82/100; Security: 2 HIGH / 4 MEDIUM / 3
+LOW), so HIGH-severity findings below were extracted by directly
+inspecting the named hot paths (`dashboard/render.py`,
+`dashboard/templates/dashboard.html`, `cli.py` →
+`dashboard/refresh.py`). MEDIUM / LOW findings beyond the HIGH
+trio remain unaudited until the MCP can stream full output.
+
+| ID | Severity | Location | Detail | Disposition |
+|---|---|---|---|---|
+| W09.A.001 | high → fixed | `src/attune_rag/dashboard/render.py` + `dashboard/templates/dashboard.html` (script block) | `json.dumps(snapshot)` was inlined into `<script>window.__SNAPSHOT__ = …;</script>` without escaping the less-than byte. A corpus value containing a literal `</script>` sequence would terminate the script block and enable XSS. | fix-now: added `_json_for_script_block()` which neutralizes the less-than byte and the U+2028 / U+2029 line separators by replacing them with their `\uXXXX` escape forms (still valid JSON; the `<script>` block can no longer be terminated from inside the payload). Tests `test_snapshot_script_terminator_escaped`, `test_snapshot_line_separators_escaped`, `test_json_for_script_block_remains_valid_json`. |
+` / ` `) inside the JSON payload. Tests `test_snapshot_script_terminator_escaped`, `test_snapshot_line_separators_escaped`, `test_json_for_script_block_remains_valid_json`. |
+| W09.A.002 | high → fixed | `src/attune_rag/dashboard/render.py` + `dashboard/templates/dashboard.html:6` (title) | `title` parameter was interpolated raw into `<title>…</title>`. A title like `</title><script>alert(1)</script>` would break out of the title element and execute. | fix-now: title now passes through `html.escape(title, quote=True)`. Tests `test_title_html_escaped`, `test_title_ampersand_escaped`. |
+| W09.A.003 | high → fixed | `src/attune_rag/dashboard/templates/dashboard.html:7` (Chart.js CDN tag) | External script loaded from `cdn.jsdelivr.net` without Subresource Integrity. A CDN compromise would execute attacker JS in the dashboard origin. | fix-now: added `integrity="sha384-NrKB+u6Ts6AtkIhwPixiKTzgSKNblyhlk0Sohlgar9UHUBzai/sgnNNWWd291xqt"` + `crossorigin="anonymous"` + `referrerpolicy="no-referrer"`. SRI computed via `openssl dgst -sha384` against the locked `chart.js@4.4.4` URL. Test `test_dashboard_template_has_sri_on_cdn_script` enforces SRI on any future external `<script>`. |
+| W09.A.004 | high (as flagged) → non-issue | `src/attune_rag/cli.py` → `dashboard/refresh.py:23` | `importlib.import_module(corpus_package)` where `corpus_package` comes from `--corpus-package` CLI arg. Flagged as arbitrary-import surface. | non-issue: developer-run library CLI; the operator already has shell + Python execution rights on the host, so importing an installed module is not a privilege escalation. Documenting the threat-model boundary here; if a server-side caller materializes later, re-evaluate. |
+
+**MEDIUM / LOW findings.** The MCP summary mentions 4 MEDIUM + 3 LOW
+across "localized duplication, mixed logging backends, and a few
+API-lie parameters" (quality) and unspecified security mediums. Defer
+to a follow-up sweep that captures the full output (tracked as a
+Phase 5 ticket once the `security_audit` MCP `AttributeError` is
+fixed upstream).
 
 ## Disposition codes
 
@@ -99,12 +126,18 @@ stdlib pass and is re-opened when the deep sweep lands._
 
 | Source | Triaged on | fix-now | non-issue | Phase-5-ticket |
 |---|---|---:|---:|---:|
-| 1 (stdlib) | 2026-05-19 + 2026-05-20 (W09.S.011 re-opened, fix landed) | 1 (closed) | 10 | 0 |
-| 2 (attune-ai deep sweep) | pending | — | — | — |
+| 1 (stdlib) | 2026-05-19 + 2026-05-20 (W09.S.011 re-opened, fix landed) | 1 (closed in #60) | 10 | 0 |
+| 2 (attune-ai deep sweep, partial) | 2026-05-19 | 3 (all closed in this PR) | 1 | 1 (deferred full-report capture) |
 
-Source 1 triage is complete; W09.S.011 surfaced a real macOS
-direct-path bypass and is fixed in this PR (`_SYSTEM_DIRS`
-extended). Source 2 findings, when the deep sweep lands, are
-folded into a follow-up pass and amended above. The hard gate
-(`zero severity: high open`) holds on the Source 1 side; recheck
-at end of W0 against the union of both sources.
+Source 1 triage is complete; W09.S.011 surfaced a real macOS direct-path
+bypass and was closed via the `_SYSTEM_DIRS` extension in PR #60. Source 2
+triage covers the 3 HIGH findings extracted by direct code inspection; all
+three are fixed in this PR (the `[Unreleased]` CHANGELOG carries `### Fixed`
+entries). The fourth HIGH-as-flagged finding (`--corpus-package` arbitrary
+import) was reclassified to non-issue under the developer-CLI threat model.
+A Phase 5 ticket tracks completing the deep sweep once the `security_audit`
+MCP `AttributeError` is fixed upstream.
+
+The hard gate (`zero severity: high open`) is **met** at this snapshot
+against both Source 1 and the audited slice of Source 2. Recheck at end of
+W0 if the Phase 5 deep-sweep capture lands inside the window.
