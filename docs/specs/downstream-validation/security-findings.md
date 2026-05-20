@@ -155,3 +155,50 @@ MCP `AttributeError` is fixed upstream.
 The hard gate (`zero severity: high open`) is **met** at this snapshot
 against both Source 1 and the audited slice of Source 2. Recheck at end of
 W0 if the Phase 5 deep-sweep capture lands inside the window.
+
+## Source 3 — independent second-pass review (defense in depth)
+
+**Status:** complete 2026-05-20. Result: **zero findings**.
+
+After the Source 2 LOW capture closed W09.A.005..008, a concern was
+raised that the LOW-capture agent had been working from an explicit
+category-hint list (TLS verify, secret-log, ANSI injection, ReDoS,
+timing channels) and might have blind spots for whatever was *not*
+on that list. To address that, a fresh general-purpose subagent was
+dispatched with:
+
+- No prior-findings context (instructed to avoid this directory).
+- No category hints (told the prior categories had already been
+  cleared and to look elsewhere).
+- Broad scope: any vulnerability anywhere in `src/attune_rag/`,
+  threat-modelled for a developer-run PyPI library.
+
+The agent actively examined and reported zero findings across:
+deserialization sinks (all `yaml.safe_load`; no `pickle`/`eval`/
+`exec`/`subprocess`/`os.system`); path-traversal in corpus loading
+(`DirectoryCorpus._within_root` gates `read_text`); atomic-write
+TOCTOU and symlink handling in `editor/rename.py` (plan/stage/apply
+rollback design); `tempfile.mkstemp` usage (single call site, mode
+0600, unique name); output-path validation in `dashboard/render.py`
+and `eval/bench_prompts.py` (POSIX-form + `/private/...` mirrors);
+provider credential handling (no `api_key`/header logging; no
+`exc_info=True` on LLM exceptions); LLM-output parsing in
+`expander.py`/`reranker.py` (explicit `isinstance` + bounds checks);
+`importlib.import_module` developer-CLI surface; `webbrowser.open`
+arg construction; expander cache bounds; exception message
+sanitization; regex backtracking patterns.
+
+Residual concerns the agent considered and dismissed as outside
+threat model: (1) TOCTOU on rename parent-dir swap (requires
+same-user attacker who could write the file directly); (2)
+unbounded expander cache (DoS-on-self only); (3) `benchmark.py`
+`_dump_json` not validated (developer-supplied flag, no attacker
+control). Reported confidence: **high** that the package has zero
+shipping-blocker vulnerabilities under the stated threat model.
+
+This independent second-pass result, combined with the Source 1
+stdlib clearance and the Source 2 HIGH+LOW closure, is the
+defensible answer to "did the partial deep_review miss something".
+The Phase 5 ticket for re-running the original `security_audit`
+MCP once its `AttributeError` is fixed remains documented for
+methodological completeness — not for an outstanding known issue.

@@ -6,6 +6,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+> **Feature freeze begins 2026-05-20** against `attune-rag==0.1.21`
+> (Phase 4 W1 of the v1.0 roadmap). For the next four calendar weeks
+> no PR may add new public surface — `### Added` is blocked by the
+> [`freeze` workflow](.github/workflows/freeze.yml) per W0.1's
+> [`scripts/check_freeze.py`](scripts/check_freeze.py). Internal
+> improvements (heuristic tweaks, prompt tuning, refactors) still
+> ship freely under `### Changed`. `### Fixed` and `### Security`
+> remain unrestricted; a security fix that requires a new public
+> symbol takes the `freeze-override` label per the
+> [Phase 4 spec](docs/specs/downstream-validation/tasks.md).
+>
+> W0 finished four days ahead of the proposed calendar
+> (2026-05-23 end-date) once the W09.A.005..008 LOW security pass
+> closed; the freeze clock therefore starts 2026-05-20 instead of
+> the calendar's 2026-05-24. End of W4 (and the 0.2.0 SemVer cut)
+> targets 2026-06-17 if no regression resets the clock.
+
 ## [0.1.21] - 2026-05-20
 
 > **Phase 4 W0 setup ships.** Twelve weeks of W0 machinery + four
