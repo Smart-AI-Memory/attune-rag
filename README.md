@@ -217,25 +217,29 @@ Locked dual-axis (wall-clock + CPU-time) thresholds on the four
 benchmarks. CPU-time is the gating axis (deterministic);
 wall-clock is advisory through Phase 4 burn-in, then revisited.
 
-| Benchmark | Axis | Mean (µs) | Threshold (µs) |
+| Benchmark | Axis | Mean | Threshold |
 |---|---|---:|---:|
-| `keyword_retriever_retrieve` | cpu | 730 | 7,783 |
-| `directory_corpus_load` | cpu | 47 | 62 |
-| `rag_pipeline_run` (retrieval-only) | cpu | 270 | 307 |
-| `llm_reranker_rerank` | wall | _re-lock pending_ | _re-lock pending_ |
+| `keyword_retriever_retrieve` | cpu | 3,212 µs | 34,493 µs |
+| `directory_corpus_load` | cpu | 47 µs | 66 µs |
+| `rag_pipeline_run` (retrieval-only) | cpu | 537 µs | 625 µs |
+| `llm_reranker_rerank` | wall | 728 ms | 1.07 s |
 
 Numbers measured from N=30 back-to-back runs on the
 locked-baseline runner (Linux `ubuntu-latest`, CPython 3.11.15).
-The `keyword_retriever_retrieve` threshold is wide because its
-measured σ (~3.5 ms) reflects cold-cache effects on the first
-few iterations — the threshold formula is `mean + 2σ`, which
-is empirically derived rather than tuned for tightness.
+Two thresholds reflect different noise profiles:
+
+- **`keyword_retriever_retrieve`** has a wide CPU band because its
+  measured σ ≈ 15.6 ms reflects cold-cache effects on the first
+  few iterations — the threshold formula is `mean + 2σ`,
+  empirically derived rather than tuned for tightness.
+- **`llm_reranker_rerank`** is wall-clock-only because Anthropic
+  network variance (σ ≈ 170 ms) dominates the CPU axis; the
+  gate is set generously and is advisory through Phase 4 W3.
 
 Gated by [`.github/workflows/perf.yml`](.github/workflows/perf.yml)
 per-PR (advisory comment in Phase 4 W1–W2, blocking in W3.1).
-Reranker numbers ship once `ANTHROPIC_API_KEY` is configured
-in repo Secrets and a full lock is run with `include_llm=true`.
-Raw numbers + hardware fingerprint:
+Raw numbers + hardware fingerprint + the full 8-row dual-axis
+table:
 [`docs/specs/downstream-validation/perf-baseline.md`](docs/specs/downstream-validation/perf-baseline.md).
 
 ### Why this is the differentiator
