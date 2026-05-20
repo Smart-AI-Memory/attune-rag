@@ -130,3 +130,50 @@ def test_query_with_provider_calls_llm(capsys: pytest.CaptureFixture[str]) -> No
 def test_unknown_subcommand_errors() -> None:
     with pytest.raises(SystemExit):
         main(["not-a-command"])
+
+
+# ── stderr ANSI hardening ──
+
+
+def test_safe_stderr_strips_ansi_control_chars() -> None:
+    from attune_rag.cli import _safe_stderr
+
+    # ESC (\x1b) starts every ANSI escape sequence. A path containing one
+    # would, if printed verbatim to a real terminal, repaint or hide the
+    # surrounding output.
+    msg = "Parent directory does not exist: /tmp/\x1b[31mEVIL\x1b[0m/dash.html"
+    cleaned = _safe_stderr(msg)
+    assert "\x1b" not in cleaned
+    # The byte is replaced with "?" so the message stays readable.
+    assert "?[31mEVIL?[0m" in cleaned
+
+
+def test_safe_stderr_strips_bel_and_backspace() -> None:
+    from attune_rag.cli import _safe_stderr
+
+    msg = "boom\x07\x08\x7f trailer"
+    cleaned = _safe_stderr(msg)
+    for bad in ("\x07", "\x08", "\x7f"):
+        assert bad not in cleaned
+
+
+def test_safe_stderr_preserves_tab_newline_cr() -> None:
+    from attune_rag.cli import _safe_stderr
+
+    msg = "line1\nline2\twith tab\r"
+    assert _safe_stderr(msg) == msg
+
+
+def test_dashboard_render_error_stderr_is_sanitized(
+    capsys: pytest.CaptureFixture[str],
+    tmp_path,
+) -> None:
+    # Trigger _validate_output_path's "Parent directory does not exist"
+    # ValueError by aiming at a nonexistent subdirectory whose name
+    # carries ANSI escape bytes. The CLI must scrub them before printing.
+    bad = str(tmp_path / "missing-\x1b[31mPWN\x1b[0m" / "dash.html")
+    rc = main(["dashboard", "render", "--out", bad])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "\x1b" not in err
+    assert "PWN" in err  # readable form survives

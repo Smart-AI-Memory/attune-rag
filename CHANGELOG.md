@@ -6,6 +6,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- **W0.9 Source 2 LOW hardening (Phase 4).** Three LOW findings surfaced
+  by a read-only security-review agent on `src/attune_rag/`, addressed
+  in this PR rather than deferred:
+  - **W09.A.005 — Rich-markup injection in `dashboard/show.py`.**
+    Snapshot fields (error message, retriever / corpus name, feature
+    labels, kind names, per-query feature) were interpolated raw into
+    Rich markup strings. A corpus value containing `[blink]X[/blink]`
+    would alter the developer's terminal styling. All untrusted fields
+    now flow through `rich.markup.escape`. Tests in
+    `tests/unit/test_dashboard_show.py`.
+  - **W09.A.006 — ANSI escape in CLI stderr.** `attune-rag dashboard
+    render --out` interpolates the user-supplied path into the
+    `ValueError` rendered to stderr. A path with raw ANSI bytes would
+    repaint the terminal. New `_safe_stderr(msg)` helper strips C0/C1
+    control characters (preserves `\t \n \r`) before printing.
+    Tests in `tests/unit/test_cli.py`.
+  - **W09.A.007 — `exc_info=True` on Anthropic-SDK exceptions.**
+    `LLMReranker.rerank` and `QueryExpander.expand` logged failures
+    with full traceback (debug-level). Traceback frames can capture
+    SDK locals that may include secret-adjacent material under future
+    SDK changes. Now logs exception type + message only.
+    Tests in `tests/unit/test_expander_reranker.py`.
+- **Close render-path macOS denylist bypass.** Same class as W09.S.011
+  but in `dashboard/render.py`. `Path("/etc/foo").resolve()` returns
+  `/private/etc/foo` on macOS, slipping past the `/etc` denylist
+  entry. Added `/private/etc`, `/private/sys`, `/private/dev`
+  mirrors. Two new tests in `tests/unit/test_dashboard_render.py`.
+
+### Changed
+
+- **Deep-review MEDIUM/LOW capture marked closed.** `security-findings.md`
+  Source 2 now lists W09.A.005..007 as `fix-now (closed in this PR)` and
+  documents the read-only-agent path as the workaround for the broken
+  `security_audit` MCP. Hard gate (`zero severity: high open`) still
+  holds; LOWs are now zero open as well.
+
 ## [0.1.20] - 2026-05-20
 
 > **Phase 4 W0 setup ships.** Twelve weeks of W0 machinery + two

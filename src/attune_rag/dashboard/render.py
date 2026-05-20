@@ -11,7 +11,16 @@ from typing import Any
 _SENTINEL_SNAPSHOT = "__ATTUNE_SNAPSHOT__"
 _SENTINEL_TITLE = "__ATTUNE_TITLE__"
 
-_SYSTEM_DIRS = frozenset({"/etc", "/sys", "/proc", "/dev", "/boot", "/sbin", "/bin", "/usr/bin"})
+# Original denylist + their macOS-resolved equivalents. On macOS,
+# ``Path("/etc/foo").resolve()`` returns ``/private/etc/foo`` because
+# ``/etc`` is a symlink to ``/private/etc``. Without the ``/private``
+# mirrors a user typing ``--out /etc/foo`` would be normalized through
+# the symlink before this check sees it, and the original denylist
+# wouldn't match. Mirrors W09.S.011's fix in ``eval/bench_prompts.py``.
+_SYSTEM_DIRS = frozenset(
+    {"/etc", "/sys", "/proc", "/dev", "/boot", "/sbin", "/bin", "/usr/bin"}
+    | {"/private/etc", "/private/sys", "/private/dev"}
+)
 
 
 def _json_for_script_block(obj: Any) -> str:

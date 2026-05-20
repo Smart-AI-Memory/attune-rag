@@ -15,11 +15,23 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import re
 import sys
 from pathlib import Path
 
 from .pipeline import RagPipeline
 from .providers import list_available
+
+# C0/C1 control characters EXCEPT tab (\t), newline (\n), and carriage
+# return (\r). Used to scrub error messages before they reach the
+# terminal so a path or filename containing raw ANSI escapes can't
+# rewrite the surrounding output.
+_CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]")
+
+
+def _safe_stderr(msg: str) -> str:
+    """Strip terminal control characters from ``msg`` before printing."""
+    return _CTRL_RE.sub("?", msg)
 
 
 def _cmd_query(args: argparse.Namespace) -> int:
@@ -156,7 +168,7 @@ def _cmd_dashboard_render(args: argparse.Namespace) -> int:
         snapshot = build_snapshot(corpus_package=args.corpus_package)
         render(out, snapshot, title=args.title)
     except ValueError as exc:
-        print(f"error: {exc}", file=sys.stderr)
+        print(f"error: {_safe_stderr(str(exc))}", file=sys.stderr)
         return 2
     print(f"Dashboard written to {out}")
     if args.open:

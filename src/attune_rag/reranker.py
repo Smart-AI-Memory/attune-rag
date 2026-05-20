@@ -136,5 +136,9 @@ class LLMReranker:
             return reranked
 
         except Exception as exc:  # noqa: BLE001
-            logger.debug("LLMReranker.rerank failed: %s", exc, exc_info=True)
+            # Log type + message only — avoid exc_info=True so the captured
+            # traceback frames (which may include locals from the Anthropic
+            # SDK) never reach the log. Keep the failure observable but
+            # secret-adjacent material out of it.
+            logger.debug("LLMReranker.rerank failed: %s: %s", type(exc).__name__, exc)
             return hits
