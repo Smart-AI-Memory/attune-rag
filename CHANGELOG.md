@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > the calendar's 2026-05-24. End of W4 (and the 0.2.0 SemVer cut)
 > targets 2026-06-17 if no regression resets the clock.
 
+## [0.1.22] - 2026-05-20
+
 > **Freeze override (Phase 4 of v1.0 roadmap).** The
 > `KeywordRetriever.MIN_ALIAS_OVERLAP` knob below is a new
 > public class attribute that lands inside the Phase 4
