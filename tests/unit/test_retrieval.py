@@ -41,6 +41,7 @@ def _entry(
     summary: str | None = None,
     related: tuple[str, ...] = (),
     category: str = "concepts",
+    aliases: tuple[str, ...] = (),
 ) -> RetrievalEntry:
     return RetrievalEntry(
         path=path,
@@ -48,6 +49,7 @@ def _entry(
         content=content,
         summary=summary,
         related=related,
+        aliases=aliases,
     )
 
 
@@ -334,6 +336,69 @@ def test_stemming_matches_ate_ator() -> None:
     # stems to "orchestr" via the "ator" suffix.
     hits = KeywordRetriever().retrieve("orchestrate documentation", corpus)
     assert hits and hits[0].entry.path == "references/tool-doc-orchestrator.md"
+
+
+def test_min_alias_overlap_filters_single_token_hits() -> None:
+    """A single common query token matching one entry's alias-token
+    union must not credit alias_hits when MIN_ALIAS_OVERLAP >= 2.
+    Multi-token alias overlap still fires. Regression for gq-020,
+    where ``test`` in a phrase alias outranked the canonical doc.
+    """
+    noisy_alias = _entry(
+        path="concepts/tool-fix-test.md",
+        category="concepts",
+        summary="fix failing tests",
+        aliases=("CI pipeline failing", "broken pipeline tests"),
+    )
+    canonical = _entry(
+        path="concepts/tool-smart-test.md",
+        category="concepts",
+        summary="generate unit tests",
+        aliases=(),
+    )
+    corpus = FakeCorpus([noisy_alias, canonical])
+    # "write unit tests" overlaps the noisy alias on a single token
+    # (`test`); the canonical doc matches the full phrase in summary.
+    hits = KeywordRetriever().retrieve("write unit tests", corpus)
+    assert hits, "expected at least one hit"
+    assert hits[0].entry.path == "concepts/tool-smart-test.md", (
+        f"expected canonical doc at top-1, got {hits[0].entry.path} "
+        f"with score {hits[0].score} (reason: {hits[0].match_reason})"
+    )
+
+
+def test_min_alias_overlap_respects_multi_token_match() -> None:
+    """Multi-token alias overlap still fires at the default threshold."""
+    aliased = _entry(
+        path="concepts/tool-release-prep.md",
+        category="concepts",
+        summary="release readiness check",
+        aliases=("publish to PyPI",),
+    )
+    corpus = FakeCorpus([aliased])
+    # Query overlaps the alias on TWO tokens ({publish, pypi}) — at or
+    # above MIN_ALIAS_OVERLAP=2, the alias signal credits as designed.
+    hits = KeywordRetriever().retrieve("publish to PyPI", corpus)
+    assert hits, "expected the aliased entry to retrieve"
+    assert (
+        "aliases:2" in hits[0].match_reason
+    ), f"expected aliases:2 in match_reason, got {hits[0].match_reason!r}"
+
+
+def test_stemming_collapses_ity_and_ities() -> None:
+    """``vulnerability`` (singular) and ``vulnerabilities`` (plural) must
+    collapse to the same stem so a singular query overlaps a doc that
+    writes the plural. Regression for the gq-011 P@1 miss where the
+    canonical concept doc lost to a quickstart that happened to also
+    write the singular form.
+    """
+    from attune_rag.retrieval import _stem
+
+    assert _stem("vulnerability") == _stem("vulnerabilities")
+    # Short tokens whose stripped length would fall below _MIN_STEM_LEN
+    # must NOT be stemmed (``city`` → ``c`` is below the floor).
+    assert _stem("city") == "city"
+    assert _stem("pity") == "pity"
 
 
 def test_stemming_preserves_short_tokens() -> None:

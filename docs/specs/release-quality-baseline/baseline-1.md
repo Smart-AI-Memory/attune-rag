@@ -5,8 +5,8 @@
 
 | Field | Value |
 |---|---|
-| Measured at | `2026-05-16T08:11:25Z` |
-| Commit | `d98fabe349210341ea7e1a1f357aba15164556e6` |
+| Measured at | `2026-05-20T05:42:59Z` |
+| Commit | `07bdf3545d5bacd14384af270882f84d59c190e5` |
 | Queries path | `tests/golden/queries.yaml` |
 | Queries SHA-256 | `f47486df87c61e2391a4326f9ffe68659373f6837063cf70c5b990a639f2290c` |
 | Runs (N) | 20 |
@@ -16,8 +16,8 @@
 
 | Metric | Mean | Stdev | Threshold (mean − σ·stdev) |
 |---|---:|---:|---:|
-| `mean_faithfulness` | 0.979 | 0.0052 | 0.9686 |
-| `precision_at_1` | 0.95 | 0.0 | 0.95 |
+| `mean_faithfulness` | 0.9801 | 0.0052 | 0.9698 |
+| `precision_at_1` | 0.975 | 0.0 | 0.975 |
 | `recall_at_3` | 1.0 | 0.0 | 1.0 |
 
 ## Raw runs
@@ -25,51 +25,51 @@
 ### `mean_faithfulness`
 
 ```
-run  1: 0.986
-run  2: 0.983
-run  3: 0.976
-run  4: 0.976
-run  5: 0.975
-run  6: 0.982
-run  7: 0.98
-run  8: 0.984
-run  9: 0.973
-run 10: 0.98
-run 11: 0.979
-run 12: 0.976
-run 13: 0.981
-run 14: 0.978
-run 15: 0.987
-run 16: 0.97
-run 17: 0.987
+run  1: 0.983
+run  2: 0.969
+run  3: 0.975
+run  4: 0.991
+run  5: 0.984
+run  6: 0.977
+run  7: 0.977
+run  8: 0.983
+run  9: 0.981
+run 10: 0.984
+run 11: 0.981
+run 12: 0.987
+run 13: 0.982
+run 14: 0.98
+run 15: 0.975
+run 16: 0.976
+run 17: 0.984
 run 18: 0.976
-run 19: 0.969
+run 19: 0.974
 run 20: 0.983
 ```
 
 ### `precision_at_1`
 
 ```
-run  1: 0.95
-run  2: 0.95
-run  3: 0.95
-run  4: 0.95
-run  5: 0.95
-run  6: 0.95
-run  7: 0.95
-run  8: 0.95
-run  9: 0.95
-run 10: 0.95
-run 11: 0.95
-run 12: 0.95
-run 13: 0.95
-run 14: 0.95
-run 15: 0.95
-run 16: 0.95
-run 17: 0.95
-run 18: 0.95
-run 19: 0.95
-run 20: 0.95
+run  1: 0.975
+run  2: 0.975
+run  3: 0.975
+run  4: 0.975
+run  5: 0.975
+run  6: 0.975
+run  7: 0.975
+run  8: 0.975
+run  9: 0.975
+run 10: 0.975
+run 11: 0.975
+run 12: 0.975
+run 13: 0.975
+run 14: 0.975
+run 15: 0.975
+run 16: 0.975
+run 17: 0.975
+run 18: 0.975
+run 19: 0.975
+run 20: 0.975
 ```
 
 ### `recall_at_3`

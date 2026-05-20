@@ -39,18 +39,20 @@ python - "$GOOD" "$QUERIES_PATH" <<'PY'
 import json, sys
 out, queries = sys.argv[1:]
 json.dump({
-    "retrieval": {"precision_at_1": 0.95, "recall_at_k": 1.0, "k": 3},
+    "retrieval": {"precision_at_1": 1.0, "recall_at_k": 1.0, "k": 3},
     "faithfulness_legacy": {"mean_faithfulness": 0.985},
     "queries_path": queries,
 }, open(out, "w"))
 PY
 
-# Bad dump: faithfulness well below threshold (0.85 < 0.9686).
+# Bad dump: faithfulness well below threshold (0.85 < 0.9698).
+# precision_at_1 kept above the 0.975 floor so the failure is scoped
+# to faithfulness.
 python - "$BAD" "$QUERIES_PATH" <<'PY'
 import json, sys
 out, queries = sys.argv[1:]
 json.dump({
-    "retrieval": {"precision_at_1": 0.95, "recall_at_k": 1.0, "k": 3},
+    "retrieval": {"precision_at_1": 1.0, "recall_at_k": 1.0, "k": 3},
     "faithfulness_legacy": {"mean_faithfulness": 0.85},
     "queries_path": queries,
 }, open(out, "w"))

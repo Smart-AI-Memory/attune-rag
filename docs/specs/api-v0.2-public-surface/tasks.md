@@ -127,3 +127,18 @@ are both backward-compatible.
   attune-gui Cowork live-dashboard surface — this is the static
   snapshot dashboard from `dashboard/render.py`, embedded in the
   preview pane for in-conversation review.
+- **`KeywordRetriever.MIN_ALIAS_OVERLAP` knob — shipped early
+  under freeze-override in 0.1.22 (was originally deferred).**
+  Default `2` lands as an `### Added` bullet in the
+  `[Unreleased]` block with `[Override-rationale]` documented
+  inline; cadence clock not reset (`Security`-scoped exception
+  pattern). The 0.2.0 cut should still re-affirm the knob in its
+  public-surface inventory and add it to the snapshot test in
+  `tests/unit/test_api_surface.py` as a deliberate class
+  attribute (not a new `__all__` entry). Full trace:
+  [`docs/specs/selection-criteria-robustness/proposal.md`](../selection-criteria-robustness/proposal.md).
+- **Embedding co-signal for genuine semantic ties (workstream B).**
+  gq-020 was the documented "needs embeddings" case before
+  `MIN_ALIAS_OVERLAP` shipped; it now passes top-1 lexically.
+  Embedding work moves from "necessary fix for 0.1.x" to
+  "0.2.0+ semantic floor lift". Re-scope before opening.
