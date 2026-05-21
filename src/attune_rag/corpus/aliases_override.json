@@ -18,6 +18,23 @@
     "tag a release"
   ],
 
+  "concepts/tool-smart-test.md": [
+    "safety nets",
+    "build safety nets",
+    "safety net for code",
+    "untouched module",
+    "untouched code",
+    "untested code",
+    "shore up coverage",
+    "shore up tests",
+    "functions need assertions",
+    "assertions for functions",
+    "missing tests",
+    "test coverage gaps",
+    "no tests yet",
+    "code with no tests"
+  ],
+
   "concepts/tool-security-audit.md": [
     "unsafe input",
     "input handling",
