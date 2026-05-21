@@ -1,6 +1,6 @@
 # Spec: embedding-retriever — Tasks
 
-> **Status: deferred — not executable. D1+D2+D3 found dependency-free alternatives close the gap; tasks do not activate unless an alias-expansion sweep leaves a meaningful residual. See [README.md](README.md) for the full defer rationale.**
+> **Status: deferred (permanent as of 2026-05-21) — not executable. alias-expansion-sweep landed paraphrased R@3 = 96.25% with baseline 100%/100%, exceeding the M13.2 revival threshold. See [README.md](README.md) for the full rationale.**
 
 This file is a **scaffold**, not a runnable task list. A `tasks.md` in a scoping spec is **not executable** — see user memory `feedback_spec_scoping_vs_approved`. The `/spec` pass promotes this into an approved spec with concrete scripts, acceptance criteria, and dependency arrows.
 

@@ -1,6 +1,6 @@
 # Spec: embedding-retriever — Requirements
 
-> **Status: deferred — D1+D2+D3 found dependency-free alternatives close the gap; spec does not activate unless an alias-expansion sweep leaves a meaningful residual. See [README.md](README.md) for the full defer rationale.**
+> **Status: deferred (permanent as of 2026-05-21) — alias-expansion-sweep landed paraphrased R@3 = 96.25% with baseline 100%/100%, well above the M13.2 ≥70% revival threshold. See [README.md](README.md) for the full rationale.**
 
 This spec adds a semantic retrieval path (local-model embeddings + hybrid combiner) to address the lexical-paraphrase brittleness measured in [diagnostic-1.md](diagnostic-1.md). The default retriever does not change.
 
