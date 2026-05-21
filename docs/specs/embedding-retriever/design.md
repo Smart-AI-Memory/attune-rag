@@ -1,6 +1,6 @@
 # Spec: embedding-retriever — Design
 
-> **Status: deferred — D1+D2+D3 found dependency-free alternatives close the gap; spec does not activate unless an alias-expansion sweep leaves a meaningful residual. See [README.md](README.md) for the full defer rationale. Design preserved as archival reference for the revival path.**
+> **Status: deferred (permanent as of 2026-05-21) — alias-expansion-sweep landed paraphrased R@3 = 96.25% with baseline 100%/100%. Design preserved as archival reference for the revival path (which now requires evidence the alias mechanism can't close a gap that matters for shipped usage). See [README.md](README.md) for the full rationale.**
 
 This document sketches the shape of the embedding retriever and hybrid combiner. It is **not** a finalized design — the `/spec` scoping pass picks the model, fills in the algorithm parameters, and decides the CI-gate timing.
 

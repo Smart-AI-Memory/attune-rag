@@ -1,14 +1,16 @@
 # Spec: embedding-retriever
 
-> **Status: deferred — diagnostics D1+D2+D3 (2026-05-21) found dependency-free alternatives (alias expansion, QueryExpander) close most of the paraphrase gap. Revisit only if an alias-expansion sweep across all under-served feature clusters leaves a meaningful residual.**
+> **Status: deferred (permanent as of 2026-05-21) — the [alias-expansion-sweep](../alias-expansion-sweep/) closed the paraphrase gap (R@3 28.75% → 96.25%, baseline still 100%/100%) without any new dependency. Revival would require evidence the alias mechanism can't close a gap that matters for shipped usage; none observed.**
 
 - **Owner:** Patrick
 - **Created:** 2026-05-21
 - **Deferred:** 2026-05-21 (same day, after D2 and D3 results landed)
+- **Defer made permanent:** 2026-05-21 (after [alias-expansion-sweep](../alias-expansion-sweep/) M13.1 confirmed paraphrased R@3 = 96.25%, well above the M13.2 ≥70% revival threshold)
 - **Target version (if revived):** 0.3.0+ (post-0.2.0 cut, additive only)
-- **Predecessor work:** [diagnostic-1.md](diagnostic-1.md), [diagnostic-2.md](diagnostic-2.md), [diagnostic-3.md](diagnostic-3.md) (D3 writeup pending).
+- **Predecessor work:** [diagnostic-1.md](diagnostic-1.md), [diagnostic-2.md](diagnostic-2.md), [diagnostic-3.md](diagnostic-3.md).
 - **Entry condition (D1):** Δ P@1 > 15pp on the paraphrase set → STRONG verdict. **Met:** observed Δ P@1 = −86.25pp.
 - **Defer condition (D2 + D3):** dependency-free alternatives close ≥ 30pp of the paraphrased R@3 gap with smaller or zero baseline cost. **Met:** D3 +50pp R@3 on bug-predict cluster with zero regression, zero dep; D2 +51pp R@3 overall (but with −10pp baseline P@1 cost, ruling it out as a default but viable as opt-in).
+- **Permanent-defer condition (M13.2):** alias-expansion-sweep lands paraphrased R@3 ≥ 70% with no baseline regression. **Met at 96.25% / 100% baseline.**
 
 ## Purpose (deferred — kept for archival context)
 
