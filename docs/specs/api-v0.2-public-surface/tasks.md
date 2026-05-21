@@ -2,7 +2,7 @@
 
 ## Phase 3: Tasks
 
-**Status**: **all in-scope work complete 2026-05-16.** M1–M4 shipped in attune-rag 0.1.18 (PR #36) + Phase 2 in 0.1.19 (PR #38). M5.1 + M5.2 merged in attune-gui via PR #36 (commit `af8d3fc`, 2026-05-16T11:46:31Z), bundled with the live-marker / CI guard from PR #32. M5.3 (contract test against published 0.1.19) verified green 2026-05-16 — 32/32 attune-rag-touching tests pass. The formal 0.2.0 freeze + classifier flip (Alpha → Stable) stay queued for a successor spec, tied to Phase 4 burn-in.
+**Status**: **all in-scope work complete 2026-05-16.** M1–M4 shipped in attune-rag 0.1.18 (PR #36) + Phase 2 in 0.1.19 (PR #38). M5.1 + M5.2 merged in attune-gui via PR #36 (commit `af8d3fc`, 2026-05-16T11:46:31Z), bundled with the live-marker / CI guard from PR #32. M5.3 (contract test against published 0.1.19) verified green 2026-05-16 — 32/32 attune-rag-touching tests pass. **The formal 0.2.0 SemVer freeze is queued in [`docs/specs/api-v0.2.0-cut/`](../api-v0.2.0-cut/) (W4.4 successor spec, tied to Phase 4 burn-in). The classifier flip `3 - Alpha` → `5 - Production/Stable` is queued in [`docs/specs/v1.0.0-release/`](../v1.0.0-release/) (Phase 5) — *not* part of 0.2.0.**
 
 ### Implementation order
 
@@ -27,7 +27,7 @@ attune-gui, post-release.
 | M4.1 | Write `docs/POLICY.md` per design.md's outline (six sections). | attune-rag | **done** | M4 — policy + docs. Six sections: what's covered, SemVer commitment, retire procedure, add procedure, underscore convention, resources. |
 | M4.2 | Add "Public API" section to [README.md](README.md) listing the PUBLIC symbols and submodules, with a link to `docs/POLICY.md`. | attune-rag | **done** | Inserted before "Status". Groups symbols by topic (Pipeline, Corpus, Retrieval, Provenance, Prompting, Hybrid retrieval) + enumerates PUBLIC submodules + notes the 0.3.0 shim removal. |
 | M4.3 | Add a CHANGELOG entry. | attune-rag | **done** | Drafted under `[Unreleased]` with Added/Changed/Deprecated sections. Note explicitly says 0.2.0 ships only after Phase 2 lands. |
-| M4.4 | Bump `pyproject.toml` and `__version__` to `0.1.18` (retargeted from 0.2.0 — the work is backward-compatible groundwork, not the formal freeze). Classifier remains `Development Status :: 3 - Alpha`. The 0.2.0 freeze + Stable flip stay queued for after Phase 2. | attune-rag | **done** | Both `pyproject.toml` and `src/attune_rag/__init__.py` set to 0.1.18. |
+| M4.4 | Bump `pyproject.toml` and `__version__` to `0.1.18` (retargeted from 0.2.0 — the work is backward-compatible groundwork, not the formal freeze). Classifier remains `Development Status :: 3 - Alpha`. The 0.2.0 SemVer freeze is queued in [`api-v0.2.0-cut/`](../api-v0.2.0-cut/); the classifier flip to `5 - Production/Stable` is queued in [`v1.0.0-release/`](../v1.0.0-release/) — two separate cuts. | attune-rag | **done** | Both `pyproject.toml` and `src/attune_rag/__init__.py` set to 0.1.18. |
 | M4.5 | Tag and publish per the existing release workflow (`/attune-release-check` then `gh release create`). | attune-rag | **done** | 0.1.18 tagged + published 2026-05-16T11:23:47Z via PR #36 (commit `6d95ee1`). 0.1.19 followed in PR #38 + PR #39 (Phase 2 close-out + CHANGELOG precision fix) and published 2026-05-16T12:02:48Z. Both releases passed the `attune-release-check` skill and the manual `pypi` environment approval gate. |
 | M5.1 | In attune-gui: replace `attune_rag.editor._rename` imports with `attune_rag.editor.rename`. Same for `_schema`. | attune-gui | **done** | Landed in attune-gui on branch `feature/attune-rag-0.2-editor-rename` (commit `5bf35ec`). 5 files: 2 route handlers, 2 tests, 1 docstring. Note: the commit message refers to "attune-rag 0.2.0" but the renames actually ship in 0.1.18 — technical capability unchanged. |
 | M5.2 | In attune-gui: remove the unpublished-module guard in `sidecar/attune_gui/_editor_dep.py` once the floor version of attune-rag is bumped to `>=0.1.18` (retargeted from 0.2.0). | attune-gui | **done** | Merged in attune-gui PR #36 (commit `af8d3fc`, 2026-05-16T11:46:31Z). The 503 guard + `test_editor_dep.py` were removed; floor pinned at `attune-rag>=0.1.18,<0.2` in attune-gui's `pyproject.toml`. PR #36 also bundled M5.1's non-underscore import migration. |
@@ -63,8 +63,10 @@ are both backward-compatible.
 - [x] `pyproject.toml` is at version `0.1.18` (re-targeted from
       `0.2.0` — the work is additive groundwork, not the formal
       freeze; bumped again to `0.1.19` in PR #38). The formal
-      0.2.0 freeze + classifier flip stay queued for a successor
-      spec.
+      0.2.0 SemVer freeze is queued in
+      [`api-v0.2.0-cut/`](../api-v0.2.0-cut/); the classifier flip
+      `3 - Alpha` → `5 - Production/Stable` is queued in
+      [`v1.0.0-release/`](../v1.0.0-release/) — two separate cuts.
 - [x] CHANGELOG has an "Added", "Changed", and "Deprecated" section
       for 0.1.18 (and a follow-up `[0.1.19]` section for Phase 2).
 - [x] attune-gui's contract test (`test_contract_attune_rag.py`)

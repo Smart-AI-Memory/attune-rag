@@ -18,8 +18,14 @@
 > renamed modules, internal surface lock test, documentation).
 > Calling it "0.2.0 API freeze" required the Phase 2 release-quality
 > baseline to land first; calling it "0.1.18 groundwork toward the
-> 0.2.0 freeze" doesn't. The formal SemVer freeze + classifier flip
-> stay queued for 0.2.0/Phase 5.
+> 0.2.0 freeze" doesn't. **The formal SemVer freeze ships at 0.2.0**
+> (see [`docs/specs/api-v0.2.0-cut/`](../api-v0.2.0-cut/), the W4.4
+> successor spec); **the classifier flip `3 - Alpha` →
+> `5 - Production/Stable` ships at 1.0.0** (see
+> [`docs/specs/v1.0.0-release/`](../v1.0.0-release/), Phase 5).
+> 0.2.0 stays at `Development Status :: 3 - Alpha`. The 2026-05-16
+> framing that bundled "freeze + classifier flip" together is
+> obsolete — they are two separate cuts.
 >
 > **M1–M3, M4.1–M4.4, and M5.1** have landed. In attune-rag:
 > `AttuneHelpCorpus` re-exported at root; five editor submodules
