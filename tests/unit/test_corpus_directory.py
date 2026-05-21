@@ -200,3 +200,94 @@ def test_deterministic_ordering(tiny_corpus: Path) -> None:
     second = [e.path for e in corpus.entries()]
     assert first == second
     assert first == sorted(first)
+
+
+# --- extra_aliases override mechanism ---
+
+
+def _aliased_corpus(tmp_path: Path) -> Path:
+    """Tiny corpus where two templates declare frontmatter aliases."""
+    root = tmp_path / "docs"
+    _write(
+        root / "concepts" / "alpha.md",
+        "---\naliases:\n  - 'fm alpha alias'\n---\n# alpha\nalpha body",
+    )
+    _write(
+        root / "concepts" / "beta.md",
+        "---\naliases:\n  - 'fm beta alias'\n---\n# beta\nbeta body",
+    )
+    return root
+
+
+def test_extra_aliases_appended_to_frontmatter(tmp_path: Path) -> None:
+    """Extras append after frontmatter aliases without overwriting them."""
+    root = _aliased_corpus(tmp_path)
+    corpus = DirectoryCorpus(
+        root,
+        extra_aliases={"concepts/alpha.md": ["override alpha one", "override alpha two"]},
+    )
+    alpha = corpus.get("concepts/alpha.md")
+    assert alpha is not None
+    assert alpha.aliases == ("fm alpha alias", "override alpha one", "override alpha two")
+
+
+def test_extra_aliases_within_template_duplicate_is_deduped(tmp_path: Path) -> None:
+    """Re-declaring a frontmatter alias in the override is silently dropped."""
+    root = _aliased_corpus(tmp_path)
+    corpus = DirectoryCorpus(
+        root,
+        extra_aliases={
+            "concepts/alpha.md": ["fm alpha alias", "novel alpha alias"],
+        },
+    )
+    alpha = corpus.get("concepts/alpha.md")
+    assert alpha is not None
+    assert alpha.aliases == ("fm alpha alias", "novel alpha alias")
+
+
+def test_extra_aliases_cross_template_collision_raises(tmp_path: Path) -> None:
+    """An override alias colliding with another template's frontmatter raises."""
+    from attune_rag.corpus.base import DuplicateAliasError
+
+    root = _aliased_corpus(tmp_path)
+    corpus = DirectoryCorpus(
+        root,
+        extra_aliases={"concepts/alpha.md": ["fm beta alias"]},
+    )
+    with pytest.raises(DuplicateAliasError):
+        list(corpus.entries())
+
+
+def test_extra_aliases_only_affects_keyed_paths(tmp_path: Path) -> None:
+    """Entries not in extra_aliases keep their frontmatter aliases unchanged."""
+    root = _aliased_corpus(tmp_path)
+    corpus = DirectoryCorpus(
+        root,
+        extra_aliases={"concepts/alpha.md": ["new alpha alias"]},
+    )
+    beta = corpus.get("concepts/beta.md")
+    assert beta is not None
+    assert beta.aliases == ("fm beta alias",)
+
+
+def test_extra_aliases_drops_non_string_entries(tmp_path: Path) -> None:
+    """Malformed override entries (non-string, empty string) are filtered."""
+    root = _aliased_corpus(tmp_path)
+    corpus = DirectoryCorpus(
+        root,
+        extra_aliases={"concepts/alpha.md": ["good", "", None, 42, "also good"]},  # type: ignore[list-item]
+    )
+    alpha = corpus.get("concepts/alpha.md")
+    assert alpha is not None
+    assert alpha.aliases == ("fm alpha alias", "good", "also good")
+
+
+def test_extra_aliases_default_none_is_noop(tmp_path: Path) -> None:
+    """Omitting extra_aliases preserves existing behavior exactly."""
+    root = _aliased_corpus(tmp_path)
+    corpus = DirectoryCorpus(root)
+    alpha = corpus.get("concepts/alpha.md")
+    beta = corpus.get("concepts/beta.md")
+    assert alpha is not None and beta is not None
+    assert alpha.aliases == ("fm alpha alias",)
+    assert beta.aliases == ("fm beta alias",)

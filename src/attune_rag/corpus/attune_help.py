@@ -40,6 +40,7 @@ from .directory import DirectoryCorpus
 from .help_adapter import HelpCorpusAdapter
 
 _OVERRIDES_PATH = Path(__file__).parent / "summaries_override.json"
+_ALIASES_OVERRIDES_PATH = Path(__file__).parent / "aliases_override.json"
 
 
 @dataclass(frozen=True)
@@ -79,6 +80,22 @@ class AttuneHelpCorpus:
                 overrides = json.loads(_OVERRIDES_PATH.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
                 pass
+        # aliases_override.json mirrors summaries_override.json's shape
+        # but appends multi-token aliases per path. Lives in attune-rag
+        # so authors can iterate on retrieval coverage without rev'ing
+        # attune-help. Keys starting with ``_`` (e.g. ``_comment``) are
+        # ignored so the file can carry inline documentation.
+        alias_overrides: dict[str, list[str]] = {}
+        if _ALIASES_OVERRIDES_PATH.is_file():
+            try:
+                raw = json.loads(_ALIASES_OVERRIDES_PATH.read_text(encoding="utf-8"))
+                alias_overrides = {
+                    path: aliases
+                    for path, aliases in raw.items()
+                    if not path.startswith("_") and isinstance(aliases, list)
+                }
+            except (OSError, json.JSONDecodeError):
+                pass
         # attune-help 0.7.0+ ships summaries_by_path.json; older
         # versions don't have it. DirectoryCorpus._load_sidecar
         # treats a missing file as an empty map, so this is safe
@@ -87,6 +104,7 @@ class AttuneHelpCorpus:
             root=adapter.templates_root,
             summaries_file="summaries_by_path.json",
             extra_summaries=overrides,
+            extra_aliases=alias_overrides,
         )
 
     @classmethod
