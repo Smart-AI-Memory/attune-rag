@@ -223,6 +223,90 @@ def test_security_audit_baseline_queries_still_pass() -> None:
         )
 
 
+def test_release_prep_carries_override_aliases() -> None:
+    """The aliases_override.json mechanism merges into concepts/tool-release-prep.md.
+
+    Regression guard for the alias-expansion-sweep M4 (release-prep cluster).
+    """
+    corpus = AttuneHelpCorpus.from_attune_help()
+    entry = corpus.get("concepts/tool-release-prep.md")
+    assert entry is not None
+    # Frontmatter aliases preserved.
+    assert "publish to PyPI" in entry.aliases
+    assert "cut a release" in entry.aliases
+    # Override aliases appended.
+    assert "before pushing" in entry.aliases
+    assert "push to users" in entry.aliases
+    assert "push to the world" in entry.aliases  # gqp-019b
+    assert "push package" in entry.aliases  # gqp-035a
+
+
+def test_release_prep_paraphrased_queries_surface_release_prep_entry() -> None:
+    """KeywordRetriever returns *some* release-prep entry in top-3 for
+    5 of the 8 D1 paraphrased misses on the release-prep cluster.
+
+    Mirrors the security-audit / bug-predict regression tests. R@3
+    semantic matches tests/golden/test_golden.py — multiple
+    release-prep paths are acceptable (concepts/, quickstarts/,
+    references/, tasks/) since the golden set accepts any of them.
+    """
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    release_prep_paths = {
+        "concepts/tool-release-prep.md",
+        "quickstarts/skill-release-prep.md",
+        "references/skill-release-prep.md",
+        "references/tool-release-prep.md",
+        "tasks/use-release-prep.md",
+    }
+
+    paraphrased = [
+        "what's the gate before I push v0.5 out",  # gqp-008b
+        "what should I do before pushing v0.4 to users",  # gqp-019a
+        "push my code out to the world",  # gqp-019b
+        "what do I need before pushing this out",  # gqp-026a
+        "push this package out to users",  # gqp-035a
+    ]
+    for query in paraphrased:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = {h.entry.path for h in hits}
+        assert paths & release_prep_paths, (
+            f"Paraphrased query did not surface release-prep in top-3: "
+            f"{query!r} → {sorted(paths)}"
+        )
+
+
+def test_release_prep_baseline_queries_still_pass() -> None:
+    """Baseline keyword-friendly release-prep queries still surface *some*
+    release-prep entry in top-3 after the alias override is in place."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    release_prep_paths = {
+        "concepts/tool-release-prep.md",
+        "quickstarts/skill-release-prep.md",
+        "references/skill-release-prep.md",
+        "references/tool-release-prep.md",
+        "tasks/use-release-prep.md",
+    }
+
+    for query in [
+        "prepare a release",
+        "create a release",
+        "version bump and changelog",
+        "publish to PyPI",
+    ]:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = {h.entry.path for h in hits}
+        assert paths & release_prep_paths, (
+            f"Baseline release-prep query regressed after alias override: "
+            f"{query!r} → {sorted(paths)}"
+        )
+
+
 def test_path_keyed_summaries_load_from_attune_help_0_7_0() -> None:
     """AttuneHelpCorpus consumes summaries_by_path.json (0.7.0+).
 
