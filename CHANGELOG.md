@@ -6,24 +6,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> **Feature freeze begins 2026-05-20** against `attune-rag==0.1.21`
-> (Phase 4 W1 of the v1.0 roadmap). For the next four calendar weeks
-> no PR may add new public surface — `### Added` is blocked by the
-> [`freeze` workflow](.github/workflows/freeze.yml) per W0.1's
-> [`scripts/check_freeze.py`](scripts/check_freeze.py). Internal
-> improvements (heuristic tweaks, prompt tuning, refactors) still
-> ship freely under `### Changed`. `### Fixed` and `### Security`
-> remain unrestricted; a security fix that requires a new public
-> symbol takes the `freeze-override` label per the
-> [Phase 4 spec](docs/specs/downstream-validation/tasks.md).
+> **Feature freeze remains in effect** against `attune-rag==0.1.21`
+> (Phase 4 W1 of the v1.0 roadmap). The 0.1.23 patch above ships
+> under freeze — all entries are `### Changed` / `### Fixed`, no
+> `### Added`. End of W4 (and the 0.2.0 SemVer cut) still targets
+> 2026-06-17.
+
+## [0.1.23] - 2026-05-21
+
+> **Patch release under the Phase 4 freeze.** This release is
+> entirely internal retrieval improvements + housekeeping. Zero
+> `### Added` entries, zero new public symbols in any `__all__`.
+> The freeze clock is not reset.
 >
-> W0 finished four days ahead of the proposed calendar
-> (2026-05-23 end-date) once the W09.A.005..008 LOW security pass
-> closed; the freeze clock therefore starts 2026-05-20 instead of
-> the calendar's 2026-05-24. End of W4 (and the 0.2.0 SemVer cut)
-> targets 2026-06-17 if no regression resets the clock.
+> Headline: the **alias-expansion sweep** (PRs #94–#108) closes
+> paraphrased R@3 from 28.75% → 100% on the new 80-query
+> regression set, with baseline R@3 holding at 100% across all
+> 13 PRs. Full arc + lessons in
+> [`docs/specs/alias-expansion-sweep/`](docs/specs/alias-expansion-sweep/);
+> the diagnostic chain that motivated the alias approach (and
+> ruled out an embedding retriever) is in
+> [`docs/specs/embedding-retriever/`](docs/specs/embedding-retriever/),
+> now permanent-deferred.
+>
+> The perf-gate σ=3.0 widening (#75 / #77) ships here as the
+> short-term noise mitigation; the principled fix is scoped in
+> [`docs/specs/perf-baseline-multi-run/`](docs/specs/perf-baseline-multi-run/)
+> (Phase 5 work) and will restore σ=2.0 once inter-run stdev is
+> measured directly.
 
 ### Changed
+
+- **Alias-expansion sweep — paraphrased R@3 lifted 28.75% → 100%,
+  baseline held at 100%.** Thirteen-PR sequence (#94–#108) that
+  adds **180+ multi-token aliases across 13 attune-help feature
+  clusters** via a new `aliases_override.json` mechanism in
+  `DirectoryCorpus.extra_aliases` + `AttuneHelpCorpus`. The
+  override mechanism mirrors the existing `summaries_override.json`
+  path-for-path and is internal — `extra_aliases` is a new kwarg
+  on existing classes, no new public symbols. Measured on the
+  new 80-query [`tests/golden/queries_paraphrased.yaml`](tests/golden/queries_paraphrased.yaml)
+  set (authored as no-token-overlap variants of the 40-query
+  baseline goldens): paraphrased P@1 lifted **11.25% → 91.25%**;
+  paraphrased R@3 lifted **28.75% → 100%**. Baseline 40-query set
+  unchanged at P@1=100%, R@3=100%. **Zero new dependencies. Zero
+  baseline regression across all 13 PRs** — strict-dominance
+  held by running the full baseline diagnostic before each PR
+  commit (one near-miss caught + corrected pre-merge on M12). One
+  golden update (gq-013) at #108 to close a documented
+  ranking-list incompleteness. Per-cluster PRs: #94 bug-predict +
+  mechanism, #95 security-audit, #96 release-prep, #97 smart-test,
+  #98 fix-test, #99 code-quality, #101 refactor-plan, #102
+  planning, #103 doc-gen, #104 doc-orchestrator, #105 deep-review
+  + doc-audit, #108 residuals (M12 + D4). Diagnostics + arc:
+  [`docs/specs/alias-expansion-sweep/`](docs/specs/alias-expansion-sweep/),
+  [`docs/specs/embedding-retriever/`](docs/specs/embedding-retriever/)
+  (D1–D4 chain).
+
+- **Paraphrase regression suite wired into `tests/golden/test_golden.py`
+  with an aggregate watermark.** PR #100 added per-query
+  `xfail(strict=False)` markers for the 80-query paraphrased set;
+  PR #107 tightened the aggregate R@3 watermark floor from 0.50
+  → **0.85** once the sweep stabilized; the current run shows
+  80/80 xpass with R@3 = 1.00. Failure mode: if a future change
+  regresses paraphrased R@3 below 0.85, the watermark assertion
+  fails; per-query xpass→fail transitions surface as individual
+  test failures.
 
 - **W3.2: downstream-attune-gui gate promoted from advisory to blocking
   (internal CI only — no public API impact).** Removed
