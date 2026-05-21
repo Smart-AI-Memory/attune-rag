@@ -527,6 +527,85 @@ def test_code_quality_baseline_queries_still_pass() -> None:
         )
 
 
+def test_refactor_plan_carries_override_aliases() -> None:
+    """The aliases_override.json mechanism merges into concepts/tool-refactor-plan.md.
+
+    Regression guard for the alias-expansion-sweep M8 (refactor-plan cluster).
+    """
+    corpus = AttuneHelpCorpus.from_attune_help()
+    entry = corpus.get("concepts/tool-refactor-plan.md")
+    assert entry is not None
+    # Frontmatter aliases preserved.
+    assert "technical debt" in entry.aliases
+    assert "code smells" in entry.aliases
+    # Override aliases appended.
+    assert "untangle module" in entry.aliases  # gqp-007a
+    assert "rework tangled" in entry.aliases  # gqp-007b
+    assert "accumulated junk" in entry.aliases  # gqp-021a
+    assert "prune codebase" in entry.aliases  # gqp-021b
+    assert "simplify gnarly" in entry.aliases  # gqp-030a
+    assert "too many branches" in entry.aliases  # gqp-030b
+
+
+def test_refactor_plan_paraphrased_queries_surface_refactor_plan_entry() -> None:
+    """KeywordRetriever returns *some* refactor-plan entry in top-3 for the
+    6 D1 paraphrased misses on the refactor-plan cluster."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    refactor_paths = {
+        "concepts/tool-refactor-plan.md",
+        "quickstarts/skill-refactor-plan.md",
+        "references/skill-refactor-plan.md",
+        "references/tool-refactor-plan.md",
+        "tasks/use-refactor-plan.md",
+    }
+
+    paraphrased = [
+        "untangle this module",  # gqp-007a
+        "rework the tangled bits in my project",  # gqp-007b
+        "the codebase has accumulated junk over time",  # gqp-021a
+        "what should I prune from this codebase",  # gqp-021b
+        "simplify this gnarly module",  # gqp-030a
+        "this module has too many branches and nesting",  # gqp-030b
+    ]
+    for query in paraphrased:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = {h.entry.path for h in hits}
+        assert paths & refactor_paths, (
+            f"Paraphrased query did not surface refactor-plan in top-3: "
+            f"{query!r} → {sorted(paths)}"
+        )
+
+
+def test_refactor_plan_baseline_queries_still_pass() -> None:
+    """Baseline keyword-friendly refactor-plan queries still surface *some*
+    refactor-plan entry in top-3 after the alias override is in place."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    refactor_paths = {
+        "concepts/tool-refactor-plan.md",
+        "quickstarts/skill-refactor-plan.md",
+        "references/skill-refactor-plan.md",
+        "references/tool-refactor-plan.md",
+        "tasks/use-refactor-plan.md",
+    }
+
+    for query in [
+        "refactor my code",
+        "reduce code complexity",
+    ]:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = {h.entry.path for h in hits}
+        assert paths & refactor_paths, (
+            f"Baseline refactor-plan query regressed after alias override: "
+            f"{query!r} → {sorted(paths)}"
+        )
+
+
 def test_path_keyed_summaries_load_from_attune_help_0_7_0() -> None:
     """AttuneHelpCorpus consumes summaries_by_path.json (0.7.0+).
 
