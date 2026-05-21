@@ -749,6 +749,76 @@ def test_doc_gen_baseline_queries_still_pass() -> None:
         )
 
 
+def test_doc_orchestrator_carries_override_aliases() -> None:
+    """The aliases_override.json mechanism merges into
+    references/tool-doc-orchestrator.md.
+
+    Regression guard for the alias-expansion-sweep M11 (doc-orchestrator
+    cluster). Note: doc-orchestrator only has the references/ entry —
+    no concepts/, quickstarts/, etc. — so aliases land there.
+    """
+    corpus = AttuneHelpCorpus.from_attune_help()
+    entry = corpus.get("references/tool-doc-orchestrator.md")
+    assert entry is not None
+    # Frontmatter aliases preserved.
+    assert "orchestrate documentation workflow" in entry.aliases
+    assert "doc pipeline" in entry.aliases
+    # Override aliases appended.
+    assert "wire up readme jobs" in entry.aliases  # gqp-013a / 038a
+    assert "readme tasks back-to-back" in entry.aliases  # gqp-013b
+    assert "wire up readme flow" in entry.aliases  # gqp-034a
+    assert "reference material jobs" in entry.aliases  # gqp-034b
+    assert "reference material tasks" in entry.aliases  # gqp-038b
+
+
+def test_doc_orchestrator_paraphrased_queries_surface_doc_orchestrator_entry() -> None:
+    """KeywordRetriever returns references/tool-doc-orchestrator.md in top-3
+    for all 6 D1 paraphrased misses on the doc-orchestrator cluster."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    target = "references/tool-doc-orchestrator.md"
+
+    paraphrased = [
+        "wire up all my readme-related jobs as one process",  # gqp-013a
+        "run readme tasks back-to-back across the repo",  # gqp-013b
+        "wire up readme tasks as one flow",  # gqp-034a
+        "run all my reference-material jobs in sequence",  # gqp-034b
+        "wire up readme jobs across all modules",  # gqp-038a
+        "run my reference-material tasks in sequence repo-wide",  # gqp-038b
+    ]
+    for query in paraphrased:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = [h.entry.path for h in hits]
+        assert target in paths, (
+            f"Paraphrased query did not surface doc-orchestrator in top-3: " f"{query!r} → {paths}"
+        )
+
+
+def test_doc_orchestrator_baseline_queries_still_pass() -> None:
+    """Baseline keyword-friendly doc-orchestrator queries still surface
+    references/tool-doc-orchestrator.md in top-3 after the alias override
+    is in place."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    target = "references/tool-doc-orchestrator.md"
+
+    for query in [
+        "orchestrate documentation workflow",
+        "manage the documentation pipeline",
+        "coordinate documentation updates across the project",
+    ]:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = [h.entry.path for h in hits]
+        assert target in paths, (
+            f"Baseline doc-orchestrator query regressed after alias override: "
+            f"{query!r} → {paths}"
+        )
+
+
 def test_path_keyed_summaries_load_from_attune_help_0_7_0() -> None:
     """AttuneHelpCorpus consumes summaries_by_path.json (0.7.0+).
 
