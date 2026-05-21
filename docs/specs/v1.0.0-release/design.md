@@ -102,16 +102,31 @@ longer clock.
 ### Backlog disposition
 
 Triage [phase-5-backlog/items.md](../phase-5-backlog/items.md)
-during scoping. The three buckets:
+during scoping.
+
+**Already promoted (no triage needed):** M1 — multi-run perf-baseline
+methodology landed as its own spec at
+[docs/specs/perf-baseline-multi-run/](../perf-baseline-multi-run/)
+([PR #86](https://github.com/Smart-AI-Memory/attune-rag/pull/86)).
+It is a Phase 5 deliverable that ships *outside* this cut spec; its
+implementation phase modifies `scripts/measure_perf_baseline.py` +
+`.github/workflows/perf.yml` (gate plumbing, not public surface),
+which is why it could not land during the freeze. Treat it as
+parallel work; the 1.0.0 cut does not block on its completion.
+
+The remaining 10 items (Q1–Q4, P1–P4, T1–T3) triage into three
+buckets:
 
 - **Fold into [tasks.md](tasks.md).** Candidates: cosmetic surface
   tidy-ups (Q3, Q4 — alphabetise `__all__`, jsonschema attribute
   rename) — only if they can ship atomically with the cut and the
   snapshot test updates in the same commit.
-- **Promote to own spec.** Candidates: M1 (multi-run perf-baseline
-  methodology) — large, touches the perf gate, deserves its own
-  scoping pass. Likely a 1.0.x or 1.1.0 deliverable, not a
-  1.0.0-cut blocker.
+- **Promote to own spec.** Sizeable items that warrant their own
+  scoping pass. Example pattern: M1 itself, already promoted via
+  [PR #86](https://github.com/Smart-AI-Memory/attune-rag/pull/86)
+  — anything Q1–T3 of similar scope (e.g. Q1's `_RollbackState`
+  helper extraction in `editor/rename.py`) would follow the same
+  path.
 - **Won't-do.** Anything that fails the cost/benefit at scoping
   time. Close with a note in
   [phase-5-backlog/items.md](../phase-5-backlog/items.md) so the
