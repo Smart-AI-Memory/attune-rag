@@ -678,6 +678,77 @@ def test_planning_baseline_queries_still_pass() -> None:
         )
 
 
+def test_doc_gen_carries_override_aliases() -> None:
+    """The aliases_override.json mechanism merges into concepts/tool-doc-gen.md.
+
+    Regression guard for the alias-expansion-sweep M10 (doc-gen cluster).
+    """
+    corpus = AttuneHelpCorpus.from_attune_help()
+    entry = corpus.get("concepts/tool-doc-gen.md")
+    assert entry is not None
+    assert "spin up docs" in entry.aliases  # gqp-017a
+    assert "module explainer" in entry.aliases
+    assert "explain functions" in entry.aliases
+    assert "annotate functions" in entry.aliases
+    assert "human-readable docs" in entry.aliases
+
+
+def test_doc_gen_paraphrased_queries_surface_doc_gen_entry() -> None:
+    """KeywordRetriever returns *some* doc-gen entry in top-3 for the
+    1 D1 paraphrased miss on the doc-gen cluster (gqp-017a). The other
+    5 doc-gen paraphrased queries already passed under content/summary
+    matches before this PR."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    doc_gen_paths = {
+        "concepts/tool-doc-gen.md",
+        "quickstarts/skill-doc-gen.md",
+        "references/skill-doc-gen.md",
+        "references/tool-doc-gen.md",
+        "tasks/use-doc-gen.md",
+    }
+
+    paraphrased = [
+        "spin up an explainer for my module",  # gqp-017a
+    ]
+    for query in paraphrased:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = {h.entry.path for h in hits}
+        assert paths & doc_gen_paths, (
+            f"Paraphrased query did not surface doc-gen in top-3: " f"{query!r} → {sorted(paths)}"
+        )
+
+
+def test_doc_gen_baseline_queries_still_pass() -> None:
+    """Baseline keyword-friendly doc-gen queries still surface *some*
+    doc-gen entry in top-3 after the alias override is in place."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    doc_gen_paths = {
+        "concepts/tool-doc-gen.md",
+        "quickstarts/skill-doc-gen.md",
+        "references/skill-doc-gen.md",
+        "references/tool-doc-gen.md",
+        "tasks/use-doc-gen.md",
+    }
+
+    for query in [
+        "write documentation for my module",
+        "create documentation for my code",
+        "add docstrings to all my functions",
+    ]:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = {h.entry.path for h in hits}
+        assert paths & doc_gen_paths, (
+            f"Baseline doc-gen query regressed after alias override: "
+            f"{query!r} → {sorted(paths)}"
+        )
+
+
 def test_path_keyed_summaries_load_from_attune_help_0_7_0() -> None:
     """AttuneHelpCorpus consumes summaries_by_path.json (0.7.0+).
 
