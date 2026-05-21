@@ -384,6 +384,77 @@ def test_smart_test_baseline_queries_still_pass() -> None:
         )
 
 
+def test_fix_test_carries_override_aliases() -> None:
+    """The aliases_override.json mechanism merges into concepts/tool-fix-test.md.
+
+    Regression guard for the alias-expansion-sweep M6 (fix-test cluster).
+    """
+    corpus = AttuneHelpCorpus.from_attune_help()
+    entry = corpus.get("concepts/tool-fix-test.md")
+    assert entry is not None
+    # Frontmatter aliases preserved.
+    assert "CI pipeline failing" in entry.aliases
+    # Override aliases appended.
+    assert "suite is red" in entry.aliases
+    assert "red after merge" in entry.aliases  # gqp-003a
+    assert "figure out why tests fail" in entry.aliases  # gqp-024a
+    assert "blocking my merges" in entry.aliases  # gqp-031b
+
+
+def test_fix_test_paraphrased_queries_surface_fix_test_entry() -> None:
+    """KeywordRetriever returns *some* fix-test entry in top-3 for the
+    3 D1 paraphrased misses on the fix-test cluster."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    fix_test_paths = {
+        "concepts/tool-fix-test.md",
+        "quickstarts/skill-fix-test.md",
+        "references/skill-fix-test.md",
+        "tasks/use-fix-test.md",
+    }
+
+    paraphrased = [
+        "suite went red after last merge",  # gqp-003a
+        "my suite is red — figure out why",  # gqp-024a
+        "what's blocking my merges",  # gqp-031b
+    ]
+    for query in paraphrased:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = {h.entry.path for h in hits}
+        assert paths & fix_test_paths, (
+            f"Paraphrased query did not surface fix-test in top-3: " f"{query!r} → {sorted(paths)}"
+        )
+
+
+def test_fix_test_baseline_queries_still_pass() -> None:
+    """Baseline keyword-friendly fix-test queries still surface *some*
+    fix-test entry in top-3 after the alias override is in place."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    fix_test_paths = {
+        "concepts/tool-fix-test.md",
+        "quickstarts/skill-fix-test.md",
+        "references/skill-fix-test.md",
+        "tasks/use-fix-test.md",
+    }
+
+    for query in [
+        "fix failing tests",
+        "debug failing tests",
+        "my CI pipeline keeps failing",
+    ]:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = {h.entry.path for h in hits}
+        assert paths & fix_test_paths, (
+            f"Baseline fix-test query regressed after alias override: "
+            f"{query!r} → {sorted(paths)}"
+        )
+
+
 def test_path_keyed_summaries_load_from_attune_help_0_7_0() -> None:
     """AttuneHelpCorpus consumes summaries_by_path.json (0.7.0+).
 
