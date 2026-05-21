@@ -307,6 +307,83 @@ def test_release_prep_baseline_queries_still_pass() -> None:
         )
 
 
+def test_smart_test_carries_override_aliases() -> None:
+    """The aliases_override.json mechanism merges into concepts/tool-smart-test.md.
+
+    Regression guard for the alias-expansion-sweep M5 (smart-test cluster).
+    """
+    corpus = AttuneHelpCorpus.from_attune_help()
+    entry = corpus.get("concepts/tool-smart-test.md")
+    assert entry is not None
+    assert "safety nets" in entry.aliases
+    assert "untouched module" in entry.aliases  # gqp-022a
+    assert "functions need assertions" in entry.aliases  # gqp-022b
+    assert "shore up coverage" in entry.aliases  # gqp-022a alt
+    assert "missing tests" in entry.aliases
+
+
+def test_smart_test_paraphrased_queries_surface_smart_test_entry() -> None:
+    """KeywordRetriever returns *some* smart-test entry in top-3 for the
+    4 D1 paraphrased misses on the smart-test cluster.
+
+    R@3 semantic matches tests/golden/test_golden.py — concepts/,
+    quickstarts/, or any other smart-test path is acceptable.
+    """
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    smart_test_paths = {
+        "concepts/tool-smart-test.md",
+        "quickstarts/generate-tests.md",
+        "quickstarts/skill-smart-test.md",
+        "references/skill-smart-test.md",
+        "tasks/use-smart-test.md",
+    }
+
+    paraphrased = [
+        "I have functions with no safety nets",  # gqp-002a
+        "build safety nets for these functions",  # gqp-020a
+        "shore up untouched parts of my module",  # gqp-022a
+        "what functions need assertions",  # gqp-022b
+    ]
+    for query in paraphrased:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = {h.entry.path for h in hits}
+        assert paths & smart_test_paths, (
+            f"Paraphrased query did not surface smart-test in top-3: "
+            f"{query!r} → {sorted(paths)}"
+        )
+
+
+def test_smart_test_baseline_queries_still_pass() -> None:
+    """Baseline keyword-friendly smart-test queries still surface *some*
+    smart-test entry in top-3 after the alias override is in place."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    smart_test_paths = {
+        "concepts/tool-smart-test.md",
+        "quickstarts/generate-tests.md",
+        "quickstarts/skill-smart-test.md",
+        "references/skill-smart-test.md",
+        "tasks/use-smart-test.md",
+    }
+
+    for query in [
+        "generate tests for my code",
+        "write unit tests",
+        "add test coverage to my project",
+    ]:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = {h.entry.path for h in hits}
+        assert paths & smart_test_paths, (
+            f"Baseline smart-test query regressed after alias override: "
+            f"{query!r} → {sorted(paths)}"
+        )
+
+
 def test_path_keyed_summaries_load_from_attune_help_0_7_0() -> None:
     """AttuneHelpCorpus consumes summaries_by_path.json (0.7.0+).
 
