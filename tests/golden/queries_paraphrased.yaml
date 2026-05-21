@@ -1,0 +1,641 @@
+# Paraphrased golden queries — diagnostic-1 (EmbeddingRetriever feasibility).
+#
+# Each entry mirrors a `queries.yaml` golden query under the same id stem
+# (gqp-NNN[a|b]), with the same `expected_in_top_3` and `difficulty`. The
+# query text is rewritten to suppress overlap with tokens that appear in
+# the target template's path / summary / aliases, while staying inside
+# realistic developer phrasing.
+#
+# The goal: measure how much KeywordRetriever degrades when the query no
+# longer shares feature-name tokens with the target. The size of that
+# degradation is the EmbeddingRetriever case (or absence of one).
+#
+# NOT a regression gate — diagnostic only. Run via
+# `docs/specs/embedding-retriever/run_diagnostic_1.py`.
+
+version: 1
+
+queries:
+  # ---- security-audit (gq-001) ----
+  - id: gqp-001a
+    query: "what catches unsafe input handling and leaked credentials"
+    expected_feature: security-audit
+    expected_in_top_3:
+      - quickstarts/run-security-audit.md
+      - concepts/tool-security-audit.md
+    difficulty: easy
+  - id: gqp-001b
+    query: "I want to find places attackers could break in"
+    expected_feature: security-audit
+    expected_in_top_3:
+      - quickstarts/run-security-audit.md
+      - concepts/tool-security-audit.md
+    difficulty: easy
+
+  # ---- smart-test (gq-002) ----
+  - id: gqp-002a
+    query: "I have functions with no safety nets"
+    expected_feature: smart-test
+    expected_in_top_3:
+      - quickstarts/generate-tests.md
+      - concepts/tool-smart-test.md
+    difficulty: easy
+  - id: gqp-002b
+    query: "stub assertions for an untouched module"
+    expected_feature: smart-test
+    expected_in_top_3:
+      - quickstarts/generate-tests.md
+      - concepts/tool-smart-test.md
+    difficulty: easy
+
+  # ---- fix-test (gq-003) ----
+  - id: gqp-003a
+    query: "suite went red after last merge"
+    expected_feature: fix-test
+    expected_in_top_3:
+      - concepts/tool-fix-test.md
+    difficulty: easy
+  - id: gqp-003b
+    query: "auto-repair when my asserts blow up"
+    expected_feature: fix-test
+    expected_in_top_3:
+      - concepts/tool-fix-test.md
+    difficulty: easy
+
+  # ---- code-quality (gq-004) ----
+  - id: gqp-004a
+    query: "give me a once-over on this module"
+    expected_feature: code-quality
+    expected_in_top_3:
+      - concepts/tool-code-quality.md
+    difficulty: easy
+  - id: gqp-004b
+    query: "evaluate craftsmanship of my changes"
+    expected_feature: code-quality
+    expected_in_top_3:
+      - concepts/tool-code-quality.md
+    difficulty: easy
+
+  # ---- deep-review (gq-005) ----
+  - id: gqp-005a
+    query: "go over everything in this branch before I ship"
+    expected_feature: deep-review
+    expected_in_top_3:
+      - references/tool-deep-review.md
+    difficulty: easy
+  - id: gqp-005b
+    query: "audit all touched files before landing"
+    expected_feature: deep-review
+    expected_in_top_3:
+      - references/tool-deep-review.md
+    difficulty: easy
+
+  # ---- bug-predict (gq-006) ----
+  - id: gqp-006a
+    query: "where are the landmines in this commit"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: medium
+  - id: gqp-006b
+    query: "what part of the diff is most likely to blow up"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: medium
+
+  # ---- refactor-plan (gq-007) ----
+  - id: gqp-007a
+    query: "untangle this module"
+    expected_feature: refactor-plan
+    expected_in_top_3:
+      - concepts/tool-refactor-plan.md
+      - references/tool-refactor-plan.md
+    difficulty: medium
+  - id: gqp-007b
+    query: "rework the tangled bits in my project"
+    expected_feature: refactor-plan
+    expected_in_top_3:
+      - concepts/tool-refactor-plan.md
+      - references/tool-refactor-plan.md
+    difficulty: medium
+
+  # ---- release-prep (gq-008) ----
+  - id: gqp-008a
+    query: "what's the checklist before I push this to users"
+    expected_feature: release-prep
+    expected_in_top_3:
+      - concepts/tool-release-prep.md
+      - references/skill-release-prep.md
+    difficulty: medium
+  - id: gqp-008b
+    query: "what's the gate before I push v0.5 out"
+    expected_feature: release-prep
+    expected_in_top_3:
+      - concepts/tool-release-prep.md
+      - references/skill-release-prep.md
+    difficulty: medium
+
+  # ---- doc-audit (gq-009) ----
+  - id: gqp-009a
+    query: "find places where my readme lies about the code"
+    expected_feature: doc-audit
+    expected_in_top_3:
+      - references/tool-doc-audit.md
+    difficulty: medium
+  - id: gqp-009b
+    query: "what readme bits are wrong about how the app works now"
+    expected_feature: doc-audit
+    expected_in_top_3:
+      - references/tool-doc-audit.md
+    difficulty: medium
+
+  # ---- planning (gq-010) ----
+  - id: gqp-010a
+    query: "lay out the work for a brand-new module"
+    expected_feature: planning
+    expected_in_top_3:
+      - concepts/tool-planning.md
+      - references/skill-planning.md
+      - quickstarts/skill-planning.md
+    difficulty: medium
+  - id: gqp-010b
+    query: "structure my work before I write anything"
+    expected_feature: planning
+    expected_in_top_3:
+      - concepts/tool-planning.md
+      - references/skill-planning.md
+      - quickstarts/skill-planning.md
+    difficulty: medium
+
+  # ---- security-audit (gq-011) ----
+  - id: gqp-011a
+    query: "look for ways my service could be compromised"
+    expected_feature: security-audit
+    expected_in_top_3:
+      - quickstarts/run-security-audit.md
+      - concepts/tool-security-audit.md
+    difficulty: medium
+  - id: gqp-011b
+    query: "check my project for exploit surface"
+    expected_feature: security-audit
+    expected_in_top_3:
+      - quickstarts/run-security-audit.md
+      - concepts/tool-security-audit.md
+    difficulty: medium
+
+  # ---- doc-gen (gq-012) ----
+  - id: gqp-012a
+    query: "explain what my functions do in human form"
+    expected_feature: doc-gen
+    expected_in_top_3:
+      - concepts/tool-doc-gen.md
+      - quickstarts/skill-doc-gen.md
+    difficulty: medium
+  - id: gqp-012b
+    query: "spit out a guide explaining what my functions do"
+    expected_feature: doc-gen
+    expected_in_top_3:
+      - concepts/tool-doc-gen.md
+      - quickstarts/skill-doc-gen.md
+    difficulty: medium
+
+  # ---- doc-orchestrator (gq-013) ----
+  - id: gqp-013a
+    query: "wire up all my readme-related jobs as one process"
+    expected_feature: doc-orchestrator
+    expected_in_top_3:
+      - references/tool-doc-orchestrator.md
+    difficulty: hard
+  - id: gqp-013b
+    query: "run readme tasks back-to-back across the repo"
+    expected_feature: doc-orchestrator
+    expected_in_top_3:
+      - references/tool-doc-orchestrator.md
+    difficulty: hard
+
+  # ---- bug-predict (gq-014) ----
+  - id: gqp-014a
+    query: "what's potentially harmful in my source"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: medium
+  - id: gqp-014b
+    query: "find shell-out and dynamic execution patterns"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: medium
+
+  # ---- bug-predict (gq-015) ----
+  - id: gqp-015a
+    query: "where might my service fail silently"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: medium
+  - id: gqp-015b
+    query: "where are the silent failure paths"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: medium
+
+  # ---- bug-predict (gq-016) ----
+  - id: gqp-016a
+    query: "where are my problem spots"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - quickstarts/skill-bug-predict.md
+    difficulty: easy
+  - id: gqp-016b
+    query: "what are the weak points in my source"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - quickstarts/skill-bug-predict.md
+    difficulty: easy
+
+  # ---- doc-gen (gq-017) ----
+  - id: gqp-017a
+    query: "spin up an explainer for my module"
+    expected_feature: doc-gen
+    expected_in_top_3:
+      - concepts/tool-doc-gen.md
+      - quickstarts/skill-doc-gen.md
+    difficulty: easy
+  - id: gqp-017b
+    query: "turn my module into something a teammate can read"
+    expected_feature: doc-gen
+    expected_in_top_3:
+      - concepts/tool-doc-gen.md
+      - quickstarts/skill-doc-gen.md
+    difficulty: easy
+
+  # ---- code-quality (gq-018) ----
+  - id: gqp-018a
+    query: "give my module a once-over"
+    expected_feature: code-quality
+    expected_in_top_3:
+      - concepts/tool-code-quality.md
+      - quickstarts/skill-code-quality.md
+    difficulty: easy
+  - id: gqp-018b
+    query: "look for craftsmanship issues in this module"
+    expected_feature: code-quality
+    expected_in_top_3:
+      - concepts/tool-code-quality.md
+      - quickstarts/skill-code-quality.md
+    difficulty: easy
+
+  # ---- release-prep (gq-019) ----
+  - id: gqp-019a
+    query: "what should I do before pushing v0.4 to users"
+    expected_feature: release-prep
+    expected_in_top_3:
+      - concepts/tool-release-prep.md
+      - references/skill-release-prep.md
+    difficulty: easy
+  - id: gqp-019b
+    query: "push my code out to the world"
+    expected_feature: release-prep
+    expected_in_top_3:
+      - concepts/tool-release-prep.md
+      - references/skill-release-prep.md
+    difficulty: easy
+
+  # ---- smart-test (gq-020) ----
+  - id: gqp-020a
+    query: "build safety nets for these functions"
+    expected_feature: smart-test
+    expected_in_top_3:
+      - concepts/tool-smart-test.md
+      - quickstarts/generate-tests.md
+    difficulty: easy
+  - id: gqp-020b
+    query: "stub assertions for my new module"
+    expected_feature: smart-test
+    expected_in_top_3:
+      - concepts/tool-smart-test.md
+      - quickstarts/generate-tests.md
+    difficulty: easy
+
+  # ---- refactor-plan (gq-021, hard) ----
+  - id: gqp-021a
+    query: "the codebase has accumulated junk over time"
+    expected_feature: refactor-plan
+    expected_in_top_3:
+      - concepts/tool-refactor-plan.md
+      - references/tool-refactor-plan.md
+    difficulty: hard
+  - id: gqp-021b
+    query: "what should I prune from this codebase"
+    expected_feature: refactor-plan
+    expected_in_top_3:
+      - concepts/tool-refactor-plan.md
+      - references/tool-refactor-plan.md
+    difficulty: hard
+
+  # ---- smart-test (gq-022) ----
+  - id: gqp-022a
+    query: "shore up untouched parts of my module"
+    expected_feature: smart-test
+    expected_in_top_3:
+      - concepts/tool-smart-test.md
+      - quickstarts/generate-tests.md
+    difficulty: medium
+  - id: gqp-022b
+    query: "what functions need assertions"
+    expected_feature: smart-test
+    expected_in_top_3:
+      - concepts/tool-smart-test.md
+      - quickstarts/generate-tests.md
+    difficulty: medium
+
+  # ---- security-audit (gq-023) ----
+  - id: gqp-023a
+    query: "look for ways my code could be exploited"
+    expected_feature: security-audit
+    expected_in_top_3:
+      - concepts/tool-security-audit.md
+      - quickstarts/run-security-audit.md
+    difficulty: medium
+  - id: gqp-023b
+    query: "look for leaked tokens and risky function calls"
+    expected_feature: security-audit
+    expected_in_top_3:
+      - concepts/tool-security-audit.md
+      - quickstarts/run-security-audit.md
+    difficulty: medium
+
+  # ---- fix-test (gq-024) ----
+  - id: gqp-024a
+    query: "my suite is red — figure out why"
+    expected_feature: fix-test
+    expected_in_top_3:
+      - concepts/tool-fix-test.md
+      - references/skill-fix-test.md
+    difficulty: medium
+  - id: gqp-024b
+    query: "auto-repair pytest errors"
+    expected_feature: fix-test
+    expected_in_top_3:
+      - concepts/tool-fix-test.md
+      - references/skill-fix-test.md
+    difficulty: medium
+
+  # ---- doc-audit (gq-025) ----
+  - id: gqp-025a
+    query: "what guidance is no longer accurate"
+    expected_feature: doc-audit
+    expected_in_top_3:
+      - references/tool-doc-audit.md
+    difficulty: medium
+  - id: gqp-025b
+    query: "what reference material no longer matches reality"
+    expected_feature: doc-audit
+    expected_in_top_3:
+      - references/tool-doc-audit.md
+    difficulty: medium
+
+  # ---- release-prep (gq-026) ----
+  - id: gqp-026a
+    query: "what do I need before pushing this out"
+    expected_feature: release-prep
+    expected_in_top_3:
+      - concepts/tool-release-prep.md
+      - references/tool-release-prep.md
+    difficulty: medium
+  - id: gqp-026b
+    query: "checklist before pushing to users"
+    expected_feature: release-prep
+    expected_in_top_3:
+      - concepts/tool-release-prep.md
+      - references/tool-release-prep.md
+    difficulty: medium
+
+  # ---- bug-predict (gq-027) ----
+  - id: gqp-027a
+    query: "what part of this PR is dangerous"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: medium
+  - id: gqp-027b
+    query: "highlight worrisome spots in the diff"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: medium
+
+  # ---- planning (gq-028) ----
+  - id: gqp-028a
+    query: "I need a design pass before I write code"
+    expected_feature: planning
+    expected_in_top_3:
+      - concepts/tool-planning.md
+      - quickstarts/skill-planning.md
+    difficulty: medium
+  - id: gqp-028b
+    query: "lay out tasks for a brand-new module"
+    expected_feature: planning
+    expected_in_top_3:
+      - concepts/tool-planning.md
+      - quickstarts/skill-planning.md
+    difficulty: medium
+
+  # ---- code-quality (gq-029) ----
+  - id: gqp-029a
+    query: "raise the bar on this codebase"
+    expected_feature: code-quality
+    expected_in_top_3:
+      - concepts/tool-code-quality.md
+      - references/skill-code-quality.md
+    difficulty: medium
+  - id: gqp-029b
+    query: "what's keeping this module from being clean"
+    expected_feature: code-quality
+    expected_in_top_3:
+      - concepts/tool-code-quality.md
+      - references/skill-code-quality.md
+    difficulty: medium
+
+  # ---- refactor-plan (gq-030) ----
+  - id: gqp-030a
+    query: "simplify this gnarly module"
+    expected_feature: refactor-plan
+    expected_in_top_3:
+      - concepts/tool-refactor-plan.md
+      - references/skill-refactor-plan.md
+    difficulty: medium
+  - id: gqp-030b
+    query: "this module has too many branches and nesting"
+    expected_feature: refactor-plan
+    expected_in_top_3:
+      - concepts/tool-refactor-plan.md
+      - references/skill-refactor-plan.md
+    difficulty: medium
+
+  # ---- fix-test (gq-031) ----
+  - id: gqp-031a
+    query: "the build won't go green"
+    expected_feature: fix-test
+    expected_in_top_3:
+      - concepts/tool-fix-test.md
+      - quickstarts/skill-fix-test.md
+    difficulty: medium
+  - id: gqp-031b
+    query: "what's blocking my merges"
+    expected_feature: fix-test
+    expected_in_top_3:
+      - concepts/tool-fix-test.md
+      - quickstarts/skill-fix-test.md
+    difficulty: medium
+
+  # ---- security-audit (gq-032) ----
+  - id: gqp-032a
+    query: "look for exploit surface in my repo"
+    expected_feature: security-audit
+    expected_in_top_3:
+      - concepts/tool-security-audit.md
+      - quickstarts/run-security-audit.md
+    difficulty: medium
+  - id: gqp-032b
+    query: "what's potentially attackable here"
+    expected_feature: security-audit
+    expected_in_top_3:
+      - concepts/tool-security-audit.md
+      - quickstarts/run-security-audit.md
+    difficulty: medium
+
+  # ---- doc-gen (gq-033) ----
+  - id: gqp-033a
+    query: "annotate my functions with explanations"
+    expected_feature: doc-gen
+    expected_in_top_3:
+      - concepts/tool-doc-gen.md
+      - references/tool-doc-gen.md
+    difficulty: medium
+  - id: gqp-033b
+    query: "describe each function in human-readable form"
+    expected_feature: doc-gen
+    expected_in_top_3:
+      - concepts/tool-doc-gen.md
+      - references/tool-doc-gen.md
+    difficulty: medium
+
+  # ---- doc-orchestrator (gq-034) ----
+  - id: gqp-034a
+    query: "wire up readme tasks as one flow"
+    expected_feature: doc-orchestrator
+    expected_in_top_3:
+      - references/tool-doc-orchestrator.md
+    difficulty: medium
+  - id: gqp-034b
+    query: "run all my reference-material jobs in sequence"
+    expected_feature: doc-orchestrator
+    expected_in_top_3:
+      - references/tool-doc-orchestrator.md
+    difficulty: medium
+
+  # ---- release-prep (gq-035) ----
+  - id: gqp-035a
+    query: "push this package out to users"
+    expected_feature: release-prep
+    expected_in_top_3:
+      - concepts/tool-release-prep.md
+      - references/tool-release-prep.md
+    difficulty: hard
+  - id: gqp-035b
+    query: "cut a new version and send it out"
+    expected_feature: release-prep
+    expected_in_top_3:
+      - concepts/tool-release-prep.md
+      - references/tool-release-prep.md
+    difficulty: hard
+
+  # ---- bug-predict (gq-036) ----
+  - id: gqp-036a
+    query: "where's the diff going to bite me"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: medium
+  - id: gqp-036b
+    query: "what part of this commit is shaky"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: medium
+
+  # ---- deep-review (gq-037) ----
+  - id: gqp-037a
+    query: "thorough sweep before I land this branch"
+    expected_feature: deep-review
+    expected_in_top_3:
+      - references/tool-deep-review.md
+    difficulty: medium
+  - id: gqp-037b
+    query: "look at every changed file before landing"
+    expected_feature: deep-review
+    expected_in_top_3:
+      - references/tool-deep-review.md
+    difficulty: medium
+
+  # ---- doc-orchestrator (gq-038) ----
+  - id: gqp-038a
+    query: "wire up readme jobs across all modules"
+    expected_feature: doc-orchestrator
+    expected_in_top_3:
+      - references/tool-doc-orchestrator.md
+    difficulty: medium
+  - id: gqp-038b
+    query: "run my reference-material tasks in sequence repo-wide"
+    expected_feature: doc-orchestrator
+    expected_in_top_3:
+      - references/tool-doc-orchestrator.md
+    difficulty: medium
+
+  # ---- planning (gq-039) ----
+  - id: gqp-039a
+    query: "what should I tackle in the next two weeks"
+    expected_feature: planning
+    expected_in_top_3:
+      - concepts/tool-planning.md
+      - references/skill-planning.md
+    difficulty: medium
+  - id: gqp-039b
+    query: "break my upcoming work into pieces"
+    expected_feature: planning
+    expected_in_top_3:
+      - concepts/tool-planning.md
+      - references/skill-planning.md
+    difficulty: medium
+
+  # ---- bug-predict (gq-040) ----
+  - id: gqp-040a
+    query: "where might my service crash in production"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: medium
+  - id: gqp-040b
+    query: "what could go wrong once this is live"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-bug-predict.md
+    difficulty: medium

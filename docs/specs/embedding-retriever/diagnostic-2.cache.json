@@ -1,0 +1,868 @@
+{
+  "I have functions with no safety nets": [
+    "error handling in functions",
+    "exception handling and try-catch blocks",
+    "adding validation and guard clauses to functions",
+    "implementing defensive programming practices",
+    "adding unit tests and error boundaries to functions"
+  ],
+  "I need a design pass before I write code": [
+    "code review process before implementation",
+    "design document approval workflow",
+    "architecture review before development",
+    "design validation and sign-off",
+    "pre-implementation design review"
+  ],
+  "I want to find places attackers could break in": [
+    "security vulnerabilities and attack surfaces",
+    "common security weaknesses and penetration testing entry points",
+    "application security flaws and exploit vectors",
+    "code vulnerabilities and threat modeling guidance",
+    "security testing and vulnerability assessment documentation"
+  ],
+  "SAST scan my repository": [
+    "SAST scan my repository",
+    "run static application security testing on my code",
+    "perform static code analysis for vulnerabilities",
+    "execute static security scanning",
+    "analyze code for security issues without running it"
+  ],
+  "add docstrings to all my functions": [
+    "generate docstrings for functions",
+    "add documentation comments to function definitions",
+    "create function documentation strings",
+    "document all function signatures with docstrings",
+    "auto-generate docstring templates for functions"
+  ],
+  "add test coverage to my project": [
+    "add test coverage to my project",
+    "increase unit test coverage percentage",
+    "measure code coverage metrics",
+    "implement code coverage tools",
+    "generate coverage reports for tests",
+    "improve test coverage score"
+  ],
+  "annotate my functions with explanations": [
+    "add documentation comments to my functions",
+    "generate docstrings for my functions",
+    "add JSDoc or inline code comments to function definitions",
+    "create function documentation with descriptions and parameter explanations",
+    "document function behavior and purpose with annotations"
+  ],
+  "architect a new feature": [
+    "design a new feature",
+    "plan feature architecture",
+    "create feature specification",
+    "outline feature implementation",
+    "build feature from scratch"
+  ],
+  "audit all touched files before landing": [
+    "audit all touched files before landing",
+    "review modified files before commit",
+    "inspect changed files before merge",
+    "validate all altered files pre-commit",
+    "check diff before pushing changes"
+  ],
+  "audit documentation for staleness": [
+    "find outdated or stale documentation",
+    "identify documentation that needs updating",
+    "audit docs for accuracy and recency",
+    "check which documentation is out of date",
+    "review documentation freshness and currency"
+  ],
+  "auto-repair pytest errors": [
+    "pytest error auto-fix",
+    "automatically repair pytest test failures",
+    "pytest error correction automation",
+    "auto-fix pytest test errors",
+    "pytest error auto-repair"
+  ],
+  "auto-repair when my asserts blow up": [
+    "test assertions failing and auto-fixing code",
+    "automatic test failure recovery",
+    "auto-repair on failed assertions",
+    "self-healing tests when assertions fail",
+    "automated code correction for assertion errors"
+  ],
+  "break my upcoming work into pieces": [
+    "break down my tasks into smaller subtasks",
+    "split my project into milestones",
+    "divide my work into manageable chunks",
+    "create a task breakdown structure",
+    "decompose my upcoming work items"
+  ],
+  "build safety nets for these functions": [
+    "add error handling to functions",
+    "implement try-catch blocks",
+    "add input validation and exception handling",
+    "create defensive programming patterns",
+    "add null checks and boundary conditions"
+  ],
+  "check code quality": [
+    "check code quality",
+    "code quality analysis",
+    "static code analysis",
+    "linting and code inspection",
+    "quality metrics and code review tools"
+  ],
+  "check for security vulnerabilities": [
+    "security vulnerability scanning",
+    "vulnerability detection and assessment",
+    "security audit and penetration testing",
+    "identify code vulnerabilities and CVEs",
+    "run security vulnerability checks"
+  ],
+  "check my project for exploit surface": [
+    "identify security vulnerabilities in my codebase",
+    "scan project for potential attack vectors",
+    "find exposed endpoints and weak points in my application",
+    "analyze code for security flaws and exploitable weaknesses",
+    "security audit and penetration testing recommendations for my project"
+  ],
+  "checklist before pushing to users": [
+    "pre-deployment checklist",
+    "production readiness checklist",
+    "release validation steps",
+    "quality assurance checks before release",
+    "pre-launch testing and verification"
+  ],
+  "clean up technical debt": [
+    "reduce technical debt",
+    "refactor legacy code",
+    "improve code quality",
+    "address code maintainability issues",
+    "eliminate obsolete dependencies"
+  ],
+  "coordinate documentation updates across the project": [
+    "sync documentation changes across the project",
+    "manage collaborative documentation edits",
+    "keep documentation in sync across repositories",
+    "coordinate docs updates between team members",
+    "centralize documentation version control and updates"
+  ],
+  "create a release": [
+    "how do I create a release",
+    "release management workflow",
+    "publishing a new version",
+    "tagging and distributing a release",
+    "automating release deployment"
+  ],
+  "create documentation for my code": [
+    "write documentation for my codebase",
+    "generate code documentation",
+    "document my source code",
+    "create API documentation for my project",
+    "write technical documentation for code"
+  ],
+  "cut a new version and send it out": [
+    "create a new release version and deploy to production",
+    "bump version number and publish package",
+    "tag a release and distribute to users",
+    "increment version and push to package registry",
+    "create release build and distribute software update"
+  ],
+  "debug failing tests": [
+    "debug failing tests",
+    "troubleshoot test failures",
+    "diagnose broken unit tests",
+    "fix failing test cases",
+    "identify and resolve test errors"
+  ],
+  "deep review my PR": [
+    "review my pull request in detail",
+    "comprehensive code review for my PR",
+    "thorough peer review of my changes",
+    "detailed feedback on my pull request",
+    "in-depth PR code review"
+  ],
+  "describe each function in human-readable form": [
+    "explain what each function does in plain language",
+    "provide human-friendly descriptions of all functions",
+    "document function purposes in non-technical terms",
+    "generate readable summaries of function behavior",
+    "create plain English explanations for each function"
+  ],
+  "end-to-end review before merging a PR": [
+    "code review before merge",
+    "pull request approval workflow",
+    "pre-merge code review process",
+    "PR review and validation before merging",
+    "comprehensive code review gate"
+  ],
+  "evaluate craftsmanship of my changes": [
+    "review code quality of my changes",
+    "assess code style and best practices in my modifications",
+    "check implementation quality of my commits",
+    "evaluate code review criteria for my pull request",
+    "inspect technical excellence of my code changes"
+  ],
+  "explain what my functions do in human form": [
+    "generate natural language descriptions of my functions",
+    "convert function documentation to plain English explanations",
+    "describe function behavior in non-technical terms",
+    "create human-readable summaries of what my functions do",
+    "translate function logic into everyday language"
+  ],
+  "find bugs in my code": [
+    "debug my code",
+    "identify errors in my code",
+    "find defects in my source code",
+    "static code analysis",
+    "code review for bugs",
+    "test and find issues in my code"
+  ],
+  "find places where my readme lies about the code": [
+    "identify discrepancies between README documentation and actual implementation",
+    "find inconsistencies between README and source code",
+    "detect outdated or inaccurate information in README files",
+    "locate README sections that don't match current codebase behavior",
+    "audit README for documentation debt and false claims"
+  ],
+  "find potential runtime errors before deployment": [
+    "detect runtime errors before deployment",
+    "identify potential runtime exceptions pre-deployment",
+    "runtime error detection and prevention",
+    "catch runtime errors early in deployment pipeline",
+    "runtime error analysis and validation before going live"
+  ],
+  "find shell-out and dynamic execution patterns": [
+    "shell execution and dynamic code execution patterns",
+    "subprocess invocation and runtime code evaluation techniques",
+    "external process spawning and eval-like functionality",
+    "command injection risks and dynamic script evaluation",
+    "child process management and interpret-at-runtime patterns",
+    "executing external commands and evaluating code strings dynamically"
+  ],
+  "find stale documentation": [
+    "find stale documentation",
+    "identify outdated documentation",
+    "locate deprecated content",
+    "find documentation that needs updating",
+    "detect out-of-date docs"
+  ],
+  "fix failing tests": [
+    "debugging test failures",
+    "resolve test errors",
+    "troubleshoot failing unit tests",
+    "fix broken test cases",
+    "address test suite failures"
+  ],
+  "generate tests for my code": [
+    "write unit tests for my code",
+    "create test cases for my functions",
+    "automated testing setup",
+    "test generation tools",
+    "how to write tests",
+    "testing frameworks and libraries",
+    "code coverage and testing",
+    "test-driven development"
+  ],
+  "give me a once-over on this module": [
+    "review this module for quality and correctness",
+    "perform a code review on this module",
+    "audit this module for bugs and issues",
+    "give me feedback on this module's implementation",
+    "check this module for problems and improvements"
+  ],
+  "give my module a once-over": [
+    "review my module",
+    "audit my module for issues",
+    "code review my module",
+    "inspect my module quality",
+    "check my module for bugs and best practices"
+  ],
+  "go over everything in this branch before I ship": [
+    "review all changes in this git branch before deploying",
+    "examine code changes and commits in this branch before release",
+    "perform code review on branch diff before merging to main",
+    "audit all modifications in this feature branch before production",
+    "check pull request changes and test coverage before shipping"
+  ],
+  "highlight worrisome spots in the diff": [
+    "identify problematic changes in the diff",
+    "flag potential issues in code changes",
+    "find risky or concerning modifications in the diff",
+    "highlight breaking changes and bugs in the diff",
+    "detect code quality issues in the diff"
+  ],
+  "how do I run a security audit": [
+    "how do I run a security audit",
+    "how to perform a security scan",
+    "security testing workflow",
+    "how to check for vulnerabilities",
+    "running security checks on my code",
+    "security auditing tools and process"
+  ],
+  "identify which files are most likely to break": [
+    "which files are most likely to break",
+    "identify fragile files in codebase",
+    "find files with high change frequency",
+    "detect files prone to breaking changes",
+    "which files have the most bugs or failures",
+    "identify unstable or brittle code files",
+    "find files with low test coverage",
+    "which files should be refactored due to complexity"
+  ],
+  "improve code quality metrics": [
+    "improve code quality metrics",
+    "enhance code quality measurement",
+    "track code quality improvements",
+    "measure code quality indicators",
+    "code quality scoring and monitoring",
+    "reduce code quality issues and defects"
+  ],
+  "lay out tasks for a brand-new module": [
+    "create a new module structure",
+    "initialize module scaffolding",
+    "set up module project layout",
+    "generate module boilerplate",
+    "establish module architecture",
+    "bootstrap new module files"
+  ],
+  "lay out the work for a brand-new module": [
+    "set up a new module from scratch",
+    "initialize module structure and boilerplate",
+    "create module scaffolding and project layout",
+    "generate module template with dependencies",
+    "establish new module architecture and organization"
+  ],
+  "look at every changed file before landing": [
+    "review all modified files before merging",
+    "inspect diff of changed files before commit",
+    "view file changes before pushing to main",
+    "code review changed files before landing PR",
+    "examine every file modification before integration"
+  ],
+  "look for craftsmanship issues in this module": [
+    "find code quality issues in this module",
+    "identify technical debt in this module",
+    "detect code smells and anti-patterns in this module",
+    "review this module for maintainability problems",
+    "locate bugs, style violations, and design flaws in this module"
+  ],
+  "look for dangerous eval calls": [
+    "dangerous eval calls",
+    "eval security vulnerabilities",
+    "unsafe eval usage",
+    "eval injection risks",
+    "detecting eval anti-patterns"
+  ],
+  "look for exploit surface in my repo": [
+    "find security vulnerabilities in my repository",
+    "identify attack surface in my codebase",
+    "scan for exploitable weaknesses in my project",
+    "detect potential security flaws and exposures in my code",
+    "analyze my repo for CVEs and security risks"
+  ],
+  "look for leaked tokens and risky function calls": [
+    "detect exposed API keys and secrets in code",
+    "find hardcoded credentials and authentication tokens",
+    "identify dangerous function calls and unsafe APIs",
+    "scan for security vulnerabilities in function usage",
+    "locate unprotected secrets and insecure coding patterns"
+  ],
+  "look for ways my code could be exploited": [
+    "security vulnerabilities in my code",
+    "potential attack vectors and exploits",
+    "code security analysis and vulnerability detection",
+    "how to find security flaws in my application",
+    "penetration testing and exploit scenarios for my code"
+  ],
+  "look for ways my service could be compromised": [
+    "security vulnerabilities in my service",
+    "attack vectors against my application",
+    "potential exploits and weaknesses in my system",
+    "how to identify security risks in my service",
+    "common attack methods and threat models for my infrastructure"
+  ],
+  "manage the documentation pipeline": [
+    "documentation pipeline management",
+    "automate documentation workflows",
+    "control documentation generation and deployment",
+    "documentation build and release process",
+    "manage docs CI/CD pipeline"
+  ],
+  "my CI pipeline keeps failing": [
+    "CI pipeline failures and debugging",
+    "continuous integration build errors and troubleshooting",
+    "GitHub Actions / GitLab CI / Jenkins job failures",
+    "automated testing pipeline debugging",
+    "deployment pipeline error logs and fixes"
+  ],
+  "my suite is red \u2014 figure out why": [
+    "why is my test suite failing with red status",
+    "test suite execution failed red results debugging",
+    "how to diagnose red test results in my test suite",
+    "what causes test suite red status errors",
+    "troubleshoot failing tests showing red in test runner"
+  ],
+  "orchestrate documentation workflow": [
+    "orchestrate documentation workflow",
+    "automate documentation pipeline",
+    "streamline doc generation and publishing",
+    "coordinate documentation processes",
+    "manage documentation build and deployment"
+  ],
+  "plan a new feature": [
+    "plan a new feature",
+    "design a new feature",
+    "feature planning and design",
+    "create a feature specification",
+    "outline feature requirements",
+    "feature development planning",
+    "start feature design process"
+  ],
+  "predict bugs before they happen": [
+    "predictive bug detection",
+    "proactive bug identification",
+    "prevent bugs before production",
+    "bug prediction analysis",
+    "anticipate defects early",
+    "static analysis and bug prevention"
+  ],
+  "prepare a release": [
+    "prepare a release",
+    "release management workflow",
+    "build and deploy release",
+    "create production build",
+    "release preparation process",
+    "package and publish version"
+  ],
+  "publish to PyPI": [
+    "publish to PyPI",
+    "upload package to PyPI",
+    "release Python package to PyPI",
+    "deploy to Python Package Index",
+    "submit package to PyPI registry"
+  ],
+  "push my code out to the world": [
+    "deploy application to production",
+    "publish code to live environment",
+    "release software to end users",
+    "ship code to production servers",
+    "push changes to production deployment"
+  ],
+  "push this package out to users": [
+    "deploy package to production",
+    "release package to end users",
+    "publish package to registry",
+    "distribute package version to users",
+    "ship package update"
+  ],
+  "raise the bar on this codebase": [
+    "improve code quality metrics",
+    "enforce stricter coding standards",
+    "upgrade dependencies and frameworks",
+    "refactor technical debt",
+    "implement better testing coverage",
+    "add linting and static analysis rules"
+  ],
+  "reduce code complexity": [
+    "reduce code complexity",
+    "simplify codebase",
+    "lower cyclomatic complexity",
+    "refactor for maintainability",
+    "code simplification techniques"
+  ],
+  "refactor my code": [
+    "refactor my code",
+    "code refactoring best practices",
+    "refactoring tools and techniques",
+    "how to restructure existing code",
+    "code quality improvement and cleanup",
+    "automated refactoring features"
+  ],
+  "review code quality": [
+    "code review",
+    "static analysis",
+    "linting",
+    "code quality metrics",
+    "peer review process",
+    "automated code inspection",
+    "quality gates"
+  ],
+  "rework the tangled bits in my project": [
+    "refactor messy code sections",
+    "simplify complex dependencies",
+    "clean up convoluted logic",
+    "untangle circular references",
+    "restructure poorly organized modules"
+  ],
+  "run all my reference-material jobs in sequence": [
+    "run all my reference-material jobs in sequence",
+    "execute reference material jobs sequentially",
+    "queue reference-material jobs to run one after another",
+    "run reference-material jobs serially without parallelization",
+    "schedule reference-material jobs in order"
+  ],
+  "run my reference-material tasks in sequence repo-wide": [
+    "execute reference material tasks sequentially across the repository",
+    "run reference-material tasks in order for the entire codebase",
+    "sequential execution of reference-material tasks repository-wide",
+    "process reference-material tasks one after another in repo",
+    "run reference-material tasks serially at repository scope"
+  ],
+  "run readme tasks back-to-back across the repo": [
+    "execute readme tasks sequentially across the repository",
+    "run readme documentation tasks in series throughout the codebase",
+    "batch execute readme workflow tasks across all repositories",
+    "chain readme tasks consecutively in the repo",
+    "perform readme automation tasks one after another across the project"
+  ],
+  "scope out next sprint tasks": [
+    "plan next sprint",
+    "define sprint scope",
+    "create sprint backlog",
+    "identify sprint goals and tasks",
+    "scope work for upcoming sprint"
+  ],
+  "shore up untouched parts of my module": [
+    "improve code coverage in uncovered sections of my module",
+    "add tests for untested code paths in my module",
+    "increase test coverage for lines not yet covered by my module",
+    "strengthen testing in areas with no test coverage in my module",
+    "identify and test edge cases in untouched parts of my module"
+  ],
+  "simplify this gnarly module": [
+    "refactor complex module code",
+    "reduce module complexity",
+    "break down large module into smaller parts",
+    "improve module readability and maintainability",
+    "clean up convoluted module structure"
+  ],
+  "sniff out hard-to-catch bugs": [
+    "debug elusive bugs",
+    "identify intermittent issues",
+    "trace hard-to-reproduce errors",
+    "find subtle logic errors",
+    "catch race conditions and timing bugs"
+  ],
+  "spin up an explainer for my module": [
+    "create documentation for my module",
+    "generate an explanation guide for my module",
+    "write a module explainer",
+    "build module documentation",
+    "create a module overview document"
+  ],
+  "spit out a guide explaining what my functions do": [
+    "generate documentation for my functions",
+    "create a guide describing function behaviors and purposes",
+    "document function signatures and their use cases",
+    "write function reference documentation",
+    "explain what each function does and how to use them"
+  ],
+  "spot risky code changes before merging": [
+    "detect risky code changes before merge",
+    "identify high-risk pull requests",
+    "flag dangerous code modifications pre-merge",
+    "scan for risky diffs before merging",
+    "pre-merge code risk detection and analysis"
+  ],
+  "structure my work before I write anything": [
+    "planning and organizing before starting to code",
+    "project setup and scaffolding tools",
+    "architecture design and code structure decisions",
+    "boilerplate generation and project initialization",
+    "pre-development planning and requirements gathering"
+  ],
+  "stub assertions for an untouched module": [
+    "create placeholder assertions for an unmodified module",
+    "generate mock assertions for a module without changes",
+    "write skeleton test assertions for a module that hasn't been touched",
+    "add boilerplate assertions to test an unchanged module",
+    "set up dummy assertions for testing an untouched codebase section"
+  ],
+  "stub assertions for my new module": [
+    "create mock assertions for new module",
+    "generate placeholder test assertions",
+    "write temporary assertion stubs",
+    "add dummy assertions to module tests",
+    "scaffold assertion templates for testing"
+  ],
+  "suite went red after last merge": [
+    "tests failed after merging code",
+    "test suite failures following merge",
+    "CI/CD pipeline failed post-merge",
+    "build broke after git merge",
+    "regression detected in test results after pull request merge"
+  ],
+  "the build won't go green": [
+    "build is failing",
+    "continuous integration pipeline failed",
+    "build status check not passing",
+    "compilation or test errors preventing deployment",
+    "CI/CD build unsuccessful"
+  ],
+  "the codebase has accumulated junk over time": [
+    "how to identify and remove unused code",
+    "refactoring legacy code and technical debt",
+    "cleaning up deprecated functions and dead code",
+    "code cleanup tools and analysis",
+    "removing obsolete dependencies and modules"
+  ],
+  "this module has too many branches and nesting": [
+    "code complexity metrics high cyclomatic complexity",
+    "refactor nested conditionals deep control flow",
+    "simplify branching logic reduce conditional depth",
+    "code smell excessive branching structure",
+    "improve code readability extract nested branches"
+  ],
+  "thorough sweep before I land this branch": [
+    "code review before merge",
+    "comprehensive testing before pull request",
+    "lint and test checks before committing",
+    "pre-merge validation and quality checks",
+    "CI/CD pipeline verification before branch integration"
+  ],
+  "turn my module into something a teammate can read": [
+    "make my code more readable for team members",
+    "refactor module for improved code readability",
+    "improve code clarity and documentation for colleagues",
+    "make my module easier to understand for other developers",
+    "enhance code legibility and add comments to my module"
+  ],
+  "untangle this module": [
+    "how to understand this module's structure",
+    "module dependency graph and relationships",
+    "refactor complex module code",
+    "module architecture and organization",
+    "debug module interactions and imports"
+  ],
+  "version bump and changelog": [
+    "version bump and changelog",
+    "increment version number and update changelog",
+    "semantic versioning and release notes",
+    "version update with change documentation",
+    "bumping patch/minor/major version and documenting changes"
+  ],
+  "vulnerability scan": [
+    "vulnerability scan",
+    "security vulnerability scanning",
+    "vulnerability assessment",
+    "security scanning tools",
+    "vulnerability detection",
+    "code security analysis",
+    "dependency vulnerability check"
+  ],
+  "what are the weak points in my source": [
+    "code quality issues in my codebase",
+    "performance bottlenecks in my source code",
+    "security vulnerabilities in my application",
+    "code smells and technical debt",
+    "areas of poor test coverage in my code"
+  ],
+  "what catches unsafe input handling and leaked credentials": [
+    "static analysis tools for security vulnerabilities",
+    "credential detection and secret scanning",
+    "input validation and sanitization checks",
+    "SAST tools for injection attacks and CWE detection",
+    "supply chain security and secrets management"
+  ],
+  "what could go wrong once this is live": [
+    "production deployment risks and potential issues",
+    "what are common failures after going live",
+    "troubleshooting problems in production environment",
+    "monitoring and error detection for live systems",
+    "rollback procedures and incident response"
+  ],
+  "what do I need before pushing this out": [
+    "deployment prerequisites and checklist",
+    "pre-release requirements and dependencies",
+    "what to verify before shipping code to production",
+    "release readiness checklist and validation steps",
+    "pre-push code review and testing requirements"
+  ],
+  "what functions need assertions": [
+    "what functions need assertions",
+    "which functions require assertions",
+    "functions that should have assertion statements",
+    "how to identify functions needing assertions",
+    "assertion coverage for functions",
+    "functions missing assertions",
+    "defensive programming assertions in functions"
+  ],
+  "what guidance is no longer accurate": [
+    "deprecated documentation",
+    "outdated guidance",
+    "what is no longer accurate",
+    "obsolete or superseded information",
+    "breaking changes to previous guidance"
+  ],
+  "what part of the diff is most likely to blow up": [
+    "what part of the diff is most likely to blow up",
+    "which changes in the diff are most likely to cause bugs",
+    "what parts of the diff are highest risk",
+    "which modifications could break the build or tests",
+    "what changes in the diff have the highest failure probability"
+  ],
+  "what part of this PR is dangerous": [
+    "what are the security risks in this pull request",
+    "identify vulnerable code changes in this PR",
+    "which sections of this pull request could cause issues",
+    "what are the problematic or high-risk modifications in this PR",
+    "highlight potential bugs or security vulnerabilities in this pull request"
+  ],
+  "what part of this commit is shaky": [
+    "what part of this commit is unstable",
+    "which parts of this commit need review",
+    "what are the weak points in this commit",
+    "identify problematic code in this commit",
+    "what part of this commit has quality issues"
+  ],
+  "what readme bits are wrong about how the app works now": [
+    "documentation inaccuracies in readme",
+    "outdated readme information about application behavior",
+    "readme contradicts current app functionality",
+    "which readme sections no longer reflect how the app actually works",
+    "readme discrepancies with actual implementation"
+  ],
+  "what reference material no longer matches reality": [
+    "outdated documentation",
+    "deprecated API references",
+    "docs that don't match current version",
+    "stale technical documentation",
+    "reference guides with breaking changes"
+  ],
+  "what should I do before pushing v0.4 to users": [
+    "pre-release checklist for version 0.4 deployment",
+    "quality assurance steps before releasing v0.4 to production",
+    "version 0.4 release preparation and validation tasks",
+    "testing and verification requirements before v0.4 user rollout",
+    "go-live readiness for v0.4 software release"
+  ],
+  "what should I prune from this codebase": [
+    "how to remove unused code from my project",
+    "identifying dead code and cleanup strategies",
+    "codebase refactoring and code removal",
+    "dependency pruning and cleanup",
+    "eliminating technical debt and obsolete modules"
+  ],
+  "what should I tackle in the next two weeks": [
+    "how to prioritize tasks for the next two weeks",
+    "what features should I implement next",
+    "sprint planning for two week cycle",
+    "identifying high priority development work",
+    "what to work on in my development roadmap"
+  ],
+  "what's blocking my merges": [
+    "what's blocking my merges",
+    "why are my pull requests blocked",
+    "what checks are failing on my PRs",
+    "merge blockers and CI failures",
+    "what's preventing my code from merging"
+  ],
+  "what's keeping this module from being clean": [
+    "how to refactor this module for better code quality",
+    "what code smells or technical debt exist in this module",
+    "how to improve module cohesion and reduce coupling",
+    "what makes this module difficult to test or maintain",
+    "how to simplify this module's dependencies and responsibilities"
+  ],
+  "what's potentially attackable here": [
+    "what are the security vulnerabilities in this code",
+    "identify potential attack vectors in this implementation",
+    "what are the exploitable weaknesses here",
+    "security assessment: what could be compromised",
+    "threat analysis: what are the attack surfaces"
+  ],
+  "what's potentially harmful in my source": [
+    "code security vulnerabilities",
+    "security analysis of source code",
+    "potential bugs and issues in codebase",
+    "code quality problems and risks",
+    "static analysis and code scanning"
+  ],
+  "what's the checklist before I push this to users": [
+    "pre-deployment checklist",
+    "production readiness checklist",
+    "release verification steps before shipping",
+    "quality gates and testing requirements before going live",
+    "go-live checklist for user-facing features"
+  ],
+  "what's the gate before I push v0.5 out": [
+    "release gate criteria for v0.5",
+    "pre-release checklist v0.5",
+    "blocking issues before v0.5 release",
+    "v0.5 release requirements and approvals",
+    "what gates need to pass before shipping v0.5"
+  ],
+  "where are my problem spots": [
+    "where are my performance bottlenecks",
+    "how do I identify code quality issues in my project",
+    "what are the failing tests and errors in my codebase",
+    "where is my application experiencing latency or slowdowns",
+    "how do I find bugs and technical debt in my code"
+  ],
+  "where are the landmines in this commit": [
+    "how to identify problematic changes in this commit",
+    "what are the risky or dangerous modifications in this commit",
+    "where are the breaking changes in this commit",
+    "what potential issues or bugs might this commit introduce",
+    "which parts of this commit could cause problems in production"
+  ],
+  "where are the silent failure paths": [
+    "where are the silent failure paths",
+    "how to identify unhandled error cases",
+    "what are the failure modes that don't raise exceptions",
+    "where do errors fail silently without logging",
+    "how to find code paths that fail without alerting",
+    "what are the implicit failures and swallowed exceptions"
+  ],
+  "where might my service crash in production": [
+    "identify potential failure points in production environment",
+    "what are common causes of service outages and crashes",
+    "how to find bugs and vulnerabilities before production incidents",
+    "production debugging and crash diagnostics",
+    "performance bottlenecks and stability issues that could bring down my service"
+  ],
+  "where might my service fail silently": [
+    "service silent failures",
+    "debugging silent errors",
+    "unhandled exceptions and logging",
+    "observability and error tracking",
+    "service health monitoring",
+    "missing error handling patterns"
+  ],
+  "where's the diff going to bite me": [
+    "what are the potential issues or breaking changes in this diff",
+    "what problems might this code change cause",
+    "where are the edge cases and gotchas in this pull request",
+    "what parts of this diff could introduce bugs or regressions",
+    "what should I review carefully in this code diff to avoid issues"
+  ],
+  "wire up all my readme-related jobs as one process": [
+    "consolidate all readme documentation tasks into a single workflow",
+    "create a unified process for readme generation and maintenance jobs",
+    "automate readme updates and related documentation tasks together",
+    "combine readme validation, generation, and publishing into one pipeline",
+    "set up an integrated readme management workflow"
+  ],
+  "wire up readme jobs across all modules": [
+    "configure readme job automation for multiple modules",
+    "set up readme generation pipeline across all packages",
+    "initialize readme build tasks in every module",
+    "connect readme documentation jobs to all submodules",
+    "enable readme processing workflow for all packages"
+  ],
+  "wire up readme tasks as one flow": [
+    "automate readme task execution in sequence",
+    "chain readme tasks together into a single workflow",
+    "create a readme workflow that runs multiple tasks",
+    "setup readme tasks to run as a continuous pipeline",
+    "integrate readme tasks into one automated process"
+  ],
+  "write documentation for my module": [
+    "how to create documentation for my package",
+    "document my library or module with examples",
+    "generate api documentation for my code",
+    "write readme and api docs for my module",
+    "document module usage and installation"
+  ],
+  "write unit tests": [
+    "write unit tests",
+    "create unit test cases",
+    "unit testing workflow",
+    "test-driven development",
+    "write test code for functions"
+  ]
+}
