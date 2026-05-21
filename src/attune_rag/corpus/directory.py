@@ -82,6 +82,7 @@ class DirectoryCorpus(CorpusProtocol):
         summaries_file: str | None = None,
         cross_links_file: str | None = None,
         extra_summaries: dict[str, str | None] | None = None,
+        extra_aliases: dict[str, Iterable[str]] | None = None,
         cache: bool = True,
         glob: str = DEFAULT_GLOB,
     ) -> None:
@@ -107,6 +108,19 @@ class DirectoryCorpus(CorpusProtocol):
                 dict layered on top). Useful for tests and for
                 packages that ship their own summary table
                 programmatically.
+            extra_aliases: In-memory ``rel_path -> [alias, ...]``
+                mapping that **appends** aliases to each entry's
+                frontmatter aliases. Used by the alias-expansion
+                override path so that aliases authored downstream
+                (e.g. in ``attune-rag``) don't require an upstream
+                ``attune-help`` release to take effect. Appends only
+                — frontmatter aliases are the canonical source.
+                Each appended alias must still be globally unique
+                across the corpus per the duplicate-alias rule;
+                duplicates raise :class:`DuplicateAliasError` at
+                load time. Within-template duplicates (an extra
+                alias that already exists in frontmatter for the
+                same path) are silently deduplicated.
             cache: If True (the default), the loaded entry
                 dict is memoized on the instance. Set False to
                 re-scan disk on every call — useful in long-
@@ -124,6 +138,12 @@ class DirectoryCorpus(CorpusProtocol):
         self._summaries_file = summaries_file
         self._cross_links_file = cross_links_file
         self._extra_summaries: dict[str, str | None] = extra_summaries or {}
+        # Normalize extras to tuples of strings at construction time so
+        # _build() doesn't have to re-validate per-rebuild.
+        self._extra_aliases: dict[str, tuple[str, ...]] = {
+            path: tuple(a for a in aliases if isinstance(a, str) and a)
+            for path, aliases in (extra_aliases or {}).items()
+        }
         self._glob = glob
         self._cache = cache
         self._loaded: dict[str, RetrievalEntry] | None = None
@@ -181,7 +201,20 @@ class DirectoryCorpus(CorpusProtocol):
             related_raw = cross_links.get(key, ())
             related = tuple(r for r in related_raw if isinstance(r, str))
             frontmatter = _parse_frontmatter(content)
-            aliases = _aliases_from_frontmatter(frontmatter)
+            frontmatter_aliases = _aliases_from_frontmatter(frontmatter)
+            # Append extras from extra_aliases (appended after frontmatter
+            # so the canonical source still comes first). Within-template
+            # duplicates are silently dropped so an override author can
+            # safely re-list an alias the frontmatter already declares.
+            extras = self._extra_aliases.get(key, ())
+            seen_in_template = set(frontmatter_aliases)
+            extra_unique: list[str] = []
+            for alias in extras:
+                if alias in seen_in_template:
+                    continue
+                seen_in_template.add(alias)
+                extra_unique.append(alias)
+            aliases = frontmatter_aliases + tuple(extra_unique)
             fm_name = frontmatter.get("name")
             template_name = fm_name if isinstance(fm_name, str) else relative.stem
 

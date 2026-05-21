@@ -1,0 +1,26 @@
+{
+  "_comment": "Appends multi-token aliases to attune-help corpus entries without requiring an attune-help release. Mirrors the summaries_override.json mechanism. Aliases are added in addition to (not replacing) the frontmatter aliases. Each appended alias must be 2+ tokens after the retriever's tokenizer + stemmer so it can clear KeywordRetriever.MIN_ALIAS_OVERLAP=2. Within-template duplicates against frontmatter are silently deduped at load time; cross-template alias collisions raise DuplicateAliasError as usual. Origin of the current entries: docs/specs/embedding-retriever/diagnostic-3.md (bug-predict cluster sweep, 2026-05-21).",
+
+  "concepts/tool-bug-predict.md": [
+    "dangerous code",
+    "harmful patterns",
+    "weak points",
+    "fragile code",
+    "code landmines",
+    "danger zones",
+    "what could go wrong",
+    "silent failures",
+    "fails silently",
+    "hidden bugs",
+    "PR risk review",
+    "dangerous PR",
+    "diff risk",
+    "diff bite",
+    "worrisome code",
+    "shaky code",
+    "commit risk",
+    "production risk",
+    "code that bites",
+    "review risky changes"
+  ]
+}

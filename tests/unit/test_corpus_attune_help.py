@@ -56,6 +56,84 @@ def test_get_unknown_returns_none() -> None:
     assert corpus.get("does/not/exist.md") is None
 
 
+# --- aliases_override.json integration ---
+
+
+def test_bug_predict_carries_override_aliases() -> None:
+    """The aliases_override.json mechanism merges into concepts/tool-bug-predict.md.
+
+    Regression guard for the alias-expansion-sweep entry condition: D3
+    proved alias expansion closes the bug-predict paraphrase gap with
+    zero baseline regression. This test pins the mechanism so a future
+    change to AttuneHelpCorpus or the override file shape can't silently
+    revert it.
+    """
+    corpus = AttuneHelpCorpus.from_attune_help()
+    entry = corpus.get("concepts/tool-bug-predict.md")
+    assert entry is not None
+    # Frontmatter aliases come first; overrides are appended. Pin a few
+    # override aliases the diagnostic-3.md sweep identified.
+    assert "dangerous code" in entry.aliases
+    assert "weak points" in entry.aliases
+    assert "fails silently" in entry.aliases  # gqp-015a fix
+    assert "diff bite" in entry.aliases  # gqp-036a fix
+
+
+def test_bug_predict_paraphrased_queries_surface_concepts_entry() -> None:
+    """KeywordRetriever returns concepts/tool-bug-predict.md in top-3 for
+    paraphrased queries that previously missed (D1) and that the alias
+    sweep was authored to fix.
+
+    Inline subset of tests/golden/queries_paraphrased.yaml so this test
+    doesn't depend on that file existing in the working tree. The full
+    diagnostic-1 re-run lives elsewhere; this test is a lightweight
+    smoke check that the override file did the job.
+    """
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+
+    # 5 of the 9 bug-predict queries that missed R@3 in D1 keyword-only.
+    # Each pair: (query text, expected path that must appear in top-3).
+    target = "concepts/tool-bug-predict.md"
+    paraphrased = [
+        "what's potentially harmful in my source",  # gqp-014a
+        "what are the weak points in my source",  # gqp-016b
+        "what part of this PR is dangerous",  # gqp-027a
+        "where might my service fail silently",  # gqp-015a (residual fix)
+        "where's the diff going to bite me",  # gqp-036a (residual fix)
+    ]
+    for query in paraphrased:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = [h.entry.path for h in hits]
+        assert target in paths, (
+            f"Paraphrased query did not surface bug-predict in top-3: {query!r} " f"→ {paths}"
+        )
+
+
+def test_bug_predict_baseline_queries_still_pass() -> None:
+    """Baseline keyword-friendly bug-predict queries still find the target
+    after aliases are added — a sanity check that the override doesn't
+    pull the entry away from queries it already handled."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    target = "concepts/tool-bug-predict.md"
+
+    for query in [
+        "find bugs in my code",
+        "predict bugs before they happen",
+        "spot risky code changes before merging",
+    ]:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = [h.entry.path for h in hits]
+        assert target in paths, (
+            f"Baseline bug-predict query regressed after alias override: " f"{query!r} → {paths}"
+        )
+
+
 def test_path_keyed_summaries_load_from_attune_help_0_7_0() -> None:
     """AttuneHelpCorpus consumes summaries_by_path.json (0.7.0+).
 
@@ -132,8 +210,6 @@ def test_invalid_templates_root_raises() -> None:
 
     from attune_rag.corpus.attune_help import _BundledAdapter
 
-    bad_adapter = _BundledAdapter(
-        templates_root=_P("/this/path/does/not/exist"), version="x"
-    )
+    bad_adapter = _BundledAdapter(templates_root=_P("/this/path/does/not/exist"), version="x")
     with pytest.raises(RuntimeError, match="templates_root is not a directory"):
         AttuneHelpCorpus(adapter=bad_adapter)
