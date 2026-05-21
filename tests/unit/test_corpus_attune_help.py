@@ -606,6 +606,78 @@ def test_refactor_plan_baseline_queries_still_pass() -> None:
         )
 
 
+def test_planning_carries_override_aliases() -> None:
+    """The aliases_override.json mechanism merges into concepts/tool-planning.md.
+
+    Regression guard for the alias-expansion-sweep M9 (planning cluster).
+    """
+    corpus = AttuneHelpCorpus.from_attune_help()
+    entry = corpus.get("concepts/tool-planning.md")
+    assert entry is not None
+    # Frontmatter aliases preserved.
+    assert "sprint planning" in entry.aliases
+    assert "feature roadmap" in entry.aliases
+    # Override aliases appended.
+    assert "design before code" in entry.aliases  # gqp-028a
+    assert "what to tackle next" in entry.aliases  # gqp-039a
+    assert "next two weeks" in entry.aliases  # gqp-039a alt
+
+
+def test_planning_paraphrased_queries_surface_planning_entry() -> None:
+    """KeywordRetriever returns *some* planning entry in top-3 for the
+    2 D1 paraphrased misses on the planning cluster (gqp-028a, gqp-039a).
+    The other 4 planning paraphrased queries (gqp-010a/b, 028b, 039b)
+    already passed under existing frontmatter aliases."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    planning_paths = {
+        "concepts/tool-planning.md",
+        "quickstarts/skill-planning.md",
+        "references/skill-planning.md",
+        "tasks/use-planning.md",
+    }
+
+    paraphrased = [
+        "I need a design pass before I write code",  # gqp-028a
+        "what should I tackle in the next two weeks",  # gqp-039a
+    ]
+    for query in paraphrased:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = {h.entry.path for h in hits}
+        assert paths & planning_paths, (
+            f"Paraphrased query did not surface planning in top-3: " f"{query!r} → {sorted(paths)}"
+        )
+
+
+def test_planning_baseline_queries_still_pass() -> None:
+    """Baseline keyword-friendly planning queries still surface *some*
+    planning entry in top-3 after the alias override is in place."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    planning_paths = {
+        "concepts/tool-planning.md",
+        "quickstarts/skill-planning.md",
+        "references/skill-planning.md",
+        "tasks/use-planning.md",
+    }
+
+    for query in [
+        "plan a new feature",
+        "architect a new feature",
+        "scope out next sprint tasks",
+    ]:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = {h.entry.path for h in hits}
+        assert paths & planning_paths, (
+            f"Baseline planning query regressed after alias override: "
+            f"{query!r} → {sorted(paths)}"
+        )
+
+
 def test_path_keyed_summaries_load_from_attune_help_0_7_0() -> None:
     """AttuneHelpCorpus consumes summaries_by_path.json (0.7.0+).
 
