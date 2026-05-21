@@ -40,6 +40,21 @@ passes, jumping straight to Stable matches what the package
 ### Support window
 
 Policy lands as a new section in [docs/POLICY.md](../../POLICY.md).
+
+**Scope honesty first.** `attune-rag`'s only external consumer at
+1.0.0 is `attune-gui`, which is also maintained by the same author.
+The 1.0.0 stability claim is therefore *"the author is confident in
+this for the author's own production use"*, not *"battle-tested
+across an independent user base"*. The support-window policy below
+is sized accordingly — it's a labor budget (how much backport work
+the author is willing to take on), not an SLA derived from observed
+external dependency on a given minor. If the consumer base broadens
+past `attune-gui`, revisit the window length and the
+bug-fix-latest-minor-only rule before the next major. The POLICY.md
+section that lands per M2.1 in [tasks.md](tasks.md) should reproduce
+this scope-honesty paragraph verbatim so the policy reader sees the
+constraints behind the numbers, not just the numbers.
+
 Sketch (numbers pinned at scoping):
 
 > ### 7. Support window
