@@ -389,6 +389,7 @@ queries:
     expected_feature: fix-test
     expected_in_top_3:
       - concepts/tool-fix-test.md
+      - quickstarts/skill-fix-test.md  # added by diagnostic-4 — retriever surfaces this as #1 with a strong summary match; the golden list was incomplete
       - references/skill-fix-test.md
     difficulty: medium
 

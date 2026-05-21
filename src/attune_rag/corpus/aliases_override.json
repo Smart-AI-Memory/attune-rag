@@ -81,7 +81,10 @@
     "next two weeks",
     "two-week plan",
     "plan the next sprint",
-    "tasks for next sprint"
+    "tasks for next sprint",
+    "break into pieces",
+    "break work into pieces",
+    "upcoming work"
   ],
 
   "concepts/tool-refactor-plan.md": [
@@ -211,6 +214,8 @@
     "commit risk",
     "production risk",
     "code that bites",
-    "review risky changes"
+    "review risky changes",
+    "problem spots",
+    "find problem spots"
   ]
 }
