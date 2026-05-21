@@ -134,6 +134,95 @@ def test_bug_predict_baseline_queries_still_pass() -> None:
         )
 
 
+def test_security_audit_carries_override_aliases() -> None:
+    """The aliases_override.json mechanism merges into concepts/tool-security-audit.md.
+
+    Regression guard for the alias-expansion-sweep M3 (security-audit
+    cluster) — pins a few override aliases the sweep identified so a
+    future change to the override file or the merge mechanism can't
+    silently revert the cluster's R@3 lift.
+    """
+    corpus = AttuneHelpCorpus.from_attune_help()
+    entry = corpus.get("concepts/tool-security-audit.md")
+    assert entry is not None
+    assert "leaked credentials" in entry.aliases
+    assert "exploit surface" in entry.aliases
+    assert "attackers break in" in entry.aliases
+    assert "potentially attackable" in entry.aliases  # gqp-032b
+    assert "service compromised" in entry.aliases  # gqp-011a
+
+
+def test_security_audit_paraphrased_queries_surface_concepts_entry() -> None:
+    """KeywordRetriever returns concepts/tool-security-audit.md in top-3 for
+    5 of the 8 D1 paraphrased misses on the security-audit cluster.
+
+    Mirrors the bug-predict regression test. Each alias used here was
+    pre-validated with attune_rag.retrieval._tokenize to clear
+    MIN_ALIAS_OVERLAP=2 against the corresponding query.
+
+    Known residual: gqp-023a "look for ways my code could be exploited"
+    is semantically ambiguous between security-audit and bug-predict
+    (the verb "exploited" reads as security; "what could go wrong with
+    my code" reads as bug-predict). Bug-predict currently wins via a
+    summary token match on "code". Captured in the full diagnostic-1
+    re-run, not papered over here with awkward aliases.
+    """
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    target = "concepts/tool-security-audit.md"
+
+    paraphrased = [
+        "what catches unsafe input handling and leaked credentials",  # gqp-001a
+        "I want to find places attackers could break in",  # gqp-001b
+        "look for ways my service could be compromised",  # gqp-011a
+        "check my project for exploit surface",  # gqp-011b
+        "look for leaked tokens and risky function calls",  # gqp-023b
+        "what's potentially attackable here",  # gqp-032b
+    ]
+    for query in paraphrased:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = [h.entry.path for h in hits]
+        assert target in paths, (
+            f"Paraphrased query did not surface security-audit in top-3: " f"{query!r} → {paths}"
+        )
+
+
+def test_security_audit_baseline_queries_still_pass() -> None:
+    """Baseline keyword-friendly security-audit queries still surface *some*
+    security-audit entry in top-3 after the alias override is in place.
+
+    Matches the R@3 semantic used by tests/golden/test_golden.py — the
+    golden set accepts either concepts/ or quickstarts/run-security-audit.md
+    for these baseline queries, so this test does too. Asserting concepts/
+    specifically would be stricter than what production callers (and the
+    golden suite) require.
+    """
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    security_audit_paths = {
+        "concepts/tool-security-audit.md",
+        "quickstarts/run-security-audit.md",
+        "quickstarts/skill-security-audit.md",
+        "references/tool-security-audit.md",
+    }
+
+    for query in [
+        "vulnerability scan",
+        "check for security vulnerabilities",
+        "SAST scan my repository",
+    ]:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = {h.entry.path for h in hits}
+        assert paths & security_audit_paths, (
+            f"Baseline security-audit query regressed after alias override: "
+            f"{query!r} → {sorted(paths)}"
+        )
+
+
 def test_path_keyed_summaries_load_from_attune_help_0_7_0() -> None:
     """AttuneHelpCorpus consumes summaries_by_path.json (0.7.0+).
 
