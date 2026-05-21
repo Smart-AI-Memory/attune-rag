@@ -1,6 +1,36 @@
 {
   "_comment": "Appends multi-token aliases to attune-help corpus entries without requiring an attune-help release. Mirrors the summaries_override.json mechanism. Aliases are added in addition to (not replacing) the frontmatter aliases. Each appended alias must be 2+ tokens after the retriever's tokenizer + stemmer so it can clear KeywordRetriever.MIN_ALIAS_OVERLAP=2. Within-template duplicates against frontmatter are silently deduped at load time; cross-template alias collisions raise DuplicateAliasError as usual. Origin: docs/specs/alias-expansion-sweep/tasks.md per-cluster sweeps (bug-predict M2 / security-audit M3 / ...). Each alias was pre-validated with attune_rag.retrieval._tokenize against the cluster's paraphrased misses to clear MIN_ALIAS_OVERLAP=2.",
 
+  "references/tool-deep-review.md": [
+    "before I ship",
+    "go over branch",
+    "review the branch",
+    "everything before ship",
+    "review before shipping",
+    "audit before landing",
+    "audit touched files",
+    "touched files review",
+    "look at every file",
+    "every changed file",
+    "look before landing",
+    "review every file",
+    "every file before landing"
+  ],
+
+  "references/tool-doc-audit.md": [
+    "readme lies",
+    "readme is wrong",
+    "readme about app",
+    "readme bits wrong",
+    "wrong about app",
+    "find places readme",
+    "no longer accurate",
+    "no longer accurate docs",
+    "no longer accurate guidance",
+    "guidance no longer accurate",
+    "out of date guidance"
+  ],
+
   "references/tool-doc-orchestrator.md": [
     "wire up readme jobs",
     "wire up readme tasks",
