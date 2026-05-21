@@ -1,5 +1,22 @@
 {
-  "_comment": "Appends multi-token aliases to attune-help corpus entries without requiring an attune-help release. Mirrors the summaries_override.json mechanism. Aliases are added in addition to (not replacing) the frontmatter aliases. Each appended alias must be 2+ tokens after the retriever's tokenizer + stemmer so it can clear KeywordRetriever.MIN_ALIAS_OVERLAP=2. Within-template duplicates against frontmatter are silently deduped at load time; cross-template alias collisions raise DuplicateAliasError as usual. Origin of the current entries: docs/specs/embedding-retriever/diagnostic-3.md (bug-predict cluster sweep, 2026-05-21).",
+  "_comment": "Appends multi-token aliases to attune-help corpus entries without requiring an attune-help release. Mirrors the summaries_override.json mechanism. Aliases are added in addition to (not replacing) the frontmatter aliases. Each appended alias must be 2+ tokens after the retriever's tokenizer + stemmer so it can clear KeywordRetriever.MIN_ALIAS_OVERLAP=2. Within-template duplicates against frontmatter are silently deduped at load time; cross-template alias collisions raise DuplicateAliasError as usual. Origin: docs/specs/alias-expansion-sweep/tasks.md per-cluster sweeps (bug-predict M2 / security-audit M3 / ...). Each alias was pre-validated with attune_rag.retrieval._tokenize against the cluster's paraphrased misses to clear MIN_ALIAS_OVERLAP=2.",
+
+  "concepts/tool-security-audit.md": [
+    "unsafe input",
+    "input handling",
+    "leaked credentials",
+    "leaked tokens",
+    "exposed secrets",
+    "attackers break in",
+    "attack surface",
+    "exploit surface",
+    "exploit code",
+    "security check",
+    "service compromised",
+    "compromised system",
+    "risky function calls",
+    "potentially attackable"
+  ],
 
   "concepts/tool-bug-predict.md": [
     "dangerous code",
