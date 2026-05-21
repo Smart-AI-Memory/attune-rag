@@ -17,6 +17,24 @@
     "fix broken suite"
   ],
 
+  "concepts/tool-code-quality.md": [
+    "once-over module",
+    "give once-over",
+    "module once-over",
+    "quick once-over",
+    "evaluate craftsmanship",
+    "evaluate code changes",
+    "code craftsmanship",
+    "raise the bar",
+    "raise code bar",
+    "raise quality bar",
+    "clean module",
+    "keep code clean",
+    "module clean code",
+    "code health check",
+    "polish code"
+  ],
+
   "concepts/tool-release-prep.md": [
     "before pushing",
     "before pushing out",

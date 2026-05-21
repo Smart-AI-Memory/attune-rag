@@ -455,6 +455,78 @@ def test_fix_test_baseline_queries_still_pass() -> None:
         )
 
 
+def test_code_quality_carries_override_aliases() -> None:
+    """The aliases_override.json mechanism merges into concepts/tool-code-quality.md.
+
+    Regression guard for the alias-expansion-sweep M7 (code-quality cluster).
+    """
+    corpus = AttuneHelpCorpus.from_attune_help()
+    entry = corpus.get("concepts/tool-code-quality.md")
+    assert entry is not None
+    assert "once-over module" in entry.aliases  # gqp-004a / 018a
+    assert "evaluate craftsmanship" in entry.aliases  # gqp-004b
+    assert "raise the bar" in entry.aliases  # gqp-029a
+    assert "clean module" in entry.aliases  # gqp-029b
+    assert "code craftsmanship" in entry.aliases
+
+
+def test_code_quality_paraphrased_queries_surface_code_quality_entry() -> None:
+    """KeywordRetriever returns *some* code-quality entry in top-3 for the
+    5 D1 paraphrased misses on the code-quality cluster."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    code_quality_paths = {
+        "concepts/tool-code-quality.md",
+        "quickstarts/skill-code-quality.md",
+        "references/skill-code-quality.md",
+        "tasks/use-code-quality.md",
+    }
+
+    paraphrased = [
+        "give me a once-over on this module",  # gqp-004a
+        "evaluate craftsmanship of my changes",  # gqp-004b
+        "give my module a once-over",  # gqp-018a
+        "raise the bar on this codebase",  # gqp-029a
+        "what's keeping this module from being clean",  # gqp-029b
+    ]
+    for query in paraphrased:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = {h.entry.path for h in hits}
+        assert paths & code_quality_paths, (
+            f"Paraphrased query did not surface code-quality in top-3: "
+            f"{query!r} → {sorted(paths)}"
+        )
+
+
+def test_code_quality_baseline_queries_still_pass() -> None:
+    """Baseline keyword-friendly code-quality queries still surface *some*
+    code-quality entry in top-3 after the alias override is in place."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    code_quality_paths = {
+        "concepts/tool-code-quality.md",
+        "quickstarts/skill-code-quality.md",
+        "references/skill-code-quality.md",
+        "tasks/use-code-quality.md",
+    }
+
+    for query in [
+        "review code quality",
+        "check code quality",
+        "improve code quality metrics",
+    ]:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = {h.entry.path for h in hits}
+        assert paths & code_quality_paths, (
+            f"Baseline code-quality query regressed after alias override: "
+            f"{query!r} → {sorted(paths)}"
+        )
+
+
 def test_path_keyed_summaries_load_from_attune_help_0_7_0() -> None:
     """AttuneHelpCorpus consumes summaries_by_path.json (0.7.0+).
 
