@@ -819,6 +819,116 @@ def test_doc_orchestrator_baseline_queries_still_pass() -> None:
         )
 
 
+def test_deep_review_carries_override_aliases() -> None:
+    """The aliases_override.json mechanism merges into
+    references/tool-deep-review.md (M12 cluster)."""
+    corpus = AttuneHelpCorpus.from_attune_help()
+    entry = corpus.get("references/tool-deep-review.md")
+    assert entry is not None
+    assert "end-to-end review" in entry.aliases  # frontmatter preserved
+    assert "go over branch" in entry.aliases  # gqp-005a
+    assert "audit before landing" in entry.aliases  # gqp-005b
+    assert "every changed file" in entry.aliases  # gqp-037b
+
+
+def test_deep_review_paraphrased_queries_surface_deep_review_entry() -> None:
+    """KeywordRetriever returns references/tool-deep-review.md in top-3
+    for the 3 D1 paraphrased misses on the deep-review cluster
+    (gqp-005a, gqp-005b, gqp-037b). gqp-037a already passed."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    target = "references/tool-deep-review.md"
+
+    paraphrased = [
+        "go over everything in this branch before I ship",  # gqp-005a
+        "audit all touched files before landing",  # gqp-005b
+        "look at every changed file before landing",  # gqp-037b
+    ]
+    for query in paraphrased:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = [h.entry.path for h in hits]
+        assert target in paths, (
+            f"Paraphrased query did not surface deep-review in top-3: " f"{query!r} → {paths}"
+        )
+
+
+def test_deep_review_baseline_queries_still_pass() -> None:
+    """Baseline keyword-friendly deep-review queries still surface
+    references/tool-deep-review.md in top-3."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    target = "references/tool-deep-review.md"
+
+    for query in [
+        "deep review my PR",
+        "end-to-end review before merging a PR",
+    ]:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = [h.entry.path for h in hits]
+        assert target in paths, (
+            f"Baseline deep-review query regressed after alias override: " f"{query!r} → {paths}"
+        )
+
+
+def test_doc_audit_carries_override_aliases() -> None:
+    """The aliases_override.json mechanism merges into
+    references/tool-doc-audit.md (M12 cluster)."""
+    corpus = AttuneHelpCorpus.from_attune_help()
+    entry = corpus.get("references/tool-doc-audit.md")
+    assert entry is not None
+    assert "stale documentation" in entry.aliases  # frontmatter preserved
+    assert "readme lies" in entry.aliases  # gqp-009a
+    assert "readme is wrong" in entry.aliases  # gqp-009b
+    assert "no longer accurate" in entry.aliases  # gqp-025a
+
+
+def test_doc_audit_paraphrased_queries_surface_doc_audit_entry() -> None:
+    """KeywordRetriever returns references/tool-doc-audit.md in top-3
+    for the 3 D1 paraphrased misses on the doc-audit cluster
+    (gqp-009a, gqp-009b, gqp-025a). gqp-025b already passed."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    target = "references/tool-doc-audit.md"
+
+    paraphrased = [
+        "find places where my readme lies about the code",  # gqp-009a
+        "what readme bits are wrong about how the app works now",  # gqp-009b
+        "what guidance is no longer accurate",  # gqp-025a
+    ]
+    for query in paraphrased:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = [h.entry.path for h in hits]
+        assert target in paths, (
+            f"Paraphrased query did not surface doc-audit in top-3: " f"{query!r} → {paths}"
+        )
+
+
+def test_doc_audit_baseline_queries_still_pass() -> None:
+    """Baseline keyword-friendly doc-audit queries still surface
+    references/tool-doc-audit.md in top-3."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    corpus = AttuneHelpCorpus.from_attune_help()
+    retriever = KeywordRetriever()
+    target = "references/tool-doc-audit.md"
+
+    for query in [
+        "audit documentation for staleness",
+        "find stale documentation",
+    ]:
+        hits = retriever.retrieve(query, corpus, k=3)
+        paths = [h.entry.path for h in hits]
+        assert target in paths, (
+            f"Baseline doc-audit query regressed after alias override: " f"{query!r} → {paths}"
+        )
+
+
 def test_path_keyed_summaries_load_from_attune_help_0_7_0() -> None:
     """AttuneHelpCorpus consumes summaries_by_path.json (0.7.0+).
 
