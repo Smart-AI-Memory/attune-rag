@@ -84,16 +84,29 @@ def test_golden_query_top3(entry: dict, pipeline: RagPipeline) -> None:
 # ---- paraphrased queries (info-only, alias-expansion-sweep M13.3) ----
 
 
-# Soft floor for the aggregate watermark below. Current observed R@3 on the
-# paraphrased set after M2-M7 is 70%. Floor set at 50% gives 20pp headroom —
-# wide enough to absorb normal corpus drift and per-query alias tuning, narrow
-# enough that a catastrophic regression (e.g., aliases_override.json failing to
-# load, stemmer change stripping most matches) trips the test.
+# Soft floor for the aggregate watermark below.
 #
-# This is NOT the gating threshold — the gate decision is deferred to 0.4.x.
-# It's a sanity guard that catches "the mechanism broke entirely" while
-# allowing the kind of small drift the per-query xfails already track.
-_PARAPHRASED_R3_FLOOR = 0.50
+# History
+# - 0.3.x (M13.3): floor set at 50%, with observed R@3 at 70%. 20pp
+#   headroom — only catches catastrophic regression.
+# - 0.3.x (this tightening): floor raised to 85%, observed R@3 at
+#   96.25% after M2-M12 swept all 12 feature clusters. 11pp headroom —
+#   tight enough to flag a real cluster regression, loose enough to
+#   absorb the kind of small drift that comes from corpus-level changes
+#   (one new noisy alias, a borderline stemmer edit, a new template that
+#   competes for content tokens).
+#
+# This is still NOT the gating threshold — that decision (whether to
+# graduate the per-query xfails to hard assertions) is explicitly
+# deferred to 0.4.x per docs/specs/alias-expansion-sweep/tasks.md M13.3.
+# This is a regression guard; the gating bar will be higher and lives
+# in benchmark.py with explicit stdev measurement, not here.
+#
+# If a future change drops R@3 below 85% legitimately (e.g., new
+# paraphrased queries authored at a level the alias mechanism can't
+# reach), update this constant in the same PR as the new queries land —
+# don't loosen it silently to make CI green.
+_PARAPHRASED_R3_FLOOR = 0.85
 
 
 @pytest.mark.parametrize(
@@ -139,12 +152,14 @@ def test_paraphrased_query_top3(entry: dict, pipeline: RagPipeline) -> None:
 def test_paraphrased_aggregate_watermark(pipeline: RagPipeline) -> None:
     """Aggregate R@3 / P@1 across the full paraphrase set.
 
-    Acts as a catastrophic-regression guard against the alias-expansion
-    mechanism breaking entirely (override file failing to load, stemmer
-    change stripping most overlap, etc.). The floor is intentionally
-    well below the current observed R@3 (~70% after M2-M7) so it doesn't
-    trip on normal drift — see ``_PARAPHRASED_R3_FLOOR`` above for the
-    rationale.
+    Acts as a regression guard against the alias-expansion mechanism
+    being substantially broken — by an override-file load failure, a
+    stemmer/tokenizer change that strips most overlap, the addition of
+    a noisy alias that pulls adjacent features across many queries, or
+    several clusters regressing at once. The floor (see
+    ``_PARAPHRASED_R3_FLOOR`` above) is set below the current observed
+    R@3 with enough headroom to absorb normal drift, but tight enough
+    that a real degradation trips it.
 
     Prints the actual numbers so they're visible in ``pytest -v`` output
     and CI logs without requiring a separate diagnostic script run.
@@ -172,9 +187,11 @@ def test_paraphrased_aggregate_watermark(pipeline: RagPipeline) -> None:
     )
 
     assert r3 >= _PARAPHRASED_R3_FLOOR, (
-        f"Paraphrased R@3 dropped below catastrophic-regression floor: "
+        f"Paraphrased R@3 dropped below regression floor: "
         f"{r3:.2%} < {_PARAPHRASED_R3_FLOOR:.0%}. "
-        f"Either aliases_override.json is failing to load, a stemmer/tokenizer "
-        f"change is stripping overlap, or several clusters regressed at once. "
-        f"This floor is NOT the gating threshold — see test docstring."
+        f"Likely causes: aliases_override.json failing to load, a "
+        f"stemmer/tokenizer change stripping overlap, a noisy alias "
+        f"pulling adjacent features, or several clusters regressing "
+        f"at once. This floor is NOT the gating threshold — see test "
+        f"docstring."
     )
