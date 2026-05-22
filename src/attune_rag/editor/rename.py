@@ -456,50 +456,22 @@ def apply_rename(corpus: Any, plan: RenamePlan) -> list[str]:
     if root is None:
         raise RenameError("Corpus has no resolvable root path; apply is not supported.")
 
-    # 1) Apply moves first. Track what we did so we can reverse it.
     applied_moves: list[tuple[Path, Path]] = []  # (source_now_target, was_source)
     created_dirs: list[Path] = []
     written: list[str] = []
+    staged: list[tuple[Path, Path, str]] = []  # (target, tmp, original_text)
+
+    # INTENTIONAL (BLE001): each phase rolls back everything done so far and
+    # re-raises. The broad-except is the central rollback hook, not a swallow.
     try:
-        for move in plan.moves:
-            source = root / move.old_path
-            target = root / move.new_path
-            if not source.is_file():
-                raise RenameError(f"Move source missing at apply time: {move.old_path}")
-            if target.exists():
-                raise RenameCollisionError(move.new_path, owning_path=move.new_path)
-            created_dirs.extend(_ensure_parents(target, root))
-            try:
-                os.replace(source, target)
-            except OSError as exc:
-                raise RenameError(
-                    f"Failed to move {move.old_path!r} -> {move.new_path!r}: {exc}"
-                ) from exc
-            applied_moves.append((target, source))
-            written.append(move.new_path)
-    # INTENTIONAL (BLE001): any failure mid-move must trigger full rollback
-    # of completed moves + created dirs; the original exception is re-raised.
+        _apply_moves(plan, root, applied_moves, created_dirs, written)
     except Exception:  # noqa: BLE001
         _undo_moves(applied_moves)
         _undo_created_dirs(created_dirs)
         raise
 
-    # 2) Stage edits + drift-check. On failure here, also reverse moves.
-    staged: list[tuple[Path, Path, str]] = []  # (target, tmp, original_text)
     try:
-        for edit in plan.edits:
-            target = root / edit.path
-            if not target.exists():
-                raise RenameError(f"Planned target does not exist: {target}")
-            original = target.read_text(encoding="utf-8")
-            if original != edit.old_text:
-                raise RenameError(
-                    f"File {edit.path!r} drifted from the planned base; rebuild plan."
-                )
-            tmp = _stage(target, edit.new_text)
-            staged.append((target, tmp, original))
-    # INTENTIONAL (BLE001): any failure while staging edits unwinds staged
-    # tmp files AND reverses the moves from step 1; the original is re-raised.
+        _stage_edits(plan, root, staged)
     except Exception:  # noqa: BLE001
         for _t, leftover, _o in staged:
             leftover.unlink(missing_ok=True)
@@ -507,8 +479,79 @@ def apply_rename(corpus: Any, plan: RenamePlan) -> list[str]:
         _undo_created_dirs(created_dirs)
         raise
 
-    # 3) Sequential rename of staged edits. On failure mid-loop,
-    # restore prior edits AND reverse moves.
+    try:
+        _commit_staged_edits(staged, root, written)
+    except OSError:
+        _undo_moves(applied_moves)
+        _undo_created_dirs(created_dirs)
+        raise
+
+    _refresh_corpus(corpus)
+    return written
+
+
+def _apply_moves(
+    plan: RenamePlan,
+    root: Path,
+    applied_moves: list[tuple[Path, Path]],
+    created_dirs: list[Path],
+    written: list[str],
+) -> None:
+    """Apply planned file moves; mutate the tracking lists in place.
+
+    Raises on first failure with state recorded in the caller-owned
+    lists so the caller can roll back.
+    """
+    for move in plan.moves:
+        source = root / move.old_path
+        target = root / move.new_path
+        if not source.is_file():
+            raise RenameError(f"Move source missing at apply time: {move.old_path}")
+        if target.exists():
+            raise RenameCollisionError(move.new_path, owning_path=move.new_path)
+        created_dirs.extend(_ensure_parents(target, root))
+        try:
+            os.replace(source, target)
+        except OSError as exc:
+            raise RenameError(
+                f"Failed to move {move.old_path!r} -> {move.new_path!r}: {exc}"
+            ) from exc
+        applied_moves.append((target, source))
+        written.append(move.new_path)
+
+
+def _stage_edits(
+    plan: RenamePlan,
+    root: Path,
+    staged: list[tuple[Path, Path, str]],
+) -> None:
+    """Stage each planned edit to a tempfile after drift-checking the base.
+
+    Mutates ``staged`` in place. Raises on missing target or drift; the
+    caller is responsible for cleaning up partial ``staged`` entries.
+    """
+    for edit in plan.edits:
+        target = root / edit.path
+        if not target.exists():
+            raise RenameError(f"Planned target does not exist: {target}")
+        original = target.read_text(encoding="utf-8")
+        if original != edit.old_text:
+            raise RenameError(f"File {edit.path!r} drifted from the planned base; rebuild plan.")
+        tmp = _stage(target, edit.new_text)
+        staged.append((target, tmp, original))
+
+
+def _commit_staged_edits(
+    staged: list[tuple[Path, Path, str]],
+    root: Path,
+    written: list[str],
+) -> None:
+    """Rename each staged tempfile into place. Mutates ``written`` in place.
+
+    On the first ``OSError`` mid-loop, restores prior edits from their
+    in-memory snapshots, removes the remaining staged tempfiles, and
+    re-raises so the caller can reverse the earlier move phase too.
+    """
     for idx, (target, tmp, _original) in enumerate(staged):
         try:
             os.replace(tmp, target)
@@ -521,12 +564,7 @@ def apply_rename(corpus: Any, plan: RenamePlan) -> list[str]:
                     pass
             for _t, leftover, _o in staged[idx:]:
                 leftover.unlink(missing_ok=True)
-            _undo_moves(applied_moves)
-            _undo_created_dirs(created_dirs)
             raise
-
-    _refresh_corpus(corpus)
-    return written
 
 
 def _ensure_parents(target: Path, root: Path) -> list[Path]:
