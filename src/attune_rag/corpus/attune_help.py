@@ -35,6 +35,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
+from ._aliases import load_aliases_from_file
 from .base import RetrievalEntry
 from .directory import DirectoryCorpus
 from .help_adapter import HelpCorpusAdapter
@@ -83,18 +84,15 @@ class AttuneHelpCorpus:
         # aliases_override.json mirrors summaries_override.json's shape
         # but appends multi-token aliases per path. Lives in attune-rag
         # so authors can iterate on retrieval coverage without rev'ing
-        # attune-help. Keys starting with ``_`` (e.g. ``_comment``) are
-        # ignored so the file can carry inline documentation.
+        # attune-help. Wraps the public ``load_aliases_from_file`` in a
+        # tolerant try/except: user corpora get strict errors, but the
+        # bundled override file is best-effort (a malformed file should
+        # not break ``AttuneHelpCorpus.from_attune_help()``).
         alias_overrides: dict[str, list[str]] = {}
         if _ALIASES_OVERRIDES_PATH.is_file():
             try:
-                raw = json.loads(_ALIASES_OVERRIDES_PATH.read_text(encoding="utf-8"))
-                alias_overrides = {
-                    path: aliases
-                    for path, aliases in raw.items()
-                    if not path.startswith("_") and isinstance(aliases, list)
-                }
-            except (OSError, json.JSONDecodeError):
+                alias_overrides = load_aliases_from_file(_ALIASES_OVERRIDES_PATH)
+            except (OSError, ValueError):
                 pass
         # attune-help 0.7.0+ ships summaries_by_path.json; older
         # versions don't have it. DirectoryCorpus._load_sidecar

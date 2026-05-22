@@ -83,6 +83,7 @@ class DirectoryCorpus(CorpusProtocol):
         cross_links_file: str | None = None,
         extra_summaries: dict[str, str | None] | None = None,
         extra_aliases: dict[str, Iterable[str]] | None = None,
+        extra_aliases_file: Path | str | None = None,
         cache: bool = True,
         glob: str = DEFAULT_GLOB,
     ) -> None:
@@ -138,11 +139,25 @@ class DirectoryCorpus(CorpusProtocol):
         self._summaries_file = summaries_file
         self._cross_links_file = cross_links_file
         self._extra_summaries: dict[str, str | None] = extra_summaries or {}
+        # Merge file-sourced extra aliases with the inline dict. Inline
+        # entries win on per-path collision so callers can override
+        # specific paths after loading a base file. File loading uses
+        # strict semantics (typed errors with path in message); the
+        # tolerance bundled AttuneHelpCorpus needs for its own override
+        # file is in its own wrapper.
+        from ._aliases import load_aliases_from_file as _load_aliases
+
+        file_aliases: dict[str, list[str]] = {}
+        if extra_aliases_file is not None:
+            file_aliases = _load_aliases(extra_aliases_file)
+        merged_aliases: dict[str, Iterable[str]] = dict(file_aliases)
+        if extra_aliases:
+            merged_aliases.update(extra_aliases)  # inline wins on collision
         # Normalize extras to tuples of strings at construction time so
         # _build() doesn't have to re-validate per-rebuild.
         self._extra_aliases: dict[str, tuple[str, ...]] = {
             path: tuple(a for a in aliases if isinstance(a, str) and a)
-            for path, aliases in (extra_aliases or {}).items()
+            for path, aliases in merged_aliases.items()
         }
         self._glob = glob
         self._cache = cache
