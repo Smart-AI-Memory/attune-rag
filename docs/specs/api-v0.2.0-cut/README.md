@@ -1,6 +1,12 @@
 # Spec: attune-rag 0.2.0 cut (post-W4.2 successor)
 
-> **Status: scaffolding — not yet scoped; activates after Phase 4 W4.2.**
+> **Status:** **scoped 2026-05-22** — executable when Phase 4 W4
+> closes and the entry gates green. See
+> [`tasks.md`](tasks.md#scoping-decisions-confirmed-2026-05-22).
+> The spec was authored decision-complete in
+> [`design.md`](design.md); the scoping pass added the M0 entry-gate
+> verification milestone and made the decisions explicit at the
+> top of `tasks.md`.
 
 - **Owner:** Patrick
 - **Created:** 2026-05-20

@@ -28,6 +28,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   0.2.0 cut + 7-day no-hotfix watch. Docs-only; no public-surface
   impact.
 
+- **`docs/specs/api-v0.2.0-cut/` promoted from scaffolding → scoped
+  (W4.4 → mechanical).** Spec was authored decision-complete in
+  `design.md`; the scoping pass added an M0 entry-gate verification
+  milestone (×5 mechanical checks: cadence-clean / perf-baseline-holds
+  / downstream-gate-green / security-clean / exit-summary-recommends-cut)
+  and an explicit decisions table at the top of `tasks.md`. The eight
+  scoping decisions confirmed: 0.2.0 = SemVer freeze only (not
+  Production/Stable); classifier stays `3 - Alpha` through 0.2.x; no
+  symbol additions in the cut PR (`### Changed` only); the cut
+  ratifies the surface locked by `test_api_surface.py` as-is;
+  POLICY.md gets a single past-tense copy edit; PyPI publish via the
+  existing release workflow + `/attune-release-check` skill;
+  deprecation shims stay through 0.2.x; 7-day hotfix watch
+  acknowledged as Phase-5-reset risk. Spec is now executable when
+  W4 closes and M0 gates green — making W4.4 ("open the 0.2.0
+  successor spec for `/spec` scoping") mechanical. Docs-only; no
+  public-surface impact.
+
 - **W3.3 coverage push — public `__all__` surface raised to ≥ 90 %
   per module (aggregate 90.04 %).** Twenty new tests across
   `tests/unit/test_editor_references.py` (+8) and
