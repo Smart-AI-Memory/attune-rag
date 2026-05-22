@@ -557,9 +557,41 @@ meaningful. Fewer queries → noisier numbers.
 
 ### 6.2 Running the measurement (v0 path)
 
-attune-rag 0.1.23 doesn't ship a packaged harness. The pattern today
-is to script it yourself, mirroring the shape of
-[`tests/golden/test_golden.py`](../tests/golden/test_golden.py):
+attune-rag ships [`scripts/measure_corpus.py`](../scripts/measure_corpus.py)
+as the v0 measurement harness. Clone the repo (or copy the file
+into yours), then run:
+
+```bash
+python scripts/measure_corpus.py \
+    --corpus-path ./my-corpus \
+    --queries ./my-queries.yaml \
+    --paraphrased ./my-paraphrased.yaml \
+    --output report.md \
+    --watermark-r3 0.85
+```
+
+The script emits a deterministic markdown report — aggregate
+P@1 / R@3 per query set + a per-query table. Non-zero exit on
+watermark fail makes it CI-suitable directly. `--paraphrased`
+is optional; pass it when you've authored a no-token-overlap
+regression set (see §6.1).
+
+**Two-pass with rerank (opt-in, ~$0.05 per 80-query set):**
+
+```bash
+python scripts/measure_corpus.py \
+    --corpus-path ./my-corpus \
+    --queries ./my-queries.yaml \
+    --with-rerank \
+    --output report.md
+```
+
+This runs both keyword and keyword-plus-rerank, side-by-side, so
+you can see exactly which marginal queries the rerank lifts —
+data-backed corpus polish, not vibes. Requires `ANTHROPIC_API_KEY`
+in the environment and the `[claude]` extra installed.
+
+If you prefer to script it yourself, the 20-line shape is:
 
 ```python
 import yaml
@@ -585,15 +617,12 @@ n = len(queries)
 print(f"P@1: {hits_at_1/n:.4f}  R@3: {hits_at_3/n:.4f}  (n={n})")
 ```
 
-That's a 20-line script. It's enough to drive iteration.
-
 > 🚧 **v1.0.0 cleanup (forthcoming):** the
 > [`user-corpus-onboarding`](specs/user-corpus-onboarding/) spec
-> ships a packaged harness — `python -m attune_rag.measure_corpus
-> --corpus-path ... --queries ... --watermark-r3 0.85` (CI-suitable,
-> non-zero exit on watermark fail) plus an `attune-rag-measure`
-> console script + a `measure(...)` Python API. The 20-line script
-> above is the v0 pattern; the harness collapses it to a one-liner.
+> promotes `scripts/measure_corpus.py` into the package as
+> `python -m attune_rag.measure_corpus ...` + an
+> `attune-rag-measure` console script + a `measure(...)` Python
+> API. The script stays as a backward-compat entry point.
 
 ### 6.3 The strict-dominance discipline
 
