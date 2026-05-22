@@ -123,6 +123,14 @@ result = pipeline.run("How do I...?")
 # run_and_generate or call a provider adapter yourself.
 ```
 
+> 📖 **Building a quality corpus.** See [`docs/USER_CORPUS_GUIDE.md`](docs/USER_CORPUS_GUIDE.md)
+> for the corpus-authoring discipline that produced the bundled
+> attune-help corpus's 100% / 100% baseline + 100% paraphrased R@3:
+> frontmatter aliases, multi-token intent, the `MIN_ALIAS_OVERLAP`
+> knob, stemmer traps, the override file pattern, and the
+> strict-dominance measurement loop. The guide is the v0 forerunner
+> of the v1.0.0 framework framing (`user-corpus-onboarding` spec).
+
 ## Hybrid retrieval (optional)
 
 `QueryExpander` and `LLMReranker` require the `[claude]` extra and an
