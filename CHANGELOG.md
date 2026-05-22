@@ -48,6 +48,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   when Phase 5 opens after the 0.2.0 cut + 7-day no-hotfix watch.
   Docs-only; no public-surface impact.
 
+- **`docs/specs/user-corpus-onboarding/` promoted from scaffolding →
+  scoped (Phase 5 v1.0.0 framework-framing).** Seven open scoping
+  questions resolved and recorded in the new
+  [`tasks.md`](docs/specs/user-corpus-onboarding/tasks.md): module
+  name `attune_rag.measure_corpus`; CLI entry shipped both as
+  `python -m attune_rag.measure_corpus` and as `attune-rag-measure`
+  console_scripts; default watermark R@3 ≥ 0.85 (matches the bundled
+  floor); leaner 600-line v1 guide with worked-example §8 deferred
+  to v1.1.0; `load_aliases_from_file` ships as a public helper (1
+  symbol against the 5-symbol budget); `extra_summaries_file=` kwarg
+  deferred to v1.1.0; harness mirrors the `RagPipeline` rerank
+  default (with `--no-rerank` flag for ablation) and inherits D5's
+  verdict at execution time. Four milestones (M0 entry gates, M1
+  harness, M2 kwarg refactor, M3 guide, M4 polish + cut prep);
+  M2 runs parallel to M1. Sequenced strictly after
+  [`reranker-evaluation/`](docs/specs/reranker-evaluation/) D5
+  closes so the harness inherits D5's verdict. Symbol budget: 4 new
+  public symbols (within the spec's ≤ 5 cap). Docs-only scoping;
+  no public-surface impact at this PR. Activates when Phase 5 opens
+  after the 0.2.0 cut + 7-day no-hotfix watch + D5 closure.
+
 - **`scripts/changelog_cadence.py` detects `> **Freeze override`
   blockquotes in CHANGELOG section headers.** Override-flagged
   `### Added` bullets no longer trigger `Status: RESET` in the

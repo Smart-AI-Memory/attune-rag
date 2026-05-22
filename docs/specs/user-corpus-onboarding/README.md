@@ -1,13 +1,15 @@
 # Spec: user-corpus-onboarding (attune-rag)
 
-> **Status:** scaffolding — not executable; promotes to scoped via
-> `/spec` pass when Phase 5 opens. No `tasks.md` until then.
+> **Status:** **scoped 2026-05-22** — executable when Phase 5 opens
+> (after 0.2.0 cut + 7-day no-hotfix watch + D5 closure). See
+> [`tasks.md`](tasks.md).
 > **Workstream:** Phase 5 of the [v1.0 roadmap](../ROADMAP-v1.md#phase-5--100-release).
 > **Activation gate:** Phase 4 W4.2 (cadence-clean) + 0.2.0 cut +
-> 7-day no-hotfix watch + Phase 5 opens.
-> **Freeze posture:** spec scaffold is docs-only and freeze-compliant.
-> Implementation (harness code + `DirectoryCorpus` override-from-file
-> kwarg) is `### Added` and cannot land before the 0.2.0 cut.
+> 7-day no-hotfix watch + Phase 5 opens + D5 verdict locked (M0.4).
+> **Freeze posture:** docs-only scoping is freeze-compliant.
+> Implementation (harness code + `DirectoryCorpus.extra_aliases_file`
+> kwarg + `load_aliases_from_file` helper) is `### Added` and lands
+> after the 0.2.0 cut.
 
 ## Purpose
 
@@ -154,10 +156,16 @@ the strict-dominance discipline) as documentation source.
 - [`risks.md`](risks.md) — scope creep, harness-maintenance burden,
   the "if user corpora don't transfer the discipline" failure mode.
 
-Promoted to executable when the `/spec` pass adds:
+Now executable:
 
-- [`tasks.md`](tasks.md) — M1 harness, M2 override-from-file kwarg,
-  M3 guide, M4 documentation polish. Currently scaffold.
+- [`tasks.md`](tasks.md) — M0 entry-gate verification (including D5
+  closure), M1 harness (`attune_rag.measure_corpus` + CLI), M2
+  `extra_aliases_file` kwarg + `load_aliases_from_file` helper, M3
+  leaner-v1 `USER_CORPUS_GUIDE.md`, M4 polish + v1.0.0 cut readiness.
+  The seven scoping questions from
+  [design.md](design.md) +
+  [requirements.md "Open questions"](requirements.md#open-questions-for-scoping)
+  are answered at the top of `tasks.md`.
 
 ## Provenance
 

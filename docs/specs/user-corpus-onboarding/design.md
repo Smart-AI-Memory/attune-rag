@@ -1,8 +1,10 @@
 # Spec: user-corpus-onboarding — design
 
-> **Status:** scaffolding — not executable. Sections below sketch
-> candidate approaches; `/spec` scoping pass picks one per axis and
-> promotes to executable `tasks.md`.
+> **Status:** **scoped 2026-05-22.** All seven open questions are
+> decided in [`tasks.md`](tasks.md#scoping-decisions-locked-2026-05-22).
+> Sections below remain as the design narrative — the recommended
+> options are the locked decisions; alternatives kept as historical
+> context for future revisions.
 
 ## 1. Quality harness
 
