@@ -1,6 +1,9 @@
 # Spec: attune-rag 0.2.0 cut — Requirements
 
-> **Status: scaffolding — not yet scoped; activates after Phase 4 W4.2.**
+> **Status:** **scoped 2026-05-22.** Requirements below are the
+> non-negotiables the implementation in [`tasks.md`](tasks.md) must
+> satisfy; the entry-gate checklist is mechanically verified by
+> M0.1-M0.5 in `tasks.md`.
 
 This spec ratifies the public surface frozen at the symbol level in
 Phase 3 ([`api-v0.2-public-surface`](../api-v0.2-public-surface/))
@@ -78,6 +81,10 @@ in scaffolding.
   [`api-v0.2-public-surface/tasks.md`](../api-v0.2-public-surface/tasks.md).
 - **Signature locking.** Phase 5 candidate.
 
-### Open questions (for scoping)
+### Open questions (closed at scoping 2026-05-22)
 
-To be filled by the `/spec` pass that runs after W4.2.
+All eight scoping decisions are recorded in
+[`tasks.md`](tasks.md#scoping-decisions-confirmed-2026-05-22). The
+spec was authored decision-complete; no questions remain open. The
+M0 entry-gate verification step in `tasks.md` is the only addition
+the scoping pass made beyond confirming the existing design.

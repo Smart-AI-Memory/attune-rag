@@ -1,6 +1,8 @@
 # Spec: attune-rag 0.2.0 cut — Design
 
-> **Status: scaffolding — not yet scoped; activates after Phase 4 W4.2.**
+> **Status:** **scoped 2026-05-22.** Design decisions confirmed in
+> [`tasks.md`](tasks.md#scoping-decisions-confirmed-2026-05-22).
+> Sections below are the load-bearing design narrative.
 
 This document sketches the shape of the 0.2.0 cut. It is **not** a
 detailed design — the `/spec` scoping pass after W4.2 fills in the
