@@ -1,10 +1,10 @@
 # Spec: reranker-evaluation — requirements
 
-> **Status:** **scoped 2026-05-22.** Invariants below are the
-> non-negotiables the implementation in [`tasks.md`](tasks.md) must
-> satisfy. The seven open questions at the bottom of this file are
-> all decided — see
-> [`tasks.md` scoping decisions table](tasks.md#scoping-decisions-locked-2026-05-22).
+> **Status:** **complete 2026-05-22** — verdict at
+> [`diagnostic-1.md`](diagnostic-1.md): `rerank-default-off`.
+> All R1–R5 invariants verified by the diagnostic; seven open
+> questions resolved at scoping (see
+> [`tasks.md`](tasks.md#scoping-decisions-locked-2026-05-22)).
 
 ## Entry gates (inherited from upstream phases)
 

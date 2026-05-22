@@ -1,10 +1,12 @@
 # Spec: reranker-evaluation — design
 
-> **Status:** **scoped 2026-05-22.** All seven open questions from §9
-> are decided in [`tasks.md`](tasks.md#scoping-decisions-locked-2026-05-22).
-> Sections below remain as the design narrative — the recommended
-> options are the locked decisions; alternatives are kept as
-> historical context for future revisions.
+> **Status:** **complete 2026-05-22** — verdict at
+> [`diagnostic-1.md`](diagnostic-1.md): `rerank-default-off`.
+> All seven open questions from §9 were decided in
+> [`tasks.md`](tasks.md#scoping-decisions-locked-2026-05-22) at scoping;
+> sections below are the design narrative — the recommended options
+> were the locked decisions; alternatives are kept as historical
+> context for future revisions.
 
 ## 1. The measurement question
 

@@ -185,29 +185,44 @@ it just sits there until cleaned up.
 ## 7. The reranker-evaluation diagnostic (D5) and the harness happen
 in different timeframes
 
-**Risk:** D5 (the `reranker-evaluation` spec, item #1 from the
-architecture plan) measures reranker effectiveness on the bundled
-corpus and produces a recommendation. The harness, shipped under
-this spec, includes reranker output by default (mirroring the
-pipeline default).
+> **Resolved 2026-05-22.** D5 closed at
+> [`reranker-evaluation/diagnostic-1.md`](../reranker-evaluation/diagnostic-1.md)
+> with verdict **`rerank-default-off`**. Multiple regression triggers
+> fired: rerank dropped baseline P@1 from 1.00 → 0.985 (it occasionally
+> demotes winning docs), baseline R@3 from 1.00 → 0.995, and paraphrased
+> R@3 from 0.9875 → 0.9825. Only 1 of 10 paraphrased P@1 residuals lifted
+> at ≥4/5 stability — far short of the ≥3 the rubric needs to flip the
+> default ON.
+>
+> **Harness default decision:** `scripts/measure_corpus.py` and the
+> future `attune_rag.measure_corpus` module mirror the
+> `RagPipeline(reranker=None)` default — i.e. rerank is **off** by
+> default in the harness. `--with-rerank` ships as an opt-in flag for
+> users who want to measure whether their corpus shape lifts under
+> rerank.
+>
+> **Spec correction:** [`tasks.md` scoping decision #7](tasks.md)
+> originally read "Mirror RagPipeline default (currently `on`)" —
+> `pipeline.py` defaulted to `None` long before D5 ran. The actual
+> default + D5's verdict agree on `off`; treat decision #7's claim
+> as misstating the current default.
+
+**Original risk text (pre-resolution).** D5 (the `reranker-evaluation`
+spec, item #1 from the architecture plan) measures reranker
+effectiveness on the bundled corpus and produces a recommendation.
+The harness, shipped under this spec, includes reranker output by
+default (mirroring the pipeline default).
 
 If D5's verdict is "the reranker doesn't help meaningfully on the
 bundled corpus" or "the reranker costs latency without lifting
 metrics", the harness's default behavior may be inconsistent with
 D5's recommendation. Two surfaces saying different things.
 
-**Posture:** sequence D5 before this spec's M1.
-
-D5 is a Phase 4 W2 deliverable (per the v1.0.0 architectural plan);
-this spec's implementation runs in Phase 5. D5 lands first, its
-verdict is incorporated into the harness's default and into the
-guide's discussion of when to use the reranker. The two artifacts
-ship consistent recommendations.
-
-If D5's verdict surfaces *after* M1 scoping is locked, the harness
-default may need a follow-up PR to align. Mitigation: the scoping
-pass for this spec (which runs *after* Phase 4 W2) inherits D5's
-verdict and bakes it into M1.
+**Posture (as executed):** D5 ran ahead of this spec's M1 thanks to
+the Phase 5 pre-staging arc. Its verdict + the existing
+`RagPipeline.reranker=None` default agree: rerank is off. The harness
+ships with `--with-rerank` as an opt-in flag, not the default. M1
+inherits this verdict directly; no follow-up alignment PR is needed.
 
 ---
 

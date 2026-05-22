@@ -1,16 +1,12 @@
 # Spec: reranker-evaluation (attune-rag)
 
-> **Status:** **scoped 2026-05-22** — executable when Phase 5 opens
-> (after 0.2.0 cut + 7-day no-hotfix watch). See [`tasks.md`](tasks.md).
-> **Workstream:** Phase 5 architectural diagnostic D5, sequenced
-> ahead of [`user-corpus-onboarding`](../user-corpus-onboarding/) M1.
-> **Activation gate:** Phase 4 W4.2 (cadence-clean) + 0.2.0 cut +
-> 7-day no-hotfix watch + Phase 5 opens.
-> **Freeze posture:** docs-only scoping is freeze-compliant. The
-> diagnostic itself is read-only measurement against the bundled
-> corpus — no `### Added`, no `__all__` changes. Decision 5 in
-> [`tasks.md`](tasks.md#scoping-decisions-locked-2026-05-22)
-> defers any default-flip PR to the v1.0.0 cut.
+> **Status:** **complete 2026-05-22** — verdict locked at
+> [`diagnostic-1.md`](diagnostic-1.md): **`rerank-default-off`**.
+> D5 ran ahead of the 0.2.0 cut via the Phase 5 pre-staging arc.
+> The verdict ratifies the existing `RagPipeline.reranker=None`
+> default — no default-flip PR is required at the v1.0.0 cut.
+> Cross-link landed: [`user-corpus-onboarding/risks.md` §7](../user-corpus-onboarding/risks.md);
+> follow-up note in [`v1.0.0-release/design.md`](../v1.0.0-release/design.md).
 
 ## Purpose
 

@@ -1,7 +1,12 @@
 # Spec: reranker-evaluation — risks
 
-> **Status:** **scoped 2026-05-22.** Risk register; mitigations are
-> implementation-time work tracked in [`tasks.md`](tasks.md).
+> **Status:** **complete 2026-05-22** — verdict at
+> [`diagnostic-1.md`](diagnostic-1.md): `rerank-default-off`.
+> Risk register below; mitigations were applied during
+> implementation. Risk #1 (Haiku non-determinism) is the
+> reason the rubric used ≥4/5 stability rather than a single-run
+> margin — the actual run showed 1 of 10 lifts hit the bar, well
+> below the 3-of-7 threshold for `rerank-default-on`.
 
 ## 1. The verdict moves on Haiku nondeterminism
 
