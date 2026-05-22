@@ -40,10 +40,10 @@ class HelpCorpusAdapter(Protocol):
     @property
     def templates_root(self) -> Path:
         """Filesystem path to the directory of ``*.md`` templates."""
-        ...
+        ...  # pragma: no cover -- Protocol stub; never executed
 
     @property
     def version(self) -> str:
         """Stable version string for the help corpus (e.g. package
         ``__version__``). Used for cache-busting and provenance."""
-        ...
+        ...  # pragma: no cover -- Protocol stub; never executed

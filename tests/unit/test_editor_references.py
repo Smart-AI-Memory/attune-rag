@@ -203,3 +203,141 @@ def test_find_references_skips_aliases_inside_fenced_code_blocks(tmp_path: Path)
     refs = find_references(corpus, "beta-spec", kind="alias")
     body_refs = [r for r in refs if r.context == "body"]
     assert body_refs == [], f"expected zero body refs, got {body_refs!r}"
+
+
+# -- W3.3 corpus-shape / entry-shape edge cases ---------------------
+#
+# These cover branches that DirectoryCorpus doesn't naturally exercise:
+# entries returned via the `entries()` callable fallback, entries with
+# empty content/path, docs with no frontmatter at all, and block-style
+# alias scans terminated by blank lines or dedents. Each test uses a
+# tiny duck-typed corpus or a hand-crafted markdown fixture rather than
+# DirectoryCorpus, so the failure surface stays scoped to the code path
+# under test.
+
+
+class _Entry:
+    """Tiny duck-typed entry for the `corpus.entries()` shape."""
+
+    def __init__(self, content: str = "", path: str = "", related: tuple[str, ...] = ()):
+        self.content = content
+        self.path = path
+        self.related = related
+
+
+class _EntriesCallableCorpus:
+    """Duck-typed corpus that exposes `entries()` (not `path_index`)."""
+
+    def __init__(self, entries: list[_Entry]) -> None:
+        self._entries = entries
+
+    def entries(self) -> list[_Entry]:
+        return self._entries
+
+
+class _NoEntryProtocolCorpus:
+    """Corpus with neither `path_index` nor `entries` — `_iter_entries`
+    falls through to an empty iterator, find_references returns []."""
+
+
+def test_iter_entries_via_entries_callable_fallback(tmp_path: Path) -> None:
+    """`_iter_entries` prefers `path_index` but falls back to `entries()`
+    when the dict-shape attr is absent. Covers references.py:167-169."""
+    entries = [
+        _Entry(
+            content=("---\n" "aliases: [foo]\n" "---\n\n" "Body has [[bar]] reference.\n"),
+            path="x.md",
+        ),
+    ]
+    corpus = _EntriesCallableCorpus(entries)
+    refs = find_references(corpus, "bar", kind="alias")
+    assert any(r.context == "body" for r in refs)
+
+
+def test_iter_entries_empty_fallback_when_neither_attr_present() -> None:
+    """No `path_index` and no `entries` → `iter(())`. Covers L170."""
+    corpus = _NoEntryProtocolCorpus()
+    assert find_references(corpus, "anything", kind="alias") == []
+    assert find_references(corpus, "anything", kind="tag") == []
+    assert find_references(corpus, "anything", kind="template_path") == []
+
+
+def test_alias_refs_skip_entry_with_empty_content() -> None:
+    """An entry with empty `content` is skipped — covers L76."""
+    corpus = _EntriesCallableCorpus([_Entry(content="", path="empty.md")])
+    assert find_references(corpus, "x", kind="alias") == []
+
+
+def test_alias_refs_skip_entry_with_empty_path() -> None:
+    """An entry with empty `path` is skipped — same L76 branch, other axis."""
+    corpus = _EntriesCallableCorpus([_Entry(content="some markdown body", path="")])
+    assert find_references(corpus, "x", kind="alias") == []
+
+
+def test_alias_decl_returns_empty_on_doc_with_no_frontmatter() -> None:
+    """A doc without a `---\\n...\\n---` block produces no alias-decl
+    refs. Covers references.py:86 (early return) and references.py:184
+    (body_start_line falls through to 1)."""
+    entries = [
+        _Entry(
+            content="Just prose, no frontmatter. Mentions [[target]] in body.\n",
+            path="bare.md",
+        )
+    ]
+    corpus = _EntriesCallableCorpus(entries)
+    refs = find_references(corpus, "target", kind="alias")
+    # No frontmatter decls, but body refs still found from line 1.
+    assert all(r.context != "frontmatter.alias" for r in refs)
+    body = [r for r in refs if r.context == "body"]
+    assert len(body) == 1
+    assert body[0].line == 1
+
+
+def test_tag_refs_skip_entry_with_no_content_or_no_frontmatter() -> None:
+    """Tag scan covers two early-skip branches:
+    - L129: empty content/path → continue
+    - L132: present content but no frontmatter → continue"""
+    entries = [
+        _Entry(content="", path="empty.md"),
+        _Entry(content="body text only, no fm", path="no_fm.md"),
+    ]
+    corpus = _EntriesCallableCorpus(entries)
+    assert find_references(corpus, "security", kind="tag") == []
+
+
+def test_block_style_alias_blank_line_continues_then_dedent_terminates() -> None:
+    """Block-style aliases interleaved with a blank line keep scanning;
+    a dedent at the same or lower indent than the key ends the block.
+    Covers references.py:221 (blank-line continue) and L223 (dedent break)."""
+    entries = [
+        _Entry(
+            content=(
+                "---\n"
+                "name: Alpha\n"
+                "aliases:\n"
+                "  - first-alias\n"
+                "\n"  # blank line inside the block → L221 continue
+                "  - target-alias\n"
+                "tags:\n"  # dedent back to top-level key → L223 break
+                "  - sec\n"
+                "---\n\n"
+                "Body.\n"
+            ),
+            path="alpha.md",
+        )
+    ]
+    corpus = _EntriesCallableCorpus(entries)
+    decl = [
+        r
+        for r in find_references(corpus, "target-alias", kind="alias")
+        if r.context == "frontmatter.alias"
+    ]
+    assert len(decl) == 1
+
+
+def test_template_path_refs_skip_entries_without_path() -> None:
+    """`_find_path_refs` requires both `related` membership AND a
+    truthy path; an entry with an empty path is skipped silently."""
+    entries = [_Entry(content="x", path="", related=("target.md",))]
+    corpus = _EntriesCallableCorpus(entries)
+    assert find_references(corpus, "target.md", kind="template_path") == []
