@@ -555,14 +555,16 @@ Authoring 20-40 baseline queries + 40-80 paraphrased variants gets
 you to the measurement floor where shifts in P@1 / R@3 are
 meaningful. Fewer queries → noisier numbers.
 
-### 6.2 Running the measurement (v0 path)
+### 6.2 Running the measurement
 
-attune-rag ships [`scripts/measure_corpus.py`](../scripts/measure_corpus.py)
-as the v0 measurement harness. Clone the repo (or copy the file
-into yours), then run:
+attune-rag ships three equivalent entry points — pick the one that
+matches your workflow. All three produce the same byte-identical
+output given the same inputs.
+
+**Console script (recommended for ad-hoc + CI):**
 
 ```bash
-python scripts/measure_corpus.py \
+attune-rag-measure \
     --corpus-path ./my-corpus \
     --queries ./my-queries.yaml \
     --paraphrased ./my-paraphrased.yaml \
@@ -570,16 +572,57 @@ python scripts/measure_corpus.py \
     --watermark-r3 0.85
 ```
 
-The script emits a deterministic markdown report — aggregate
-P@1 / R@3 per query set + a per-query table. Non-zero exit on
-watermark fail makes it CI-suitable directly. `--paraphrased`
-is optional; pass it when you've authored a no-token-overlap
-regression set (see §6.1).
+Available after `pip install attune-rag` (no repo clone needed).
+Non-zero exit on watermark fail makes it CI-suitable directly.
+`--paraphrased` is optional; pass it when you've authored a
+no-token-overlap regression set (see §6.1).
+
+**Module entry (handy when you need a specific Python interpreter):**
+
+```bash
+python -m attune_rag.measure_corpus \
+    --corpus-path ./my-corpus \
+    --queries ./my-queries.yaml \
+    --output report.md
+```
+
+**Python API (build your own pipelines + dashboards on top):**
+
+```python
+from pathlib import Path
+from attune_rag.measure_corpus import measure
+
+result = measure(
+    corpus_path=Path("./my-corpus"),
+    queries_path=Path("./my-queries.yaml"),
+    paraphrased_path=Path("./my-paraphrased.yaml"),
+)
+print(f"P@1 = {result.p1:.4f}  R@3 = {result.r3:.4f}")
+
+# Per-difficulty breakdown for surfacing the corpus's weak spots
+for diff, stats in sorted(result.per_difficulty_breakdown.items()):
+    print(f"  {diff}: P@1={stats['p1']:.2%} R@3={stats['r3']:.2%} (n={int(stats['n'])})")
+
+# CI-suitable watermark check
+import sys
+if result.watermark_failures(r3_floor=0.85):
+    sys.exit(1)
+
+Path("report.md").write_bytes(result.report_markdown().encode("utf-8"))
+```
+
+`MeasureResult` is a frozen dataclass — safe to log, pass between
+threads, or feed into downstream tooling. It carries the
+aggregate scalars, per-query records (in YAML input order),
+the per-difficulty breakdown, and the file SHA-256s for
+provenance. See the
+[`attune_rag.measure_corpus`](../src/attune_rag/measure_corpus.py)
+docstrings for the full schema.
 
 **Two-pass with rerank (opt-in, ~$0.05 per 80-query set):**
 
 ```bash
-python scripts/measure_corpus.py \
+attune-rag-measure \
     --corpus-path ./my-corpus \
     --queries ./my-queries.yaml \
     --with-rerank \
@@ -591,13 +634,21 @@ you can see exactly **whether rerank earns its keep on your corpus**.
 Sometimes it lifts a handful of marginal queries; sometimes it's
 neutral (the bundled corpus is one such case — see
 [`docs/specs/release-quality-baseline/baseline-with-rerank.md`](specs/release-quality-baseline/baseline-with-rerank.md)
-for the N=1 measurement). Either result is informative: a lift tells
-you to leave rerank on for prod traffic; a neutral result tells you
-the keyword path is doing its job and you can skip the API spend
+for the N=1 measurement and [D5's diagnostic](specs/reranker-evaluation/diagnostic-1.md)
+for the rigorous N=5 verdict). Either result is informative: a lift
+tells you to leave rerank on for prod traffic; a neutral result tells
+you the keyword path is doing its job and you can skip the API spend
 for end users. Requires `ANTHROPIC_API_KEY` in the environment and
 the `[claude]` extra installed.
 
-If you prefer to script it yourself, the 20-line shape is:
+**Backward-compat: `scripts/measure_corpus.py`.** The original
+freeze-time entry point still works — it's now a thin shim that
+calls into `attune_rag.measure_corpus:main`. Existing CI
+invocations (`python scripts/measure_corpus.py ...`) keep working
+unchanged. New code should prefer one of the three paths above.
+
+**If you prefer to script the loop yourself**, the 20-line shape
+that the harness is built on:
 
 ```python
 import yaml
@@ -607,28 +658,27 @@ from attune_rag import RagPipeline, DirectoryCorpus
 corpus = DirectoryCorpus(Path("./my-corpus"))
 pipeline = RagPipeline(corpus=corpus)
 
-queries = yaml.safe_load(Path("./my-queries.yaml").read_text())
+queries = yaml.safe_load(Path("./my-queries.yaml").read_text())["queries"]
 
 hits_at_1 = 0
 hits_at_3 = 0
 for q in queries:
     result = pipeline.run(q["query"])
-    top_paths = [c.path for c in result.candidates[:3]]
-    if top_paths and top_paths[0] == q["expected_top_1"]:
+    top_paths = [h.template_path for h in result.citation.hits[:3]]
+    expected = set(q["expected_in_top_3"])
+    if top_paths and top_paths[0] in expected:
         hits_at_1 += 1
-    if q["expected_top_1"] in top_paths:
+    if expected & set(top_paths):
         hits_at_3 += 1
 
 n = len(queries)
 print(f"P@1: {hits_at_1/n:.4f}  R@3: {hits_at_3/n:.4f}  (n={n})")
 ```
 
-> 🚧 **v1.0.0 cleanup (forthcoming):** the
-> [`user-corpus-onboarding`](specs/user-corpus-onboarding/) spec
-> promotes `scripts/measure_corpus.py` into the package as
-> `python -m attune_rag.measure_corpus ...` + an
-> `attune-rag-measure` console script + a `measure(...)` Python
-> API. The script stays as a backward-compat entry point.
+For most users `attune-rag-measure` is the better path — it
+handles the YAML schema, SHA-256 provenance, deterministic
+report rendering, and watermark-gating mechanics that you'd
+otherwise re-implement.
 
 ### 6.3 The strict-dominance discipline
 
@@ -654,8 +704,8 @@ near-regression that this discipline caught pre-merge.
 
 ### 6.4 Wiring into CI
 
-Once you have a measurement script, wire it into your corpus repo's
-CI:
+`attune-rag-measure` is designed for direct CI use — non-zero
+exit on watermark fail makes it a one-line gate:
 
 ```yaml
 # .github/workflows/corpus-quality.yml (sketch)
@@ -666,8 +716,20 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
-      - run: pip install attune-rag pyyaml
-      - run: python scripts/measure_corpus.py --watermark-r3 0.85
+      - run: pip install attune-rag
+      - run: |
+          attune-rag-measure \
+              --corpus-path ./my-corpus \
+              --queries ./my-queries.yaml \
+              --paraphrased ./my-paraphrased.yaml \
+              --watermark-r3 0.85 \
+              --output measurement.md
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: corpus-measurement
+          path: measurement.md
 ```
 
 Exit non-zero when R@3 drops below your floor (0.85 is the bundled
