@@ -212,8 +212,11 @@ def _render_report(
 
     if not rerank_used:
         lines.append(
-            "> 💡 Run with `--with-rerank` to measure the rerank lift on your "
-            "corpus. Typical cost: ~$0.05 for an 80-query set at Haiku pricing. "
+            "> 💡 Run with `--with-rerank` to measure whether rerank earns "
+            "its keep on your corpus — a lift on marginal queries means leave "
+            "it on; a neutral result means the keyword path is already doing "
+            "the work. Either outcome is informative. Typical cost: ~$0.05 "
+            "for an 80-query set at Haiku pricing. "
             "See `docs/USER_CORPUS_GUIDE.md` §6.2."
         )
         lines.append("")
