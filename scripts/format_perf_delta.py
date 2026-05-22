@@ -131,19 +131,31 @@ def render_comparison_comment(
     comparisons: list[MetricComparison],
     *,
     advisory: bool,
+    gated_metrics: frozenset[str] = frozenset(),
 ) -> str:
     """Render the per-PR delta comment.
 
-    ``advisory=True`` means regressions print but the gate doesn't
-    "fail" from the reader's POV — phrasing is softened accordingly.
+    ``advisory=True`` softens the global phrasing (Phase 4 W1–W2).
+    ``gated_metrics`` lists metric keys whose regressions are
+    blocking from W3.1 onward — those rows get a ⛔ icon and the
+    intro names them explicitly. Non-gated regressions stay ⚠️.
     """
     has_regression = any(c.status == "regression" for c in comparisons)
+    has_gated_regression = any(
+        c.status == "regression" and c.metric in gated_metrics for c in comparisons
+    )
     has_new = any(c.status == "new" for c in comparisons)
 
-    if has_regression:
-        title = (
-            "Perf delta — possible regression" if advisory else "Perf delta — REGRESSION (gating)"
-        )
+    if has_gated_regression:
+        title = "Perf delta — REGRESSION (gating)"
+    elif has_regression:
+        if gated_metrics or advisory:
+            # gated-metrics set but no gated regression → advisory
+            # regressions only, gate stays green. Match `--advisory`
+            # phrasing for this case.
+            title = "Perf delta — possible regression"
+        else:
+            title = "Perf delta — REGRESSION (gating)"
     elif has_new:
         title = "Perf delta — new metrics (no baseline)"
     else:
@@ -154,7 +166,16 @@ def render_comparison_comment(
         f"## {title}",
         "",
     ]
-    if advisory:
+    if gated_metrics:
+        gated_list = ", ".join(f"`{m}`" for m in sorted(gated_metrics))
+        lines.extend(
+            [
+                f"Blocking on regression in: {gated_list}. Other metrics "
+                "are advisory and don't block merge.",
+                "",
+            ]
+        )
+    elif advisory:
         lines.extend(
             [
                 "Advisory only (Phase 4 W1–W2). Regressions don't block "
@@ -176,14 +197,17 @@ def render_comparison_comment(
     rank = {"regression": 0, "new": 1, "ok": 2}
     ordered = sorted(comparisons, key=lambda c: (rank[c.status], c.metric))
     for c in ordered:
-        status_icon = {"regression": "⚠️ over threshold", "new": "🆕 new", "ok": "ok"}[c.status]
+        if c.status == "regression":
+            status_icon = "⛔ blocking" if c.metric in gated_metrics else "⚠️ over threshold"
+        else:
+            status_icon = {"new": "🆕 new", "ok": "ok"}[c.status]
         lines.append(
             f"| `{c.metric}` | {_format_seconds(c.baseline_mean)} | "
             f"{_format_seconds(c.current_mean)} | {_format_pct(c.delta_pct)} | "
             f"{_format_seconds(c.baseline_threshold)} | {status_icon} |"
         )
 
-    if has_regression and not advisory:
+    if has_gated_regression or (has_regression and not advisory):
         lines.extend(
             [
                 "",
@@ -243,7 +267,22 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help=(
             "Soften the regression phrasing — Phase 4 W1–W2 mode. "
-            "Exit code is unaffected; only the comment text changes."
+            "Exit code is unaffected; only the comment text changes. "
+            "Has no effect when --gate-metric is set."
+        ),
+    )
+    parser.add_argument(
+        "--gate-metric",
+        action="append",
+        default=[],
+        metavar="METRIC",
+        help=(
+            "Repeatable. Restrict the exit-1 condition to regressions "
+            "in the named metric(s) only (e.g. "
+            "'--gate-metric keyword_retriever_retrieve.cpu'). "
+            "Phase 4 W3.1 promotes the CPU-time axis of "
+            "KeywordRetriever.retrieve and RagPipeline.run to "
+            "blocking; everything else stays advisory."
         ),
     )
     args = parser.parse_args(argv)
@@ -277,10 +316,21 @@ def main(argv: list[str] | None = None) -> int:
         current.get("metrics", {}) or {},
     )
 
+    gated_metrics = frozenset(args.gate_metric)
     args.comment_out.write_text(
-        render_comparison_comment(comparisons, advisory=args.advisory),
+        render_comparison_comment(
+            comparisons,
+            advisory=args.advisory,
+            gated_metrics=gated_metrics,
+        ),
         encoding="utf-8",
     )
+
+    if gated_metrics:
+        has_gate_breach = any(
+            c.status == "regression" and c.metric in gated_metrics for c in comparisons
+        )
+        return 1 if has_gate_breach else 0
 
     has_regression = any(c.status == "regression" for c in comparisons)
     return 1 if has_regression else 0

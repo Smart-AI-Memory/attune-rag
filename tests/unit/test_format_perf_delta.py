@@ -315,3 +315,239 @@ def test_main_advisory_flag_propagates(tmp_path: Path) -> None:
     assert rc == 1
     body = out.read_text(encoding="utf-8")
     assert "Advisory only" in body
+
+
+# ---------------------------------------------------------------------------
+# --gate-metric (W3.1 selective gating)
+# ---------------------------------------------------------------------------
+
+
+def test_gate_metric_scopes_exit_to_named_metric(tmp_path: Path) -> None:
+    """When --gate-metric is set, only regressions in the named metric
+    return exit 1. Other regressions still appear in the comment but
+    don't fail the gate."""
+    baseline = tmp_path / "baseline.json"
+    current = tmp_path / "current.json"
+    out = tmp_path / "comment.md"
+    baseline.write_text(
+        json.dumps(
+            _payload(
+                {
+                    "keyword_retriever_retrieve.cpu": _metric(0.001, 0.0001, 0.0012),
+                    "llm_reranker_rerank.wall": _metric(0.5, 0.1, 0.8),
+                }
+            )
+        )
+    )
+    # Both regress; only the gated one should affect exit code.
+    current.write_text(
+        json.dumps(
+            _payload(
+                {
+                    "keyword_retriever_retrieve.cpu": _metric(0.0020, 0.0001, 0.0022),
+                    "llm_reranker_rerank.wall": _metric(1.5, 0.1, 1.7),
+                }
+            )
+        )
+    )
+    rc = fpd.main(
+        [
+            "--baseline",
+            str(baseline),
+            "--current",
+            str(current),
+            "--comment-out",
+            str(out),
+            "--gate-metric",
+            "keyword_retriever_retrieve.cpu",
+        ]
+    )
+    assert rc == 1
+
+
+def test_gate_metric_returns_zero_when_only_non_gated_regresses(tmp_path: Path) -> None:
+    """A regression in a non-gated metric doesn't trip the exit code."""
+    baseline = tmp_path / "baseline.json"
+    current = tmp_path / "current.json"
+    out = tmp_path / "comment.md"
+    baseline.write_text(
+        json.dumps(
+            _payload(
+                {
+                    "keyword_retriever_retrieve.cpu": _metric(0.001, 0.0001, 0.0012),
+                    "llm_reranker_rerank.wall": _metric(0.5, 0.1, 0.8),
+                }
+            )
+        )
+    )
+    current.write_text(
+        json.dumps(
+            _payload(
+                {
+                    "keyword_retriever_retrieve.cpu": _metric(0.0011, 0.0001, 0.0013),
+                    "llm_reranker_rerank.wall": _metric(1.5, 0.1, 1.7),
+                }
+            )
+        )
+    )
+    rc = fpd.main(
+        [
+            "--baseline",
+            str(baseline),
+            "--current",
+            str(current),
+            "--comment-out",
+            str(out),
+            "--gate-metric",
+            "keyword_retriever_retrieve.cpu",
+        ]
+    )
+    assert rc == 0
+
+
+def test_gate_metric_renders_blocking_icon_for_gated_regression(tmp_path: Path) -> None:
+    baseline = tmp_path / "baseline.json"
+    current = tmp_path / "current.json"
+    out = tmp_path / "comment.md"
+    baseline.write_text(
+        json.dumps(_payload({"rag_pipeline_run.cpu": _metric(0.001, 0.0001, 0.0012)}))
+    )
+    current.write_text(
+        json.dumps(_payload({"rag_pipeline_run.cpu": _metric(0.0020, 0.0001, 0.0022)}))
+    )
+    rc = fpd.main(
+        [
+            "--baseline",
+            str(baseline),
+            "--current",
+            str(current),
+            "--comment-out",
+            str(out),
+            "--gate-metric",
+            "rag_pipeline_run.cpu",
+        ]
+    )
+    assert rc == 1
+    body = out.read_text(encoding="utf-8")
+    assert "blocking" in body
+    assert "REGRESSION (gating)" in body
+    assert "rag_pipeline_run.cpu" in body
+
+
+def test_gate_metric_renders_advisory_icon_for_non_gated_regression(tmp_path: Path) -> None:
+    """Non-gated regressions in the same report still show ⚠️, not ⛔."""
+    baseline = tmp_path / "baseline.json"
+    current = tmp_path / "current.json"
+    out = tmp_path / "comment.md"
+    baseline.write_text(
+        json.dumps(
+            _payload(
+                {
+                    "rag_pipeline_run.cpu": _metric(0.001, 0.0001, 0.0012),
+                    "llm_reranker_rerank.wall": _metric(0.5, 0.1, 0.8),
+                }
+            )
+        )
+    )
+    current.write_text(
+        json.dumps(
+            _payload(
+                {
+                    "rag_pipeline_run.cpu": _metric(0.0011, 0.0001, 0.0013),
+                    "llm_reranker_rerank.wall": _metric(1.5, 0.1, 1.7),
+                }
+            )
+        )
+    )
+    fpd.main(
+        [
+            "--baseline",
+            str(baseline),
+            "--current",
+            str(current),
+            "--comment-out",
+            str(out),
+            "--gate-metric",
+            "rag_pipeline_run.cpu",
+        ]
+    )
+    body = out.read_text(encoding="utf-8")
+    # llm_reranker regressed but isn't gated — should NOT be marked blocking.
+    reranker_row = next(line for line in body.splitlines() if "llm_reranker_rerank.wall" in line)
+    assert "blocking" not in reranker_row
+    assert "over threshold" in reranker_row
+
+
+def test_gate_metric_title_softens_when_only_advisory_metric_regresses(tmp_path: Path) -> None:
+    """When --gate-metric is set and the only regression is in a
+    non-gated metric, the title should not claim 'gating' — the gate
+    in fact stayed green."""
+    baseline = tmp_path / "baseline.json"
+    current = tmp_path / "current.json"
+    out = tmp_path / "comment.md"
+    baseline.write_text(
+        json.dumps(
+            _payload(
+                {
+                    "keyword_retriever_retrieve.cpu": _metric(0.001, 0.0001, 0.0012),
+                    "llm_reranker_rerank.wall": _metric(0.5, 0.1, 0.8),
+                }
+            )
+        )
+    )
+    current.write_text(
+        json.dumps(
+            _payload(
+                {
+                    "keyword_retriever_retrieve.cpu": _metric(0.0011, 0.0001, 0.0013),
+                    "llm_reranker_rerank.wall": _metric(2.0, 0.1, 2.2),
+                }
+            )
+        )
+    )
+    rc = fpd.main(
+        [
+            "--baseline",
+            str(baseline),
+            "--current",
+            str(current),
+            "--comment-out",
+            str(out),
+            "--gate-metric",
+            "keyword_retriever_retrieve.cpu",
+        ]
+    )
+    assert rc == 0
+    body = out.read_text(encoding="utf-8")
+    assert "possible regression" in body
+    assert "REGRESSION (gating)" not in body
+
+
+def test_gate_metric_intro_lists_gated_metrics(tmp_path: Path) -> None:
+    baseline = tmp_path / "baseline.json"
+    current = tmp_path / "current.json"
+    out = tmp_path / "comment.md"
+    baseline.write_text(
+        json.dumps(_payload({"keyword_retriever_retrieve.cpu": _metric(0.001, 0.0001, 0.0012)}))
+    )
+    current.write_text(
+        json.dumps(_payload({"keyword_retriever_retrieve.cpu": _metric(0.0011, 0.0001, 0.0013)}))
+    )
+    fpd.main(
+        [
+            "--baseline",
+            str(baseline),
+            "--current",
+            str(current),
+            "--comment-out",
+            str(out),
+            "--gate-metric",
+            "keyword_retriever_retrieve.cpu",
+            "--gate-metric",
+            "rag_pipeline_run.cpu",
+        ]
+    )
+    body = out.read_text(encoding="utf-8")
+    assert "Blocking on regression" in body
+    assert "keyword_retriever_retrieve.cpu" in body
+    assert "rag_pipeline_run.cpu" in body

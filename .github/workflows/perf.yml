@@ -221,6 +221,14 @@ jobs:
       # - failure → emit a static "measurement failed" comment
       #   directly so the PR still gets a visible signal that
       #   the gate plumbing is broken (rather than silent CI red).
+      #
+      # W3.1 (2026-05-22): CPU-time axis of KeywordRetriever.retrieve
+      # and RagPipeline.run is now BLOCKING via --gate-metric. Other
+      # metrics (wall-clock, reranker, directory_corpus_load) stay
+      # advisory — they appear in the comment table with the ⚠️ icon
+      # but don't fail the job. Re-evaluate wall-clock promotion in
+      # W4 based on observed σ. Measurement-failure branch stays
+      # advisory (RC=0) — a script crash shouldn't block merge.
       - name: Format delta
         id: delta
         run: |
@@ -234,9 +242,11 @@ jobs:
           data. See the workflow run log for details (top-level CI
           summary links the failing step).
 
-          Advisory check is non-blocking; merging is not affected,
-          but a real perf regression would be invisible until the
-          measurement step is fixed.
+          Measurement-failure stays non-blocking even under W3.1
+          gating — the alternative would make every PR depend on the
+          perf-script infrastructure being green. Fix the measurement
+          step in a follow-up; real regressions in gated metrics will
+          remain detectable once measurement runs again.
 
           <!-- attune-rag-perf-gate -->
           EOF
@@ -246,19 +256,27 @@ jobs:
               --baseline "$BASELINE_JSON" \
               --current "$CURRENT_JSON" \
               --comment-out "$COMMENT_PATH" \
-              --advisory
+              --gate-metric keyword_retriever_retrieve.cpu \
+              --gate-metric rag_pipeline_run.cpu
             RC=$?
           fi
           echo "rc=$RC" >> "$GITHUB_OUTPUT"
-          # Advisory mode: even on regression (exit 1), the job
-          # stays green. Promotes to blocking in W3.1.
-          exit 0
+          # W3.1: propagate the script's exit code. RC=1 (regression
+          # in a gated metric) fails the job and blocks merge under
+          # branch protection. Measurement-failure branch above
+          # explicitly sets RC=0 so it doesn't trip the gate.
+          exit $RC
         shell: bash
 
       # ── Post or update the PR comment ─────────────────────────
+      # W3.1: `always()` ensures the comment posts even when the
+      # Format delta step exited non-zero (gated regression). The
+      # devloop needs the comment to know WHY the gate failed; the
+      # job's overall non-zero exit still blocks merge.
       - name: Post or update PR comment
         if: |
-          github.event_name == 'pull_request'
+          always()
+          && github.event_name == 'pull_request'
           && hashFiles(env.COMMENT_PATH) != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -286,9 +304,9 @@ jobs:
           DELTA_RC: ${{ steps.delta.outputs.rc }}
         run: |
           {
-            echo "### attune-rag perf delta (advisory)"
+            echo "### attune-rag perf delta"
             echo ""
             echo "- format_perf_delta.py exit: ${DELTA_RC:-skipped}"
-            echo "- Mode: advisory (Phase 4 W1–W2)"
+            echo "- Mode: W3.1 — CPU-time blocking on \`keyword_retriever_retrieve.cpu\` + \`rag_pipeline_run.cpu\`; other metrics advisory"
           } >> "$GITHUB_STEP_SUMMARY"
         shell: bash

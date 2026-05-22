@@ -24,6 +24,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `MIN_ALIAS_OVERLAP` addition. Schema documented at
   [`docs/specs/downstream-validation/cadence-week-schema.md`](docs/specs/downstream-validation/cadence-week-schema.md).
   Internal-tooling change; no public surface impact.
+- **Perf gate promoted advisory → blocking on CPU-time axis of
+  `KeywordRetriever.retrieve` + `RagPipeline.run` (Phase 4 W3.1).**
+  `scripts/format_perf_delta.py` gains `--gate-metric METRIC`
+  (repeatable). When set, only regressions in the named metrics
+  affect the exit code; other metrics still appear in the comment
+  table with the ⚠️ icon but don't fail the job. Gated regressions
+  render as ⛔ blocking. `.github/workflows/perf.yml` switches from
+  `--advisory` to two `--gate-metric` flags and propagates the
+  script's exit code instead of force-exiting 0. Measurement-failure
+  branch stays advisory (RC=0) — a script crash shouldn't block
+  merge. Wall-clock, reranker, and `directory_corpus_load` axes
+  remain advisory through W3; wall-clock promotion re-evaluated in
+  W4 per [`tasks.md`](docs/specs/downstream-validation/tasks.md)
+  W3.1. Verified by smoke test: clean → exit 0, gated regression
+  → exit 1, advisory-only regression → exit 0.
 
 ## [0.1.23] - 2026-05-21
 
