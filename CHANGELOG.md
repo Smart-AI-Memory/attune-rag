@@ -46,6 +46,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   successor spec for `/spec` scoping") mechanical. Docs-only; no
   public-surface impact.
 
+- **W4.3 exit-summary skeleton drafted ahead of W4 close.**
+  `docs/specs/downstream-validation/exit-summary.md` lands as a
+  structured template with `<TODO>` placeholders for the numbers
+  that fill in mechanically as W4 closes: phase calendar (with
+  observed −2.5-week W2/W3 slack), four cadence-report verdicts,
+  per-metric perf trend (gated vs advisory columns), security
+  findings disposition (HIGH/MEDIUM/LOW counts), downstream-gate
+  green record, W2 hand-off pointers, recommendation (CUT-0.2.0 /
+  EXTEND-FREEZE), Phase 5 spec readiness table, and token-spend
+  projection. The structure is reviewable today; only the
+  measured values await. Per `tasks.md` W4.3.
+
+- **W3.2 task row updated with `✅ done 2026-05-20` annotation**
+  citing PR #81 (drift fix: the row was never updated when W3.2
+  shipped). Same shape as the W1.1 / W2.1 / W2.2 / W3.1 / W3.3
+  done annotations in the same file.
+
 - **W3.3 coverage push — public `__all__` surface raised to ≥ 90 %
   per module (aggregate 90.04 %).** Twenty new tests across
   `tests/unit/test_editor_references.py` (+8) and
