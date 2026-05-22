@@ -58,6 +58,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   matrix wiring (M2) + first v2 lock-baseline run (M3) ship in
   follow-up PRs once Phase 5 opens.
 
+- **`scripts/measure_reranker.py` ships as the D5 diagnostic harness
+  (Phase 5 reranker-evaluation M1).** Compares `RagPipeline(reranker=None)`
+  (Run A — deterministic, N=1) against `RagPipeline(reranker=LLMReranker())`
+  (Run B — non-deterministic, N=5 by default), emitting a markdown
+  diagnostic report with per-metric mean/p50/p95 and full reproducibility
+  metadata (query SHA-256, commit SHA, reranker model, Anthropic SDK
+  version, ISO timestamp). Run A includes an R1 strict-dominance check:
+  fails loudly if the bundled-baseline numbers (1.00/1.00/0.8750/0.9875)
+  don't reproduce. Uses the shared `attune_rag._scoring.score_queries`
+  helper (no duplicated scoring logic; cross-link satisfied per
+  `tasks.md` M1.1 annotation). `--skip-run-b` enables R1-only emission
+  for the M1 PR without API spend; M2 (live run + verdict) and M3
+  (cross-link to user-corpus-onboarding/risks.md) ship in follow-up
+  PRs. Internal tooling; no public API surface. 9 unit tests cover
+  query loading, R1 check pass/fail, aggregation math (mean/p50/p95),
+  report rendering, deterministic metadata, and CLI smoke.
+
 - **`scripts/measure_corpus.py` ships as the v0 user-corpus measurement
   harness (Phase 5 accelerator).** Standalone script that scores any
   attune-rag-compatible markdown corpus against a queries YAML, emitting
