@@ -14,6 +14,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`docs/USER_CORPUS_GUIDE.md` published (v0 forerunner of the
+  Phase 5 framework-framing).** ~750-line user-facing guide
+  documenting the working-today path for pointing attune-rag at a
+  user corpus: directory layout + frontmatter schema, multi-token
+  alias intent (the `MIN_ALIAS_OVERLAP = 2` consequence), authoring
+  patterns + the `_tokenize()` validation discipline (the `bites →
+  bit` lesson), the override file pattern + override-then-promote
+  workflow, the `MIN_ALIAS_OVERLAP` knob (when to flip), stemmer
+  gotchas + the `_MIN_STEM_LEN` floor, quality measurement (a
+  20-line script users can build today), strict-dominance
+  discipline + CI wiring, the `QueryExpander` lever, and where the
+  override mechanism fits in package-ships-a-corpus shipping
+  patterns. The guide is the v0 forerunner; the v1.0.0 spec
+  ([`user-corpus-onboarding/`](docs/specs/user-corpus-onboarding/))
+  upgrades it with packaged-harness ergonomics. Pure docs; no
+  public-surface impact. Ships under freeze. Cross-linked from
+  README "Quick start — custom corpus" section.
+
 - **`docs/specs/perf-baseline-multi-run/` promoted from scaffolding →
   scoped (Phase 5 inter-run noise methodology).** Spec was authored
   decision-complete; the scoping pass added a confirmed-decisions
