@@ -203,6 +203,40 @@ class TestLLMReranker:
             for block in system
         )
 
+    def test_returns_original_on_non_list_json(self):
+        hits = [_make_hit("a.md"), _make_hit("b.md")]
+        reranker, _ = self._reranker_with_mock('{"not": "a list"}')
+        result = reranker.rerank("query", hits)
+        assert [h.entry.path for h in result] == ["a.md", "b.md"]
+
+    def test_empty_list_response_falls_back_to_original_order(self):
+        hits = [_make_hit("a.md"), _make_hit("b.md"), _make_hit("c.md")]
+        reranker, _ = self._reranker_with_mock("[]")
+        result = reranker.rerank("query", hits)
+        assert [h.entry.path for h in result] == ["a.md", "b.md", "c.md"]
+
+    def test_ignores_duplicate_indices(self):
+        hits = [_make_hit("a.md"), _make_hit("b.md"), _make_hit("c.md")]
+        reranker, _ = self._reranker_with_mock("[1, 1, 0]")
+        result = reranker.rerank("query", hits)
+        assert [h.entry.path for h in result] == ["b.md", "a.md", "c.md"]
+
+    def test_timeout_exception_returns_original_order(self):
+        hits = [_make_hit("a.md"), _make_hit("b.md")]
+        reranker = LLMReranker(timeout=0.001)
+        mock_client = MagicMock()
+        mock_client.messages.create.side_effect = TimeoutError("Haiku didn't respond")
+        reranker._client = mock_client
+        result = reranker.rerank("query", hits)
+        assert [h.entry.path for h in result] == ["a.md", "b.md"]
+
+    def test_requires_claude_extra(self):
+        reranker = LLMReranker()
+        with patch.dict("sys.modules", {"anthropic": None}):
+            reranker._client = None
+            with pytest.raises(RuntimeError, match=r"\[claude\]"):
+                reranker._anthropic  # noqa: B018
+
 
 # ---------------------------------------------------------------------------
 # Pipeline integration tests

@@ -12,6 +12,10 @@ import re
 from dataclasses import asdict, dataclass
 from typing import Any, Literal
 
+from ._regex import ALIAS_REF_RE as _ALIAS_REF_RE
+from ._regex import FENCE_RE as _FENCE_RE
+from ._regex import TOP_LEVEL_KEY_RE as _TOP_LEVEL_KEY_RE
+
 ReferenceContext = Literal["body", "frontmatter.alias", "frontmatter.tag", "cross_links"]
 ReferenceKind = Literal["alias", "tag", "template_path"]
 
@@ -37,8 +41,6 @@ class Reference:
 
 
 _FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
-_FENCE_RE = re.compile(r"^(```|~~~)")
-_TOP_LEVEL_KEY_RE = re.compile(r"^([A-Za-z_][\w-]*)\s*:")
 
 
 def find_references(corpus: Any, name: str, kind: ReferenceKind) -> list[Reference]:
@@ -63,9 +65,6 @@ def find_references(corpus: Any, name: str, kind: ReferenceKind) -> list[Referen
 
 
 # -- alias ----------------------------------------------------------
-
-
-_ALIAS_REF_RE = re.compile(r"(?<!\\)\[\[([^\[\]\n]+?)\]\]")
 
 
 def _find_alias_refs(corpus: Any, name: str) -> list[Reference]:

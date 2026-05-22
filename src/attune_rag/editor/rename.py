@@ -27,16 +27,20 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
+from ._regex import ALIAS_REF_RE as _ALIAS_REF_RE
+from ._regex import FENCE_RE as _FENCE_RE
+from ._regex import TOP_LEVEL_KEY_RE as _TOP_LEVEL_KEY_RE
 from .references import ReferenceKind
 
+# rename.py's frontmatter regex captures the opener/body/closer separately
+# so the rewrite step can reassemble them; the references.py version only
+# captures the body, so they intentionally don't share a definition.
 _FRONTMATTER_RE = re.compile(r"^(---\s*\n)(.*?)(\n---\s*\n)", re.DOTALL)
-_FENCE_RE = re.compile(r"^(```|~~~)")
 
 # Sidecar files we look for in the corpus root when planning a
 # template_path rename. Both have the same flat ``rel_path -> summary``
 # shape; ``summaries_by_path.json`` is the attune-help variant.
 _PATH_KEYED_SIDECARS = ("summaries.json", "summaries_by_path.json")
-_ALIAS_REF_RE = re.compile(r"(?<!\\)\[\[([^\[\]\n]+?)\]\]")
 
 
 class RenameError(ValueError):
@@ -290,9 +294,6 @@ def _rewrite_frontmatter_value(text: str, key: str, old: str, new: str) -> str:
     return fm_open + rewritten_body + fm_close + text[m.end() :]
 
 
-_TOP_LEVEL_KEY_RE = re.compile(r"^([A-Za-z_][\w-]*)\s*:")
-
-
 def _rewrite_yaml_block_value(fm_body: str, key: str, old: str, new: str) -> str:
     """Rewrite ``old`` -> ``new`` inside the ``key:`` list (flow or block)."""
     lines = fm_body.split("\n")
@@ -455,55 +456,102 @@ def apply_rename(corpus: Any, plan: RenamePlan) -> list[str]:
     if root is None:
         raise RenameError("Corpus has no resolvable root path; apply is not supported.")
 
-    # 1) Apply moves first. Track what we did so we can reverse it.
     applied_moves: list[tuple[Path, Path]] = []  # (source_now_target, was_source)
     created_dirs: list[Path] = []
     written: list[str] = []
+    staged: list[tuple[Path, Path, str]] = []  # (target, tmp, original_text)
+
+    # INTENTIONAL (BLE001): each phase rolls back everything done so far and
+    # re-raises. The broad-except is the central rollback hook, not a swallow.
     try:
-        for move in plan.moves:
-            source = root / move.old_path
-            target = root / move.new_path
-            if not source.is_file():
-                raise RenameError(f"Move source missing at apply time: {move.old_path}")
-            if target.exists():
-                raise RenameCollisionError(move.new_path, owning_path=move.new_path)
-            created_dirs.extend(_ensure_parents(target, root))
-            try:
-                os.replace(source, target)
-            except OSError as exc:
-                raise RenameError(
-                    f"Failed to move {move.old_path!r} -> {move.new_path!r}: {exc}"
-                ) from exc
-            applied_moves.append((target, source))
-            written.append(move.new_path)
-    except Exception:
+        _apply_moves(plan, root, applied_moves, created_dirs, written)
+    except Exception:  # noqa: BLE001
         _undo_moves(applied_moves)
         _undo_created_dirs(created_dirs)
         raise
 
-    # 2) Stage edits + drift-check. On failure here, also reverse moves.
-    staged: list[tuple[Path, Path, str]] = []  # (target, tmp, original_text)
     try:
-        for edit in plan.edits:
-            target = root / edit.path
-            if not target.exists():
-                raise RenameError(f"Planned target does not exist: {target}")
-            original = target.read_text(encoding="utf-8")
-            if original != edit.old_text:
-                raise RenameError(
-                    f"File {edit.path!r} drifted from the planned base; rebuild plan."
-                )
-            tmp = _stage(target, edit.new_text)
-            staged.append((target, tmp, original))
-    except Exception:
+        _stage_edits(plan, root, staged)
+    except Exception:  # noqa: BLE001
         for _t, leftover, _o in staged:
             leftover.unlink(missing_ok=True)
         _undo_moves(applied_moves)
         _undo_created_dirs(created_dirs)
         raise
 
-    # 3) Sequential rename of staged edits. On failure mid-loop,
-    # restore prior edits AND reverse moves.
+    try:
+        _commit_staged_edits(staged, root, written)
+    except OSError:
+        _undo_moves(applied_moves)
+        _undo_created_dirs(created_dirs)
+        raise
+
+    _refresh_corpus(corpus)
+    return written
+
+
+def _apply_moves(
+    plan: RenamePlan,
+    root: Path,
+    applied_moves: list[tuple[Path, Path]],
+    created_dirs: list[Path],
+    written: list[str],
+) -> None:
+    """Apply planned file moves; mutate the tracking lists in place.
+
+    Raises on first failure with state recorded in the caller-owned
+    lists so the caller can roll back.
+    """
+    for move in plan.moves:
+        source = root / move.old_path
+        target = root / move.new_path
+        if not source.is_file():
+            raise RenameError(f"Move source missing at apply time: {move.old_path}")
+        if target.exists():
+            raise RenameCollisionError(move.new_path, owning_path=move.new_path)
+        created_dirs.extend(_ensure_parents(target, root))
+        try:
+            os.replace(source, target)
+        except OSError as exc:
+            raise RenameError(
+                f"Failed to move {move.old_path!r} -> {move.new_path!r}: {exc}"
+            ) from exc
+        applied_moves.append((target, source))
+        written.append(move.new_path)
+
+
+def _stage_edits(
+    plan: RenamePlan,
+    root: Path,
+    staged: list[tuple[Path, Path, str]],
+) -> None:
+    """Stage each planned edit to a tempfile after drift-checking the base.
+
+    Mutates ``staged`` in place. Raises on missing target or drift; the
+    caller is responsible for cleaning up partial ``staged`` entries.
+    """
+    for edit in plan.edits:
+        target = root / edit.path
+        if not target.exists():
+            raise RenameError(f"Planned target does not exist: {target}")
+        original = target.read_text(encoding="utf-8")
+        if original != edit.old_text:
+            raise RenameError(f"File {edit.path!r} drifted from the planned base; rebuild plan.")
+        tmp = _stage(target, edit.new_text)
+        staged.append((target, tmp, original))
+
+
+def _commit_staged_edits(
+    staged: list[tuple[Path, Path, str]],
+    root: Path,
+    written: list[str],
+) -> None:
+    """Rename each staged tempfile into place. Mutates ``written`` in place.
+
+    On the first ``OSError`` mid-loop, restores prior edits from their
+    in-memory snapshots, removes the remaining staged tempfiles, and
+    re-raises so the caller can reverse the earlier move phase too.
+    """
     for idx, (target, tmp, _original) in enumerate(staged):
         try:
             os.replace(tmp, target)
@@ -516,12 +564,7 @@ def apply_rename(corpus: Any, plan: RenamePlan) -> list[str]:
                     pass
             for _t, leftover, _o in staged[idx:]:
                 leftover.unlink(missing_ok=True)
-            _undo_moves(applied_moves)
-            _undo_created_dirs(created_dirs)
             raise
-
-    _refresh_corpus(corpus)
-    return written
 
 
 def _ensure_parents(target: Path, root: Path) -> list[Path]:

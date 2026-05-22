@@ -31,7 +31,9 @@ def _ts(raw: str) -> str:
     try:
         dt = datetime.fromisoformat(raw.replace("Z", "+00:00")).astimezone(timezone.utc)
         return dt.strftime("%Y-%m-%d %H:%M UTC")
-    except Exception:
+    # INTENTIONAL (BLE001): dashboard display tolerates malformed/missing
+    # timestamps by falling back to the raw string rather than crashing.
+    except Exception:  # noqa: BLE001
         return raw
 
 
