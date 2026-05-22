@@ -1,8 +1,10 @@
 # Spec: reranker-evaluation — requirements
 
-> **Status:** scaffolding — not executable. Invariants below are the
-> non-negotiables the `/spec` scoping pass + implementation must
-> satisfy.
+> **Status:** **scoped 2026-05-22.** Invariants below are the
+> non-negotiables the implementation in [`tasks.md`](tasks.md) must
+> satisfy. The seven open questions at the bottom of this file are
+> all decided — see
+> [`tasks.md` scoping decisions table](tasks.md#scoping-decisions-locked-2026-05-22).
 
 ## Entry gates (inherited from upstream phases)
 

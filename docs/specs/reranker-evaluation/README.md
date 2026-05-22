@@ -1,17 +1,16 @@
 # Spec: reranker-evaluation (attune-rag)
 
-> **Status:** scaffolding — not executable; promotes to scoped via
-> `/spec` pass when Phase 5 opens. No `tasks.md` until then.
+> **Status:** **scoped 2026-05-22** — executable when Phase 5 opens
+> (after 0.2.0 cut + 7-day no-hotfix watch). See [`tasks.md`](tasks.md).
 > **Workstream:** Phase 5 architectural diagnostic D5, sequenced
 > ahead of [`user-corpus-onboarding`](../user-corpus-onboarding/) M1.
 > **Activation gate:** Phase 4 W4.2 (cadence-clean) + 0.2.0 cut +
 > 7-day no-hotfix watch + Phase 5 opens.
-> **Freeze posture:** spec scaffold is docs-only and freeze-compliant.
-> The diagnostic itself is read-only measurement against the
-> bundled corpus — no `### Added`, no `__all__` changes. The
-> verdict-and-default decision it produces *may* land as a
-> `### Changed` (default rerank flag flip) within Phase 4 freeze,
-> or may defer to v1.0.0 (cut-PR decision); the scoping pass picks.
+> **Freeze posture:** docs-only scoping is freeze-compliant. The
+> diagnostic itself is read-only measurement against the bundled
+> corpus — no `### Added`, no `__all__` changes. Decision 5 in
+> [`tasks.md`](tasks.md#scoping-decisions-locked-2026-05-22)
+> defers any default-flip PR to the v1.0.0 cut.
 
 ## Purpose
 
@@ -135,11 +134,15 @@ its own PR with its own scoping pass — see
 - [`risks.md`](risks.md) — measurement-validity risks, the
   default-flip-during-freeze risk, prompt-drift after measurement.
 
-Promoted to executable when the `/spec` pass adds:
+Now executable:
 
-- [`tasks.md`](tasks.md) — M1 measurement script, M2 measurement
-  run + report draft, M3 verdict + cross-link to
-  `user-corpus-onboarding` M1. Currently scaffold.
+- [`tasks.md`](tasks.md) — M0 entry-gate verification, M1
+  measurement script (`scripts/measure_reranker.py`), M2
+  diagnostic run + report draft, M3 verdict + cross-link to
+  `user-corpus-onboarding` M1. The seven scoping questions from
+  [design.md §9](design.md#9-open-questions-for-scoping) +
+  [requirements.md "Open questions"](requirements.md#open-questions-for-scoping)
+  are answered at the top of `tasks.md`.
 
 ## Provenance
 

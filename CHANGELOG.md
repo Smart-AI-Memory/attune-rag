@@ -32,6 +32,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   design). 849/849 tests green. Closes W3.3 of
   [`docs/specs/downstream-validation/tasks.md`](docs/specs/downstream-validation/tasks.md).
 
+- **`docs/specs/reranker-evaluation/` promoted from scaffolding →
+  scoped (Phase 5 D5).** Seven open scoping questions resolved and
+  recorded in the new [`tasks.md`](docs/specs/reranker-evaluation/tasks.md):
+  Scope α (retrieval-only, no faithfulness); Approach B (new
+  `scripts/measure_reranker.py`); N=5 for `rerank=on` + N=1 for
+  `rerank=off`; tightened verdict thresholds (≥3 of 7 paraphrased
+  misses fixed at ≥4/5 stability AND token cost ≤ $0.002/query →
+  `rerank-default-on`; ≤1 fix OR baseline regression OR
+  > $0.005/query → `rerank-default-off`; exactly 2 fixes →
+  `corpus-shape-dependent-default`); default-flip PR deferred to
+  v1.0.0 cut PR (cleaner exit-summary); report filename
+  `diagnostic-1.md` (matches `embedding-retriever/diagnostic-1.md`
+  convention); token cost via `response.usage` (SDK). Activates
+  when Phase 5 opens after the 0.2.0 cut + 7-day no-hotfix watch.
+  Docs-only; no public-surface impact.
+
 - **`scripts/changelog_cadence.py` detects `> **Freeze override`
   blockquotes in CHANGELOG section headers.** Override-flagged
   `### Added` bullets no longer trigger `Status: RESET` in the
