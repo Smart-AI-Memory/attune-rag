@@ -143,7 +143,9 @@ def _render_report(
     lines.append(f"- Harness version: `{_HARNESS_VERSION}`")
     lines.append(f"- Timestamp: `{timestamp}`")
     for s in baseline_sets:
-        lines.append(f"- Query set `{s.label}`: `{s.queries_path}` (sha256: `{s.queries_sha}`)")
+        lines.append(
+            f"- Query set `{s.label}`: `{s.queries_path.as_posix()}` (sha256: `{s.queries_sha}`)"
+        )
     lines.append(
         "- Mode: `keyword-only`" if not rerank_used else "- Mode: `keyword + LLM rerank (opt-in)`"
     )
@@ -308,7 +310,7 @@ def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
 
     bundled = bool(args.corpus_bundled)
-    corpus_label = "bundled (AttuneHelpCorpus)" if bundled else str(args.corpus_path)
+    corpus_label = "bundled (AttuneHelpCorpus)" if bundled else args.corpus_path.as_posix()
 
     pipeline_base = _build_pipeline(
         corpus_path=args.corpus_path,
