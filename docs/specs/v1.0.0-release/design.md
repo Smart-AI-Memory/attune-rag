@@ -21,6 +21,24 @@
 The cut is a **claim**, not new code. The work that earns the
 claim happened in Phases 1–4. Phase 5 codifies it.
 
+### D5 verdict — reranker default ratified off (2026-05-22)
+
+[`reranker-evaluation/diagnostic-1.md`](../reranker-evaluation/diagnostic-1.md)
+closed 2026-05-22 with verdict **`rerank-default-off`**: rerank
+demotes winning docs on the bundled corpus (baseline P@1 1.00 → 0.985
+across N=5; ditto R@3) and lifts only 1 of 10 paraphrased P@1
+residuals at ≥4/5 stability. The
+[`pipeline.py`](../../../src/attune_rag/pipeline.py) default is
+already `reranker=None`; **the v1.0.0 cut PR does not need to flip
+the default** — D5 ratifies the existing behavior.
+
+The cut PR's CHANGELOG narrative can therefore frame `LLMReranker`
+as a documented opt-in tool (still public, still supported, costs
+opt-in API spend) rather than a default-on pipeline component.
+`scripts/measure_corpus.py --with-rerank` is the user-facing
+diagnostic; the verdict in `diagnostic-1.md` is the bundled-corpus
+evidence behind that framing.
+
 ### Phase 5 scope (decided 2026-05-21)
 
 A planning conversation on 2026-05-21 narrowed the in-scope work

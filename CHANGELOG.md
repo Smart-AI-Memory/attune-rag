@@ -38,6 +38,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **D5 (reranker-evaluation) closed — verdict `rerank-default-off`.**
+  [`docs/specs/reranker-evaluation/diagnostic-1.md`](docs/specs/reranker-evaluation/diagnostic-1.md)
+  committed with N=5 live measurement against the bundled
+  `AttuneHelpCorpus` + golden query sets. Multiple regression triggers
+  fired against the rubric: Run B baseline P@1 dropped from 1.00 to
+  0.985 (rerank demotes winning docs ~1.5% of runs), baseline R@3
+  dropped to 0.995, paraphrased R@3 dropped to 0.9825. Only 1 of 10
+  paraphrased P@1 residuals lifted at ≥4/5 stability — well short of
+  the ≥3-of-7 the rubric needs for `rerank-default-on`. **D5 ratifies
+  the existing `RagPipeline.reranker=None` default** — no flip at the
+  v1.0.0 cut. Cross-link landed at
+  [`user-corpus-onboarding/risks.md` §7](docs/specs/user-corpus-onboarding/risks.md);
+  follow-up note in
+  [`v1.0.0-release/design.md`](docs/specs/v1.0.0-release/design.md).
+  Spec status banners (README/design/requirements/risks/tasks) promoted
+  to `complete`. Spec drift corrected: `user-corpus-onboarding` scoping
+  decision #7 claimed "Mirror RagPipeline default (currently `on`)";
+  the actual default was always `None`. Script extended (M2.3):
+  `_residual_stability()` + per-query residuals table in the report;
+  +3 unit tests. ~$0.50 of Haiku spend (~600 calls), ~10 min wall-clock.
+
 - **Reframe rerank-mode messaging from "measure the lift" to "measure
   whether rerank earns its keep" — informed by the N=1 bundled-corpus
   result (#133, rerank-neutral on a well-aliased corpus).** Updates

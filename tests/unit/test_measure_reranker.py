@@ -97,6 +97,8 @@ def test_aggregate_run_b_mean_p50_p95(mr) -> None:
             baseline_r3=1.0,
             paraphrased_p1=p,
             paraphrased_r3=1.0,
+            baseline_per=(),
+            paraphrased_per=(),
         )
         for p in [0.85, 0.90, 0.92, 0.95, 0.95]
     ]
@@ -105,6 +107,133 @@ def test_aggregate_run_b_mean_p50_p95(mr) -> None:
     assert agg["paraphrased_p1"]["p50"] == pytest.approx(0.92)
     # All baseline values are 1.0 → all stats are 1.0
     assert agg["baseline_p1"]["mean"] == 1.0
+
+
+def test_residual_stability_counts_lifts(mr) -> None:
+    """For each Run-A paraphrased P@1 miss, count how many of N Run-B
+    passes lifted it to ✓ and how many held R@3."""
+    from attune_rag._scoring import QueryScore
+
+    # Run A had one paraphrased miss: gqp-X
+    qa_miss = QueryScore(
+        qid="gqp-X",
+        query="test query",
+        difficulty="medium",
+        expected=("a.md",),
+        hit_paths=("b.md", "a.md"),  # R@3 yes, P@1 no
+        p1=False,
+        r3=True,
+    )
+    qa_hit = QueryScore(
+        qid="gqp-Y",
+        query="other",
+        difficulty="easy",
+        expected=("c.md",),
+        hit_paths=("c.md",),
+        p1=True,
+        r3=True,
+    )
+    run_a = {"paraphrased_per": [qa_miss, qa_hit]}
+
+    # Build 5 Run-B passes: gqp-X lifts to ✓ in 4 of them; R@3 holds in all 5
+    def _b_record(qid: str, p1: bool, r3: bool) -> QueryScore:
+        return QueryScore(
+            qid=qid,
+            query="x",
+            difficulty="medium",
+            expected=("a.md",),
+            hit_paths=(),
+            p1=p1,
+            r3=r3,
+        )
+
+    run_b_results = [
+        mr._RunBResult(
+            baseline_p1=1.0,
+            baseline_r3=1.0,
+            paraphrased_p1=0.5,
+            paraphrased_r3=1.0,
+            baseline_per=(),
+            paraphrased_per=(_b_record("gqp-X", p1=lifts, r3=True), _b_record("gqp-Y", True, True)),
+        )
+        for lifts in [True, True, True, False, True]  # 4 of 5 lifts
+    ]
+    residuals = mr._residual_stability(run_a, run_b_results)
+    assert len(residuals) == 1
+    r = residuals[0]
+    assert r["qid"] == "gqp-X"
+    assert r["p1_lifts"] == 4
+    assert r["n"] == 5
+    assert r["p1_stability"] == "4/5"
+    assert r["r3_stability"] == "5/5"
+    # ⌈0.8 * 5⌉ = 4 → 4/5 counts as stable lift
+    assert r["stable_lift"] is True
+
+
+def test_residual_stability_empty_when_run_a_perfect(mr) -> None:
+    """When Run A's paraphrased P@1 = 100%, there are no residuals."""
+    from attune_rag._scoring import QueryScore
+
+    run_a = {
+        "paraphrased_per": [
+            QueryScore(
+                qid="gqp-Z",
+                query="q",
+                difficulty="easy",
+                expected=("x.md",),
+                hit_paths=("x.md",),
+                p1=True,
+                r3=True,
+            )
+        ]
+    }
+    residuals = mr._residual_stability(run_a, [])
+    assert residuals == []
+
+
+def test_residual_stability_stable_threshold(mr) -> None:
+    """⌈0.8 * 5⌉ = 4 → 3/5 lifts is NOT a stable lift."""
+    from attune_rag._scoring import QueryScore
+
+    run_a = {
+        "paraphrased_per": [
+            QueryScore(
+                qid="q",
+                query="x",
+                difficulty="medium",
+                expected=("a.md",),
+                hit_paths=("b.md",),
+                p1=False,
+                r3=False,
+            )
+        ]
+    }
+
+    def _rec(p1: bool) -> QueryScore:
+        return QueryScore(
+            qid="q",
+            query="x",
+            difficulty="medium",
+            expected=("a.md",),
+            hit_paths=(),
+            p1=p1,
+            r3=False,
+        )
+
+    runs = [
+        mr._RunBResult(
+            baseline_p1=1.0,
+            baseline_r3=1.0,
+            paraphrased_p1=0.0,
+            paraphrased_r3=0.0,
+            baseline_per=(),
+            paraphrased_per=(_rec(p1),),
+        )
+        for p1 in [True, True, True, False, False]  # 3/5 lifts
+    ]
+    residuals = mr._residual_stability(run_a, runs)
+    assert residuals[0]["p1_lifts"] == 3
+    assert residuals[0]["stable_lift"] is False  # 3/5 < 4/5
 
 
 def test_render_report_includes_metadata_block(mr) -> None:

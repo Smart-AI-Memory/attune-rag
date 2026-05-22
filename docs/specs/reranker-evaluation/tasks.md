@@ -1,8 +1,10 @@
 # Spec: reranker-evaluation — tasks
 
-> **Status:** scoped 2026-05-22 — executable. Entry gates inherited
-> from [`requirements.md`](requirements.md) §"Entry gates"; this
-> file describes what to *do* once those gates open.
+> **Status:** **complete 2026-05-22.** Verdict at
+> [`diagnostic-1.md`](diagnostic-1.md): **`rerank-default-off`**.
+> M1 (script), M2 (live run), M3 (verdict + cross-link) all
+> closed. No default-flip PR needed at v1.0.0 cut — the existing
+> `RagPipeline.reranker=None` default is ratified.
 
 ## Scoping decisions locked (2026-05-22)
 

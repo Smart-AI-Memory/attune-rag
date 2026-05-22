@@ -67,12 +67,20 @@ _R1_REFERENCE = {
 
 @dataclass(frozen=True)
 class _RunBResult:
-    """One Run-B pass (rerank-on) result."""
+    """One Run-B pass (rerank-on) result.
+
+    Carries both the aggregate metrics (for the run-over-run table)
+    and the per-query records (so M2.3's per-query stability
+    analysis can count how many of N runs lifted each Run-A
+    paraphrased P@1 miss).
+    """
 
     baseline_p1: float
     baseline_r3: float
     paraphrased_p1: float
     paraphrased_r3: float
+    baseline_per: tuple[QueryScore, ...]
+    paraphrased_per: tuple[QueryScore, ...]
 
 
 def _load_queries(path: Path) -> tuple[list[dict[str, Any]], str]:
@@ -160,17 +168,61 @@ def run_b(
     """
     out: list[_RunBResult] = []
     for _ in range(n):
-        _, base_agg = score_queries(pipeline_on, baseline_queries, k=3)
-        _, para_agg = score_queries(pipeline_on, paraphrased_queries, k=3)
+        base_per, base_agg = score_queries(pipeline_on, baseline_queries, k=3)
+        para_per, para_agg = score_queries(pipeline_on, paraphrased_queries, k=3)
         out.append(
             _RunBResult(
                 baseline_p1=base_agg.p1,
                 baseline_r3=base_agg.r3,
                 paraphrased_p1=para_agg.p1,
                 paraphrased_r3=para_agg.r3,
+                baseline_per=tuple(base_per),
+                paraphrased_per=tuple(para_per),
             )
         )
     return out
+
+
+def _residual_stability(
+    run_a_result: dict[str, Any],
+    run_b_results: list[_RunBResult],
+) -> list[dict[str, Any]]:
+    """Per-query stability analysis on Run A's paraphrased P@1 misses (M2.3).
+
+    For each paraphrased query where Run A (``rerank=off``) had P@1 = ✗,
+    counts how many of the N Run-B passes lifted P@1 to ✓ and how many
+    held R@3. Stability is expressed as ``k/N``; ``k >= ⌈0.8N⌉`` is the
+    "≥4/5" bar named in the M3.1 rubric.
+    """
+    residuals: list[dict[str, Any]] = []
+    a_paraphrased_per = run_a_result["paraphrased_per"]
+    n = len(run_b_results)
+    for q in a_paraphrased_per:
+        if q.p1:
+            continue  # Run A already at P@1 — not a residual
+        p1_lifts = 0
+        r3_holds = 0
+        for run in run_b_results:
+            for rq in run.paraphrased_per:
+                if rq.qid == q.qid:
+                    if rq.p1:
+                        p1_lifts += 1
+                    if rq.r3:
+                        r3_holds += 1
+                    break
+        residuals.append(
+            {
+                "qid": q.qid,
+                "difficulty": q.difficulty,
+                "expected": list(q.expected),
+                "p1_lifts": p1_lifts,
+                "n": n,
+                "p1_stability": f"{p1_lifts}/{n}",
+                "r3_stability": f"{r3_holds}/{n}",
+                "stable_lift": p1_lifts >= max(1, (n * 4 + 4) // 5),  # ⌈0.8N⌉
+            }
+        )
+    return residuals
 
 
 def _aggregate_run_b(results: list[_RunBResult]) -> dict[str, dict[str, float]]:
@@ -199,6 +251,7 @@ def render_report(
     run_b_aggregated: dict[str, dict[str, float]] | None,
     run_b_n: int,
     metadata: dict[str, str],
+    residuals: list[dict[str, Any]] | None = None,
 ) -> str:
     """Markdown report mirroring design.md §3 shape."""
     lines: list[str] = []
@@ -237,6 +290,40 @@ def render_report(
             s = run_b_aggregated[metric]
             lines.append(f"| {metric} | {s['mean']:.4f} | {s['p50']:.4f} | {s['p95']:.4f} |")
         lines.append("")
+
+    # M2.3 — per-query residual stability on Run A's paraphrased P@1 misses.
+    if residuals is not None:
+        lines.append("## Per-query residuals (paraphrased P@1 misses in Run A)")
+        lines.append("")
+        if not residuals:
+            lines.append("> No residuals — Run A's paraphrased P@1 = 1.00.")
+            lines.append("")
+        else:
+            lines.append(
+                "Stability column is `k/N` = number of Run-B passes where "
+                "rerank lifted that query to ✓. The rubric's "
+                '"stable lift" bar is `≥ ⌈0.8·N⌉` (e.g. ≥4/5).'
+            )
+            lines.append("")
+            lines.append(
+                "| qid | difficulty | rerank fixes P@1 (k/N) | R@3 stability | stable lift? |"
+            )
+            lines.append(
+                "|-----|-----------|------------------------|---------------|--------------|"
+            )
+            for r in residuals:
+                lines.append(
+                    f"| `{r['qid']}` | {r['difficulty'] or '—'} | "
+                    f"{r['p1_stability']} | {r['r3_stability']} | "
+                    f"{'✓' if r['stable_lift'] else '✗'} |"
+                )
+            lines.append("")
+            stable_fixes = sum(1 for r in residuals if r["stable_lift"])
+            lines.append(
+                f"**Stable-lift count:** {stable_fixes} of {len(residuals)} "
+                f"residuals fixed at ≥⌈0.8·N⌉ stability."
+            )
+            lines.append("")
 
     # Verdict placeholder — filled in at M3 per locked rubric.
     lines.append("## Verdict")
@@ -323,10 +410,12 @@ def main(argv: list[str] | None = None) -> int:
 
     # Run B (skipped when --skip-run-b).
     b_aggregated: dict[str, dict[str, float]] | None = None
+    residuals: list[dict[str, Any]] | None = None
     if not args.skip_run_b:
         assert pipeline_on is not None
         b_results = run_b(pipeline_on, baseline_queries, paraphrased_queries, args.rerank_runs)
         b_aggregated = _aggregate_run_b(b_results)
+        residuals = _residual_stability(a_result, b_results)
 
     # Metadata.
     repo_root = Path(__file__).resolve().parent.parent
@@ -349,6 +438,7 @@ def main(argv: list[str] | None = None) -> int:
         run_b_aggregated=b_aggregated,
         run_b_n=args.rerank_runs if not args.skip_run_b else 0,
         metadata=metadata,
+        residuals=residuals,
     )
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
