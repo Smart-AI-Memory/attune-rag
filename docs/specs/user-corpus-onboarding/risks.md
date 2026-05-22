@@ -1,7 +1,7 @@
 # Spec: user-corpus-onboarding — risks
 
-> **Status:** scaffolding — not executable. Risk register, not a
-> mitigation plan. Mitigations are implementation-time work.
+> **Status:** **scoped 2026-05-22.** Risk register; mitigations are
+> implementation-time work tracked in [`tasks.md`](tasks.md).
 
 ## 1. The discipline doesn't transfer
 
