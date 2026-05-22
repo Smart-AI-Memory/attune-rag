@@ -14,6 +14,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`attune_rag.measure_corpus` public module — quality harness
+  promoted from the v0 `scripts/measure_corpus.py` (user-corpus-onboarding
+  M1).** Public Python API: `measure(corpus_path | bundled, queries_path,
+  paraphrased_path=None, rerank=False, candidate_multiplier=3,
+  extra_aliases_file=None) -> MeasureResult` + `MeasureResult` frozen
+  dataclass with `p1` / `r3` / `n` / `paraphrased_*` / `per_query_table`
+  / `paraphrased_per_query` / `per_difficulty_breakdown` / metadata
+  (corpus_label, queries_path, queries_sha, etc.). `MeasureResult.report_markdown()`
+  renders the same byte-identical shape the v0 script produced (golden
+  snapshot at `tests/golden/measure_corpus_bundled.golden.md`
+  unchanged); `MeasureResult.to_json()` for the alternate format;
+  `MeasureResult.watermark_failures()` for CI-suitable threshold checks.
+  CLI via `python -m attune_rag.measure_corpus ...` + the new
+  `attune-rag-measure` console_script (`[project.scripts]`). Default
+  `rerank=False` per D5's verdict (`reranker-evaluation/diagnostic-1.md`).
+  `scripts/measure_corpus.py` retained as a backward-compat shim
+  (~25 lines) so existing invocations keep working and the
+  bundled-corpus golden snapshot test pins the regression net unchanged.
+  Implements M1 of [`user-corpus-onboarding`](docs/specs/user-corpus-onboarding/).
+  Adds 2 symbols to the v1.0.0 surface budget (running total: 4 of 5
+  — `measure`, `MeasureResult`, `load_aliases_from_file`,
+  `extra_aliases_file=` kwarg).
+
 > **Pre-staged for Phase 5 / v1.0.0 cut.** These entries are part
 > of a draft PR (`### Added` blocked under freeze) sitting against
 > `main` waiting for the 0.2.0 SemVer cut to clear. Move to
