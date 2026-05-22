@@ -38,6 +38,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`USER_CORPUS_GUIDE.md` §6 reframed around the packaged
+  `attune-rag-measure` entry point (user-corpus-onboarding M3
+  partial).** §6.2 now leads with three equivalent paths — the
+  `attune-rag-measure` console script, `python -m
+  attune_rag.measure_corpus`, and the `measure()` Python API — and
+  ends with a worked Python-API example showing
+  `per_difficulty_breakdown` and `watermark_failures()` use. The
+  legacy 20-line scripted loop stays as the "build your own" path.
+  §6.4 (CI wiring) updated: the gate is now `attune-rag-measure
+  --watermark-r3 0.85` with an artifact upload, not
+  `python scripts/measure_corpus.py`. **Depends on**: this guide
+  references the public `attune_rag.measure_corpus` module promoted
+  in #136; merge order should be #136 → this PR. The script
+  (`scripts/measure_corpus.py`) remains as a backward-compat shim;
+  existing invocations keep working unchanged. Docs-only; no public
+  API surface; no test impact.
+
 - **`.github/workflows/perf.yml` `lock-baseline` job restructured to
   multi-run methodology v2 (Phase 5 perf-baseline-multi-run M2).** The
   single-invocation lock job is replaced by a K=5 parallel matrix
