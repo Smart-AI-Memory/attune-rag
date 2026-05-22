@@ -1,12 +1,15 @@
 # Spec: Multi-run perf-baseline methodology (attune-rag)
 
-> **Status:** scaffolding — not executable; activates as Phase 5 work.
+> **Status:** **scoped 2026-05-22** — executable when Phase 5 opens
+> (after Phase 4 W4 close + 0.2.0 cut + 7-day no-hotfix watch).
+> See [`tasks.md`](tasks.md). The spec was authored decision-complete;
+> the scoping pass confirmed the decisions and added M0 entry-gate
+> verification for symmetry with the other Phase 5 specs.
 > **Workstream:** Phase 5 (post-freeze methodology fix).
-> **Freeze posture:** docs-only at scaffold time; the implementation
-> phase touches `scripts/measure_perf_baseline.py` and
-> `.github/workflows/perf.yml`, both gate plumbing rather than
-> public surface — safe for Phase 5, would have invalidated the
-> in-flight baseline if landed during the freeze.
+> **Freeze posture:** docs-only scoping. Implementation touches
+> `scripts/measure_perf_baseline.py` + `.github/workflows/perf.yml`,
+> both gate plumbing rather than public surface — would have
+> invalidated the in-flight baseline if landed during the freeze.
 
 ## Problem
 

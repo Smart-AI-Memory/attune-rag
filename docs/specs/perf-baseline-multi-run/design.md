@@ -1,6 +1,8 @@
 # Spec: Multi-run perf-baseline methodology — design
 
-> **Status:** scaffolding — not executable; activates as Phase 5 work.
+> **Status:** **scoped 2026-05-22** — design decisions confirmed in
+> [`tasks.md`](tasks.md#scoping-decisions-confirmed-2026-05-22).
+> Sections below are the load-bearing design narrative.
 
 ## 1. Methodology
 

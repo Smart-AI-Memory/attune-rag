@@ -14,6 +14,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`docs/specs/perf-baseline-multi-run/` promoted from scaffolding →
+  scoped (Phase 5 inter-run noise methodology).** Spec was authored
+  decision-complete; the scoping pass added a confirmed-decisions
+  table at the top of `tasks.md` (Option B matrix orchestration with
+  K=5 parallel jobs and escape-to-Option-C if M5 shows clustering;
+  N=20 per invocation; backward-compatible schema additions;
+  σ rollback 3.0 → 2.0 lands in the same PR as the first v2 lock;
+  three-trigger re-lock cadence; `methodology_version: 2`; cost
+  ceiling K=5 N=20 inside 20-min workflow timeout) plus an M0
+  entry-gate verification milestone for symmetry with D5 +
+  user-corpus-onboarding. Activates when Phase 5 opens after the
+  0.2.0 cut + 7-day no-hotfix watch. Docs-only; no public-surface
+  impact.
+
 - **W3.3 coverage push — public `__all__` surface raised to ≥ 90 %
   per module (aggregate 90.04 %).** Twenty new tests across
   `tests/unit/test_editor_references.py` (+8) and
