@@ -38,6 +38,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Reframe rerank-mode messaging from "measure the lift" to "measure
+  whether rerank earns its keep" — informed by the N=1 bundled-corpus
+  result (#133, rerank-neutral on a well-aliased corpus).** Updates
+  `USER_CORPUS_GUIDE.md` §6.2 to surface both outcomes (lift vs.
+  neutral) as informative + links to `baseline-with-rerank.md` as the
+  worked example. Updates `scripts/measure_corpus.py`'s keyword-only
+  footer to match. Bundled-corpus golden snapshot
+  (`tests/golden/measure_corpus_bundled.golden.md`) regenerated to
+  reflect the new footer wording — same numbers, same per-query
+  results; only the marketing line changed.
+
 - **`docs/specs/release-quality-baseline/baseline-with-rerank.md` published —
   N=1 indicative rerank-lift artifact (marketing/onboarding companion to
   `scripts/measure_corpus.py --with-rerank`).** Real-data example users

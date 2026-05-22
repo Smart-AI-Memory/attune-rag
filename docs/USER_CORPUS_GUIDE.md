@@ -587,9 +587,15 @@ python scripts/measure_corpus.py \
 ```
 
 This runs both keyword and keyword-plus-rerank, side-by-side, so
-you can see exactly which marginal queries the rerank lifts —
-data-backed corpus polish, not vibes. Requires `ANTHROPIC_API_KEY`
-in the environment and the `[claude]` extra installed.
+you can see exactly **whether rerank earns its keep on your corpus**.
+Sometimes it lifts a handful of marginal queries; sometimes it's
+neutral (the bundled corpus is one such case — see
+[`docs/specs/release-quality-baseline/baseline-with-rerank.md`](specs/release-quality-baseline/baseline-with-rerank.md)
+for the N=1 measurement). Either result is informative: a lift tells
+you to leave rerank on for prod traffic; a neutral result tells you
+the keyword path is doing its job and you can skip the API spend
+for end users. Requires `ANTHROPIC_API_KEY` in the environment and
+the `[claude]` extra installed.
 
 If you prefer to script it yourself, the 20-line shape is:
 
