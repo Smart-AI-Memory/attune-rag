@@ -372,17 +372,30 @@ treat 0.1.x as still-evolving.
 
 **PUBLIC submodules** (importable by qualified path):
 
-- `attune_rag.corpus` — exposes `AliasInfo`, `DuplicateAliasError`
-  in addition to the top-level corpus names
+- `attune_rag.corpus` — exposes `AliasInfo`, `DuplicateAliasError`,
+  `load_aliases_from_file` in addition to the top-level corpus names
 - `attune_rag.corpus.attune_help` — `AttuneHelpCorpus`
 - `attune_rag.corpus.help_adapter` — `HelpCorpusAdapter` Protocol
 - `attune_rag.providers` — `LLMProvider`, `get_provider`,
   `list_available`
+- `attune_rag.measure_corpus` — `measure(...)` function +
+  `MeasureResult` dataclass for scoring a corpus against a query
+  set. CLI via `python -m attune_rag.measure_corpus ...` or the
+  `attune-rag-measure` console script. See
+  [`docs/USER_CORPUS_GUIDE.md`](docs/USER_CORPUS_GUIDE.md) §6 for
+  the worked example.
 - `attune_rag.editor` — template-editor primitives (lint, schema,
   rename, autocomplete, references); see "Template editor primitives"
   above for the symbol list
 - `attune_rag.editor.{rename,schema,lint,autocomplete,references}` —
   the individual editor submodules
+
+**Console scripts:**
+
+- `attune-rag` — CLI entry point (`attune_rag.cli:main`)
+- `attune-rag-measure` — quality measurement
+  (`attune_rag.measure_corpus:main`); CI-suitable via `--watermark-r3`
+  (non-zero exit on fail)
 
 Anything not listed above is INTERNAL and may change in any release.
 The underscore-prefixed editor modules (`attune_rag.editor._rename`

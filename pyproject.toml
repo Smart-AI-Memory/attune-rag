@@ -73,6 +73,7 @@ dev = [
 
 [project.scripts]
 attune-rag = "attune_rag.cli:main"
+attune-rag-measure = "attune_rag.measure_corpus:main"
 
 [project.urls]
 Homepage = "https://github.com/Smart-AI-Memory/attune-rag"

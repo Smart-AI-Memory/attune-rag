@@ -71,6 +71,8 @@ EXPECTED_PROVIDERS_ALL = frozenset(
     }
 )
 
+EXPECTED_MEASURE_CORPUS_ALL = frozenset({"measure", "MeasureResult"})
+
 EXPECTED_EDITOR_ALL = frozenset(
     {
         "Diagnostic",
@@ -102,6 +104,7 @@ PUBLIC_SUBMODULES = (
     "attune_rag.corpus.attune_help",
     "attune_rag.corpus.help_adapter",
     "attune_rag.providers",
+    "attune_rag.measure_corpus",
     "attune_rag.editor",
     "attune_rag.editor.rename",
     "attune_rag.editor.schema",
@@ -114,6 +117,7 @@ MODULE_ALL_EXPECTATIONS = (
     ("attune_rag", EXPECTED_ROOT_ALL),
     ("attune_rag.corpus", EXPECTED_CORPUS_ALL),
     ("attune_rag.providers", EXPECTED_PROVIDERS_ALL),
+    ("attune_rag.measure_corpus", EXPECTED_MEASURE_CORPUS_ALL),
     ("attune_rag.editor", EXPECTED_EDITOR_ALL),
 )
 
