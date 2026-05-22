@@ -101,6 +101,46 @@ Symbols are only PUBLIC once all four steps land together. A symbol
 in source `__all__` but not in the surface test is INTERNAL by
 construction — the test is the source of truth.
 
+### 4.1 Surface budget (0.2.0 → v1.0.0)
+
+Between the **0.2.0 SemVer cut** and the **v1.0.0 graduation**, the
+public surface grows by at most **5 new symbols**. This cap is the
+cost-of-stability commitment that lets `attune-rag` graduate from
+"alpha" to "Production/Stable" — every new symbol added before v1.0.0
+is a symbol we commit to never break under SemVer for the entire 1.x
+line.
+
+The cap is enforced by the snapshot test
+([`tests/unit/test_api_surface.py`](../tests/unit/test_api_surface.py)).
+Every `EXPECTED_*_ALL` update is a PR diff that counts against the
+budget. The cap was scoped in
+[`user-corpus-onboarding/tasks.md` scoping decision #5](specs/user-corpus-onboarding/tasks.md#scoping-decisions-locked-2026-05-22);
+re-opening it requires a new `/spec` pass.
+
+**Running ledger:**
+
+| # | Symbol | Source PR | Spec |
+|---|--------|-----------|------|
+| 1 | `attune_rag.corpus.load_aliases_from_file` | [#130](https://github.com/Smart-AI-Memory/attune-rag/pull/130) | [user-corpus-onboarding M2](specs/user-corpus-onboarding/) |
+| 2 | `DirectoryCorpus(extra_aliases_file=)` kwarg | [#130](https://github.com/Smart-AI-Memory/attune-rag/pull/130) | [user-corpus-onboarding M2](specs/user-corpus-onboarding/) |
+| 3 | `attune_rag.measure_corpus.measure` | [#136](https://github.com/Smart-AI-Memory/attune-rag/pull/136) | [user-corpus-onboarding M1](specs/user-corpus-onboarding/) |
+| 4 | `attune_rag.measure_corpus.MeasureResult` | [#136](https://github.com/Smart-AI-Memory/attune-rag/pull/136) | [user-corpus-onboarding M1](specs/user-corpus-onboarding/) |
+
+**Status: 4 of 5 slots used.** One remaining.
+
+The `attune-rag-measure` console_script + the `attune_rag.measure_corpus`
+module path are part of the public surface but not enumerated as
+separate "symbol" slots — they're discovery affordances around the
+already-counted `measure` and `MeasureResult`.
+
+**Do not add a 6th public symbol without explicitly re-opening the
+v1.0.0 surface scope** in a `/spec` pass that updates scoping decision
+#5 of `user-corpus-onboarding`. The 5th slot is the last bargaining
+chip; spend it where it materially shapes the v1.0.0 framing.
+
+Symbols *retired* under §3 free up no slots (graduation is "no
+breaking changes after v1.0.0," not "we get to add more before").
+
 ## 5. Underscore convention
 
 Module names starting with `_` are **never** part of the public

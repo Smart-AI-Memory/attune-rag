@@ -61,6 +61,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`docs/POLICY.md` §4.1: "Surface budget (0.2.0 → v1.0.0)" — durable
+  home for the 5-symbol public-surface cap committed in
+  [`user-corpus-onboarding/tasks.md` scoping decision #5](docs/specs/user-corpus-onboarding/tasks.md).**
+  Adds a running ledger of the four symbols already used (4/5 slots)
+  cross-linked to their source PRs + specs. Names the test-snapshot
+  mechanism that mechanically enforces the cap and the
+  /spec-pass requirement to re-open scoping decision #5 if a 6th
+  symbol becomes load-bearing. Tripwire intent: before the next
+  PR that wants new public surface, this paragraph is the first
+  place to check "is this worth burning the last slot?" Docs-only;
+  no public API surface; no test impact.
+
 - **`USER_CORPUS_GUIDE.md` §6 reframed around the packaged
   `attune-rag-measure` entry point (user-corpus-onboarding M3
   partial).** §6.2 now leads with three equivalent paths — the
