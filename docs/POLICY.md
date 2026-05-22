@@ -131,6 +131,86 @@ mirror it.
   treated identically to renaming a PUBLIC module: introduce a
   symlink or copy, deprecate the old path, remove at the next major.
 
+## 7. Behavioral commitments
+
+§1–§6 govern the package's *symbol-level* surface — what names
+exist and how they evolve. This section governs **behavioral**
+stability: what `attune-rag` commits to *doing* across a minor
+series, beyond the names staying put.
+
+### 7.1 What we commit to
+
+**Retrieval-quality non-regression on the bundled corpus.** The
+baseline numbers locked in
+[docs/specs/release-quality-baseline/baseline-1.md](specs/release-quality-baseline/baseline-1.md)
+are *floors*, not point-in-time observations:
+
+- Baseline `precision_at_1`: 1.00 (40 / 40)
+- Baseline `recall_at_3`: 1.00 (40 / 40)
+
+These hold across every 1.x release. A PR cannot land that drops
+either metric on the bundled `attune-help` corpus + locked
+[`tests/golden/queries.yaml`](../tests/golden/queries.yaml). The
+strict-dominance discipline used during the alias-expansion sweep
+(see [docs/specs/alias-expansion-sweep/](specs/alias-expansion-sweep/))
+is the contractual floor; every internal change runs the full
+baseline diagnostic before merge.
+
+Enforcement: [`tests/golden/test_golden.py`](../tests/golden/test_golden.py)
+on every PR, plus the watermark guard for the paraphrased set
+(R@3 floor at 85%, set in 0.1.23).
+
+### 7.2 What we do *not* commit to
+
+Selection-criteria internals evolve freely within a minor series
+and ship as CHANGELOG `### Changed` — not `### Added`, not breaking:
+
+- **Exact document ordering** beyond the P@1 / R@3 floors. Two
+  candidates at adjacent scores may swap rank-2 vs rank-3 between
+  releases.
+- **Score values** — retrieval scores, faithfulness numbers, rerank
+  deltas may drift across releases as the scoring pipeline evolves.
+- **Alias dictionary contents** —
+  [`aliases_override.json`](../src/attune_rag/corpus/aliases_override.json)
+  and per-template frontmatter aliases may grow, shrink, or change.
+- **Tokenizer behavior and stem rules** — `_tokenize()`,
+  `_MIN_STEM_LEN`, stemmer choice are all internal.
+- **Reranker prompt wording** and the `candidate_multiplier`
+  default (currently `3`).
+
+These are the levers we tune to *hold* the §7.1 floors, not the
+floors themselves.
+
+### 7.3 Faithfulness — tracked, not committed
+
+Mean faithfulness on the bundled corpus is measured in CI on
+retrieval-touching PRs (per
+[docs/specs/release-quality-baseline/](specs/release-quality-baseline/)),
+currently at `mean − σ·stdev` = 0.9698 over N=20 runs. **We do
+not commit to a faithfulness floor at the POLICY level for 1.x.**
+The metric depends on a Claude judge call (network + API key +
+model availability), and its composition depends on the reranker's
+default posture (see
+[reranker-evaluation D5](specs/reranker-evaluation/)) — pinning a
+faithfulness floor before D5's verdict locks the reranker default
+would commit to a number whose definition is in flight.
+
+The CI gate is a *development quality signal*, not a downstream
+SemVer contract. 1.1.0+ may revisit this as a conditional
+commitment once D5 lands and telemetry
+(per [docs/specs/telemetry/](specs/telemetry/)) produces
+real-distribution data to back the floor.
+
+### 7.4 Provenance
+
+This section codifies as POLICY what the alias-expansion sweep
+(0.1.23) and the
+[release-quality-baseline](specs/release-quality-baseline/) spec
+(Phase 1 of v1.0) already practiced: every retrieval change ships
+with a baseline-diagnostic check; baseline numbers are not allowed
+to move. §7 makes that internal discipline a downstream-facing
+commitment.
+
 ## See also
 
 - [docs/specs/api-v0.2-public-surface/requirements.md](specs/api-v0.2-public-surface/requirements.md)
@@ -139,3 +219,8 @@ mirror it.
   — the proposed `__all__` per PUBLIC module with rationale.
 - [tests/unit/test_api_surface.py](../tests/unit/test_api_surface.py)
   — the executable contract.
+- [docs/specs/release-quality-baseline/baseline-1.md](specs/release-quality-baseline/baseline-1.md)
+  — the locked baseline numbers §7.1 commits to.
+- [docs/specs/reranker-evaluation/](specs/reranker-evaluation/)
+  — the D5 diagnostic that resolves the reranker-default decision
+  §7.3 forward-references.
