@@ -38,6 +38,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`.github/workflows/perf.yml` `lock-baseline` job restructured to
+  multi-run methodology v2 (Phase 5 perf-baseline-multi-run M2).** The
+  single-invocation lock job is replaced by a K=5 parallel matrix
+  (invocation_index 0..4), each running
+  `scripts/measure_perf_baseline.py --per-invocation-out <id>.json`
+  with the existing `--include-llm` toggle preserved per matrix entry.
+  A new `aggregate-baseline` job (`needs: lock-baseline`, runs after
+  all matrix entries) downloads the K artifacts, runs
+  `scripts/aggregate_perf_baseline.py`, and opens the bot-PR with the
+  v2 locked baseline (mean / intra_run_stdev / inter_run_stdev /
+  threshold = mean + σ × inter_run_stdev). `fail-fast: false` on the
+  matrix so one bad invocation doesn't kill the others; the aggregator
+  catches missing/duplicate invocation_index. Matrix entries run with
+  `contents: read` only; the aggregator widens to `contents: write` +
+  `pull-requests: write` for the bot-PR. Runner fingerprint logged
+  per invocation so M5's clustering check has the raw data. The
+  per-PR `delta-check` job is unchanged — Phase 5 M5 reads the v2
+  threshold but the gate continues to consume `mean / stdev / threshold`
+  via the backward-compat schema alias. **M3** (live v2 lock-baseline
+  dispatch on main + σ 3.0 → 2.0 rollback PR) ships in a follow-up
+  once the workflow change lands. Per
+  [`perf-baseline-multi-run/tasks.md`](docs/specs/perf-baseline-multi-run/tasks.md)
+  M2; freeze-legal (no public API; workflow + docs only).
+
 - **D5 (reranker-evaluation) closed — verdict `rerank-default-off`.**
   [`docs/specs/reranker-evaluation/diagnostic-1.md`](docs/specs/reranker-evaluation/diagnostic-1.md)
   committed with N=5 live measurement against the bundled
