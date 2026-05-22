@@ -431,14 +431,41 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--out",
         type=Path,
-        required=True,
-        help="Markdown report destination.",
+        default=None,
+        help="Markdown report destination (v1 mode). Omit when emitting "
+        "a per-invocation JSON for the v2 aggregator.",
     )
     parser.add_argument(
         "--thresholds-out",
         type=Path,
-        required=True,
-        help="perf-thresholds.json destination.",
+        default=None,
+        help="perf-thresholds.json destination (v1 mode). Omit when "
+        "emitting a per-invocation JSON for the v2 aggregator.",
+    )
+    parser.add_argument(
+        "--per-invocation-out",
+        type=Path,
+        default=None,
+        help="When set, write the raw N-trial timings for THIS invocation "
+        "as a per-invocation JSON for scripts/aggregate_perf_baseline.py "
+        "to combine. Mutually exclusive with --out / --thresholds-out: "
+        "the script does not lock thresholds when this flag is set "
+        "(orchestration runs K invocations via the workflow matrix, then "
+        "an aggregator step builds the v2 locked baseline).",
+    )
+    parser.add_argument(
+        "--invocations",
+        type=int,
+        default=1,
+        help="Total K invocations the aggregator will receive. Metadata "
+        "only; the script does not orchestrate K. Default 1 (v1 single-pass).",
+    )
+    parser.add_argument(
+        "--invocation-index",
+        type=int,
+        default=0,
+        help="This invocation's index (0..K-1). Recorded in the per-invocation "
+        "JSON so the aggregator can detect missing/duplicate invocations.",
     )
     parser.add_argument(
         "--sigma",
@@ -464,6 +491,24 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
 
+    per_inv = args.per_invocation_out is not None
+    v1_paths = (args.out is not None) or (args.thresholds_out is not None)
+    if per_inv and v1_paths:
+        print(
+            "error: --per-invocation-out is mutually exclusive with "
+            "--out / --thresholds-out. The aggregator (scripts/"
+            "aggregate_perf_baseline.py) writes the v2 locked baseline.",
+            file=sys.stderr,
+        )
+        return 2
+    if not per_inv and (args.out is None or args.thresholds_out is None):
+        print(
+            "error: --out and --thresholds-out are required in v1 mode "
+            "(when --per-invocation-out is not set).",
+            file=sys.stderr,
+        )
+        return 2
+
     repo_root = Path(__file__).resolve().parent.parent
     commit = git_sha(repo_root)
     env = environment_fingerprint()
@@ -474,6 +519,35 @@ def main(argv: list[str] | None = None) -> int:
     except RuntimeError as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
+
+    if per_inv:
+        # v2 per-invocation emission: write raw timings flattened to
+        # f"{bench}.{axis}" keys. The aggregator reads K of these and
+        # builds the locked v2 thresholds payload.
+        flat: dict[str, list[float]] = {}
+        for bench, axes in raw.items():
+            for axis, values in axes.items():
+                if values:
+                    flat[f"{bench}.{axis}"] = list(values)
+        per_inv_payload = {
+            "methodology_version": 2,
+            "invocation_index": args.invocation_index,
+            "invocations": args.invocations,
+            "runs_per_invocation": args.runs,
+            "sigma": args.sigma,
+            "include_llm": args.include_llm,
+            "measured_at": measured_at,
+            "commit": commit,
+            "environment": env,
+            "raw_timings": flat,
+        }
+        args.per_invocation_out.parent.mkdir(parents=True, exist_ok=True)
+        args.per_invocation_out.write_text(
+            json.dumps(per_inv_payload, indent=2, sort_keys=True),
+            encoding="utf-8",
+        )
+        print(f"wrote {args.per_invocation_out}", file=sys.stderr)
+        return 0
 
     stats_by_metric = aggregate_results(raw, args.sigma)
     payload = build_thresholds_payload(
