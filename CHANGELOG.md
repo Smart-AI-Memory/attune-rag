@@ -14,6 +14,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **W3.3 coverage push — public `__all__` surface raised to ≥ 90 %
+  per module (aggregate 90.04 %).** Twenty new tests across
+  `tests/unit/test_editor_references.py` (+8) and
+  `tests/unit/test_editor_rename.py` (+12) cover branches that
+  end-to-end fixtures didn't naturally exercise: duck-typed
+  corpus shapes via `entries()` callable, entries with empty
+  content/path, docs with no frontmatter, block-style alias
+  scans with blank-line/dedent terminators, unsupported rename
+  kinds, normalizer rejections (empty / absolute / escape),
+  `FileMove.to_dict` round-trip, `apply_rename` failure modes
+  (source-missing, target-missing, no `_root`). Net delta:
+  `editor/references.py` 88 % → 99 %; `editor/rename.py` 87 %
+  → 92 %; total 88.5 % → 90.04 %. Also added `pragma: no cover`
+  on the two Protocol-stub ellipses in
+  `src/attune_rag/corpus/help_adapter.py` (uncoverable by
+  design). 849/849 tests green. Closes W3.3 of
+  [`docs/specs/downstream-validation/tasks.md`](docs/specs/downstream-validation/tasks.md).
+
 - **`scripts/changelog_cadence.py` detects `> **Freeze override`
   blockquotes in CHANGELOG section headers.** Override-flagged
   `### Added` bullets no longer trigger `Status: RESET` in the

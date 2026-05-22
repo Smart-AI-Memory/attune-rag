@@ -9,7 +9,10 @@ import pytest
 from attune_rag import DirectoryCorpus
 from attune_rag.editor import (
     FileEdit,
+    FileMove,
     RenameCollisionError,
+    RenameError,
+    RenamePlan,
     apply_rename,
     plan_rename,
 )
@@ -152,8 +155,6 @@ def test_apply_detects_drifted_base(trio: Path) -> None:
     # Drift: rewrite alpha.md externally between plan and apply.
     (trio / "alpha.md").write_text("totally different content\n", encoding="utf-8")
 
-    from attune_rag.editor import RenameError
-
     with pytest.raises(RenameError):
         apply_rename(corpus, plan)
     # The other planned file should NOT have been written either,
@@ -227,7 +228,6 @@ def test_template_path_rename_rejects_escape(trio: Path) -> None:
 
 def test_template_path_rename_rejects_missing_source(trio: Path) -> None:
     corpus = DirectoryCorpus(trio)
-    from attune_rag.editor import RenameError
 
     with pytest.raises(RenameError, match="Source template does not exist"):
         plan_rename(corpus, "no-such.md", "elsewhere.md", kind="template_path")
@@ -314,8 +314,6 @@ def test_template_path_rename_rolls_back_move_when_edit_drifts(trio: Path) -> No
         _json.dumps({"alpha.md": "Tampered summary."}, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-
-    from attune_rag.editor import RenameError
 
     with pytest.raises(RenameError, match="drifted"):
         apply_rename(corpus, plan)
@@ -464,3 +462,158 @@ def test_sidecar_corrupt_json_is_skipped_silently(trio: Path) -> None:
     corpus3 = DirectoryCorpus(trio)
     plan3 = plan_rename(corpus3, "alpha.md", "alpha-renamed.md", kind="template_path")
     assert all(e.path != "summaries.json" for e in plan3.edits)
+
+
+# -- W3.3 coverage push: error/edge paths in rename.py --------------
+#
+# These cover branches that the existing end-to-end tests don't hit
+# naturally: unsupported kinds, corpus shapes without _root, normalize
+# rejections (empty / absolute / escape), apply-time failure modes
+# (source missing, planned target missing), entries with empty content,
+# and the FileMove.to_dict serialization path.
+
+
+class _Entry:
+    """Tiny duck-typed entry for the `corpus.entries()` shape."""
+
+    def __init__(self, content: str = "", path: str = ""):
+        self.content = content
+        self.path = path
+
+
+class _EntriesCallableCorpus:
+    """Duck-typed corpus with `entries()` and no `_root` — for plan-only
+    paths that don't require a filesystem root."""
+
+    def __init__(self, entries: list[_Entry]) -> None:
+        self._entries = entries
+
+    def entries(self) -> list[_Entry]:
+        return self._entries
+
+
+def test_plan_rename_rejects_unsupported_kind(trio: Path) -> None:
+    """Covers rename.py:149 — the ValueError raised by `plan_rename`
+    when ``kind`` isn't one of the three supported reference kinds."""
+    corpus = DirectoryCorpus(trio)
+    with pytest.raises(ValueError, match="Unsupported rename kind"):
+        plan_rename(corpus, "x", "y", kind="bogus")  # type: ignore[arg-type]
+
+
+def test_plan_template_path_rename_raises_when_corpus_has_no_root() -> None:
+    """Covers rename.py:194-198 — corpus without a `_root` attribute
+    can't accept a template_path rename (the move needs a filesystem
+    anchor)."""
+    corpus = _EntriesCallableCorpus([])
+    with pytest.raises(RenameError, match="no resolvable root path"):
+        plan_rename(corpus, "x.md", "y.md", kind="template_path")
+
+
+def test_plan_template_path_rename_rejects_empty_template_path(trio: Path) -> None:
+    """Covers rename.py:222-223 — empty `raw` in `_normalize_corpus_relpath`."""
+    corpus = DirectoryCorpus(trio)
+    with pytest.raises(ValueError, match="Empty template path"):
+        plan_rename(corpus, "", "y.md", kind="template_path")
+
+
+def test_plan_template_path_rename_rejects_absolute_path(trio: Path, tmp_path: Path) -> None:
+    """Covers rename.py:225-226 — absolute path rejected by normalizer."""
+    corpus = DirectoryCorpus(trio)
+    absolute = str(tmp_path / "elsewhere" / "doc.md")
+    with pytest.raises(ValueError, match="must be relative to the corpus root"):
+        plan_rename(corpus, absolute, "y.md", kind="template_path")
+
+
+def test_plan_alias_rename_skips_entries_with_empty_content() -> None:
+    """Covers rename.py:163-164 — `_plan_alias_rename` skip when an
+    entry has empty content or path. Uses a duck-typed corpus so we
+    can construct entries without going through DirectoryCorpus's
+    on-disk filter."""
+    corpus = _EntriesCallableCorpus(
+        [
+            _Entry(content="", path="empty.md"),
+            _Entry(content="some content but...", path=""),
+        ]
+    )
+    plan = plan_rename(corpus, "x", "y", kind="alias")
+    assert plan.edits == []
+    assert plan.moves == []
+
+
+def test_plan_tag_rename_skips_entries_with_empty_content() -> None:
+    """Covers rename.py:177-178 — same skip in `_plan_tag_rename`."""
+    corpus = _EntriesCallableCorpus(
+        [
+            _Entry(content="", path="empty.md"),
+            _Entry(content="body", path=""),
+        ]
+    )
+    plan = plan_rename(corpus, "old-tag", "new-tag", kind="tag")
+    assert plan.edits == []
+
+
+def test_file_move_to_dict_round_trip() -> None:
+    """Covers rename.py:108-109 — `FileMove.to_dict` short return.
+    The end-to-end `test_plan_to_dict_round_trip` uses an alias plan
+    with zero moves, so the FileMove.to_dict line was never executed."""
+    move = FileMove(old_path="old.md", new_path="new.md")
+    assert move.to_dict() == {"old_path": "old.md", "new_path": "new.md"}
+    # Through a RenamePlan with a real move:
+    plan = RenamePlan(old="old.md", new="new.md", kind="template_path", moves=[move])
+    dumped = plan.to_dict()
+    assert dumped["moves"] == [{"old_path": "old.md", "new_path": "new.md"}]
+
+
+def test_apply_rename_raises_when_corpus_has_no_root() -> None:
+    """Covers rename.py:455-457 — `apply_rename` mirrors the planner's
+    root-required check. A plan with edits can't apply against a
+    corpus that has no `_root`."""
+    corpus = _EntriesCallableCorpus([])
+    plan = RenamePlan(
+        old="x",
+        new="y",
+        kind="alias",
+        edits=[FileEdit(path="x.md", old_text="a", new_text="b", hunks=[])],
+    )
+    with pytest.raises(RenameError, match="apply is not supported"):
+        apply_rename(corpus, plan)
+
+
+def test_apply_rename_raises_when_move_source_missing(trio: Path) -> None:
+    """Covers rename.py:508-509 — `_apply_moves` raises if the source
+    file disappeared between plan and apply."""
+    corpus = DirectoryCorpus(trio)
+    plan = plan_rename(corpus, "alpha.md", "alpha-renamed.md", kind="template_path")
+    # Delete the source after planning, before applying.
+    (trio / "alpha.md").unlink()
+    with pytest.raises(RenameError, match="Move source missing at apply time"):
+        apply_rename(corpus, plan)
+
+
+def test_apply_rename_raises_when_edit_target_missing(trio: Path) -> None:
+    """Covers rename.py:535-536 — `_stage_edits` raises if a planned
+    edit target disappeared between plan and apply."""
+    corpus = DirectoryCorpus(trio)
+    plan = plan_rename(corpus, "beta-spec", "beta", kind="alias")
+    # Pick a path in the plan and delete it before applying.
+    target_path = trio / plan.edits[0].path
+    target_path.unlink()
+    with pytest.raises(RenameError, match="Planned target does not exist"):
+        apply_rename(corpus, plan)
+
+
+def test_apply_rename_noop_plan_returns_empty_list(trio: Path) -> None:
+    """Covers the early-return at rename.py:451-453 — an empty plan
+    short-circuits without touching disk."""
+    corpus = DirectoryCorpus(trio)
+    plan = RenamePlan(old="x", new="y", kind="alias", edits=[], moves=[])
+    written = apply_rename(corpus, plan)
+    assert written == []
+
+
+def test_plan_template_path_rename_rejects_path_escaping_root(trio: Path) -> None:
+    """Covers rename.py:233-237 — normalizer rejects ``..`` escapes
+    even though the path looks relative."""
+    corpus = DirectoryCorpus(trio)
+    with pytest.raises(ValueError, match="escapes corpus root"):
+        plan_rename(corpus, "../escape.md", "y.md", kind="template_path")
