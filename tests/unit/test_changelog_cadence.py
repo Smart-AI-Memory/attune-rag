@@ -144,6 +144,42 @@ def test_parse_handles_no_releases() -> None:
     assert sections[0].version == "Unreleased"
 
 
+def test_parse_detects_freeze_override_header() -> None:
+    """A `> **Freeze override` blockquote in a section's header sets
+    is_override=True; absence keeps it False."""
+    text = (
+        "# Changelog\n\n"
+        "## [Unreleased]\n\n"
+        "## [0.1.22] - 2026-05-20\n\n"
+        "> **Freeze override (Phase 4 of v1.0 roadmap).** Rationale here.\n"
+        ">\n"
+        "> Multi-line blockquote continues.\n\n"
+        "### Added\n\n"
+        "- authorized knob\n\n"
+        "## [0.1.21] - 2026-05-20\n\n"
+        "### Changed\n\n"
+        "- routine change\n"
+    )
+    sections = cc.parse_changelog(text)
+    by_version = {s.version: s for s in sections}
+    assert by_version["Unreleased"].is_override is False
+    assert by_version["0.1.22"].is_override is True
+    assert by_version["0.1.21"].is_override is False
+
+
+def test_parse_override_header_case_insensitive() -> None:
+    """The override regex tolerates capitalization variants."""
+    text = (
+        "# Changelog\n\n"
+        "## [0.1.22] - 2026-05-20\n\n"
+        "> **freeze override** rationale\n\n"
+        "### Added\n\n"
+        "- thing\n"
+    )
+    sections = cc.parse_changelog(text)
+    assert sections[0].is_override is True
+
+
 def test_parse_skips_malformed_release_dates() -> None:
     """A header with an unparseable date is skipped, not crash-on."""
     text = (
@@ -164,10 +200,21 @@ def test_parse_skips_malformed_release_dates() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _section(version: str, d: date | None, **counts: int) -> cc.ChangelogSection:
+def _section(
+    version: str,
+    d: date | None,
+    *,
+    is_override: bool = False,
+    **counts: int,
+) -> cc.ChangelogSection:
     full_counts = dict.fromkeys(cc.CATEGORIES, 0)
     full_counts.update(counts)
-    return cc.ChangelogSection(version=version, release_date=d, categories=full_counts)
+    return cc.ChangelogSection(
+        version=version,
+        release_date=d,
+        categories=full_counts,
+        is_override=is_override,
+    )
 
 
 def test_filter_unreleased_always_counts() -> None:
@@ -219,12 +266,47 @@ def test_aggregate_sums_per_category_across_sections() -> None:
         _section("Unreleased", None, Security=1),
     ]
     counts = cc.aggregate_counts(sections)
-    assert counts == {"Added": 1, "Changed": 3, "Fixed": 3, "Security": 1}
+    assert counts == {
+        "Added": 1,
+        "Changed": 3,
+        "Fixed": 3,
+        "Security": 1,
+        "Added_override": 0,
+    }
 
 
 def test_aggregate_empty_returns_all_zero() -> None:
     counts = cc.aggregate_counts([])
-    assert counts == {"Added": 0, "Changed": 0, "Fixed": 0, "Security": 0}
+    assert counts == {
+        "Added": 0,
+        "Changed": 0,
+        "Fixed": 0,
+        "Security": 0,
+        "Added_override": 0,
+    }
+
+
+def test_aggregate_splits_added_under_override() -> None:
+    """Override-flagged sections contribute to both Added and
+    Added_override; non-override sections only to Added."""
+    sections = [
+        _section("0.1.22", date(2026, 5, 20), is_override=True, Added=1, Changed=2),
+        _section("0.1.21", date(2026, 5, 19), Changed=3, Fixed=1),
+        _section("Unreleased", None),
+    ]
+    counts = cc.aggregate_counts(sections)
+    assert counts["Added"] == 1
+    assert counts["Added_override"] == 1
+    assert counts["Changed"] == 5
+    assert counts["Fixed"] == 1
+
+
+def test_aggregate_non_override_added_not_counted_as_override() -> None:
+    """A plain Added entry (no override flag) leaves Added_override at 0."""
+    sections = [_section("Unreleased", None, Added=1)]
+    counts = cc.aggregate_counts(sections)
+    assert counts["Added"] == 1
+    assert counts["Added_override"] == 0
 
 
 # ---------------------------------------------------------------------------
@@ -284,6 +366,50 @@ def test_render_freeze_week_appears_when_set() -> None:
     assert "week 2/4" in report
 
 
+def test_render_status_on_track_when_all_added_under_override() -> None:
+    """Added=1 with Added_override=1 stays ON TRACK — the addition was
+    authorized per the freeze-override mechanism."""
+    report = cc.render_report(
+        window_start=date(2026, 5, 19),
+        window_end=date(2026, 5, 26),
+        counts={"Added": 1, "Added_override": 1, "Changed": 0, "Fixed": 0, "Security": 0},
+        releases=[],
+        freeze_week=1,
+        freeze_total=4,
+    )
+    assert "ON TRACK" in report
+    assert "RESET" not in report
+    assert "1 under override" in report
+
+
+def test_render_status_reset_when_only_partial_added_under_override() -> None:
+    """Added=2 with Added_override=1 still resets — one unauthorized
+    addition is enough."""
+    report = cc.render_report(
+        window_start=date(2026, 5, 19),
+        window_end=date(2026, 5, 26),
+        counts={"Added": 2, "Added_override": 1, "Changed": 0, "Fixed": 0, "Security": 0},
+        releases=[],
+        freeze_week=None,
+        freeze_total=None,
+    )
+    assert "RESET" in report
+    assert "1 under override" in report
+
+
+def test_render_no_override_annotation_when_zero() -> None:
+    """A clean week omits the override annotation entirely."""
+    report = cc.render_report(
+        window_start=date(2026, 5, 19),
+        window_end=date(2026, 5, 26),
+        counts={"Added": 0, "Added_override": 0, "Changed": 1, "Fixed": 0, "Security": 0},
+        releases=[],
+        freeze_week=None,
+        freeze_total=None,
+    )
+    assert "under override" not in report
+
+
 def test_render_releases_annotation_appears_when_changed_and_releases_in_window() -> None:
     report = cc.render_report(
         window_start=date(2026, 5, 10),
@@ -326,6 +452,32 @@ def test_cadence_summary_against_clean_unreleased() -> None:
     )
     assert "ON TRACK" in report
     assert "(releases: 0.1.19)" in report
+
+
+def test_cadence_summary_override_authorized_added_stays_on_track() -> None:
+    """End-to-end: a release whose section opens with `> **Freeze override`
+    counts its Added bullets as authorized; the report reads ON TRACK."""
+    text = (
+        "# Changelog\n\n"
+        "## [Unreleased]\n\n"
+        "## [0.1.22] - 2026-05-20\n\n"
+        "> **Freeze override (Phase 4 of v1.0 roadmap).** Authorized\n"
+        "> per the spec's Security-scoped exception pattern.\n\n"
+        "### Added\n\n"
+        "- authorized class attribute\n\n"
+        "### Changed\n\n"
+        "- routine improvement\n"
+    )
+    report = cc.cadence_summary(
+        text,
+        window_start=date(2026, 5, 19),
+        window_end=date(2026, 5, 26),
+        freeze_week=1,
+        freeze_total=4,
+    )
+    assert "ON TRACK" in report
+    assert "RESET" not in report
+    assert "1 under override" in report
 
 
 def test_cadence_summary_flags_unreleased_added() -> None:

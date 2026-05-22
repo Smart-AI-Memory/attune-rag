@@ -12,6 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > `### Added`. End of W4 (and the 0.2.0 SemVer cut) still targets
 > 2026-06-17.
 
+### Changed
+
+- **`scripts/changelog_cadence.py` detects `> **Freeze override`
+  blockquotes in CHANGELOG section headers.** Override-flagged
+  `### Added` bullets no longer trigger `Status: RESET` in the
+  weekly cadence report; they're surfaced as
+  `Added | N (M under override)` while status reads `ON TRACK`.
+  Closes a false-positive gap that would have reset the freeze
+  clock on Monday 2026-05-25 against 0.1.22's authorized
+  `MIN_ALIAS_OVERLAP` addition. Schema documented at
+  [`docs/specs/downstream-validation/cadence-week-schema.md`](docs/specs/downstream-validation/cadence-week-schema.md).
+  Internal-tooling change; no public surface impact.
+
 ## [0.1.23] - 2026-05-21
 
 > **Patch release under the Phase 4 freeze.** This release is
