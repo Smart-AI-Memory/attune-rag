@@ -476,7 +476,9 @@ def apply_rename(corpus: Any, plan: RenamePlan) -> list[str]:
                 ) from exc
             applied_moves.append((target, source))
             written.append(move.new_path)
-    except Exception:
+    # INTENTIONAL (BLE001): any failure mid-move must trigger full rollback
+    # of completed moves + created dirs; the original exception is re-raised.
+    except Exception:  # noqa: BLE001
         _undo_moves(applied_moves)
         _undo_created_dirs(created_dirs)
         raise
@@ -495,7 +497,9 @@ def apply_rename(corpus: Any, plan: RenamePlan) -> list[str]:
                 )
             tmp = _stage(target, edit.new_text)
             staged.append((target, tmp, original))
-    except Exception:
+    # INTENTIONAL (BLE001): any failure while staging edits unwinds staged
+    # tmp files AND reverses the moves from step 1; the original is re-raised.
+    except Exception:  # noqa: BLE001
         for _t, leftover, _o in staged:
             leftover.unlink(missing_ok=True)
         _undo_moves(applied_moves)
