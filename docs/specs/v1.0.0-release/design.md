@@ -21,6 +21,67 @@
 The cut is a **claim**, not new code. The work that earns the
 claim happened in Phases 1–4. Phase 5 codifies it.
 
+### Phase 5 scope (decided 2026-05-21)
+
+A planning conversation on 2026-05-21 narrowed the in-scope work
+for Phase 5 versus the deferred-to-v1.1.0 work. Recorded here so
+the formal `/spec` scoping pass (which runs after the 0.2.0 cut)
+inherits the decision rather than re-litigating it.
+
+**In v1.0.0:**
+
+- [`perf-baseline-multi-run`](../perf-baseline-multi-run/) M1–M5
+  — the principled fix for the σ=3.0 widening shipped in 0.1.23.
+  Restores σ=2.0 and makes the v1.0.0 perf claim defensible.
+  Per its own spec, this is Phase 5 work that runs **parallel**
+  to the cut; the cut does not block on its completion, but
+  v1.0.0's perf-stability story does.
+- `user-corpus-onboarding` (scaffolded Phase 4 W2, implemented
+  in Phase 5). Quality harness + the "your own corpus" guide +
+  first-class `aliases_override.json` for `DirectoryCorpus`.
+  **Load-bearing for the v1.0.0 framing** — calling the package
+  "Production/Stable" while users can't measure quality on
+  their own corpus would be inconsistent with the framework
+  framing below. Spec at `docs/specs/user-corpus-onboarding/`
+  (scaffolded in Phase 4 W2).
+- Telemetry config-surface reservation — the
+  `attune.config.json` `telemetry` block as schema only, no
+  emission code. Reserves the public surface inside the v1.0.0
+  freeze so future emission doesn't have to retrofit a config
+  block. Per [`docs/specs/telemetry/open-questions.md`](../telemetry/open-questions.md)
+  §8 ("Does the feature ship before or after `perf-baseline-multi-run`?").
+- Standard cut work: classifier flip, [POLICY.md](../../POLICY.md)
+  tense fixes, support-window section, 1.x deprecation policy,
+  signature-locking decision, `py.typed` decision.
+
+**Deferred to v1.1.0:**
+
+- **Telemetry emission.** Gated on `perf-baseline-multi-run`
+  M2 landing first so the 1ms latency claim is defensible
+  against σ=2.0, not σ=3.0. The v1.0.0 surface reservation
+  makes the v1.1.0 implementation a non-breaking minor (add
+  emission code behind the already-reserved config block;
+  default still `enabled: false`).
+
+**Calendar consequence:** the
+[`ROADMAP-v1.md`](../ROADMAP-v1.md) Phase 5 "~2 weeks of
+attention" estimate was set before `user-corpus-onboarding`
+entered scope. Realistic Phase 5 is **6–8 weeks** of substantive
+work. v1.0.0 target shifts from the implied ~2026-07-08 (Phase 4
+W4 close + 2-week Phase 5) to **2026-08-01 → 2026-08-15**. The
+ROADMAP-v1.md Phase 5 stanza is updated in the same PR as this
+section to reflect the new estimate.
+
+**Strategic framing:** v1.0.0 carries the **"deterministic
+retrieval framework for your own markdown corpus, with the
+attune-help corpus as the bundled exemplar"** framing — not the
+narrower "the retrieval layer for attune-help" framing. The
+user-corpus-onboarding work is therefore v1.0.0-defining, not
+an optional addition; the quality harness, the override
+mechanism for `DirectoryCorpus`, and the documented authoring
+discipline together earn the "Production/Stable" claim for the
+bigger framing.
+
 ### Classifier flip
 
 One-line change in [pyproject.toml](../../../pyproject.toml):

@@ -149,15 +149,26 @@ security audit clean.
 
 ## Phase 5 — 1.0.0 release
 
-**Spec:** `docs/specs/v1.0.0-release/` (to create)
+**Spec:** [`docs/specs/v1.0.0-release/`](v1.0.0-release/) (scaffolded; promotes to scoped after 0.2.0 cut)
 **Status:** not started
-**Estimate:** ~2 weeks of attention
+**Estimate:** **6–8 weeks of attention** (revised 2026-05-21 — see
+[v1.0.0-release/design.md](v1.0.0-release/design.md#phase-5-scope-decided-2026-05-21)
+for the scope decision that expanded the estimate)
 **Depends on:** Phase 4 complete
 
 **Outcome:** `Development Status :: 3 - Alpha` →
 `5 - Production/Stable` in `pyproject.toml`.
-`docs/POLICY.md` documents support window and deprecation
-policy.
+[`docs/POLICY.md`](../POLICY.md) documents support window and
+deprecation policy.
+[`perf-baseline-multi-run`](perf-baseline-multi-run/) M1–M5
+restores σ=2.0 with a defensible inter-run noise model.
+`user-corpus-onboarding` (scaffolded Phase 4 W2) ships a
+quality harness + "your own corpus" guide + first-class
+`aliases_override.json` for `DirectoryCorpus` so the
+"Production/Stable" claim covers arbitrary markdown corpora,
+not just bundled attune-help. Telemetry config-surface
+reserved (emission deferred to v1.1.0 per
+[`docs/specs/telemetry/open-questions.md`](telemetry/open-questions.md) §8).
 
 **Gate:** 1.0.0 on PyPI; support policy published; seven
 days post-release with no hotfix.
