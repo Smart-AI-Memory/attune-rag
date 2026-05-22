@@ -74,6 +74,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`scripts/measure_perf_baseline.py` `DEFAULT_SIGMA` rolled back
+  3.0 → 2.0 (Phase 5 perf-baseline-multi-run M3 follow-up).** Closes
+  the M3 cycle started by [#137](https://github.com/Smart-AI-Memory/attune-rag/pull/137)
+  (workflow matrix) + [#139](https://github.com/Smart-AI-Memory/attune-rag/pull/139)
+  (first v2 locked baseline). The σ=3.0 inflation in v1 absorbed
+  inter-run noise the single-invocation methodology couldn't see;
+  the v2 methodology (`scripts/aggregate_perf_baseline.py`, K=5
+  invocations) now captures that noise explicitly as
+  `inter_run_stdev`, so the inflation is no longer load-bearing.
+  Aligns `measure_perf_baseline.py`'s default with
+  `aggregate_perf_baseline.py`'s `DEFAULT_SIGMA = 2.0` so v1-path
+  single-invocation runs (per-PR `delta-check`'s `current.json`,
+  future manual locks without `--per-invocation-out`) use the same
+  σ as the v2-path aggregator. **The gate that matters — the
+  locked baseline's threshold on main — is unchanged**: it was
+  re-computed in #139 as `mean + 2.0 × inter_run_stdev` and is
+  unaffected by this script-default change. Threshold-comparison
+  check (per spec M3) in the PR body; only `rag_pipeline_run.{cpu,wall}`
+  show a hypothetical σ=2.0 v1-path tightening vs v2 (~7%), all
+  other metrics loosen substantially under v1 — expected and not
+  operationally relevant since v1-path is non-canonical now.
+  Internal tooling; no public API; one-line script change + comment
+  update; freeze-legal.
+
 - **`docs/POLICY.md` §4.1: "Surface budget (0.2.0 → v1.0.0)" — durable
   home for the 5-symbol public-surface cap committed in
   [`user-corpus-onboarding/tasks.md` scoping decision #5](docs/specs/user-corpus-onboarding/tasks.md).**

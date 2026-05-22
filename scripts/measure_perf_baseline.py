@@ -88,17 +88,21 @@ LLM_BENCHMARKS: tuple[str, ...] = ("llm_reranker_rerank",)
 
 # Threshold = mean + sigma * stdev (latencies are higher-is-worse).
 #
-# sigma=3.0 (was 2.0) tolerates the inter-run noise observed on
-# sub-millisecond benchmarks during W1–W2 advisory operation.
-# Specifically: two consecutive perf-workflow readings on
-# perf-relevant-identical code (PR #72 and PR #74) produced a ±23%
-# swing on `rag_pipeline_run.cpu`, while baseline intra-run stdev
-# suggests only ±8% RSD. The inter-run noise (different runner SKUs,
-# co-tenancy, GC) is real and isn't captured by the intra-run stdev
-# the locked baseline measures. sigma=3.0 absorbs that asymmetry
-# without making the gate useless: a real 50%+ regression still
-# fires. Re-evaluate at W4 close once we have ~4 weeks of readings.
-DEFAULT_SIGMA = 3.0
+# sigma=2.0 (rolled back from 3.0 in Phase 5 perf-baseline-multi-run
+# M3 follow-up). The σ=3.0 inflation absorbed the inter-run noise the
+# v1 single-invocation methodology couldn't see — two consecutive
+# perf-workflow readings on perf-relevant-identical code (PR #72 +
+# #74) produced a ±23% swing on `rag_pipeline_run.cpu` while v1's
+# intra-run stdev only saw ±8% RSD. With the v2 multi-run methodology
+# (K=5 parallel invocations + aggregator; `aggregate_perf_baseline.py`),
+# the inter_run_stdev term now captures the runner-SKU / co-tenancy /
+# GC noise directly. The locked baseline's threshold is
+# `mean + 2.0 × inter_run_stdev`, which is the actual gate; this σ
+# only affects v1-path single-invocation runs (current.json from
+# delta-check, future manual `measure_perf_baseline.py` invocations
+# without `--per-invocation-out`). Aligning the v1 default with the
+# aggregator's σ=2.0 keeps the two paths consistent.
+DEFAULT_SIGMA = 2.0
 MIN_RUNS = 10  # statistics.stdev needs ≥2, but small N is unreliable
 
 
