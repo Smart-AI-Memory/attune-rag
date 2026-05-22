@@ -1,9 +1,11 @@
 # Spec: Multi-run perf-baseline methodology — requirements
 
-> **Status:** scaffolding — not executable; activates as Phase 5 work.
+> **Status:** **scoped 2026-05-22.** R1-R5 are the non-negotiables
+> the implementation in [`tasks.md`](tasks.md) must satisfy.
 > **Entry gates inherited from:** Phase 4 close (W4 complete), 0.2.0
-> cut landed, [release-quality-baseline](../release-quality-baseline/)
-> intact (the perf gate must not regress retrieval-quality plumbing).
+> cut landed + 7-day watch closed,
+> [release-quality-baseline](../release-quality-baseline/) intact
+> (the perf gate must not regress retrieval-quality plumbing).
 
 ## R1 — Inter-run stdev must be captured into the locked baseline
 

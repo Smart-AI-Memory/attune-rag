@@ -1,6 +1,7 @@
 # Spec: Multi-run perf-baseline methodology — risks
 
-> **Status:** scaffolding — not executable; activates as Phase 5 work.
+> **Status:** **scoped 2026-05-22.** Risk register; mitigations are
+> implementation-time work tracked in [`tasks.md`](tasks.md).
 
 ## R1 — Runner cost on lock
 
