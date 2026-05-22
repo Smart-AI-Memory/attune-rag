@@ -14,6 +14,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`scripts/measure_perf_baseline.py` extended for multi-run methodology
+  (Phase 5 perf-baseline-multi-run M1).** New flags: `--per-invocation-out`,
+  `--invocations K`, `--invocation-index I`. When `--per-invocation-out`
+  is set, the script emits one invocation's raw N-trial timings as JSON
+  (skipping v1 lock emission); a workflow matrix runs the script K times
+  to collect K JSONs. **New companion** `scripts/aggregate_perf_baseline.py`
+  combines K per-invocation JSONs into the v2 locked baseline with the
+  dual-noise schema: `intra_run_stdev` (within-invocation jitter) +
+  `inter_run_stdev` (between-invocation drift). Threshold rebases on
+  inter-run noise (`mean + sigma × inter_run_stdev`) so per-PR
+  delta-check gates the noise floor a single sequential run can't see.
+  Backward-compatible v1 schema: `mean`, `stdev`, `threshold` keep their
+  meaning (`stdev` aliases `inter_run_stdev`); new keys
+  (`intra_run_stdev`, `inter_run_stdev`, `runs_per_invocation`,
+  `invocations`, `methodology_version: 2`) added beside (R2 of
+  [`perf-baseline-multi-run`](docs/specs/perf-baseline-multi-run/)).
+  Internal tooling; no public API surface; pure stdlib. Workflow
+  matrix wiring (M2) + first v2 lock-baseline run (M3) ship in
+  follow-up PRs once Phase 5 opens.
+
 - **`scripts/measure_corpus.py` ships as the v0 user-corpus measurement
   harness (Phase 5 accelerator).** Standalone script that scores any
   attune-rag-compatible markdown corpus against a queries YAML, emitting
