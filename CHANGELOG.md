@@ -38,6 +38,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`docs/specs/release-quality-baseline/baseline-with-rerank.md` published —
+  N=1 indicative rerank-lift artifact (marketing/onboarding companion to
+  `scripts/measure_corpus.py --with-rerank`).** Real-data example users
+  can point at when reading [`USER_CORPUS_GUIDE.md`](docs/USER_CORPUS_GUIDE.md)
+  §6.2. Result against the bundled `AttuneHelpCorpus` + golden query
+  sets: **net rerank lift on aggregate = zero** (paraphrased P@1 70/80
+  and R@3 79/80 unchanged with rerank on). Two individual queries flipped
+  in opposite directions and canceled (`gqp-003b` ✗→✓, `gqp-014b` ✓→✗).
+  Wall-clock ~2.5 min; API spend < $0.10 at Haiku list pricing.
+  **Important framing in the artifact**: this is NOT the D5 verdict —
+  N=1 doesn't apply the rubric; D5 ([`reranker-evaluation/`](docs/specs/reranker-evaluation/))
+  uses N=5 + statistical CI for the default-flip decision, which gets
+  written to `diagnostic-1.md` and supersedes this file.
+  Docs-only PR; no public API surface; no test impact.
+
 - **`scripts/measure_perf_baseline.py` extended for multi-run methodology
   (Phase 5 perf-baseline-multi-run M1).** New flags: `--per-invocation-out`,
   `--invocations K`, `--invocation-index I`. When `--per-invocation-out`
