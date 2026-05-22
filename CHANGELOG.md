@@ -7,10 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 > **Feature freeze remains in effect** against `attune-rag==0.1.21`
-> (Phase 4 W1 of the v1.0 roadmap). The 0.1.23 patch above ships
-> under freeze — all entries are `### Changed` / `### Fixed`, no
-> `### Added`. End of W4 (and the 0.2.0 SemVer cut) still targets
-> 2026-06-17.
+> (Phase 4 W1 of the v1.0 roadmap). End of W4 (and the 0.2.0 SemVer
+> cut) still targets 2026-06-17.
+>
+> **Freeze override (Phase 5 pre-staging).** The `### Added` block
+> below carries entries from Phase 5 work that landed on `main` ahead
+> of the 0.2.0 cut via the per-PR override mechanism (`freeze-override`
+> label + `[Override-rationale]` PR-body block). These entries are
+> queued for the 0.2.0 release; they are *not* eligible for a 0.1.x
+> patch. The `> **Freeze override` blockquote here tells
+> `scripts/changelog_cadence.py` to subtract these entries from the
+> effective `Added` count, preserving the W4.2 cadence-clean ON TRACK
+> verdict the 0.2.0 cut depends on. `[Override-rationale]`: Phase 5
+> work is intentionally pre-staged per
+> [`v1.0.0-release/design.md`](docs/specs/v1.0.0-release/design.md)
+> §"Phase 5 scope"; full per-PR rationales live on
+> [#130](https://github.com/Smart-AI-Memory/attune-rag/pull/130) and
+> [#136](https://github.com/Smart-AI-Memory/attune-rag/pull/136).
 
 ### Added
 
