@@ -28,6 +28,7 @@ pytest.importorskip("attune_help")
 import yaml  # noqa: E402
 
 from attune_rag import RagPipeline  # noqa: E402
+from attune_rag._scoring import score_queries  # noqa: E402
 
 _QUERIES_FILE = Path(__file__).parent / "queries.yaml"
 _PARAPHRASED_QUERIES_FILE = Path(__file__).parent / "queries_paraphrased.yaml"
@@ -165,20 +166,9 @@ def test_paraphrased_aggregate_watermark(pipeline: RagPipeline) -> None:
     and CI logs without requiring a separate diagnostic script run.
     """
     queries = _load_paraphrased_queries()
-    p1_hits = 0
-    r3_hits = 0
-    for entry in queries:
-        expected = set(entry.get("expected_in_top_3", []))
-        result = pipeline.run(entry["query"], k=3)
-        hit_paths = [h.template_path for h in result.citation.hits]
-        if hit_paths and hit_paths[0] in expected:
-            p1_hits += 1
-        if expected & set(hit_paths):
-            r3_hits += 1
-
-    n = len(queries)
-    p1 = p1_hits / n if n else 0.0
-    r3 = r3_hits / n if n else 0.0
+    _, agg = score_queries(pipeline, queries, k=3)
+    n, p1_hits, r3_hits = agg.n, agg.p1_hits, agg.r3_hits
+    p1, r3 = agg.p1, agg.r3
 
     # Visible in pytest -v output; CI logs this for trend tracking.
     print(

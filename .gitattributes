@@ -2,4 +2,6 @@
 # so the quality gate's `queries_sha256` check stays byte-stable
 # across macOS / Linux / Windows checkouts.
 tests/golden/queries.yaml text eol=lf
+tests/golden/queries_paraphrased.yaml text eol=lf
+tests/golden/measure_corpus_bundled.golden.md text eol=lf
 docs/specs/release-quality-baseline/thresholds.json text eol=lf

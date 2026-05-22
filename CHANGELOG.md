@@ -14,6 +14,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`scripts/measure_corpus.py` ships as the v0 user-corpus measurement
+  harness (Phase 5 accelerator).** Standalone script that scores any
+  attune-rag-compatible markdown corpus against a queries YAML, emitting
+  a deterministic markdown report with aggregate P@1 / R@3 + per-query
+  breakdown. Defaults match `RagPipeline()` (keyword-only, no rerank,
+  deterministic, no API spend); opt-in `--with-rerank` adds a
+  side-by-side comparison pass for data-backed corpus polish (requires
+  `ANTHROPIC_API_KEY`, ~$0.05 per 80-query set at Haiku pricing).
+  CI-suitable via `--watermark-r3` (default 0.85; non-zero exit on fail).
+  Extracts a private scoring helper to `attune_rag._scoring` shared with
+  `tests/golden/test_golden.py`; refactor is strict-dominance verified
+  (bundled-baseline numbers byte-identical pre/post). Bundled-corpus
+  output pinned at `tests/golden/measure_corpus_bundled.golden.md` via
+  byte-identical golden-snapshot diff in
+  `tests/golden/test_measure_corpus_bundled.py` — the strict-dominance
+  regression net for the keyword path. Internal tooling; no public API
+  surface growth. The v1.0.0 spec
+  ([`user-corpus-onboarding/`](docs/specs/user-corpus-onboarding/))
+  promotes this script into `attune_rag.measure_corpus` post-D5; the
+  script stays as a backward-compat entry point. `docs/USER_CORPUS_GUIDE.md`
+  §6.2 updated to document the new path. Cross-linked from
+  `reranker-evaluation/tasks.md` M1.1/M1.3 so D5's harness reuses
+  `_scoring.score_queries` rather than duplicating it.
+
 - **`docs/USER_CORPUS_GUIDE.md` published (v0 forerunner of the
   Phase 5 framework-framing).** ~750-line user-facing guide
   documenting the working-today path for pointing attune-rag at a
