@@ -4,6 +4,13 @@
 > **Workstream:** A (internal retriever tuning) — shipped. B (embeddings) — deferred.
 > **Freeze posture:** `### Changed`, no `__all__` delta, no new public surface, no new dependency. Compatible with the Phase 4 symbol-level freeze.
 
+> **Update 2026-05-21:** Workstream B's premise — that a semantic co-signal would be needed to lift the paraphrased-query floor — was **superseded by the [alias-expansion sweep](../alias-expansion-sweep/)** (shipped in 0.1.23). The sweep added 180+ multi-token aliases via the new `aliases_override.json` mechanism and closed paraphrased R@3 from 28.75% → 100% on the attune-help corpus without any new dependency. So:
+>
+> - **For the attune-help corpus**, Workstream B is **permanently deferred** — the embedding co-signal is no longer needed; the keyword-only path now lands paraphrased R@3 = 100%.
+> - **For arbitrary user corpora** (post-v1.0.0 framework framing — see [v1.0.0-release Phase 5 scope](../v1.0.0-release/design.md#phase-5-scope-decided-2026-05-21)), embedding retrieval remains viable as a future feature if the [`user-corpus-onboarding`](../user-corpus-onboarding/) quality harness surfaces gaps the frontmatter-alias + override path can't close. The [`embedding-retriever`](../embedding-retriever/#scope-of-the-defer) spec carries the scope-specific defer.
+>
+> The "Why not workstream B or C now" section below predates the sweep and should be read as "as of pre-sweep evaluation (2026-05-19)." The rest of this proposal is preserved unchanged as the historical record of what shipped in 0.1.22.
+
 ## Problem
 
 `docs/specs/release-quality-baseline/thresholds.json` locks Precision@1 at **0.95** — the floor and the current measured value. There is zero headroom; the next regression that flips a single query unlocks an indefinite re-baseline window. The two queries currently sitting at the cliff are diagnostic, not random:
