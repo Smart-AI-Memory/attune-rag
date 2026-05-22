@@ -1,6 +1,6 @@
 # Spec: embedding-retriever
 
-> **Status: deferred (permanent as of 2026-05-21) — the [alias-expansion-sweep](../alias-expansion-sweep/) closed the paraphrase gap (R@3 28.75% → 96.25%, baseline still 100%/100%) without any new dependency. Revival would require evidence the alias mechanism can't close a gap that matters for shipped usage; none observed.**
+> **Status: deferred (permanent for the attune-help corpus context as of 2026-05-21) — the [alias-expansion-sweep](../alias-expansion-sweep/) closed the paraphrase gap (R@3 28.75% → 100% after D4, baseline still 100%/100%) without any new dependency. Revival for the bundled corpus would require evidence the alias mechanism can't close a gap that matters for shipped usage; none observed. For arbitrary user corpora the defer is *scope-specific, not absolute* — see "Scope of the defer" below.**
 
 - **Owner:** Patrick
 - **Created:** 2026-05-21
@@ -10,7 +10,17 @@
 - **Predecessor work:** [diagnostic-1.md](diagnostic-1.md), [diagnostic-2.md](diagnostic-2.md), [diagnostic-3.md](diagnostic-3.md).
 - **Entry condition (D1):** Δ P@1 > 15pp on the paraphrase set → STRONG verdict. **Met:** observed Δ P@1 = −86.25pp.
 - **Defer condition (D2 + D3):** dependency-free alternatives close ≥ 30pp of the paraphrased R@3 gap with smaller or zero baseline cost. **Met:** D3 +50pp R@3 on bug-predict cluster with zero regression, zero dep; D2 +51pp R@3 overall (but with −10pp baseline P@1 cost, ruling it out as a default but viable as opt-in).
-- **Permanent-defer condition (M13.2):** alias-expansion-sweep lands paraphrased R@3 ≥ 70% with no baseline regression. **Met at 96.25% / 100% baseline.**
+- **Permanent-defer condition (M13.2):** alias-expansion-sweep lands paraphrased R@3 ≥ 70% with no baseline regression. **Met at 96.25% / 100% baseline at M13.2; closed to 100% / 100% at [D4](diagnostic-4.md).**
+
+## Scope of the defer
+
+The permanent defer is **scope-specific, not absolute**. Added 2026-05-21 alongside the [v1.0.0 Phase 5 scope decision](../v1.0.0-release/design.md#phase-5-scope-decided-2026-05-21), which committed v1.0.0 to the framework framing.
+
+- **Permanent for the attune-help corpus context.** The alias-expansion sweep closed paraphrased R@3 to 100% on the 80-query regression set. For users consuming the bundled `AttuneHelpCorpus`, the embedding-retriever question is settled — `KeywordRetriever` + the override mechanism is the answer, with no embedding dependency required.
+- **Viable for arbitrary user corpora** (post-v1.0.0 framework framing). The [`user-corpus-onboarding`](../user-corpus-onboarding/) spec (Phase 5 of the v1.0 roadmap; scaffolded Phase 4 W2) ships a quality harness so users can measure retrieval quality on their own markdown corpora. **If the harness consistently surfaces gaps that the frontmatter-alias + override path can't close for a user-corpus class**, the embedding-retriever revival case re-opens — for that corpus class, not for the bundled one.
+- **Revival path preserved.** The D1–D4 diagnostic artifacts remain on disk specifically so a future revival can pick up the evaluation framework without re-deriving it. The 80-query paraphrase set is the harness shape; future user-corpus paraphrase sets would slot into the same shape. The diagnostic scripts (`run_diagnostic_1.py` through `run_diagnostic_3.py`) are reusable drivers, not attune-help-specific.
+
+The defer is "permanent" in the sense that it closes the *original question* (does attune-help's retrieval need embeddings?). It does not foreclose embeddings as a future feature for the broader framework framing — a future revival would scope a new spec (e.g. `docs/specs/embedding-retriever-for-user-corpora/`) using this one as the methodology parent.
 
 ## Purpose (deferred — kept for archival context)
 
