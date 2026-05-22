@@ -65,7 +65,12 @@ class _SetResult:
 
 def _load_queries(path: Path) -> tuple[list[dict[str, Any]], str]:
     raw = path.read_bytes()
-    sha = sha256(raw).hexdigest()[:12]
+    # Normalize CRLF → LF so the SHA-256 in the report is identical
+    # across Linux / macOS / Windows checkouts regardless of git's
+    # eol-attribute application. The hash describes the canonical
+    # content of the queries file, not the local line-ending policy.
+    canonical = raw.replace(b"\r\n", b"\n")
+    sha = sha256(canonical).hexdigest()[:12]
     try:
         data = yaml.safe_load(raw)
     except yaml.YAMLError as exc:
@@ -348,7 +353,9 @@ def main(argv: list[str] | None = None) -> int:
         if not report.endswith("\n"):
             sys.stdout.write("\n")
     else:
-        args.output.write_text(report, encoding="utf-8")
+        # Write bytes directly so output has LF line endings on every
+        # platform (Path.write_text translates \n → \r\n on Windows).
+        args.output.write_bytes(report.encode("utf-8"))
 
     failures = _watermark_check(
         baseline_sets,
