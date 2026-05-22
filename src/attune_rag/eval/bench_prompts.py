@@ -351,7 +351,7 @@ def _print_table(reports: list[_VariantReport]) -> None:
     )
 
 
-def main(argv: list[str] | None = None) -> int:
+def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="attune-rag-bench-prompts",
         description=(
@@ -387,15 +387,11 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Optional JSON report path for the full run detail",
     )
-    args = parser.parse_args(argv)
+    return parser
 
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        print(
-            "error: ANTHROPIC_API_KEY not set; cannot run prompt A/B.",
-            file=sys.stderr,
-        )
-        return 2
 
+def _resolve_queries_path(args: argparse.Namespace) -> Path | int:
+    """Return a validated queries path, or an exit code on failure."""
     try:
         queries_path = _validate_read_path(args.queries, kind="queries")
     except ValueError as e:
@@ -418,15 +414,12 @@ def main(argv: list[str] | None = None) -> int:
             print(f"error: queries file not found: {queries_path}", file=sys.stderr)
         return 2
 
-    output_path: Path | None = None
-    if args.output is not None:
-        try:
-            output_path = _validate_write_path(args.output)
-        except ValueError as e:
-            print(f"error: {e}", file=sys.stderr)
-            return 2
+    return queries_path
 
-    variants = [v.strip() for v in args.variants.split(",") if v.strip()]
+
+def _resolve_variants(raw: str) -> list[str] | int:
+    """Parse and validate the --variants list; return an exit code on failure."""
+    variants = [v.strip() for v in raw.split(",") if v.strip()]
     from ..prompts import PROMPT_VARIANTS
 
     unknown = [v for v in variants if v not in PROMPT_VARIANTS]
@@ -436,6 +429,51 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 2
+    return variants
+
+
+def _write_full_report(reports: list[_VariantReport], output_path: Path) -> None:
+    output_path.write_text(
+        json.dumps(
+            [
+                {
+                    **{k: v for k, v in asdict(r).items() if k != "runs"},
+                    "runs": [asdict(run) for run in r.runs],
+                }
+                for r in reports
+            ],
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    print(f"\nWrote full report to {output_path}")
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _build_parser().parse_args(argv)
+
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        print(
+            "error: ANTHROPIC_API_KEY not set; cannot run prompt A/B.",
+            file=sys.stderr,
+        )
+        return 2
+
+    queries_path = _resolve_queries_path(args)
+    if isinstance(queries_path, int):
+        return queries_path
+
+    output_path: Path | None = None
+    if args.output is not None:
+        try:
+            output_path = _validate_write_path(args.output)
+        except ValueError as e:
+            print(f"error: {e}", file=sys.stderr)
+            return 2
+
+    variants = _resolve_variants(args.variants)
+    if isinstance(variants, int):
+        return variants
 
     queries = _load_queries(queries_path)
     reports = asyncio.run(
@@ -451,20 +489,7 @@ def main(argv: list[str] | None = None) -> int:
     _print_table(reports)
 
     if output_path is not None:
-        output_path.write_text(
-            json.dumps(
-                [
-                    {
-                        **{k: v for k, v in asdict(r).items() if k != "runs"},
-                        "runs": [asdict(run) for run in r.runs],
-                    }
-                    for r in reports
-                ],
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
-        print(f"\nWrote full report to {output_path}")
+        _write_full_report(reports, output_path)
 
     return 0
 
