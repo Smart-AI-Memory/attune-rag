@@ -1,5 +1,5 @@
 {
-  "commit": "28a329311fc7ebc01a1ca10eb502c95e3cca862c",
+  "commit": "6fbe6d7c4322d09fd4bc41bbf54182f3c070722e",
   "environment": {
     "ci_runner": "Linux",
     "machine": "x86_64",
@@ -9,57 +9,83 @@
     "python_version": "3.11.15"
   },
   "include_llm": true,
-  "measured_at": "2026-05-20T21:47:48Z",
+  "invocations": 5,
+  "measured_at": "2026-05-22T20:09:14Z",
+  "methodology_version": 2,
   "metrics": {
     "directory_corpus_load.cpu": {
-      "mean": 4.5e-05,
-      "n": 50,
-      "stdev": 7e-06,
-      "threshold": 6.6e-05
+      "inter_run_stdev": 2e-06,
+      "intra_run_stdev": 1.4e-05,
+      "invocations": 5,
+      "mean": 5.5e-05,
+      "runs_per_invocation": 20,
+      "stdev": 2e-06,
+      "threshold": 5.9e-05
     },
     "directory_corpus_load.wall": {
-      "mean": 4.5e-05,
-      "n": 50,
-      "stdev": 7e-06,
-      "threshold": 6.6e-05
+      "inter_run_stdev": 2e-06,
+      "intra_run_stdev": 1.4e-05,
+      "invocations": 5,
+      "mean": 5.4e-05,
+      "runs_per_invocation": 20,
+      "stdev": 2e-06,
+      "threshold": 5.8e-05
     },
     "keyword_retriever_retrieve.cpu": {
-      "mean": 0.002079,
-      "n": 50,
-      "stdev": 0.012135,
-      "threshold": 0.038484
+      "inter_run_stdev": 9.7e-05,
+      "intra_run_stdev": 0.02259,
+      "invocations": 5,
+      "mean": 0.005437,
+      "runs_per_invocation": 20,
+      "stdev": 9.7e-05,
+      "threshold": 0.005631
     },
     "keyword_retriever_retrieve.wall": {
-      "mean": 0.002079,
-      "n": 50,
-      "stdev": 0.012135,
-      "threshold": 0.038484
+      "inter_run_stdev": 9.7e-05,
+      "intra_run_stdev": 0.022594,
+      "invocations": 5,
+      "mean": 0.005437,
+      "runs_per_invocation": 20,
+      "stdev": 9.7e-05,
+      "threshold": 0.005632
     },
     "llm_reranker_rerank.cpu": {
-      "mean": 0.012409,
-      "n": 50,
-      "stdev": 0.071402,
-      "threshold": 0.226615
+      "inter_run_stdev": 0.001368,
+      "intra_run_stdev": 0.114928,
+      "invocations": 5,
+      "mean": 0.027729,
+      "runs_per_invocation": 20,
+      "stdev": 0.001368,
+      "threshold": 0.030466
     },
     "llm_reranker_rerank.wall": {
-      "mean": 0.799094,
-      "n": 50,
-      "stdev": 0.520869,
-      "threshold": 2.361702
+      "inter_run_stdev": 0.062108,
+      "intra_run_stdev": 0.27266,
+      "invocations": 5,
+      "mean": 0.211075,
+      "runs_per_invocation": 20,
+      "stdev": 0.062108,
+      "threshold": 0.335291
     },
     "rag_pipeline_run.cpu": {
-      "mean": 0.00063,
-      "n": 50,
-      "stdev": 5.6e-05,
-      "threshold": 0.000799
+      "inter_run_stdev": 8e-05,
+      "intra_run_stdev": 5.2e-05,
+      "invocations": 5,
+      "mean": 0.000633,
+      "runs_per_invocation": 20,
+      "stdev": 8e-05,
+      "threshold": 0.000793
     },
     "rag_pipeline_run.wall": {
-      "mean": 0.00063,
-      "n": 50,
-      "stdev": 5.6e-05,
-      "threshold": 0.000799
+      "inter_run_stdev": 8e-05,
+      "intra_run_stdev": 5.1e-05,
+      "invocations": 5,
+      "mean": 0.000632,
+      "runs_per_invocation": 20,
+      "stdev": 8e-05,
+      "threshold": 0.000793
     }
   },
-  "runs": 50,
-  "sigma": 3.0
+  "runs_per_invocation": 20,
+  "sigma": 2.0
 }
