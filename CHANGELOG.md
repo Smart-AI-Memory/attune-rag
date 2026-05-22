@@ -12,6 +12,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > `### Added`. End of W4 (and the 0.2.0 SemVer cut) still targets
 > 2026-06-17.
 
+### Added
+
+> **Pre-staged for Phase 5 / v1.0.0 cut.** These entries are part
+> of a draft PR (`### Added` blocked under freeze) sitting against
+> `main` waiting for the 0.2.0 SemVer cut to clear. Move to
+> `[0.2.0]` or `[1.0.0]` at cut time per the release-prep flow.
+
+- **`attune_rag.corpus.load_aliases_from_file(path)` public helper**
+  + **`DirectoryCorpus(extra_aliases_file=...)` kwarg** for loading
+  path-keyed extra aliases from a JSON file. Schema mirrors
+  `attune-rag`'s own `aliases_override.json`:
+  `{"rel/path.md": ["alias one", "alias two"], "_comment": "..."}`.
+  Underscore-prefixed keys are dropped; missing files raise
+  `FileNotFoundError` with path in message; malformed JSON or
+  non-list/non-string values raise `ValueError`. When both
+  `extra_aliases` (inline dict) and `extra_aliases_file` are
+  provided, inline wins per-path collision. `AttuneHelpCorpus`'s
+  internal bundled-aliases loader refactored to use the new
+  function (wrapped in a tolerant try/except for backward-compat
+  on the bundled file). Strict-dominance verified: bundled
+  `tests/golden/measure_corpus_bundled.golden.md` byte-identical
+  pre/post refactor; `pytest tests/golden` unchanged. Implements
+  M2 of [`user-corpus-onboarding`](docs/specs/user-corpus-onboarding/).
+
 ### Changed
 
 - **`scripts/measure_corpus.py` ships as the v0 user-corpus measurement

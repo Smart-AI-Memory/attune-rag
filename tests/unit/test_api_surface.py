@@ -59,6 +59,7 @@ EXPECTED_CORPUS_ALL = frozenset(
         "DirectoryCorpus",
         "DuplicateAliasError",
         "RetrievalEntry",
+        "load_aliases_from_file",
     }
 )
 

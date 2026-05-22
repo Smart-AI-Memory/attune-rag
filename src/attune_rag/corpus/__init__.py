@@ -6,6 +6,7 @@
 - AliasInfo, DuplicateAliasError (template-editor M1 task #2)
 """
 
+from ._aliases import load_aliases_from_file
 from .attune_help import AttuneHelpCorpus
 from .base import (
     AliasInfo,
@@ -22,4 +23,5 @@ __all__ = [
     "DirectoryCorpus",
     "DuplicateAliasError",
     "RetrievalEntry",
+    "load_aliases_from_file",
 ]
