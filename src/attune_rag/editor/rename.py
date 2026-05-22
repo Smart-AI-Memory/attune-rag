@@ -27,16 +27,20 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
+from ._regex import ALIAS_REF_RE as _ALIAS_REF_RE
+from ._regex import FENCE_RE as _FENCE_RE
+from ._regex import TOP_LEVEL_KEY_RE as _TOP_LEVEL_KEY_RE
 from .references import ReferenceKind
 
+# rename.py's frontmatter regex captures the opener/body/closer separately
+# so the rewrite step can reassemble them; the references.py version only
+# captures the body, so they intentionally don't share a definition.
 _FRONTMATTER_RE = re.compile(r"^(---\s*\n)(.*?)(\n---\s*\n)", re.DOTALL)
-_FENCE_RE = re.compile(r"^(```|~~~)")
 
 # Sidecar files we look for in the corpus root when planning a
 # template_path rename. Both have the same flat ``rel_path -> summary``
 # shape; ``summaries_by_path.json`` is the attune-help variant.
 _PATH_KEYED_SIDECARS = ("summaries.json", "summaries_by_path.json")
-_ALIAS_REF_RE = re.compile(r"(?<!\\)\[\[([^\[\]\n]+?)\]\]")
 
 
 class RenameError(ValueError):
@@ -288,9 +292,6 @@ def _rewrite_frontmatter_value(text: str, key: str, old: str, new: str) -> str:
     if rewritten_body == fm_body:
         return text
     return fm_open + rewritten_body + fm_close + text[m.end() :]
-
-
-_TOP_LEVEL_KEY_RE = re.compile(r"^([A-Za-z_][\w-]*)\s*:")
 
 
 def _rewrite_yaml_block_value(fm_body: str, key: str, old: str, new: str) -> str:

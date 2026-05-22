@@ -21,6 +21,9 @@ from typing import Any, Literal
 
 import yaml
 
+from ._regex import ALIAS_REF_RE as _ALIAS_REF_RE
+from ._regex import FENCE_RE as _FENCE_RE
+from ._regex import TOP_LEVEL_KEY_RE as _TOP_LEVEL_KEY_RE
 from .schema import (
     FrontmatterIssue,
     SchemaError,
@@ -55,11 +58,7 @@ class Diagnostic:
 
 _FRONTMATTER_OPEN_RE = re.compile(r"^---\s*$")
 _FRONTMATTER_CLOSE_RE = re.compile(r"^---\s*$")
-_FENCE_RE = re.compile(r"^(```|~~~)")
-# Match [[alias]] but not \[[alias]] (escape) and not nested.
-_ALIAS_REF_RE = re.compile(r"(?<!\\)\[\[([^\[\]\n]+?)\]\]")
 _DEPTH_RE = re.compile(r"^(#{1,6})\s+Depth\s+(\d+)\b", re.IGNORECASE)
-_TOP_LEVEL_KEY_RE = re.compile(r"^([A-Za-z_][\w-]*)\s*:")
 
 
 @lru_cache(maxsize=1)
