@@ -55,30 +55,42 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ── W0.4: manual baseline lock ─────────────────────────────────
+  # ── W0.4 / Phase 5 M2: manual baseline lock (multi-run v2) ────
+  #
+  # Phase 5 perf-baseline-multi-run M2: split the single-invocation
+  # lock into K=5 parallel matrix invocations + an aggregator job.
+  # Each matrix entry runs N trials and emits a per-invocation JSON;
+  # the aggregator combines K JSONs into the v2 locked baseline
+  # (mean + intra_run_stdev + inter_run_stdev + threshold per
+  # docs/specs/perf-baseline-multi-run/design.md §3).
+  #
+  # K=5 hardcoded per scoping decision #2 (requirements.md R3).
+  # N defaults to inputs.runs (M2 spec calls 20; default kept at 50
+  # for backward compat with v1 dispatches — pass runs=20 to switch).
   lock-baseline:
     if: github.event_name == 'workflow_dispatch'
-    name: Lock baseline
+    name: Lock baseline (invocation ${{ matrix.invocation_index }} / ${{ strategy.job-total }})
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    strategy:
+      # One bad invocation shouldn't kill the others. The aggregator
+      # job's `_validate_consistent` will fail loudly if the surviving
+      # set isn't a contiguous 0..K-1 range — surfacing the gap.
+      fail-fast: false
+      matrix:
+        invocation_index: [0, 1, 2, 3, 4]  # K=5
     permissions:
-      # Bot opens a PR with the locked baseline (direct push to
-      # main is rejected by branch protection). Needs:
-      contents: write  # to push the auto-branch
-      pull-requests: write  # to open the PR
+      # Matrix entries are read-only; the aggregator widens to
+      # contents:write + pull-requests:write for the bot PR.
+      contents: read
     env:
-      BASELINE_MD: docs/specs/downstream-validation/perf-baseline.md
-      THRESHOLDS_JSON: docs/specs/downstream-validation/perf-thresholds.json
       RUNS: ${{ inputs.runs }}
       INCLUDE_LLM: ${{ inputs.include_llm }}
+      INVOCATIONS: 5
+      PER_INV_JSON: per-invocation-${{ matrix.invocation_index }}.json
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-        with:
-          # Need write access + full history to commit the locked
-          # baseline back to main.
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
 
       - name: Set up Python 3.11
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
@@ -112,16 +124,98 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         shell: bash
 
-      - name: Run measure_perf_baseline
+      - name: Run per-invocation measurement
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           set -euo pipefail
-          ARGS=(--runs "$RUNS" --out "$BASELINE_MD" --thresholds-out "$THRESHOLDS_JSON")
+          ARGS=(
+            --runs "$RUNS"
+            --invocations "$INVOCATIONS"
+            --invocation-index "${{ matrix.invocation_index }}"
+            --per-invocation-out "$PER_INV_JSON"
+          )
           if [ "$INCLUDE_LLM" = "true" ]; then
             ARGS+=(--include-llm)
           fi
           python scripts/measure_perf_baseline.py "${ARGS[@]}"
+          # Log runner fingerprint so design.md §3's clustering check
+          # (M5 validation) has the data it needs.
+          echo "::group::Runner fingerprint"
+          python -c "import json,sys; p=json.load(open('$PER_INV_JSON')); print(json.dumps(p['environment'], indent=2))"
+          echo "::endgroup::"
+        shell: bash
+
+      - name: Upload per-invocation artifact
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.1
+        with:
+          name: perf-per-invocation-${{ matrix.invocation_index }}
+          path: ${{ env.PER_INV_JSON }}
+          retention-days: 7
+          if-no-files-found: error
+
+  # ── Phase 5 M2: aggregate K artifacts → v2 locked baseline ────
+  aggregate-baseline:
+    if: github.event_name == 'workflow_dispatch'
+    name: Aggregate per-invocation JSONs (v2 lock)
+    needs: lock-baseline
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # Bot opens a PR with the locked baseline (direct push to
+      # main is rejected by branch protection).
+      contents: write       # to push the auto-branch
+      pull-requests: write  # to open the PR
+    env:
+      BASELINE_MD: docs/specs/downstream-validation/perf-baseline.md
+      THRESHOLDS_JSON: docs/specs/downstream-validation/perf-thresholds.json
+      RUNS: ${{ inputs.runs }}
+      INCLUDE_LLM: ${{ inputs.include_llm }}
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          # Need write access + full history to commit the locked
+          # baseline back to main.
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install (aggregator is pure stdlib)
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+        shell: bash
+
+      - name: Download all per-invocation artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          pattern: perf-per-invocation-*
+          path: per-invocation-artifacts/
+          merge-multiple: true
+
+      - name: Aggregate to v2 locked baseline
+        run: |
+          set -euo pipefail
+          ls -la per-invocation-artifacts/
+          PER_INV_ARGS=()
+          for f in per-invocation-artifacts/*.json; do
+            PER_INV_ARGS+=(--per-invocation "$f")
+          done
+          if [ "${#PER_INV_ARGS[@]}" -lt 2 ]; then
+            echo "::error::aggregator requires ≥2 per-invocation JSONs (got ${#PER_INV_ARGS[@]})"
+            exit 1
+          fi
+          python scripts/aggregate_perf_baseline.py \
+            "${PER_INV_ARGS[@]}" \
+            --out "$BASELINE_MD" \
+            --thresholds-out "$THRESHOLDS_JSON"
         shell: bash
 
       - name: Open PR with the locked baseline
@@ -141,26 +235,32 @@ jobs:
             exit 0
           fi
           STAMP=$(date -u +%Y%m%d-%H%M%S)
-          BRANCH="auto/perf-baseline-${STAMP}-r${RUN_ID}"
+          BRANCH="auto/perf-baseline-v2-${STAMP}-r${RUN_ID}"
           git checkout -b "$BRANCH"
-          git commit -m "perf: lock perf baseline (runs=$RUNS, include_llm=$INCLUDE_LLM)
+          git commit -m "perf: lock perf baseline v2 (K=5, runs=$RUNS, include_llm=$INCLUDE_LLM)
 
-          Phase 4 W0.4. Generated by the \`perf\` workflow's \`lock-baseline\` dispatch.
-          See docs/specs/downstream-validation/perf-baseline.md for the locked record."
+          Phase 5 perf-baseline-multi-run M3. K=5 parallel invocations
+          (matrix), each N=$RUNS trials. Aggregator emits the v2
+          methodology schema: mean / intra_run_stdev / inter_run_stdev /
+          threshold (= mean + sigma × inter_run_stdev). See
+          docs/specs/perf-baseline-multi-run/design.md for the noise-
+          decomposition rationale."
           git push --set-upstream origin "$BRANCH"
           gh pr create \
             --base main \
             --head "$BRANCH" \
-            --title "perf: lock perf baseline (runs=$RUNS, include_llm=$INCLUDE_LLM)" \
+            --title "perf: lock perf baseline v2 (K=5, runs=$RUNS, include_llm=$INCLUDE_LLM)" \
             --body "Auto-generated by the \`perf\` workflow's \`lock-baseline\` dispatch (run id \`$RUN_ID\`).
 
-          - Runs: $RUNS
-          - Include LLM benchmarks: $INCLUDE_LLM
-          - Files: \`docs/specs/downstream-validation/perf-baseline.md\` (narrative) + \`docs/specs/downstream-validation/perf-thresholds.json\` (machine-readable).
+          **Multi-run methodology v2** (\`docs/specs/perf-baseline-multi-run/\`):
 
-          Merging this lands the locked baseline on \`main\`; subsequent per-PR perf-delta comments will compare against it.
+          - **K**: 5 invocations (parallel matrix)
+          - **N**: $RUNS trials per invocation
+          - **include_llm**: $INCLUDE_LLM
+          - **Schema additions**: \`intra_run_stdev\` (within-invocation jitter), \`inter_run_stdev\` (between-invocation drift), \`runs_per_invocation\`, \`invocations\`, \`methodology_version: 2\`. Backward-compat aliases held: \`mean\` / \`stdev\` (= \`inter_run_stdev\`) / \`threshold\` (= mean + sigma × inter_run_stdev).
+          - **Files**: \`docs/specs/downstream-validation/perf-baseline.md\` + \`docs/specs/downstream-validation/perf-thresholds.json\`.
 
-          Phase 4 W0.4."
+          Merging this lands the v2 locked baseline on \`main\`; subsequent per-PR \`delta-check\` comments will compare against the inter-run-stdev-based threshold. Follow-up (M3.2 σ rollback PR) drops \`DEFAULT_SIGMA\` 3.0 → 2.0 once a v2 baseline is on main."
         shell: bash
 
   # ── W0.5: per-PR advisory delta check ─────────────────────────
