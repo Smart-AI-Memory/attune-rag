@@ -1,11 +1,11 @@
 # Release-narrative drafts — v1.0.0
 
-> **Status: drafts, not commitments.** These are skeleton outlines
-> for the three-post release narrative flagged in
-> [../tasks.md](../tasks.md) "Scoping-time considerations" on
-> 2026-05-22. They sit here so the *shape* is captured while the
+> **Status: v1 full drafts, not commitments.** All three posts (plus
+> the LinkedIn adaptation of B) are now first-draft complete. They
+> sit here so the *shape and substance* are captured while the
 > v1.0.0-release spec is still scaffolding. None of these ship until
-> the spec is scoped and the narrative task is owned.
+> the spec is scoped, the narrative task is owned, and a polish pass
+> resolves each draft's "Open questions for fleshing-out" tail.
 
 ## Why three posts
 
@@ -26,11 +26,19 @@ works in the first place. The trilogy *is* the v1.0.0 thesis:
 Spacing rationale: B too soon dilutes A's hook; C too soon looks
 defensive. Three staggered drops = three visibility moments, not one.
 
-## Skeleton convention
+## Draft maturity
 
-Each draft is headers + 1–2 sentences per section. Enough to know
-what each section argues; not enough to ship. Fleshing out happens
-during M2 of v1.0.0-release after scoping pins owner and channel.
+| Draft | State | Words | Notes |
+|---|---|---|---|
+| [A — Rerank measurement](A-rerank-measurement.md) | v1 full draft (2026-05-22) | ~1570 | Grounded in D5 diagnostic-1 receipts. Hero table from the verdict-lock. |
+| [B — RAG methodology](B-rag-methodology.md) | v1 full draft (2026-05-22) | ~2320 | Grounded in locked v2 baseline at commit `6fbe6d7`. Four-levers framing + σ=3.0→2.0 walkback. |
+| [B — LinkedIn adaptation](B-linkedin-adaptation.md) | v1 full draft (2026-05-22) | ~920 body | Founder-voice, no code blocks, provocation CTA. Companion to canonical B. |
+| [C — BM25 broken](C-bm25-broken.md) | v1 full draft (2026-05-22) | ~1980 | Grounded in alias-expansion-sweep memory + project arc. Five diagnostic patterns + the M12 near-regression. |
+
+All v1 drafts. Polish-pass + scoping-pinned owner/channel still
+required before publication. Every draft carries its own
+"Open questions for fleshing-out" tail naming the calls a human
+needs to make.
 
 ## Originating context
 
