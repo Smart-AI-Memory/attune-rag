@@ -87,6 +87,22 @@ Pinned during scoping. Listed here so the shape is visible:
 | Cosmetic surface tidy-ups folded into M3 break the snapshot test. | Atomic commit: surface change + `EXPECTED_*` constants update + CHANGELOG line in the same PR, gated by CI on the snapshot test. |
 | `attune-release-check` skill rejects the cut for a stale `__version__` or dirty tree. | The skill is the gate — fix and re-run. Not a risk in the "blocks the cut" sense, only in the "adds an iteration" sense. |
 
+### Scoping-time considerations (flagged 2026-05-22)
+
+Items the scoping pass should resolve — not yet executable, but the
+shape is visible enough to capture now:
+
+- **Release narrative — methodology framing.** Scoping should decide
+  whether M2 grows a docs sub-task (or a new milestone slots between
+  M2 and M3) for the *external* release announcement. M3.4 covers
+  the GitHub release notes (factual, terse); the narrative piece is
+  separate — leading with "we measured our reranker and shipped the
+  measurement, not the opinion." Bundled-corpus numbers are the
+  proof; user-corpus-onboarding is the CTA. Highest-leverage release
+  artifact that isn't code. Owner / channel (README hero, blog,
+  Show HN) pinned at scoping. Originating discussion:
+  perf-baseline-multi-run M3 wrap, 2026-05-22.
+
 ### Out of scope (deferred)
 
 See [requirements.md](requirements.md) §"Out of scope (Non-Goals)"
