@@ -56,33 +56,47 @@ pays the K-fold cost.
 ## 2. Schema additions
 
 `docs/specs/downstream-validation/perf-thresholds.json` after the
-new methodology lands:
+new methodology lands.
+
+> **As-shipped note (M4 audit, 2026-05-22).** Four diagnostic /
+> redundant fields originally sketched here were not emitted by the
+> shipped aggregator ([`scripts/aggregate_perf_baseline.py`](../../../scripts/aggregate_perf_baseline.py)):
+> top-level `runs`, top-level `per_invocation[]`, per-metric `n`,
+> and per-metric `mean_of_means`. None of the two known readers
+> (`format_perf_delta.py`, `check_thresholds.py`) consumed them —
+> the M4 audit confirmed backward-compat aliases (`mean` / `stdev`
+> / `threshold`) carry the entire reader contract per R2. The
+> rationale: v2's reader contract is the three aliases, and the
+> omitted fields were either redundant (`runs`,
+> `n`, `mean_of_means` are all derivable from
+> `mean` / `invocations` / `runs_per_invocation`) or
+> diagnostic-only (`per_invocation[]`). If a future diagnostic need
+> (e.g. M5 inter-run clustering analysis) requires
+> `per_invocation[]`, that's an aggregator change scoped
+> separately, not a design correction.
 
 ```jsonc
 {
   // ── existing top-level fields (backward-compat) ───────────────
   "measured_at": "2026-…Z",
   "commit": "<sha>",
-  "runs": 100,                   // = invocations * runs_per_invocation
+  // "runs": 100,                // OMITTED in v2 — redundant with
+                                 //   invocations * runs_per_invocation;
+                                 //   no reader consumed it.
   "sigma": 2.0,                  // back to 2.0 from the σ=3.0 hack
   "include_llm": true,
-  "environment": { … },          // K-fold: see §2.1
+  "environment": { … },          // single fingerprint of the aggregation
+                                 //   runner; see §2.1.
 
   // ── new top-level fields ──────────────────────────────────────
   "invocations": 5,              // K
   "runs_per_invocation": 20,     // N
   "methodology_version": 2,      // 1 = legacy intra-run; 2 = multi-run
-  "per_invocation": [            // K entries, diagnostics only
-    {
-      "invocation_id": "…",      // workflow run id of the i-th dispatch
-      "commit": "<sha>",         // sanity-check: all K should match
-      "environment": { … },      // per-invocation runner fingerprint
-      "metrics": {
-        "rag_pipeline_run.cpu": { "mean": …, "stdev": …, "n": 20 },
-        …
-      }
-    }
-  ],
+  // "per_invocation": [...]     // OMITTED in v2 — diagnostic-only, no
+                                 //   reader consumed it. Add via a
+                                 //   separately scoped aggregator
+                                 //   change if M5 needs per-invocation
+                                 //   inspection on disk.
 
   // ── per-metric fields ─────────────────────────────────────────
   "metrics": {
@@ -91,12 +105,20 @@ new methodology lands:
       "mean":      0.000601,     // = mean_of_means
       "stdev":     0.000048,     // = inter_run_stdev (aliased)
       "threshold": 0.000697,     // = mean + sigma * inter_run_stdev
-      "n":         100,          // = invocations * runs_per_invocation
+      // "n":      100,          // OMITTED in v2 — redundant with
+                                 //   top-level invocations *
+                                 //   runs_per_invocation; no reader
+                                 //   consumed it.
 
       // new keys:
       "intra_run_stdev": 0.000032,
       "inter_run_stdev": 0.000048,
-      "mean_of_means":   0.000601
+      "invocations":      5,     // K (also emitted per-metric for
+                                 //   single-key consumers)
+      "runs_per_invocation": 20  // N (ditto)
+      // "mean_of_means": …      // OMITTED in v2 — equal to `mean`
+                                 //   by construction; no reader
+                                 //   consumed it.
     }
   }
 }
@@ -105,17 +127,20 @@ new methodology lands:
 ### 2.1 The `environment` block
 
 Under methodology v1 there is one environment fingerprint per
-baseline. Under v2 there is one per invocation. The top-level
-`environment` block stays — it records the fingerprint of the
-**aggregation step** (which itself runs on a runner), with a new
-key `environment.is_aggregation_runner: true` for clarity. The K
-per-invocation runner fingerprints live under
-`per_invocation[i].environment`.
+baseline. Under v2 the aggregator emits a single top-level
+`environment` block recording the fingerprint of the **aggregation
+runner** (the job that downloads the K per-invocation artifacts and
+emits the locked JSON). The K per-invocation runner fingerprints
+are visible in the matrix-job logs and per-invocation artifacts
+themselves (uploaded as `perf-per-invocation-*` artifacts by the
+`lock-baseline` workflow) but are not written into the locked JSON
+under v2 — see the as-shipped note above on `per_invocation[]`.
 
-This keeps existing single-fingerprint readers working — they see
-*some* environment — while making the multi-runner reality available
-to anyone who wants to assert "all K invocations ran on the same
-SKU" (they won't; that's the point).
+This keeps existing single-fingerprint readers working (they see
+*some* environment) without inventing a marker field
+(`is_aggregation_runner`) that no reader checks. Anyone wanting to
+verify "all K invocations ran on the same SKU" inspects the
+matrix-job logs or the per-invocation artifacts directly.
 
 ### 2.2 `methodology_version`
 
