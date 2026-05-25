@@ -5,10 +5,10 @@
 
 | Category | Count |
 |---|---:|
-| `Added` | 1  (1 under override) |
-| `Changed` | 27  (releases: 0.1.22, 0.1.21, 0.1.23) |
+| `Added` | 3  (1 under override) |
+| `Changed` | 38  (releases: 0.1.22, 0.1.21, 0.1.23) |
 | `Fixed` | 3 |
 | `Security` | 3 |
 
-**Status:** ON TRACK (freeze active, week 1/4)
+**Status:** RESET (freeze active, week 1/4)
 
