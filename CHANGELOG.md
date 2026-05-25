@@ -6,24 +6,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-> **Feature freeze remains in effect** against `attune-rag==0.1.21`
-> (Phase 4 W1 of the v1.0 roadmap). End of W4 (and the 0.2.0 SemVer
-> cut) still targets 2026-06-17.
->
-> **Freeze override (Phase 5 pre-staging).** The `### Added` block
-> below carries entries from Phase 5 work that landed on `main` ahead
-> of the 0.2.0 cut via the per-PR override mechanism (`freeze-override`
-> label + `[Override-rationale]` PR-body block). These entries are
-> queued for the 0.2.0 release; they are *not* eligible for a 0.1.x
-> patch. The `> **Freeze override` blockquote here tells
-> `scripts/changelog_cadence.py` to subtract these entries from the
-> effective `Added` count, preserving the W4.2 cadence-clean ON TRACK
-> verdict the 0.2.0 cut depends on. `[Override-rationale]`: Phase 5
-> work is intentionally pre-staged per
-> [`v1.0.0-release/design.md`](docs/specs/v1.0.0-release/design.md)
-> §"Phase 5 scope"; full per-PR rationales live on
-> [#130](https://github.com/Smart-AI-Memory/attune-rag/pull/130) and
-> [#136](https://github.com/Smart-AI-Memory/attune-rag/pull/136).
+### Changed
+
+- **CI now enforces `uv.lock` matches `pyproject.toml`** via the new
+  `.github/workflows/lockfile.yml` workflow (single job:
+  `uv lock --check` per PR + push to main). Closes a silent-drift gap
+  — `uv.lock` existed in the repo but nothing verified it, and it
+  silently drifted from `0.1.22` to `0.1.23` (then would have drifted
+  to `0.2.0`+) until a release-time reproducibility issue would have
+  surfaced. Same class of bug caught on attune-ai's v7.1.0 ship,
+  which surfaced there only because attune-ai's pre-commit happens
+  to call `uv run` (which auto-regenerates uv.lock as a side effect).
+  This workflow is the explicit version of that protection.
+
+## [0.2.0] — 2026-05-25
+
+> **Cut via the freeze-override mechanism (W4.2 hard gate).**
+> Phase 4's review/gate deliverables landed ~3 weeks ahead of the
+> nominal calendar; rather than wait the remaining cadence-soak
+> weeks for calendar-elapse alone, the user-facing additions below
+> shipped via the per-PR override mechanism (`freeze-override`
+> label + `[Override-rationale]` PR-body block). Full per-PR
+> rationales:
+> [#130](https://github.com/Smart-AI-Memory/attune-rag/pull/130)
+> (`load_aliases_from_file`) and
+> [#136](https://github.com/Smart-AI-Memory/attune-rag/pull/136)
+> (`attune_rag.measure_corpus`). Override-release notation in
+> [`docs/specs/downstream-validation/exit-summary.md`](docs/specs/downstream-validation/exit-summary.md).
 
 ### Added
 
@@ -49,11 +58,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Adds 2 symbols to the v1.0.0 surface budget (running total: 4 of 5
   — `measure`, `MeasureResult`, `load_aliases_from_file`,
   `extra_aliases_file=` kwarg).
-
-> **Pre-staged for Phase 5 / v1.0.0 cut.** These entries are part
-> of a draft PR (`### Added` blocked under freeze) sitting against
-> `main` waiting for the 0.2.0 SemVer cut to clear. Move to
-> `[0.2.0]` or `[1.0.0]` at cut time per the release-prep flow.
 
 - **`attune_rag.corpus.load_aliases_from_file(path)` public helper**
   + **`DirectoryCorpus(extra_aliases_file=...)` kwarg** for loading
