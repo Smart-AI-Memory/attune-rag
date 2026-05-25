@@ -48,6 +48,15 @@ when you want a RAG component you can drop into an existing app
 without buying into a framework — and want the quality bar
 quantified, not implied.
 
+Beyond drop-in retrieval, attune-rag is the grounding foundation
+for the `attune-*` family's content-quality discipline. The
+`attune-author` polish/fact-check pipeline uses attune-rag's
+retrieval + faithfulness primitives to verify generated help
+content is grounded in source material before it's marked
+authoritative — the same `mean_faithfulness ≥ 0.9686` discipline
+that gates this library's own benchmarks, extended to the
+authoring loop.
+
 ### What attune-rag is **not**
 
 Honest exclusions, so you can self-disqualify if you need any
@@ -223,32 +232,29 @@ in [`docs/specs/release-quality-baseline/`](docs/specs/release-quality-baseline/
 
 Locked dual-axis (wall-clock + CPU-time) thresholds on the four
 benchmarks. CPU-time is the gating axis (deterministic);
-wall-clock is advisory through Phase 4 burn-in, then revisited.
+wall-clock is advisory.
 
-| Benchmark | Axis | Mean | Threshold |
-|---|---|---:|---:|
-| `keyword_retriever_retrieve` | cpu | 3,212 µs | 34,493 µs |
-| `directory_corpus_load` | cpu | 47 µs | 66 µs |
-| `rag_pipeline_run` (retrieval-only) | cpu | 537 µs | 625 µs |
-| `llm_reranker_rerank` | wall | 728 ms | 1.07 s |
-
-Numbers measured from N=30 back-to-back runs on the
+Numbers measured under the V2 multi-run methodology (5
+invocations × 20 runs = 100 measurements per metric) on the
 locked-baseline runner (Linux `ubuntu-latest`, CPython 3.11.15).
-Two thresholds reflect different noise profiles:
+Inter-run and intra-run variance are tracked separately;
+thresholds are `mean + 2σ × inter_run_stdev`. **Full 8-row
+dual-axis table + hardware fingerprint + per-metric noise
+profile:**
+[`docs/specs/downstream-validation/perf-baseline.md`](docs/specs/downstream-validation/perf-baseline.md).
 
-- **`keyword_retriever_retrieve`** has a wide CPU band because its
-  measured σ ≈ 15.6 ms reflects cold-cache effects on the first
-  few iterations — the threshold formula is `mean + 2σ`,
-  empirically derived rather than tuned for tightness.
+Why two threshold styles in the locked table:
+
+- **`keyword_retriever_retrieve`** has a wider CPU band because
+  measured intra-run variance reflects cold-cache effects on the
+  first few iterations — empirically derived, not tuned for
+  tightness.
 - **`llm_reranker_rerank`** is wall-clock-only because Anthropic
-  network variance (σ ≈ 170 ms) dominates the CPU axis; the
-  gate is set generously and is advisory through Phase 4 W3.
+  network variance dominates the CPU axis; the gate is set
+  generously.
 
 Gated by [`.github/workflows/perf.yml`](.github/workflows/perf.yml)
-per-PR (advisory comment in Phase 4 W1–W2, blocking in W3.1).
-Raw numbers + hardware fingerprint + the full 8-row dual-axis
-table:
-[`docs/specs/downstream-validation/perf-baseline.md`](docs/specs/downstream-validation/perf-baseline.md).
+per-PR (blocking on the CPU axis as of W3.1).
 
 ### Why this is the differentiator
 
@@ -290,6 +296,12 @@ the mean over the golden query set. Aggregate σ ≈ `0.005` over 40
 queries even though per-query judge non-determinism can swing 40+
 percentage points on individual queries — averaging absorbs the noise.
 
+The same discipline powers `attune-author`'s polish/fact-check
+pipeline — generated help content is scored against retrieved
+source passages before being marked authoritative. attune-rag's
+faithfulness primitives aren't just instrumentation; they're the
+contract the family's content-quality story is built on.
+
 ### Run faithfulness manually
 
 ```bash
@@ -330,10 +342,9 @@ The plan is to ship `attune-rag[embeddings]` using
 CPU-only embeddings — no new network dependency, no API key
 required at retrieval time. Keyword retrieval stays the default;
 embeddings layer in opt-in, same shape as `QueryExpander` and
-`LLMReranker`. Shipping is paced by the
-[Phase 4 feature-freeze](docs/specs/downstream-validation/)
-currently in progress — public surface additions wait for the
-0.2.0 cut.
+`LLMReranker`. With 0.2.0 cut, embeddings are a Phase 5
+candidate — see
+[`docs/specs/ROADMAP-v1.md`](docs/specs/ROADMAP-v1.md).
 
 See
 [CHANGELOG.md](https://github.com/Smart-AI-Memory/attune-rag/blob/main/CHANGELOG.md)
@@ -354,10 +365,10 @@ header automatically.
 
 attune-rag's public surface is documented below and snapshot-tested
 in [tests/unit/test_api_surface.py](tests/unit/test_api_surface.py).
-Formal SemVer commitments begin with the 0.2.0 release — see
-[docs/POLICY.md](docs/POLICY.md) for the deprecation policy. Until
-then the surface is honor-system: the lock test catches drift, but
-treat 0.1.x as still-evolving.
+Formal SemVer commitments are in effect as of 0.2.0 — see
+[docs/POLICY.md](docs/POLICY.md) for the deprecation policy. Symbols
+PUBLIC in 0.2.x stay PUBLIC through every 0.2.z; the snapshot test
+catches drift.
 
 **Top-level (`from attune_rag import ...`):**
 
@@ -405,12 +416,25 @@ They are removed in 0.3.0.
 
 ## Status
 
-v0.1.19 (alpha). In
-[Phase 4 of the v1.0 roadmap](docs/specs/ROADMAP-v1.md) — a
-four-week feature freeze + downstream validation soak; formal
-`0.2.0` SemVer cut follows. Until then the public surface is
-honor-system + lock-tested; deprecation policy at
-[`docs/POLICY.md`](docs/POLICY.md).
+**0.2.0 — first SemVer-binding cut.** Phase 4 of the v1.0 roadmap
+landed cleanly: quality baselines (P@1 ≥ 0.95, R@3 = 1.00, mean
+faithfulness ≥ 0.9686) hold; per-hot-path perf thresholds re-locked
+under the V2 multi-run methodology (5 × 20 measurements); attune-gui
+downstream blocking gate stayed green throughout. From 0.2.0 forward,
+[`docs/POLICY.md`](docs/POLICY.md) §2 binds — symbols PUBLIC in 0.2.x
+stay PUBLIC through every 0.2.z.
+
+We hit our Phase 4 goals ~3 weeks ahead of the nominal calendar and
+opted to ship early via the freeze-override mechanism rather than let
+the cadence clock run out — getting the user-facing additions
+(`attune-rag-measure` console script + `attune_rag.measure_corpus`
+module for benchmarking your own corpus quality;
+`load_aliases_from_file()` for file-based alias customization) into
+your hands sooner. Override rationale + per-PR receipts at
+[`docs/specs/api-v0.2.0-cut/`](docs/specs/api-v0.2.0-cut/).
+
+Classifier stays at `3 - Alpha` — the Production/Stable flip is a
+Phase 5 deliverable.
 
 Part of the attune ecosystem
 ([attune-ai](https://github.com/Smart-AI-Memory/attune-ai),
