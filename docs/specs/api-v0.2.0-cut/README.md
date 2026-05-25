@@ -1,12 +1,13 @@
 # Spec: attune-rag 0.2.0 cut (post-W4.2 successor)
 
-> **Status:** **scoped 2026-05-22** — executable when Phase 4 W4
-> closes and the entry gates green. See
-> [`tasks.md`](tasks.md#scoping-decisions-confirmed-2026-05-22).
-> The spec was authored decision-complete in
-> [`design.md`](design.md); the scoping pass added the M0 entry-gate
-> verification milestone and made the decisions explicit at the
-> top of `tasks.md`.
+> **Status:** **executed 2026-05-25 via W4.2 override.** Phase 4
+> review/gate deliverables completed ~3 weeks ahead of nominal
+> calendar (W2 landed −17 d, W3 landed −22 d per
+> [`exit-summary.md`](../downstream-validation/exit-summary.md));
+> the override mechanism shipped the user-facing additions ahead
+> of the remaining cadence-clock weeks. Per-PR override receipts:
+> [#130](https://github.com/Smart-AI-Memory/attune-rag/pull/130),
+> [#136](https://github.com/Smart-AI-Memory/attune-rag/pull/136).
 
 - **Owner:** Patrick
 - **Created:** 2026-05-20
