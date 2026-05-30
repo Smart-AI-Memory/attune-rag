@@ -82,3 +82,30 @@ help-regen-resume: _check-author-polish  ## Resume the pending batch regen and w
 .PHONY: help-regen-status
 help-regen-status:  ## Show one-shot status of the pending batch (no polling).
 	$(ATTUNE_AUTHOR) regenerate --status
+
+# --------------------------------------------------------------------
+# Claude Code session hooks (.claude/hooks/) — vendored from attune-ai
+#
+# attune-ai's plugin/hooks/ is the canonical source. Each sibling repo
+# (attune-rag, attune-author, attune-help, attune-gui) carries a
+# byte-identical copy of the portable hook closure plus a drift-guard
+# test that asserts the copy matches the canonical hash.
+#
+# See specs/sibling-claude-hooks/ in the attune umbrella workspace.
+
+ATTUNE_AI_ROOT ?= ../attune-ai
+HOOK_FILES = security_guard.py format_on_save.py compact_warning.py spec_orient.py _state.py _resume_prompt.py _transcript_size.py
+
+.PHONY: sync-hooks
+sync-hooks:  ## Re-copy session hooks from attune-ai canonical + refresh checksums.
+	@if [ ! -d "$(ATTUNE_AI_ROOT)/plugin/hooks" ]; then \
+		echo "Error: $(ATTUNE_AI_ROOT)/plugin/hooks not found. Set ATTUNE_AI_ROOT=<path>"; \
+		exit 1; \
+	fi
+	@mkdir -p .claude/hooks
+	@for f in $(HOOK_FILES); do \
+		cp "$(ATTUNE_AI_ROOT)/plugin/hooks/$$f" ".claude/hooks/$$f"; \
+		echo "  synced: $$f"; \
+	done
+	@(cd .claude/hooks && shasum -a 256 $(HOOK_FILES) > .canonical-sha256)
+	@echo "✓ .claude/hooks/.canonical-sha256 refreshed"
