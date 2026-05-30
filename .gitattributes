@@ -5,3 +5,10 @@ tests/golden/queries.yaml text eol=lf
 tests/golden/queries_paraphrased.yaml text eol=lf
 tests/golden/measure_corpus_bundled.golden.md text eol=lf
 docs/specs/release-quality-baseline/thresholds.json text eol=lf
+
+# Vendored Claude Code session hooks: byte-identical copies of attune-ai's
+# canonical plugin/hooks/. The drift-guard test hashes each file; CRLF
+# conversion on Windows checkout would break the hash match. Force LF
+# for the whole tree (Python sources + manifest) so all platforms agree.
+.claude/hooks/*.py text eol=lf
+.claude/hooks/.canonical-sha256 text eol=lf
