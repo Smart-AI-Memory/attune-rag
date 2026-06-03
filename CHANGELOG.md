@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Corpus-quality guide §6.4 (“Wiring into CI”) hardened into a
+  standing-guard recipe.** The CI recipe now gates on **both**
+  `--watermark-p1` and `--watermark-r3` (R@3 sits near 1.0 with
+  headroom; real regressions surface in P@1 first), adds a
+  pick-your-floors-from-a-measured-baseline step, and offers a
+  second in-suite `pytest` shape (`measure()` +
+  `watermark_failures()`) for repos that prefer a test over a
+  standalone workflow. Also fixes the guide’s §7→§9 heading gap
+  (the override-mechanism section is now §8). Docs-only; no API or
+  CLI surface change — every primitive the recipe uses already
+  shipped in 0.2.0.
 - **CI now enforces `uv.lock` matches `pyproject.toml`** via the new
   `.github/workflows/lockfile.yml` workflow (single job:
   `uv lock --check` per PR + push to main). Closes a silent-drift gap
