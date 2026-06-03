@@ -39,9 +39,9 @@ learn it.
   to avoid. Read when you hit a specific problem.
 - **§6** is the measurement loop — how to know whether your
   changes helped.
-- **§§7, 9** are sidebars: when the `QueryExpander` is the right
+- **§§7, 8** are sidebars: when the `QueryExpander` is the right
   lever (§7), and where the override mechanism fits in larger
-  shipping patterns (§9).
+  shipping patterns (§8).
 - The worked example (a hypothetical "tutorials directory" walked
   through the full flow) is deferred to v1.1.0 with iteration based
   on user feedback. v0 ships without it.
@@ -729,13 +729,38 @@ regression** — every PR cleared the discipline before merge. See
 [the retro](retros/2026-05-21-alias-sweep.md) §3 for the M12
 near-regression that this discipline caught pre-merge.
 
-### 6.4 Wiring into CI
+### 6.4 Wiring into CI — a standing guard
 
-`attune-rag-measure` is designed for direct CI use — non-zero
-exit on watermark fail makes it a one-line gate:
+The discipline in §6.3 is only as strong as its enforcement. Wire
+the measurement into CI so *every PR* re-runs it and a regression
+can't merge silently. Two equivalent shapes — pick the one that
+fits your repo.
+
+**First, pick your floors from a measured baseline.** Run the
+harness once on a known-good commit and read the aggregate numbers:
+
+```bash
+attune-rag-measure \
+    --corpus-path ./my-corpus \
+    --queries ./my-queries.yaml \
+    --paraphrased ./my-paraphrased.yaml \
+    --output baseline.md
+# baseline.md header → P@1 0.9750  R@3 0.9875 (example values)
+```
+
+Set each floor a hair below the measured value — low enough to
+absorb scoring noise, high enough to catch a real drop. Gate on
+**both** P@1 and R@3: R@3 usually sits near 1.0 with lots of
+headroom, so a genuine regression shows up in **P@1** first. On the
+bundled corpus the paraphrased P@1 (~0.875) is the number that
+actually moves while R@3 stays ~0.99 — see the baseline in
+[`docs/specs/alias-overlap-remediation/ux-guard-baseline.md`](specs/alias-overlap-remediation/ux-guard-baseline.md).
+Flooring only R@3 under-guards.
+
+**Shape A — a standalone workflow** (no existing test suite needed):
 
 ```yaml
-# .github/workflows/corpus-quality.yml (sketch)
+# .github/workflows/corpus-quality.yml
 on: [pull_request]
 jobs:
   measure:
@@ -749,6 +774,7 @@ jobs:
               --corpus-path ./my-corpus \
               --queries ./my-queries.yaml \
               --paraphrased ./my-paraphrased.yaml \
+              --watermark-p1 0.95 \
               --watermark-r3 0.85 \
               --output measurement.md
       - name: Upload report
@@ -759,9 +785,40 @@ jobs:
           path: measurement.md
 ```
 
-Exit non-zero when R@3 drops below your floor (0.85 is the bundled
-attune-help floor; adjust to your corpus's measured baseline).
-This converts the strict-dominance discipline into an automated gate.
+`attune-rag-measure` exits non-zero and prints `WATERMARK FAIL: …`
+to stderr when either floor is breached, so this is a one-line gate.
+The `if: always()` upload keeps the full report as a build artifact
+even on failure — open it to see exactly which queries moved.
+
+**Shape B — a test in your existing suite** (runs with your other
+pytest CI, no separate workflow):
+
+```python
+# tests/test_corpus_guard.py
+from pathlib import Path
+
+from attune_rag.measure_corpus import measure
+
+# Floors measured on a known-good commit. Raise them as your corpus
+# improves so the guard ratchets forward, never backward.
+P1_FLOOR = 0.95
+R3_FLOOR = 0.85
+
+
+def test_corpus_meets_watermark():
+    result = measure(
+        corpus_path=Path("my-corpus"),
+        queries_path=Path("my-queries.yaml"),
+        paraphrased_path=Path("my-paraphrased.yaml"),
+    )
+    failures = result.watermark_failures(p1_floor=P1_FLOOR, r3_floor=R3_FLOOR)
+    assert not failures, "\n".join(failures)
+```
+
+Either shape converts the strict-dominance discipline into an
+automated gate. Shape B has the nice property that the floors live
+in version control next to the test: bump them in the same PR that
+improves the corpus and the guard ratchets forward.
 
 ## 7. The `QueryExpander` (when to use it)
 
@@ -795,7 +852,7 @@ attune-rag default is on (~$0.0008/query at Haiku list price); for
 bundled-corpus paraphrased queries, the alias mechanism alone now
 gets R@3 to 100% — but the expander helps when aliases are sparse.
 
-## 9. Where the override mechanism fits
+## 8. Where the override mechanism fits
 
 If you're shipping a **package that ships with a corpus** (the
 attune-help shape — your package bundles a markdown directory that
