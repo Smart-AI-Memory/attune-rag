@@ -40,7 +40,7 @@ class LLMReranker:
 
     def __init__(
         self,
-        model: str = "claude-haiku-4-5-20251001",
+        model: str = "claude-haiku-4-5",
         api_key: str | None = None,
         candidate_multiplier: int = 3,
         timeout: float = 60.0,

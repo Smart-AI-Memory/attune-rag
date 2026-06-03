@@ -39,7 +39,7 @@ def _try(client, n: int) -> tuple[bool, str]:
     """Return (accepted, error_message)."""
     try:
         client.messages.create(
-            model="claude-haiku-4-5-20251001",
+            model="claude-haiku-4-5",
             max_tokens=8,
             messages=[
                 {
