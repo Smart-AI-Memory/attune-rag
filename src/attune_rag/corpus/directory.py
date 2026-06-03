@@ -47,6 +47,14 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_GLOB = "**/*.md"
 
+# Fraction of aliased entries that must be "alias-degraded" (every alias
+# too short to ever satisfy MIN_ALIAS_OVERLAP) before the build-time
+# warning fires. Tunable without an API change. A single degraded entry
+# in a small corpus still warns (the max(1, ...) floor); 10%+ is the
+# corpus-shape signal for larger corpora. See
+# docs/specs/alias-overlap-remediation/.
+_ALIAS_WARN_FRACTION = 0.10
+
 
 class DirectoryCorpus(CorpusProtocol):
     """Load a directory of markdown files as a corpus.
@@ -86,6 +94,7 @@ class DirectoryCorpus(CorpusProtocol):
         extra_aliases_file: Path | str | None = None,
         cache: bool = True,
         glob: str = DEFAULT_GLOB,
+        warn_alias_overlap: bool = True,
     ) -> None:
         """Configure the corpus root and optional sidecars.
 
@@ -128,6 +137,14 @@ class DirectoryCorpus(CorpusProtocol):
                 running processes where the corpus changes.
             glob: Shell glob for files to include. Default
                 ``"**/*.md"`` (all markdown, recursive).
+            warn_alias_overlap: When True (default), emit a single
+                ``logging.warning`` at build time if a meaningful
+                share of aliased entries have only single-token
+                aliases that can never satisfy
+                ``KeywordRetriever.MIN_ALIAS_OVERLAP`` (observability
+                only; retrieval is unchanged). Set False to silence,
+                or raise the logger ``attune_rag.corpus.directory``
+                to ERROR. See docs/specs/alias-overlap-remediation/.
 
         Raises:
             ValueError: When ``root`` is not an existing
@@ -161,6 +178,11 @@ class DirectoryCorpus(CorpusProtocol):
         }
         self._glob = glob
         self._cache = cache
+        # Build-time alias-overlap warning (observability only; see
+        # docs/specs/alias-overlap-remediation/). Latched so it fires
+        # at most once per corpus instance.
+        self._warn_alias_overlap = warn_alias_overlap
+        self._alias_warning_emitted = False
         self._loaded: dict[str, RetrievalEntry] | None = None
         self._aliases: dict[str, AliasInfo] | None = None
         # Cached SHA-256 fingerprint of the loaded corpus. Invalidated
@@ -254,7 +276,57 @@ class DirectoryCorpus(CorpusProtocol):
                 metadata={"frontmatter": frontmatter},
             )
             entries[key] = entry
+        self._warn_if_alias_degraded(entries)
         return entries, alias_index
+
+    def _warn_if_alias_degraded(
+        self, entries: dict[str, RetrievalEntry]
+    ) -> None:
+        """Warn once if aliased entries can't satisfy the overlap floor.
+
+        Observability only — does not touch retrieval scoring. Detects the
+        silent failure where a corpus's aliases are all single-token and
+        therefore contribute zero alias signal under
+        ``KeywordRetriever.MIN_ALIAS_OVERLAP >= 2``. See
+        docs/specs/alias-overlap-remediation/.
+        """
+        if not self._warn_alias_overlap or self._alias_warning_emitted:
+            return
+        # Lazy import: retrieval has no corpus dependency, but importing
+        # here keeps corpus import-light and avoids any load-order coupling.
+        from ..retrieval import KeywordRetriever, _tokenize
+
+        floor = KeywordRetriever.MIN_ALIAS_OVERLAP
+        if floor <= 1:
+            return  # floor is inert; single-token aliases still count
+
+        aliased = 0
+        degraded = 0
+        for entry in entries.values():
+            if not entry.aliases:
+                continue
+            aliased += 1
+            reachable = any(len(_tokenize(a)) >= floor for a in entry.aliases)
+            if not reachable:
+                degraded += 1
+
+        if degraded == 0:
+            return
+        threshold = max(1, int(_ALIAS_WARN_FRACTION * aliased))
+        if degraded < threshold:
+            return
+
+        self._alias_warning_emitted = True
+        logger.warning(
+            "%d of %d aliased entries have only single-token aliases and "
+            "will contribute zero alias signal under MIN_ALIAS_OVERLAP=%d. "
+            "If your corpus uses single-word aliases, set "
+            "MIN_ALIAS_OVERLAP=1 (see USER_CORPUS_GUIDE section 4.2) or "
+            "author multi-token aliases.",
+            degraded,
+            aliased,
+            floor,
+        )
 
     def _ensure_loaded(self) -> dict[str, RetrievalEntry]:
         if self._cache and self._loaded is not None:
