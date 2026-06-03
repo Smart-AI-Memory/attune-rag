@@ -34,7 +34,7 @@ class QueryExpander:
 
     def __init__(
         self,
-        model: str = "claude-haiku-4-5-20251001",
+        model: str = "claude-haiku-4-5",
         api_key: str | None = None,
         cache: bool = True,
     ) -> None:
