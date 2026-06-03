@@ -386,6 +386,33 @@ It defaults to **2** because that's the floor at which multi-token
 aliases (the design intent — `"ship a release"`, `"publish to PyPI"`)
 still fire while single-common-token phantom hits get filtered.
 
+attune-rag will **tell you** when this default is silently hurting
+your corpus. At corpus-build time, if a meaningful share of your
+aliased entries have *only* single-token aliases (which can never
+reach the 2-token floor), `DirectoryCorpus` emits a one-time
+warning on the `attune_rag.corpus.directory` logger:
+
+```text
+N of M aliased entries have only single-token aliases and will
+contribute zero alias signal under MIN_ALIAS_OVERLAP=2. If your
+corpus uses single-word aliases, set MIN_ALIAS_OVERLAP=1 (see
+USER_CORPUS_GUIDE section 4.2) or author multi-token aliases.
+```
+
+The warning is **observability only** — it never changes retrieval
+results. To silence it, either set the logger to `ERROR`+:
+
+```python
+import logging
+logging.getLogger("attune_rag.corpus.directory").setLevel(logging.ERROR)
+```
+
+or pass `warn_alias_overlap=False` when constructing the corpus:
+
+```python
+corpus = DirectoryCorpus(root=my_root, warn_alias_overlap=False)
+```
+
 ### 4.2 When to flip to 1
 
 Corpora **without curated multi-token aliases** — e.g. you've
