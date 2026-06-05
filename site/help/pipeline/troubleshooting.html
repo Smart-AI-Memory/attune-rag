@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Troubleshoot pipeline — troubleshooting</title>
+  <meta name="description" content="`RagPipeline` orchestrates corpus retrieval, prompt assembly, and optional LLM generation in a single call. `RagPipeline.run()` returns a `RagResult` dataclass containing the augmented prompt, `Citati" />
+  <meta property="og:title" content="Troubleshoot pipeline — troubleshooting" />
+  <meta property="og:description" content="`RagPipeline` orchestrates corpus retrieval, prompt assembly, and optional LLM generation in a single call. `RagPipeline.run()` returns a `RagResult` dataclass containing the augmented prompt, `Citati" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://attune-rag.dev/og.png" />
+  <link rel="canonical" href="https://attune-rag.dev/help/pipeline/troubleshooting" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="32x32" />
+  <style>
+    :root {
+      --primary: #004ac6;
+      --bg: #f8f9ff;
+      --ink: #0b1c30;
+      --muted: #434655;
+      --rule: #c3c6d7;
+      --surface-low: #eff4ff;
+      --surface-high: #dce9ff;
+      --draft: #8a5a00;
+      --draft-bg: #fff4e0;
+      --draft-rule: #f0d49a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1c30;
+        --ink: #e8ecf5;
+        --muted: #b7c8e1;
+        --rule: #38485d;
+        --surface-low: #132438;
+        --surface-high: #213145;
+        --primary: #6ea1ff;
+        --draft: #f0c674;
+        --draft-bg: #2a2310;
+        --draft-rule: #4a3d18;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+      font-size: 18px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .draft-banner {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--draft-bg);
+      color: var(--draft);
+      border-bottom: 1px solid var(--draft-rule);
+      text-align: center;
+      padding: 0.6rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .draft-banner a { color: var(--draft); text-decoration: underline; }
+
+    article {
+      max-width: 42rem;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem 5rem;
+    }
+
+    .home-link {
+      display: inline-block;
+      margin-bottom: 2.5rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .home-link:hover { color: var(--primary); }
+
+    article h1 {
+      font-family: "Manrope", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin: 0 0 1rem;
+    }
+    article h2 {
+      font-family: "Manrope", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin: 3.5rem 0 1rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule);
+    }
+    article h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 2.25rem 0 0.75rem;
+    }
+    article h1 + blockquote {
+      margin-top: 0;
+      font-size: 1.2rem;
+      color: var(--muted);
+    }
+    article p { margin: 0 0 1.3rem; }
+    article a { color: var(--primary); }
+    article strong { font-weight: 700; }
+    article em { font-style: italic; }
+
+    article blockquote {
+      margin: 1.5rem 0;
+      padding: 0.5rem 0 0.5rem 1.25rem;
+      border-left: 3px solid var(--primary);
+      color: var(--muted);
+      font-style: italic;
+    }
+    article blockquote p { margin: 0 0 0.5rem; }
+
+    article ul, article ol { margin: 0 0 1.3rem; padding-left: 1.4rem; }
+    article li { margin: 0 0 0.5rem; }
+
+    article code {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, Menlo, monospace;
+      font-size: 0.88em;
+      background: var(--surface-high);
+      padding: 0.12em 0.4em;
+      border-radius: 4px;
+    }
+    article pre {
+      background: var(--surface-low);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      margin: 0 0 1.5rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    article pre code { background: none; padding: 0; }
+
+    article table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0 0 1.5rem;
+      font-size: 0.92rem;
+    }
+    article th, article td {
+      text-align: left;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+    }
+    article th { font-weight: 700; }
+
+    article hr {
+      border: none;
+      border-top: 1px solid var(--rule);
+      margin: 2.5rem 0;
+    }
+
+    footer {
+      max-width: 42rem;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+      border-top: 1px solid var(--rule);
+      color: var(--muted);
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--ink); }
+
+    @media (max-width: 480px) {
+      body { font-size: 17px; }
+      article { padding: 2.5rem 1.25rem 3rem; }
+      article h1 { font-size: 2rem; }
+      article h2 { font-size: 1.4rem; }
+    }
+
+    .help-nav { max-width: 60rem; margin: 0 auto; display: flex;
+      align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 1.25rem 1.5rem; font-size: 0.9rem; }
+    .help-nav .crumbs a { color: var(--muted); text-decoration: none; }
+    .help-nav .crumbs a:hover { color: var(--primary); }
+    .help-nav .crumbs .sep { color: var(--rule); margin: 0 0.4rem; }
+    .help-nav .api-link { color: var(--primary); text-decoration: none; font-weight: 600; }
+    main.help-home { max-width: 60rem; margin: 0 auto; padding: 1rem 1.5rem 5rem; }
+    .help-home h1 { font-family: "Manrope", -apple-system, sans-serif;
+      font-size: 2.4rem; font-weight: 800; letter-spacing: -0.03em; margin: 1rem 0 0.5rem; }
+    .help-home .lede { color: var(--muted); font-size: 1.15rem; margin: 0 0 2rem; }
+    .search-wrap { margin: 0 0 2.5rem; }
+    #help-search { width: 100%; font-size: 1.05rem; padding: 0.85rem 1.1rem;
+      border: 1px solid var(--rule); border-radius: 10px;
+      background: var(--surface-low); color: var(--ink); }
+    #help-search:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+    #search-results { list-style: none; margin: 0.75rem 0 0; padding: 0; }
+    #search-results li { margin: 0 0 0.4rem; }
+    #search-results a { display: block; padding: 0.6rem 0.8rem; border-radius: 8px;
+      text-decoration: none; color: var(--ink); border: 1px solid transparent; }
+    #search-results a:hover { background: var(--surface-low); border-color: var(--rule); }
+    #search-results .r-kind { color: var(--muted); font-size: 0.85rem; }
+    #search-results .r-snip { color: var(--muted); font-size: 0.9rem; display: block; margin-top: 0.15rem; }
+    .section-h { font-family: "Manrope", -apple-system, sans-serif;
+      font-size: 1.3rem; font-weight: 700; margin: 2.5rem 0 1rem;
+      padding-top: 1.25rem; border-top: 1px solid var(--rule); }
+    .intent-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; }
+    .intent-card { display: block; padding: 1.1rem 1.2rem; border: 1px solid var(--rule);
+      border-radius: 12px; text-decoration: none; color: var(--ink); background: var(--surface-low); }
+    .intent-card:hover { border-color: var(--primary); }
+    .intent-card .it-title { display: block; font-weight: 700; font-size: 1.05rem; }
+    .intent-card .it-sub { display: block; color: var(--muted); font-size: 0.9rem; margin-top: 0.2rem; }
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.85rem; }
+    .feature-card { display: block; padding: 0.9rem 1.1rem; border: 1px solid var(--rule);
+      border-radius: 10px; text-decoration: none; color: var(--ink); }
+    .feature-card:hover { border-color: var(--primary); background: var(--surface-low); }
+    .feature-card .fc-name { display: block; font-weight: 700; }
+    .feature-card .fc-meta { display: block; color: var(--muted); font-size: 0.82rem; margin-top: 0.2rem; }
+    .kind-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 2rem; }
+    .kind-tabs a { padding: 0.35rem 0.75rem; border: 1px solid var(--rule); border-radius: 999px;
+      text-decoration: none; color: var(--muted); font-size: 0.88rem; }
+    .kind-tabs a:hover { border-color: var(--primary); color: var(--primary); }
+    .markdown-body { max-width: 50rem; margin: 0 auto; padding: 1rem 1.5rem 5rem; }
+    .markdown-body h1 { font-family: "Manrope", -apple-system, sans-serif;
+      font-size: 2.1rem; font-weight: 800; letter-spacing: -0.02em; margin: 0.5rem 0 1rem; }
+    .markdown-body h2 { font-size: 1.4rem; margin: 2rem 0 0.75rem; }
+    .markdown-body h3 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; }
+    .markdown-body p, .markdown-body li { line-height: 1.6; }
+    .markdown-body code { background: var(--surface-low); padding: 0.1rem 0.35rem;
+      border-radius: 4px; font-size: 0.9em; }
+    .markdown-body pre { background: var(--surface-low); border: 1px solid var(--rule);
+      border-radius: 8px; padding: 1rem; overflow-x: auto; }
+    .markdown-body pre code { background: none; padding: 0; }
+    .markdown-body table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
+    .markdown-body th, .markdown-body td { border: 1px solid var(--rule); padding: 0.5rem 0.7rem; text-align: left; }
+    .markdown-body blockquote { border-left: 3px solid var(--rule); margin: 1rem 0;
+      padding: 0.25rem 1rem; color: var(--muted); }
+
+    footer { max-width: 60rem; margin: 4rem auto 0; padding: 1.5rem;
+      border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.85rem;
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--ink); }
+</style>
+  <script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+  <nav class="help-nav">
+    <span class="crumbs"><a href="/">attune-rag</a><span class="sep">&rsaquo;</span><a href="/help">Help</a><span class="sep">&rsaquo;</span><a href="/help/pipeline">Pipeline</a><span class="sep">&rsaquo;</span><span>troubleshooting</span></span>
+    <a class="api-link" href="https://github.com/Smart-AI-Memory/attune-rag">Source &amp; API &rarr;</a>
+  </nav>
+  <article class="markdown-body">
+<h1>Troubleshoot pipeline</h1>
+<h2>Overview</h2>
+<p><code>RagPipeline</code> orchestrates corpus retrieval, prompt assembly, and optional LLM generation in a single call. <code>RagPipeline.run()</code> returns a <code>RagResult</code> dataclass containing the augmented prompt, <code>CitationRecord</code> provenance, a confidence score, and a <code>fallback_used</code> flag that indicates whether the pipeline found any grounding context for the query.</p>
+<h2>Symptom table</h2>
+<table>
+<thead>
+<tr>
+<th>If you observe</th>
+<th>Check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RagResult.fallback_used</code> is <code>True</code></td>
+<td>The corpus returned no hits — verify <code>RagPipeline.corpus</code> is populated and that your query terms match indexed content.</td>
+</tr>
+<tr>
+<td><code>RagResult.confidence</code> is <code>0.0</code> or unexpectedly low</td>
+<td>Inspect <code>RagResult.context</code> (the raw retrieved text). An empty string means retrieval returned nothing; a non-empty string means reranking or scoring is the issue.</td>
+</tr>
+<tr>
+<td><code>augmented_prompt</code> contains the fallback template</td>
+<td><code>fallback_used</code> is <code>True</code>. The pipeline substituted <code>FALLBACK_PROMPT_TEMPLATE</code>, which instructs the LLM to answer without grounding. Check corpus ingestion.</td>
+</tr>
+<tr>
+<td><code>run_and_generate()</code> raises on <code>provider</code></td>
+<td>The <code>provider</code> argument accepts an <code>LLMProvider</code> instance or a string name. Confirm the value matches a registered provider.</td>
+</tr>
+<tr>
+<td><code>claim_citations</code> is an empty tuple</td>
+<td><code>used_native_citations</code> is <code>False</code> and no claim-level attribution was attempted, or the <code>prompt_variant</code> used does not produce claim citations.</td>
+</tr>
+<tr>
+<td>Intermittent retrieval differences</td>
+<td><code>QueryExpander</code> or <code>LLMReranker</code> are non-deterministic — check whether the same <code>k</code> and <code>prompt_variant</code> values were used across runs.</td>
+</tr>
+<tr>
+<td><code>elapsed_ms</code> is unexpectedly high</td>
+<td>The reranker (<code>LLMReranker</code>) makes an LLM call during retrieval. Remove it from the pipeline constructor to isolate retrieval latency from generation latency.</td>
+</tr>
+</tbody>
+</table>
+<h2>Step-by-step diagnosis</h2>
+<ol>
+<li>
+<p><strong>Reproduce the failure with a minimal call.</strong>
+Strip <code>RagPipeline</code> down to its required arguments and call <code>run()</code> directly:</p>
+<pre><code class="language-python">from attune_rag import RagPipeline, DirectoryCorpus
+
+pipeline = RagPipeline(corpus=DirectoryCorpus(&quot;path/to/docs&quot;))
+result = pipeline.run(&quot;your failing query&quot;, k=3)
+print(result)
+</code></pre>
+<p>Confirm the failure occurs here before involving <code>run_and_generate()</code>, an expander, or a reranker.</p>
+</li>
+<li>
+<p><strong>Inspect the <code>RagResult</code> fields.</strong>
+After calling <code>run()</code>, print every field to locate where the pipeline diverges from expectations:</p>
+<pre><code class="language-python">print(&quot;fallback_used:&quot;, result.fallback_used)
+print(&quot;confidence:&quot;, result.confidence)
+print(&quot;context:&quot;, result.context[:500])
+print(&quot;augmented_prompt:&quot;, result.augmented_prompt[:500])
+print(&quot;citation:&quot;, result.citation)
+print(&quot;claim_citations:&quot;, result.claim_citations)
+print(&quot;elapsed_ms:&quot;, result.elapsed_ms)
+</code></pre>
+<ul>
+<li><code>context</code> empty → the problem is in retrieval, not prompt assembly.</li>
+<li><code>context</code> populated but <code>augmented_prompt</code> wrong → the problem is in prompt assembly (<code>build_augmented_prompt</code>, <code>prompt_variant</code>).</li>
+<li><code>fallback_used: True</code> → no corpus hits; see corpus and retriever fixes below.</li>
+</ul>
+</li>
+<li>
+<p><strong>Enable DEBUG logging.</strong>
+Add the following before your pipeline call to surface internal retrieval and reranking decisions:</p>
+<pre><code class="language-python">import logging
+logging.basicConfig(level=logging.DEBUG)
+</code></pre>
+<p>Re-run and look for log lines from <code>attune_rag.pipeline</code>.</p>
+</li>
+<li>
+<p><strong>Isolate optional components.</strong>
+If you passed <code>expander</code> or <code>reranker</code> to the constructor, remove them and re-run <code>run()</code>. Both components transform the query or reorder hits before prompt assembly — removing them confirms whether the root cause is in the core pipeline or in the optional components.</p>
+</li>
+<li>
+<p><strong>Run the pipeline test suite.</strong></p>
+<pre><code class="language-bash">pytest -k &quot;pipeline&quot; -v
+</code></pre>
+<p>If a test covers the failing path, check whether it passes. A passing test with a failing integration call usually means environment or input data differs from the fixture.</p>
+</li>
+</ol>
+<h2>Common fixes</h2>
+<ul>
+<li>
+<p><strong>Corpus is empty or not attached.</strong>
+If <code>RagPipeline.corpus</code> was not passed to the constructor, <code>RagResult.fallback_used</code> will be <code>True</code> for every query. Pass a populated corpus at construction time:</p>
+<pre><code class="language-python">pipeline = RagPipeline(corpus=DirectoryCorpus(&quot;path/to/docs&quot;))
+</code></pre>
+</li>
+<li>
+<p><strong>Wrong <code>prompt_variant</code>.</strong>
+<code>run()</code> and <code>run_and_generate()</code> accept a <code>prompt_variant</code> argument (default <code>'citation'</code>). Passing an unrecognized variant can produce unexpected prompts. Check the allowed values in <code>PROMPT_VARIANTS</code>:</p>
+<pre><code class="language-python">from attune_rag import PROMPT_VARIANTS
+print(PROMPT_VARIANTS)
+</code></pre>
+</li>
+<li>
+<p><strong>Retriever returns too few hits.</strong>
+The default <code>k=3</code> may be too low if your corpus is large and the relevant document ranks outside the top 3. Increase <code>k</code>:</p>
+<pre><code class="language-python">result = pipeline.run(&quot;your query&quot;, k=10)
+</code></pre>
+</li>
+<li>
+<p><strong>Stale corpus cache.</strong>
+If documents were added to the corpus but retrieval still misses them, the corpus index may be stale. Re-instantiate <code>DirectoryCorpus</code> (or your custom <code>CorpusProtocol</code> implementation) to force re-indexing.</p>
+</li>
+<li>
+<p><strong>Dependency version mismatch.</strong>
+This module is version <code>0.1.19</code>. If behavior changed after an update, confirm the installed version:</p>
+<pre><code class="language-bash">pip show attune-rag
+</code></pre>
+<p>Pin to <code>0.1.19</code> if a newer version introduced a regression:</p>
+<pre><code class="language-bash">pip install &quot;attune-rag==0.1.19&quot;
+</code></pre>
+</li>
+<li>
+<p><strong><code>use_native_citations</code> not set.</strong>
+If you expect <code>used_native_citations: True</code> in <code>RagResult</code> but see <code>False</code>, you must pass <code>use_native_citations=True</code> explicitly to <code>run_and_generate()</code> — it defaults to <code>False</code>.</p>
+</li>
+</ul>
+<h2>Source files</h2>
+<ul>
+<li><code>src/attune_rag/pipeline.py</code></li>
+<li><code>src/attune_rag/__init__.py</code></li>
+</ul>
+<p><strong>Tags:</strong> <code>pipeline</code>, <code>orchestration</code>, <code>rag</code>, <code>result</code></p>
+
+  </article>
+  <footer>
+    <span>Smart AI Memory</span>
+    <span><a href="https://github.com/Smart-AI-Memory/attune-rag">GitHub</a>&nbsp;&middot;&nbsp;<a href="https://pypi.org/project/attune-rag/">PyPI</a></span>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Corpus cautions — warning</title>
+  <meta name="description" content="The corpus module provides three entry points: `CorpusProtocol` defines the interface, `DirectoryCorpus` loads markdown files from disk, and `AttuneHelpCorpus` wraps the bundled attune-help templates." />
+  <meta property="og:title" content="Corpus cautions — warning" />
+  <meta property="og:description" content="The corpus module provides three entry points: `CorpusProtocol` defines the interface, `DirectoryCorpus` loads markdown files from disk, and `AttuneHelpCorpus` wraps the bundled attune-help templates." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://attune-rag.dev/og.png" />
+  <link rel="canonical" href="https://attune-rag.dev/help/corpus/warning" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="32x32" />
+  <style>
+    :root {
+      --primary: #004ac6;
+      --bg: #f8f9ff;
+      --ink: #0b1c30;
+      --muted: #434655;
+      --rule: #c3c6d7;
+      --surface-low: #eff4ff;
+      --surface-high: #dce9ff;
+      --draft: #8a5a00;
+      --draft-bg: #fff4e0;
+      --draft-rule: #f0d49a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1c30;
+        --ink: #e8ecf5;
+        --muted: #b7c8e1;
+        --rule: #38485d;
+        --surface-low: #132438;
+        --surface-high: #213145;
+        --primary: #6ea1ff;
+        --draft: #f0c674;
+        --draft-bg: #2a2310;
+        --draft-rule: #4a3d18;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+      font-size: 18px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .draft-banner {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--draft-bg);
+      color: var(--draft);
+      border-bottom: 1px solid var(--draft-rule);
+      text-align: center;
+      padding: 0.6rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .draft-banner a { color: var(--draft); text-decoration: underline; }
+
+    article {
+      max-width: 42rem;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem 5rem;
+    }
+
+    .home-link {
+      display: inline-block;
+      margin-bottom: 2.5rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .home-link:hover { color: var(--primary); }
+
+    article h1 {
+      font-family: "Manrope", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin: 0 0 1rem;
+    }
+    article h2 {
+      font-family: "Manrope", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin: 3.5rem 0 1rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule);
+    }
+    article h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 2.25rem 0 0.75rem;
+    }
+    article h1 + blockquote {
+      margin-top: 0;
+      font-size: 1.2rem;
+      color: var(--muted);
+    }
+    article p { margin: 0 0 1.3rem; }
+    article a { color: var(--primary); }
+    article strong { font-weight: 700; }
+    article em { font-style: italic; }
+
+    article blockquote {
+      margin: 1.5rem 0;
+      padding: 0.5rem 0 0.5rem 1.25rem;
+      border-left: 3px solid var(--primary);
+      color: var(--muted);
+      font-style: italic;
+    }
+    article blockquote p { margin: 0 0 0.5rem; }
+
+    article ul, article ol { margin: 0 0 1.3rem; padding-left: 1.4rem; }
+    article li { margin: 0 0 0.5rem; }
+
+    article code {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, Menlo, monospace;
+      font-size: 0.88em;
+      background: var(--surface-high);
+      padding: 0.12em 0.4em;
+      border-radius: 4px;
+    }
+    article pre {
+      background: var(--surface-low);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      margin: 0 0 1.5rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    article pre code { background: none; padding: 0; }
+
+    article table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0 0 1.5rem;
+      font-size: 0.92rem;
+    }
+    article th, article td {
+      text-align: left;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+    }
+    article th { font-weight: 700; }
+
+    article hr {
+      border: none;
+      border-top: 1px solid var(--rule);
+      margin: 2.5rem 0;
+    }
+
+    footer {
+      max-width: 42rem;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+      border-top: 1px solid var(--rule);
+      color: var(--muted);
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--ink); }
+
+    @media (max-width: 480px) {
+      body { font-size: 17px; }
+      article { padding: 2.5rem 1.25rem 3rem; }
+      article h1 { font-size: 2rem; }
+      article h2 { font-size: 1.4rem; }
+    }
+
+    .help-nav { max-width: 60rem; margin: 0 auto; display: flex;
+      align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 1.25rem 1.5rem; font-size: 0.9rem; }
+    .help-nav .crumbs a { color: var(--muted); text-decoration: none; }
+    .help-nav .crumbs a:hover { color: var(--primary); }
+    .help-nav .crumbs .sep { color: var(--rule); margin: 0 0.4rem; }
+    .help-nav .api-link { color: var(--primary); text-decoration: none; font-weight: 600; }
+    main.help-home { max-width: 60rem; margin: 0 auto; padding: 1rem 1.5rem 5rem; }
+    .help-home h1 { font-family: "Manrope", -apple-system, sans-serif;
+      font-size: 2.4rem; font-weight: 800; letter-spacing: -0.03em; margin: 1rem 0 0.5rem; }
+    .help-home .lede { color: var(--muted); font-size: 1.15rem; margin: 0 0 2rem; }
+    .search-wrap { margin: 0 0 2.5rem; }
+    #help-search { width: 100%; font-size: 1.05rem; padding: 0.85rem 1.1rem;
+      border: 1px solid var(--rule); border-radius: 10px;
+      background: var(--surface-low); color: var(--ink); }
+    #help-search:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+    #search-results { list-style: none; margin: 0.75rem 0 0; padding: 0; }
+    #search-results li { margin: 0 0 0.4rem; }
+    #search-results a { display: block; padding: 0.6rem 0.8rem; border-radius: 8px;
+      text-decoration: none; color: var(--ink); border: 1px solid transparent; }
+    #search-results a:hover { background: var(--surface-low); border-color: var(--rule); }
+    #search-results .r-kind { color: var(--muted); font-size: 0.85rem; }
+    #search-results .r-snip { color: var(--muted); font-size: 0.9rem; display: block; margin-top: 0.15rem; }
+    .section-h { font-family: "Manrope", -apple-system, sans-serif;
+      font-size: 1.3rem; font-weight: 700; margin: 2.5rem 0 1rem;
+      padding-top: 1.25rem; border-top: 1px solid var(--rule); }
+    .intent-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; }
+    .intent-card { display: block; padding: 1.1rem 1.2rem; border: 1px solid var(--rule);
+      border-radius: 12px; text-decoration: none; color: var(--ink); background: var(--surface-low); }
+    .intent-card:hover { border-color: var(--primary); }
+    .intent-card .it-title { display: block; font-weight: 700; font-size: 1.05rem; }
+    .intent-card .it-sub { display: block; color: var(--muted); font-size: 0.9rem; margin-top: 0.2rem; }
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.85rem; }
+    .feature-card { display: block; padding: 0.9rem 1.1rem; border: 1px solid var(--rule);
+      border-radius: 10px; text-decoration: none; color: var(--ink); }
+    .feature-card:hover { border-color: var(--primary); background: var(--surface-low); }
+    .feature-card .fc-name { display: block; font-weight: 700; }
+    .feature-card .fc-meta { display: block; color: var(--muted); font-size: 0.82rem; margin-top: 0.2rem; }
+    .kind-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 2rem; }
+    .kind-tabs a { padding: 0.35rem 0.75rem; border: 1px solid var(--rule); border-radius: 999px;
+      text-decoration: none; color: var(--muted); font-size: 0.88rem; }
+    .kind-tabs a:hover { border-color: var(--primary); color: var(--primary); }
+    .markdown-body { max-width: 50rem; margin: 0 auto; padding: 1rem 1.5rem 5rem; }
+    .markdown-body h1 { font-family: "Manrope", -apple-system, sans-serif;
+      font-size: 2.1rem; font-weight: 800; letter-spacing: -0.02em; margin: 0.5rem 0 1rem; }
+    .markdown-body h2 { font-size: 1.4rem; margin: 2rem 0 0.75rem; }
+    .markdown-body h3 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; }
+    .markdown-body p, .markdown-body li { line-height: 1.6; }
+    .markdown-body code { background: var(--surface-low); padding: 0.1rem 0.35rem;
+      border-radius: 4px; font-size: 0.9em; }
+    .markdown-body pre { background: var(--surface-low); border: 1px solid var(--rule);
+      border-radius: 8px; padding: 1rem; overflow-x: auto; }
+    .markdown-body pre code { background: none; padding: 0; }
+    .markdown-body table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
+    .markdown-body th, .markdown-body td { border: 1px solid var(--rule); padding: 0.5rem 0.7rem; text-align: left; }
+    .markdown-body blockquote { border-left: 3px solid var(--rule); margin: 1rem 0;
+      padding: 0.25rem 1rem; color: var(--muted); }
+
+    footer { max-width: 60rem; margin: 4rem auto 0; padding: 1.5rem;
+      border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.85rem;
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--ink); }
+</style>
+  <script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+  <nav class="help-nav">
+    <span class="crumbs"><a href="/">attune-rag</a><span class="sep">&rsaquo;</span><a href="/help">Help</a><span class="sep">&rsaquo;</span><a href="/help/corpus">Corpus</a><span class="sep">&rsaquo;</span><span>warning</span></span>
+    <a class="api-link" href="https://github.com/Smart-AI-Memory/attune-rag">Source &amp; API &rarr;</a>
+  </nav>
+  <article class="markdown-body">
+<h1>Corpus cautions</h1>
+<h2>What to watch for</h2>
+<p>The corpus module provides three entry points: <code>CorpusProtocol</code> defines the interface, <code>DirectoryCorpus</code> loads markdown files from disk, and <code>AttuneHelpCorpus</code> wraps the bundled attune-help templates. The risks below apply when you build, extend, or swap out a corpus implementation.</p>
+<h2>Risk areas</h2>
+<h3>Duplicate aliases cause a hard failure at load time</h3>
+<p>If two templates in a corpus declare the same alias string, <code>DirectoryCorpus</code> raises <code>DuplicateAliasError(alias, first_path, second_path)</code> before any entries are returned. This error surfaces the two conflicting paths, so you can resolve the collision directly. To avoid it, audit the <code>aliases</code> field of every <code>RetrievalEntry</code> you add to a shared corpus — aliases must be globally unique within a corpus instance.</p>
+<h3><code>DirectoryCorpus</code> caches eagerly by default</h3>
+<p><code>DirectoryCorpus</code> accepts a <code>cache</code> parameter (default <code>True</code>). When caching is enabled, the <code>path_index</code> and <code>alias_index</code> properties are built once from the files on disk. If you modify, add, or remove markdown files after the corpus is constructed, those changes are invisible until you create a new <code>DirectoryCorpus</code> instance. Pass <code>cache=False</code> only when you need live reloading during development — it adds I/O overhead on every call to <code>entries()</code>.</p>
+<h3>The <code>DEFAULT_GLOB</code> pattern silently skips non-markdown files</h3>
+<p><code>DirectoryCorpus</code> defaults to <code>**/*.md</code>. Any file in the root directory that doesn't match this pattern is ignored without warning. If entries you expect are missing from a corpus, verify that the files have <code>.md</code> extensions and that you haven't overridden <code>glob</code> with a pattern that excludes them.</p>
+<h3><code>RetrievalEntry</code> metadata is an open <code>dict</code> with no schema enforcement</h3>
+<p>The <code>metadata</code> field of <code>RetrievalEntry</code> accepts any <code>dict[str, Any]</code>. Code that reads from <code>metadata</code> must handle missing keys defensively — the corpus loader does not validate the contents. Undocumented keys added by one part of the system can be silently dropped or misread by another.</p>
+<h3><code>AttuneHelpCorpus</code> depends on the bundled adapter, not on disk</h3>
+<p><code>AttuneHelpCorpus.from_attune_help()</code> constructs the corpus from a <code>HelpCorpusAdapter</code> that wraps the bundled templates. It does not read from the filesystem at call time. If you expect to use a customized template directory, <code>AttuneHelpCorpus</code> is the wrong choice — use <code>DirectoryCorpus</code> with your own <code>root</code> path instead.</p>
+<h3>Custom <code>CorpusProtocol</code> implementations must satisfy both <code>entries()</code> and <code>get()</code></h3>
+<p><code>CorpusProtocol</code> requires <code>entries()</code>, <code>get(path)</code>, <code>name</code>, and <code>version</code>. A common mistake is implementing <code>entries()</code> correctly but returning <code>None</code> from <code>get()</code> for paths that <code>entries()</code> yields. Callers that use <code>get()</code> for fast lookup will silently receive <code>None</code> rather than raising an error, which can produce incorrect retrieval results downstream.</p>
+<h2>How to avoid problems</h2>
+<ol>
+<li>
+<p><strong>Check <code>DuplicateAliasError</code> during corpus construction.</strong> Wrap <code>DirectoryCorpus</code> instantiation in a try/except when loading user-supplied template directories. The error message includes both conflicting paths, making the fix straightforward.</p>
+</li>
+<li>
+<p><strong>Reconstruct <code>DirectoryCorpus</code> when files change.</strong> Don't hold a long-lived instance across file modifications in tests or tooling. Create a new instance instead of relying on the cached index to refresh.</p>
+</li>
+<li>
+<p><strong>Validate <code>metadata</code> contents at the point of insertion.</strong> If your pipeline writes custom keys into <code>RetrievalEntry.metadata</code>, define and document the expected schema in one place rather than scattering key-name assumptions across consumers.</p>
+</li>
+<li>
+<p><strong>Depend only on <code>CorpusProtocol</code>'s public interface.</strong> Private helpers (names starting with <code>_</code>) can change without notice. Code that calls <code>_</code>-prefixed attributes on any corpus class is likely to break during refactors.</p>
+</li>
+<li>
+<p><strong>Run <code>pytest -k &quot;corpus&quot;</code> before integrating changes.</strong> The corpus index is shared across retrieval; a regression in alias lookup or path resolution can silently degrade answer quality rather than raising an exception.</p>
+</li>
+</ol>
+<h2>Source files</h2>
+<ul>
+<li><code>src/attune_rag/corpus/__init__.py</code></li>
+<li><code>src/attune_rag/corpus/base.py</code></li>
+<li><code>src/attune_rag/corpus/directory.py</code></li>
+<li><code>src/attune_rag/corpus/attune_help.py</code></li>
+</ul>
+<p><strong>Tags:</strong> <code>corpus</code>, <code>loader</code>, <code>markdown</code>, <code>attune-help</code></p>
+
+  </article>
+  <footer>
+    <span>Smart AI Memory</span>
+    <span><a href="https://github.com/Smart-AI-Memory/attune-rag">GitHub</a>&nbsp;&middot;&nbsp;<a href="https://pypi.org/project/attune-rag/">PyPI</a></span>
+  </footer>
+</body>
+</html>
