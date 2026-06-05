@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Troubleshoot retrieval — troubleshooting</title>
+  <meta name="description" content="`KeywordRetriever` scores `RetrievalEntry` objects against a query using token-overlap scoring, stemming (via `_STEM_SUFFIXES`), and stopword filtering (via `_STOPWORDS`). It weights matches across fo" />
+  <meta property="og:title" content="Troubleshoot retrieval — troubleshooting" />
+  <meta property="og:description" content="`KeywordRetriever` scores `RetrievalEntry` objects against a query using token-overlap scoring, stemming (via `_STEM_SUFFIXES`), and stopword filtering (via `_STOPWORDS`). It weights matches across fo" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://attune-rag.dev/og.png" />
+  <link rel="canonical" href="https://attune-rag.dev/help/retrieval/troubleshooting" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="32x32" />
+  <style>
+    :root {
+      --primary: #004ac6;
+      --bg: #f8f9ff;
+      --ink: #0b1c30;
+      --muted: #434655;
+      --rule: #c3c6d7;
+      --surface-low: #eff4ff;
+      --surface-high: #dce9ff;
+      --draft: #8a5a00;
+      --draft-bg: #fff4e0;
+      --draft-rule: #f0d49a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1c30;
+        --ink: #e8ecf5;
+        --muted: #b7c8e1;
+        --rule: #38485d;
+        --surface-low: #132438;
+        --surface-high: #213145;
+        --primary: #6ea1ff;
+        --draft: #f0c674;
+        --draft-bg: #2a2310;
+        --draft-rule: #4a3d18;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+      font-size: 18px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .draft-banner {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--draft-bg);
+      color: var(--draft);
+      border-bottom: 1px solid var(--draft-rule);
+      text-align: center;
+      padding: 0.6rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .draft-banner a { color: var(--draft); text-decoration: underline; }
+
+    article {
+      max-width: 42rem;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem 5rem;
+    }
+
+    .home-link {
+      display: inline-block;
+      margin-bottom: 2.5rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .home-link:hover { color: var(--primary); }
+
+    article h1 {
+      font-family: "Manrope", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin: 0 0 1rem;
+    }
+    article h2 {
+      font-family: "Manrope", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin: 3.5rem 0 1rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule);
+    }
+    article h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 2.25rem 0 0.75rem;
+    }
+    article h1 + blockquote {
+      margin-top: 0;
+      font-size: 1.2rem;
+      color: var(--muted);
+    }
+    article p { margin: 0 0 1.3rem; }
+    article a { color: var(--primary); }
+    article strong { font-weight: 700; }
+    article em { font-style: italic; }
+
+    article blockquote {
+      margin: 1.5rem 0;
+      padding: 0.5rem 0 0.5rem 1.25rem;
+      border-left: 3px solid var(--primary);
+      color: var(--muted);
+      font-style: italic;
+    }
+    article blockquote p { margin: 0 0 0.5rem; }
+
+    article ul, article ol { margin: 0 0 1.3rem; padding-left: 1.4rem; }
+    article li { margin: 0 0 0.5rem; }
+
+    article code {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, Menlo, monospace;
+      font-size: 0.88em;
+      background: var(--surface-high);
+      padding: 0.12em 0.4em;
+      border-radius: 4px;
+    }
+    article pre {
+      background: var(--surface-low);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      margin: 0 0 1.5rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    article pre code { background: none; padding: 0; }
+
+    article table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0 0 1.5rem;
+      font-size: 0.92rem;
+    }
+    article th, article td {
+      text-align: left;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+    }
+    article th { font-weight: 700; }
+
+    article hr {
+      border: none;
+      border-top: 1px solid var(--rule);
+      margin: 2.5rem 0;
+    }
+
+    footer {
+      max-width: 42rem;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+      border-top: 1px solid var(--rule);
+      color: var(--muted);
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--ink); }
+
+    @media (max-width: 480px) {
+      body { font-size: 17px; }
+      article { padding: 2.5rem 1.25rem 3rem; }
+      article h1 { font-size: 2rem; }
+      article h2 { font-size: 1.4rem; }
+    }
+
+    .help-nav { max-width: 60rem; margin: 0 auto; display: flex;
+      align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 1.25rem 1.5rem; font-size: 0.9rem; }
+    .help-nav .crumbs a { color: var(--muted); text-decoration: none; }
+    .help-nav .crumbs a:hover { color: var(--primary); }
+    .help-nav .crumbs .sep { color: var(--rule); margin: 0 0.4rem; }
+    .help-nav .api-link { color: var(--primary); text-decoration: none; font-weight: 600; }
+    main.help-home { max-width: 60rem; margin: 0 auto; padding: 1rem 1.5rem 5rem; }
+    .help-home h1 { font-family: "Manrope", -apple-system, sans-serif;
+      font-size: 2.4rem; font-weight: 800; letter-spacing: -0.03em; margin: 1rem 0 0.5rem; }
+    .help-home .lede { color: var(--muted); font-size: 1.15rem; margin: 0 0 2rem; }
+    .search-wrap { margin: 0 0 2.5rem; }
+    #help-search { width: 100%; font-size: 1.05rem; padding: 0.85rem 1.1rem;
+      border: 1px solid var(--rule); border-radius: 10px;
+      background: var(--surface-low); color: var(--ink); }
+    #help-search:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+    #search-results { list-style: none; margin: 0.75rem 0 0; padding: 0; }
+    #search-results li { margin: 0 0 0.4rem; }
+    #search-results a { display: block; padding: 0.6rem 0.8rem; border-radius: 8px;
+      text-decoration: none; color: var(--ink); border: 1px solid transparent; }
+    #search-results a:hover { background: var(--surface-low); border-color: var(--rule); }
+    #search-results .r-kind { color: var(--muted); font-size: 0.85rem; }
+    #search-results .r-snip { color: var(--muted); font-size: 0.9rem; display: block; margin-top: 0.15rem; }
+    .section-h { font-family: "Manrope", -apple-system, sans-serif;
+      font-size: 1.3rem; font-weight: 700; margin: 2.5rem 0 1rem;
+      padding-top: 1.25rem; border-top: 1px solid var(--rule); }
+    .intent-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; }
+    .intent-card { display: block; padding: 1.1rem 1.2rem; border: 1px solid var(--rule);
+      border-radius: 12px; text-decoration: none; color: var(--ink); background: var(--surface-low); }
+    .intent-card:hover { border-color: var(--primary); }
+    .intent-card .it-title { display: block; font-weight: 700; font-size: 1.05rem; }
+    .intent-card .it-sub { display: block; color: var(--muted); font-size: 0.9rem; margin-top: 0.2rem; }
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.85rem; }
+    .feature-card { display: block; padding: 0.9rem 1.1rem; border: 1px solid var(--rule);
+      border-radius: 10px; text-decoration: none; color: var(--ink); }
+    .feature-card:hover { border-color: var(--primary); background: var(--surface-low); }
+    .feature-card .fc-name { display: block; font-weight: 700; }
+    .feature-card .fc-meta { display: block; color: var(--muted); font-size: 0.82rem; margin-top: 0.2rem; }
+    .kind-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 2rem; }
+    .kind-tabs a { padding: 0.35rem 0.75rem; border: 1px solid var(--rule); border-radius: 999px;
+      text-decoration: none; color: var(--muted); font-size: 0.88rem; }
+    .kind-tabs a:hover { border-color: var(--primary); color: var(--primary); }
+    .markdown-body { max-width: 50rem; margin: 0 auto; padding: 1rem 1.5rem 5rem; }
+    .markdown-body h1 { font-family: "Manrope", -apple-system, sans-serif;
+      font-size: 2.1rem; font-weight: 800; letter-spacing: -0.02em; margin: 0.5rem 0 1rem; }
+    .markdown-body h2 { font-size: 1.4rem; margin: 2rem 0 0.75rem; }
+    .markdown-body h3 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; }
+    .markdown-body p, .markdown-body li { line-height: 1.6; }
+    .markdown-body code { background: var(--surface-low); padding: 0.1rem 0.35rem;
+      border-radius: 4px; font-size: 0.9em; }
+    .markdown-body pre { background: var(--surface-low); border: 1px solid var(--rule);
+      border-radius: 8px; padding: 1rem; overflow-x: auto; }
+    .markdown-body pre code { background: none; padding: 0; }
+    .markdown-body table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
+    .markdown-body th, .markdown-body td { border: 1px solid var(--rule); padding: 0.5rem 0.7rem; text-align: left; }
+    .markdown-body blockquote { border-left: 3px solid var(--rule); margin: 1rem 0;
+      padding: 0.25rem 1rem; color: var(--muted); }
+
+    footer { max-width: 60rem; margin: 4rem auto 0; padding: 1.5rem;
+      border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.85rem;
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--ink); }
+</style>
+  <script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+  <nav class="help-nav">
+    <span class="crumbs"><a href="/">attune-rag</a><span class="sep">&rsaquo;</span><a href="/help">Help</a><span class="sep">&rsaquo;</span><a href="/help/retrieval">Retrieval</a><span class="sep">&rsaquo;</span><span>troubleshooting</span></span>
+    <a class="api-link" href="https://github.com/Smart-AI-Memory/attune-rag">Source &amp; API &rarr;</a>
+  </nav>
+  <article class="markdown-body">
+<h1>Troubleshoot retrieval</h1>
+<h2>Overview</h2>
+<p><code>KeywordRetriever</code> scores <code>RetrievalEntry</code> objects against a query using token-overlap scoring, stemming (via <code>_STEM_SUFFIXES</code>), and stopword filtering (via <code>_STOPWORDS</code>). It weights matches across four fields: path, summary, content, and related. Results are returned as a ranked list of <code>RetrievalHit</code> objects, each carrying an <code>entry</code>, a <code>score</code>, and a <code>match_reason</code>.</p>
+<h2>Symptom table</h2>
+<table>
+<thead>
+<tr>
+<th>If you observe</th>
+<th>Check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>retrieve()</code> returns an empty list</td>
+<td>Whether all query tokens are stopwords (e.g., <code>&quot;how do i&quot;</code>) — after filtering, the effective query may be empty</td>
+</tr>
+<tr>
+<td>Results are returned but scores are unexpectedly low</td>
+<td>Whether the query terms survive stemming — confirm your term minus known suffixes (<code>ations</code>, <code>ing</code>, <code>ed</code>, etc.) still matches tokens in the corpus entries</td>
+</tr>
+<tr>
+<td>The wrong entries are ranked first</td>
+<td>Which fields the matched tokens appear in — path and summary weights may differ from content and related weights, skewing rank</td>
+</tr>
+<tr>
+<td><code>retrieve()</code> raises <code>AttributeError</code> or <code>TypeError</code></td>
+<td>Whether the <code>corpus</code> argument implements <code>CorpusProtocol</code> — any object passed as <code>corpus</code> must support the expected corpus interface</td>
+</tr>
+<tr>
+<td>A custom retriever is silently ignored</td>
+<td>Whether it implements <code>RetrieverProtocol</code> — the object must have a <code>retrieve(query, corpus, k)</code> method with that exact signature</td>
+</tr>
+<tr>
+<td>Results are non-deterministic across identical calls</td>
+<td>Whether the corpus or retriever holds mutable state that changes between calls</td>
+</tr>
+</tbody>
+</table>
+<h2>Diagnose the issue</h2>
+<p>Work through these steps in order — earlier steps are cheaper and resolve most issues.</p>
+<h3>1. Reproduce the failure with a minimal call</h3>
+<p>Strip the call to its required arguments:</p>
+<pre><code class="language-python">from attune_rag.retrieval import KeywordRetriever
+
+retriever = KeywordRetriever()
+hits = retriever.retrieve(query=&quot;your query&quot;, corpus=your_corpus, k=3)
+print(hits)
+</code></pre>
+<p>Confirm the failure occurs here before investigating the surrounding context. If this call succeeds, the problem is in how the retriever is wired into your application, not in the retriever itself.</p>
+<h3>2. Check whether your query survives stopword filtering</h3>
+<p><code>KeywordRetriever</code> strips tokens that appear in <code>_STOPWORDS</code> before scoring. If every token in your query is a stopword, no scoring occurs and <code>retrieve()</code> returns an empty list or zero-scored hits.</p>
+<p>Verify your effective query tokens manually:</p>
+<pre><code class="language-python">_STOPWORDS = {'a', 'an', 'the', 'how', 'do', 'does', 'i', 'to', 'with',
+              'for', 'is', 'are', 'of', 'in', 'on', 'at', 'and', 'or',
+              'but', 'can', 'should', 'would', 'will', 'be', 'been', 'by',
+              'my', 'me', 'we', 'it', 'this', 'that', 'these', 'those'}
+
+query = &quot;how do i use this&quot;
+tokens = [t for t in query.lower().split() if t not in _STOPWORDS]
+print(tokens)  # [] — no tokens survive; retriever has nothing to match
+</code></pre>
+<p>Fix: include at least one non-stopword content term in the query.</p>
+<h3>3. Check whether your query terms survive stemming</h3>
+<p><code>KeywordRetriever</code> strips the following suffixes before matching: <code>ations</code>, <code>ation</code>, <code>ators</code>, <code>ator</code>, <code>ates</code>, <code>ate</code>, <code>ings</code>, <code>ing</code>, <code>ions</code>, <code>ion</code>, <code>ies</code>, <code>ers</code>, <code>ed</code>, <code>er</code>, <code>es</code>, <code>s</code>.</p>
+<p>If corpus entry tokens were indexed after stemming, your query terms must reduce to the same stem. Check that the stemmed form of your query token matches a stemmed form present in the corpus:</p>
+<pre><code class="language-python">_STEM_SUFFIXES = ('ations', 'ation', 'ators', 'ator', 'ates', 'ate',
+                  'ings', 'ing', 'ions', 'ion', 'ies', 'ers', 'ed',
+                  'er', 'es', 's')
+
+def stem(word):
+    for suffix in _STEM_SUFFIXES:
+        if word.endswith(suffix):
+            return word[:-len(suffix)]
+    return word
+
+print(stem(&quot;configurations&quot;))  # -&gt; &quot;configur&quot;
+print(stem(&quot;configure&quot;))       # -&gt; &quot;configur&quot;
+</code></pre>
+<p>If your query term and the corpus term don't reduce to the same stem, they won't match regardless of how semantically similar they are.</p>
+<h3>4. Inspect the <code>RetrievalHit</code> results you do receive</h3>
+<p>When results are returned but ranked incorrectly, inspect the <code>score</code> and <code>match_reason</code> fields on each hit:</p>
+<pre><code class="language-python">for hit in hits:
+    print(hit.score, hit.match_reason, hit.entry)
+</code></pre>
+<p>This tells you which fields matched (path, summary, content, related) and the score each produced. If high-value entries are scoring low, the match may be occurring in a lower-weight field.</p>
+<h3>5. Verify corpus compatibility</h3>
+<p>If <code>retrieve()</code> raises <code>AttributeError</code> or <code>TypeError</code>, confirm your corpus object implements <code>CorpusProtocol</code>. Pass the corpus directly to a minimal <code>retrieve()</code> call (step 1) and check the traceback — Python will name the missing attribute or method.</p>
+<h3>6. Run the retrieval tests</h3>
+<pre><code class="language-bash">pytest -k &quot;retrieval&quot; -v
+</code></pre>
+<p>If a test exercises the failing path, use its fixtures as a baseline for your reproduction. A failing test here indicates a regression in <code>src/attune_rag/retrieval.py</code> itself.</p>
+<h2>Common fixes</h2>
+<ul>
+<li>
+<p><strong>Query contains only stopwords.</strong> Rewrite the query to include at least one content term. Words like <code>how</code>, <code>do</code>, <code>i</code>, <code>is</code>, <code>the</code>, and <code>with</code> are all filtered before scoring.</p>
+</li>
+<li>
+<p><strong>Stemming mismatch between query and corpus.</strong> Ensure both the query term and the corpus term reduce to the same stem under <code>_STEM_SUFFIXES</code>. For example, <code>&quot;running&quot;</code> → <code>&quot;runn&quot;</code> and <code>&quot;runner&quot;</code> → <code>&quot;runn&quot;</code> match, but <code>&quot;run&quot;</code> → <code>&quot;run&quot;</code> does not.</p>
+</li>
+<li>
+<p><strong>Custom retriever not recognized.</strong> If you provide a custom retriever, confirm it has exactly this method signature:</p>
+<pre><code class="language-python">def retrieve(self, query: str, corpus: CorpusProtocol, k: int = 3) -&gt; Iterable[RetrievalHit]:
+</code></pre>
+<p>Missing or renamed parameters break <code>RetrieverProtocol</code> compatibility.</p>
+</li>
+<li>
+<p><strong>Corpus object doesn't implement <code>CorpusProtocol</code>.</strong> This is a change required outside the retrieval feature — update your corpus class to satisfy the expected interface before passing it to <code>retrieve()</code>.</p>
+</li>
+<li>
+<p><strong>Environment or dependency drift.</strong> If retrieval behavior changed without a code change, run <code>pip show attune-rag</code> and compare against the last known-good version. Reinstall with <code>pip install attune-rag==&lt;known-good-version&gt;</code> to rule out a dependency change.</p>
+</li>
+</ul>
+<h2>Source files</h2>
+<ul>
+<li><code>src/attune_rag/retrieval.py</code></li>
+</ul>
+<p><strong>Tags:</strong> <code>retrieval</code>, <code>keyword</code>, <code>scoring</code>, <code>ranking</code></p>
+
+  </article>
+  <footer>
+    <span>Smart AI Memory</span>
+    <span><a href="https://github.com/Smart-AI-Memory/attune-rag">GitHub</a>&nbsp;&middot;&nbsp;<a href="https://pypi.org/project/attune-rag/">PyPI</a></span>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Comparison: Provenance approaches — comparison</title>
+  <meta name="description" content="The `provenance` module gives you two distinct ways to attribute an answer back to its source documents:" />
+  <meta property="og:title" content="Comparison: Provenance approaches — comparison" />
+  <meta property="og:description" content="The `provenance` module gives you two distinct ways to attribute an answer back to its source documents:" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://attune-rag.dev/og.png" />
+  <link rel="canonical" href="https://attune-rag.dev/help/provenance/comparison" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="32x32" />
+  <style>
+    :root {
+      --primary: #004ac6;
+      --bg: #f8f9ff;
+      --ink: #0b1c30;
+      --muted: #434655;
+      --rule: #c3c6d7;
+      --surface-low: #eff4ff;
+      --surface-high: #dce9ff;
+      --draft: #8a5a00;
+      --draft-bg: #fff4e0;
+      --draft-rule: #f0d49a;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1c30;
+        --ink: #e8ecf5;
+        --muted: #b7c8e1;
+        --rule: #38485d;
+        --surface-low: #132438;
+        --surface-high: #213145;
+        --primary: #6ea1ff;
+        --draft: #f0c674;
+        --draft-bg: #2a2310;
+        --draft-rule: #4a3d18;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+      font-size: 18px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .draft-banner {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--draft-bg);
+      color: var(--draft);
+      border-bottom: 1px solid var(--draft-rule);
+      text-align: center;
+      padding: 0.6rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .draft-banner a { color: var(--draft); text-decoration: underline; }
+
+    article {
+      max-width: 42rem;
+      margin: 0 auto;
+      padding: 3.5rem 1.5rem 5rem;
+    }
+
+    .home-link {
+      display: inline-block;
+      margin-bottom: 2.5rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .home-link:hover { color: var(--primary); }
+
+    article h1 {
+      font-family: "Manrope", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin: 0 0 1rem;
+    }
+    article h2 {
+      font-family: "Manrope", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 1.7rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin: 3.5rem 0 1rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule);
+    }
+    article h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 2.25rem 0 0.75rem;
+    }
+    article h1 + blockquote {
+      margin-top: 0;
+      font-size: 1.2rem;
+      color: var(--muted);
+    }
+    article p { margin: 0 0 1.3rem; }
+    article a { color: var(--primary); }
+    article strong { font-weight: 700; }
+    article em { font-style: italic; }
+
+    article blockquote {
+      margin: 1.5rem 0;
+      padding: 0.5rem 0 0.5rem 1.25rem;
+      border-left: 3px solid var(--primary);
+      color: var(--muted);
+      font-style: italic;
+    }
+    article blockquote p { margin: 0 0 0.5rem; }
+
+    article ul, article ol { margin: 0 0 1.3rem; padding-left: 1.4rem; }
+    article li { margin: 0 0 0.5rem; }
+
+    article code {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, Menlo, monospace;
+      font-size: 0.88em;
+      background: var(--surface-high);
+      padding: 0.12em 0.4em;
+      border-radius: 4px;
+    }
+    article pre {
+      background: var(--surface-low);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      margin: 0 0 1.5rem;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+    article pre code { background: none; padding: 0; }
+
+    article table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0 0 1.5rem;
+      font-size: 0.92rem;
+    }
+    article th, article td {
+      text-align: left;
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+    }
+    article th { font-weight: 700; }
+
+    article hr {
+      border: none;
+      border-top: 1px solid var(--rule);
+      margin: 2.5rem 0;
+    }
+
+    footer {
+      max-width: 42rem;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+      border-top: 1px solid var(--rule);
+      color: var(--muted);
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--ink); }
+
+    @media (max-width: 480px) {
+      body { font-size: 17px; }
+      article { padding: 2.5rem 1.25rem 3rem; }
+      article h1 { font-size: 2rem; }
+      article h2 { font-size: 1.4rem; }
+    }
+
+    .help-nav { max-width: 60rem; margin: 0 auto; display: flex;
+      align-items: center; justify-content: space-between; gap: 1rem;
+      padding: 1.25rem 1.5rem; font-size: 0.9rem; }
+    .help-nav .crumbs a { color: var(--muted); text-decoration: none; }
+    .help-nav .crumbs a:hover { color: var(--primary); }
+    .help-nav .crumbs .sep { color: var(--rule); margin: 0 0.4rem; }
+    .help-nav .api-link { color: var(--primary); text-decoration: none; font-weight: 600; }
+    main.help-home { max-width: 60rem; margin: 0 auto; padding: 1rem 1.5rem 5rem; }
+    .help-home h1 { font-family: "Manrope", -apple-system, sans-serif;
+      font-size: 2.4rem; font-weight: 800; letter-spacing: -0.03em; margin: 1rem 0 0.5rem; }
+    .help-home .lede { color: var(--muted); font-size: 1.15rem; margin: 0 0 2rem; }
+    .search-wrap { margin: 0 0 2.5rem; }
+    #help-search { width: 100%; font-size: 1.05rem; padding: 0.85rem 1.1rem;
+      border: 1px solid var(--rule); border-radius: 10px;
+      background: var(--surface-low); color: var(--ink); }
+    #help-search:focus { outline: 2px solid var(--primary); border-color: var(--primary); }
+    #search-results { list-style: none; margin: 0.75rem 0 0; padding: 0; }
+    #search-results li { margin: 0 0 0.4rem; }
+    #search-results a { display: block; padding: 0.6rem 0.8rem; border-radius: 8px;
+      text-decoration: none; color: var(--ink); border: 1px solid transparent; }
+    #search-results a:hover { background: var(--surface-low); border-color: var(--rule); }
+    #search-results .r-kind { color: var(--muted); font-size: 0.85rem; }
+    #search-results .r-snip { color: var(--muted); font-size: 0.9rem; display: block; margin-top: 0.15rem; }
+    .section-h { font-family: "Manrope", -apple-system, sans-serif;
+      font-size: 1.3rem; font-weight: 700; margin: 2.5rem 0 1rem;
+      padding-top: 1.25rem; border-top: 1px solid var(--rule); }
+    .intent-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: 1rem; }
+    .intent-card { display: block; padding: 1.1rem 1.2rem; border: 1px solid var(--rule);
+      border-radius: 12px; text-decoration: none; color: var(--ink); background: var(--surface-low); }
+    .intent-card:hover { border-color: var(--primary); }
+    .intent-card .it-title { display: block; font-weight: 700; font-size: 1.05rem; }
+    .intent-card .it-sub { display: block; color: var(--muted); font-size: 0.9rem; margin-top: 0.2rem; }
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.85rem; }
+    .feature-card { display: block; padding: 0.9rem 1.1rem; border: 1px solid var(--rule);
+      border-radius: 10px; text-decoration: none; color: var(--ink); }
+    .feature-card:hover { border-color: var(--primary); background: var(--surface-low); }
+    .feature-card .fc-name { display: block; font-weight: 700; }
+    .feature-card .fc-meta { display: block; color: var(--muted); font-size: 0.82rem; margin-top: 0.2rem; }
+    .kind-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 2rem; }
+    .kind-tabs a { padding: 0.35rem 0.75rem; border: 1px solid var(--rule); border-radius: 999px;
+      text-decoration: none; color: var(--muted); font-size: 0.88rem; }
+    .kind-tabs a:hover { border-color: var(--primary); color: var(--primary); }
+    .markdown-body { max-width: 50rem; margin: 0 auto; padding: 1rem 1.5rem 5rem; }
+    .markdown-body h1 { font-family: "Manrope", -apple-system, sans-serif;
+      font-size: 2.1rem; font-weight: 800; letter-spacing: -0.02em; margin: 0.5rem 0 1rem; }
+    .markdown-body h2 { font-size: 1.4rem; margin: 2rem 0 0.75rem; }
+    .markdown-body h3 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; }
+    .markdown-body p, .markdown-body li { line-height: 1.6; }
+    .markdown-body code { background: var(--surface-low); padding: 0.1rem 0.35rem;
+      border-radius: 4px; font-size: 0.9em; }
+    .markdown-body pre { background: var(--surface-low); border: 1px solid var(--rule);
+      border-radius: 8px; padding: 1rem; overflow-x: auto; }
+    .markdown-body pre code { background: none; padding: 0; }
+    .markdown-body table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
+    .markdown-body th, .markdown-body td { border: 1px solid var(--rule); padding: 0.5rem 0.7rem; text-align: left; }
+    .markdown-body blockquote { border-left: 3px solid var(--rule); margin: 1rem 0;
+      padding: 0.25rem 1rem; color: var(--muted); }
+
+    footer { max-width: 60rem; margin: 4rem auto 0; padding: 1.5rem;
+      border-top: 1px solid var(--rule); color: var(--muted); font-size: 0.85rem;
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--ink); }
+</style>
+  <script defer src="/_vercel/insights/script.js"></script>
+</head>
+<body>
+  <nav class="help-nav">
+    <span class="crumbs"><a href="/">attune-rag</a><span class="sep">&rsaquo;</span><a href="/help">Help</a><span class="sep">&rsaquo;</span><a href="/help/provenance">Provenance</a><span class="sep">&rsaquo;</span><span>comparison</span></span>
+    <a class="api-link" href="https://github.com/Smart-AI-Memory/attune-rag">Source &amp; API &rarr;</a>
+  </nav>
+  <article class="markdown-body">
+<h1>Comparison: Provenance approaches</h1>
+<h2>Context</h2>
+<p>The <code>provenance</code> module gives you two distinct ways to attribute an answer back to its source documents:</p>
+<ul>
+<li><strong>Pipeline-level provenance</strong> — <code>CitationRecord</code> and <code>CitedSource</code> capture which corpus entries grounded a full RAG response, along with retrieval metadata (query, retriever name, timestamp, relevance score).</li>
+<li><strong>Claim-level provenance</strong> — <code>ClaimCitation</code> maps individual spans of the response text back to specific document blocks, using data from the Anthropic Citations API.</li>
+</ul>
+<p>Both paths share a common rendering layer (<code>format_citations_markdown</code> and <code>format_claim_citations_markdown</code>) that produces ready-to-display markdown.</p>
+<h2>Feature comparison</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Pipeline-level (<code>CitationRecord</code>)</th>
+<th>Claim-level (<code>ClaimCitation</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Granularity</strong></td>
+<td>Per retrieved document</td>
+<td>Per response span → document block</td>
+</tr>
+<tr>
+<td><strong>Primary data source</strong></td>
+<td><code>RetrievalHit</code> objects from your retriever</td>
+<td>Anthropic Citations API response</td>
+</tr>
+<tr>
+<td><strong>Entry point</strong></td>
+<td><code>build_citation_record()</code></td>
+<td>Consume <code>ClaimCitation</code> objects directly</td>
+</tr>
+<tr>
+<td><strong>What it tracks</strong></td>
+<td>Query, retriever name, timestamp, score, optional excerpt</td>
+<td>Response span <code>(start, end)</code>, document index, cited text, block index</td>
+</tr>
+<tr>
+<td><strong>Rendering function</strong></td>
+<td><code>format_citations_markdown(record, base_url)</code></td>
+<td><code>format_claim_citations_markdown(text, citations, base_url)</code></td>
+</tr>
+<tr>
+<td><strong>Output style</strong></td>
+<td>Markdown section listing all cited sources</td>
+<td>Response text with inline footnote-style references</td>
+</tr>
+<tr>
+<td><strong>Requires Anthropic Citations API</strong></td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><strong>Captures retrieval score</strong></td>
+<td>Yes (<code>CitedSource.score</code>)</td>
+<td>No</td>
+</tr>
+<tr>
+<td><strong>Captures retrieval timestamp</strong></td>
+<td>Yes (<code>CitationRecord.retrieved_at</code>)</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<h2>Tradeoffs</h2>
+<p><strong>Pipeline-level provenance</strong> is the right default for most RAG applications. <code>build_citation_record()</code> converts your existing <code>RetrievalHit</code> objects into a structured <code>CitationRecord</code> with minimal wiring. You get a complete audit trail — what was queried, which retriever ran, when retrieval happened, and how each source scored — all rendered to markdown via <code>format_citations_markdown()</code>. The weakness is granularity: citations point to whole documents (or short excerpts up to <code>excerpt_chars</code> characters), not to the exact sentence that supported a claim.</p>
+<p><strong>Claim-level provenance</strong> is more precise but narrower in scope. <code>ClaimCitation</code> pinpoints which character span of the model's response corresponds to which block in which document, making it suitable for applications where readers need to verify individual assertions. The tradeoff is a hard dependency on the Anthropic Citations API — you cannot produce <code>ClaimCitation</code> objects from arbitrary retrievers — and you lose retrieval metadata like scores and timestamps.</p>
+<h2>Use X when...</h2>
+<p><strong>Use <code>CitationRecord</code> / pipeline-level provenance when:</strong></p>
+<ul>
+<li>You want to audit or log the full retrieval run (who retrieved what, when, and how relevant it scored).</li>
+<li>Your retriever is not the Anthropic Citations API, or you need retriever-agnostic citation tracking.</li>
+<li>You need a source list rendered as a markdown section appended to an answer.</li>
+<li>You are building a new feature and want the simplest path to traceable answers.</li>
+</ul>
+<p><strong>Use <code>ClaimCitation</code> / claim-level provenance when:</strong></p>
+<ul>
+<li>You need to show users exactly which sentence in a document supports each claim in the response.</li>
+<li>You are already using the Anthropic Citations API and have span data available.</li>
+<li>Auditability of individual assertions matters more than capturing retrieval metadata.</li>
+</ul>
+<p>When in doubt, start with <code>build_citation_record()</code> and <code>format_citations_markdown()</code>. They cover the common case and require no external API dependency.</p>
+<h2>Source files</h2>
+<ul>
+<li><code>src/attune_rag/provenance.py</code></li>
+</ul>
+<p><strong>Tags:</strong> <code>provenance</code>, <code>citations</code>, <code>traceability</code></p>
+
+  </article>
+  <footer>
+    <span>Smart AI Memory</span>
+    <span><a href="https://github.com/Smart-AI-Memory/attune-rag">GitHub</a>&nbsp;&middot;&nbsp;<a href="https://pypi.org/project/attune-rag/">PyPI</a></span>
+  </footer>
+</body>
+</html>
