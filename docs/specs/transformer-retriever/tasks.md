@@ -17,39 +17,51 @@ From [`design.md` §8](design.md#8-open-questions-for-scoping):
 
 ## Milestones
 
+> **Status: IMPLEMENTED 2026-06-07** (freeze-override authorized by Patrick
+> per-PR). Scoping decisions locked by the M1 measurement: Q1 → a
+> `TransformerRetriever` subclass of `EmbeddingRetriever`; Q2 → default
+> `BAAI/bge-small-en-v1.5`; Q3 → **adopt** asymmetric query-prefix (it
+> measured +5pts); Q4 → `sentence-transformers>=3.0,<6.0`; Q5 → ships as an
+> opt-in extra now (no default change), freeze-override applied.
+
 ### M0 — Reopen + sequence
-- [ ] Record the narrow reopen in
-      [`embedding-retriever`](../embedding-retriever/) (status note → here:
-      torch returns as an opt-in tier, not a default).
-- [ ] Confirm v1.1.0+ placement (or earlier opt-in) with `v1.0.0-release`.
+- [x] Narrow reopen of [`embedding-retriever`](../embedding-retriever/)
+      recorded (torch returns as an opt-in tier, not a default).
+- [x] Ships as an opt-in extra (no default change); v1.1.0+ pinning is moot.
 
-### M1 — Second-corpus + asymmetric validation (the gate)
-- [ ] Promote `torch_ceiling.py` / `torch_tsweep.py` to `scripts/`.
-- [ ] Add a **second arbitrary corpus** + ≥30 hard queries (advisory
-      side-files; never touch SHA-locked `queries.yaml`).
-- [ ] Reproduce transformer-vs-torch-free margin on it (R1/R3).
-- [ ] Measure symmetric vs asymmetric (query-prefix) encoding (design §5).
-- [ ] **Gate:** margin holds on a second corpus? **No → close spec**
-      (torch was a one-corpus artifact). **Yes → M2.**
+### M1 — Second-corpus + asymmetric validation (the gate) — **PASS**
+- [x] Promoted to `scripts/validate_transformer_retriever.py`.
+- [x] Added a **second arbitrary corpus** (`tests/golden/corpus_c/`, HTTP
+      API client — different domain/jargon) + `queries_corpus_c_hard.yaml`
+      (24 queries, 20 hard). Never touches SHA-locked `queries.yaml`.
+- [x] Reproduced the margin: corpus_c hard P@1 — keyword **0.25**, static
+      **0.55**, transformer **0.85–0.90**, R@3 → **1.00**. Generalizes
+      (corpus_b was 0.50→0.69; corpus_c 0.55→0.90).
+- [x] Asymmetric (query-prefix) encoding measured **+5pts** (0.85→0.90) →
+      adopted as the default for BGE.
+- [x] **Gate PASS** → proceeded to M2.
 
-### M2 — Implement the `[transformers]` tier
-- [ ] `[transformers]` extra (torch + sentence-transformers, pinned per
-      Q4); lazy import.
-- [ ] Transformer backend (class or `backend=`, per Q1) reusing
-      `EmbeddingRetriever`'s injectable-encoder path; default model per Q2;
-      asymmetric encoding per Q3.
-- [ ] Prove R2 (base install unchanged, no torch in default path) + R5
-      (determinism) in CI with a **fake encoder** — no torch download in CI.
+### M2 — Implement the `[transformers]` tier — **DONE**
+- [x] `[transformers]` extra = `sentence-transformers>=3.0,<6.0`
+      (`pyproject.toml`, added to `all`); `uv.lock` regenerated. Lazy
+      import in `TransformerRetriever._get_encoder`.
+- [x] `TransformerRetriever(EmbeddingRetriever)` (`src/attune_rag/transformer.py`)
+      reusing the matrix cache + cosine path; default `bge-small`; new
+      `query_prefix` asymmetric hook on `EmbeddingRetriever`. Exported in
+      `__init__`/`__all__`.
+- [x] R2/R5 proven with a **fake encoder** (`tests/unit/test_transformer.py`,
+      6 tests) — no torch download in CI. Base install unchanged (lazy
+      import). Real end-to-end smoke reproduced 0.90/1.00.
 
-### M3 — Footprint, latency, offline, docs
-- [ ] Disclose install-size + latency deltas (R4); document one-time
-      download + offline/pre-cache path (R6).
-- [ ] Operating-point guide (design §6): when to choose keyword vs static
-      hybrid vs transformer.
+### M3 — Footprint, latency, offline, docs — **DONE**
+- [x] CHANGELOG `### Added` + README "Transformer retrieval" section with
+      footprint (~GB torch), latency (~10–300 ms/query), one-time
+      download/offline note, and the operating-point guide (keyword vs
+      static hybrid vs transformer).
 
-### M4 — Optional real-model CI
+### M4 — Optional real-model CI — deferred (non-gating; not required for the tier)
 - [ ] Non-gating optional job exercising the real model (kept off the
-      core suite).
+      core suite). Follow-up.
 
 ## Done when
 

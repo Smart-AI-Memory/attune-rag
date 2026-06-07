@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Transformer retrieval (`[transformers]` extra) — heavyweight opt-in.**
+  `TransformerRetriever` ranks by a real sentence-transformers model
+  (default `BAAI/bge-small-en-v1.5`), reusing `EmbeddingRetriever`'s
+  matrix cache + cosine ranking and a new asymmetric `query_prefix` hook
+  (BGE query instruction, applied to the query only). It is
+  **embedding-primary** and for **arbitrary corpora where paraphrase
+  recall matters** — it tanks a keyword-tuned corpus's top-1, so it is
+  opt-in and never a default. Validated on two unseen corpora
+  (`docs/specs/transformer-retriever/`): hard-tier paraphrase
+  precision@1 **≈0.50 (torch-free ceiling) → 0.85–0.90**, recall@3 →
+  1.00 — the one goal no torch-free retriever reaches. Cost: torch
+  (~GB) + one-time model download (then offline), ~10–300 ms/query.
+  `sentence_transformers` is imported lazily, so the base install is
+  unaffected; `pip install attune-rag[transformers]` to enable.
 - **Hybrid retrieval (`[embeddings]` extra) — opt-in.** `EmbeddingRetriever`
   (static `model2vec` embeddings: no torch, offline, ms-encode) and
   `HybridRetriever` (keyword + embedding fused via weighted RRF, with

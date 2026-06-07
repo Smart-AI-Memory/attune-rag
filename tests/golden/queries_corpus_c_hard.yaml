@@ -1,0 +1,124 @@
+# Second arbitrary corpus (corpus_c — an HTTP API client library) HARD
+# paraphrase set, for docs/specs/transformer-retriever M1: validate that
+# the transformer advantage over torch-free generalizes beyond corpus_b.
+#
+# Different domain (HTTP client) and jargon (bearer token, 429, cursor,
+# multipart) from corpus_b (job scheduler). Lay-language paraphrases that
+# deliberately avoid each doc's distinctive vocabulary. Authored blind to
+# retrieval behavior. Advisory side-file; never gates; never edits the
+# SHA-locked queries.yaml.
+
+version: 1
+
+queries:
+  # -------- target: concepts/authentication.md --------
+  - id: cc-001
+    query: "how do I prove who I am when calling the service"
+    expected_in_top_3: [concepts/authentication.md]
+    difficulty: hard
+  - id: cc-002
+    query: "what do I pass so the server knows I'm allowed in"
+    expected_in_top_3: [concepts/authentication.md]
+    difficulty: hard
+  - id: cc-003
+    query: "my calls are being rejected as not permitted, what's wrong with my credentials"
+    expected_in_top_3: [concepts/authentication.md]
+    difficulty: hard
+
+  # -------- target: concepts/rate-limiting.md --------
+  - id: cc-004
+    query: "what happens if I call it too often"
+    expected_in_top_3: [concepts/rate-limiting.md]
+    difficulty: hard
+  - id: cc-005
+    query: "the server told me to slow down, how long should I pause"
+    expected_in_top_3: [concepts/rate-limiting.md]
+    difficulty: hard
+  - id: cc-006
+    query: "how many calls am I allowed before being throttled"
+    expected_in_top_3: [concepts/rate-limiting.md]
+    difficulty: medium
+
+  # -------- target: concepts/pagination.md --------
+  - id: cc-007
+    query: "how do I fetch every record when results arrive in chunks"
+    expected_in_top_3: [concepts/pagination.md]
+    difficulty: hard
+  - id: cc-008
+    query: "how do I get the rest of the list beyond the first batch"
+    expected_in_top_3: [concepts/pagination.md]
+    difficulty: hard
+  - id: cc-009
+    query: "how do I keep going to grab all the remaining items"
+    expected_in_top_3: [concepts/pagination.md]
+    difficulty: hard
+
+  # -------- target: howto/make-a-request.md --------
+  - id: cc-010
+    query: "how do I actually send a call to an endpoint"
+    expected_in_top_3: [howto/make-a-request.md]
+    difficulty: hard
+  - id: cc-011
+    query: "how do I include lookup parameters with my call"
+    expected_in_top_3: [howto/make-a-request.md]
+    difficulty: hard
+  - id: cc-012
+    query: "how do I submit data to create something"
+    expected_in_top_3: [howto/make-a-request.md]
+    difficulty: medium
+
+  # -------- target: howto/handle-errors.md --------
+  - id: cc-013
+    query: "what happens when a call comes back with a failure code"
+    expected_in_top_3: [howto/handle-errors.md]
+    difficulty: hard
+  - id: cc-014
+    query: "does it try again on its own if the server hiccups"
+    expected_in_top_3: [howto/handle-errors.md, reference/client-options.md]
+    difficulty: hard
+  - id: cc-015
+    query: "how do I catch and react to a bad response"
+    expected_in_top_3: [howto/handle-errors.md]
+    difficulty: hard
+
+  # -------- target: howto/upload-files.md --------
+  - id: cc-016
+    query: "how do I send a document along with my request"
+    expected_in_top_3: [howto/upload-files.md]
+    difficulty: hard
+  - id: cc-017
+    query: "how do I attach a large binary without running out of memory"
+    expected_in_top_3: [howto/upload-files.md]
+    difficulty: hard
+  - id: cc-018
+    query: "how do I post something that isn't structured data"
+    expected_in_top_3: [howto/upload-files.md]
+    difficulty: medium
+
+  # -------- target: reference/client-options.md --------
+  - id: cc-019
+    query: "where do I set how long to wait before giving up on a call"
+    expected_in_top_3: [reference/client-options.md]
+    difficulty: hard
+  - id: cc-020
+    query: "how do I configure where the service lives"
+    expected_in_top_3: [reference/client-options.md]
+    difficulty: hard
+  - id: cc-021
+    query: "can I supply these settings through the environment"
+    expected_in_top_3: [reference/client-options.md]
+    difficulty: hard
+
+  # -------- target: reference/endpoints.md --------
+  - id: cc-022
+    query: "what resources can I work with"
+    expected_in_top_3: [reference/endpoints.md]
+    difficulty: hard
+  - id: cc-023
+    query: "what operations can I do to each kind of object"
+    expected_in_top_3: [reference/endpoints.md]
+    difficulty: hard
+  - id: cc-024
+    query: "is there a list of available paths I can hit"
+    expected_in_top_3: [reference/endpoints.md]
+    difficulty: medium
