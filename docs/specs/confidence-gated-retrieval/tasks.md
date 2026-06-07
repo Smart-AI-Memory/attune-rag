@@ -66,6 +66,50 @@ That scope decision is escalated before M2. (Also reframes the original
 question: ~0.50 is the torch-free hard ceiling, so "does torch exceed it"
 is now the sharper open question.)
 
+### M1b — torch / sentence-transformers comparison (2026-06-07)
+
+The "does torch beat the ~0.50 torch-free ceiling?" question, measured
+directly. Real transformer encoders injected into `EmbeddingRetriever`
+(symmetric encoding), same n=26 hard set + attune-help guard.
+
+| config | hard P@1 | hard R@3 | help P@1/R@3 |
+|---|---:|---:|---:|
+| torch-free gated T=2 (ret-32M) | 0.50 | 0.65 | 1.00 / 1.00 |
+| embedding-only `all-MiniLM-L6-v2` | 0.58 | **0.92** | 0.42 |
+| embedding-only `bge-small-en-v1.5` | **0.69** | 0.81 | 0.53 |
+| gated T=3 + bge-small (zero-regression) | 0.54 | 0.73 | **1.00 / 1.00** |
+| gated T=4–6 + bge-small | 0.62 | 0.73 | 0.97 |
+| gated T=10 + bge-small | **0.69** | 0.81 | 0.82 |
+
+**Findings:**
+- **Torch genuinely exceeds the torch-free ceiling** on paraphrase — but
+  only **embedding-primary**: bge-small hits hard P@1 **0.69** (vs 0.50),
+  MiniLM hits R@3 **0.92**. No torch-free option reaches this.
+- **Gating throttles the gain.** The threshold that protects attune-help
+  also keeps deferring to weak keyword, so at zero help-regression (T=3)
+  torch buys only hard 0.50→0.54 over torch-free. The transformer's full
+  strength (0.69) needs T=10+, which costs attune-help (→0.82).
+- There is **no single gate setting** that gets both the transformer's
+  0.69 hard *and* help 1.00 — the operating point is corpus-type-dependent.
+
+**Conclusion — the design space, fully mapped:**
+
+| goal | best retriever | torch? |
+|---|---|---|
+| bundled/tuned corpus | keyword | no (already 1.00) |
+| safe-everywhere, zero tuned-corpus regression | torch-free gated (~0.50 hard) | no — torch adds only ~+4pts |
+| **max paraphrase quality on arbitrary BYO corpus** | **bge-small, embedding-primary** (0.69 / 0.92) | **yes — uniquely** |
+
+So sentence-transformers is the only way **for one specific goal**: best
+paraphrase retrieval on an arbitrary corpus, where the user accepts an
+embedding-primary config (no keyword-tuned precision to protect). It is a
+heavyweight (~GB torch dep, ~3 s first-load, 10–300 ms/query) → fits a
+separate **opt-in `[transformers]`** rung, never a default. For the
+bundled exemplar and for a zero-regression safe-everywhere retriever,
+torch is **not** justified. This narrowly reopens the
+[`embedding-retriever`](../embedding-retriever/) defer (which was a torch
+defer) — as an opt-in heavyweight tier, not a default flip.
+
 ### M2 — Mechanism bake-off
 - [ ] Measure hard-switch vs below-T RRF blend (Q1), and gate-on-score vs
       gate-on-gap (Q2), on the ≥30-set incl. medium tier.
