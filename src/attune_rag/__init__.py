@@ -9,6 +9,7 @@ Core public API:
 - DirectoryCorpus — generic markdown directory loader
 - AttuneHelpCorpus — attune-help bundled corpus (opt. dep)
 - KeywordRetriever — default retriever (no embedding)
+- TransformerRetriever — opt-in dense retriever ([transformers] extra)
 - build_augmented_prompt — prompt template helper
 
 See spec: attune-ai/.claude/plans/feature-rag-code-
@@ -44,6 +45,7 @@ from .provenance import (
 )
 from .reranker import LLMReranker
 from .retrieval import KeywordRetriever, RetrievalHit, RetrieverProtocol
+from .transformer import TransformerRetriever
 
 __all__ = [
     "RagPipeline",
@@ -60,6 +62,7 @@ __all__ = [
     "KeywordRetriever",
     "EmbeddingRetriever",
     "HybridRetriever",
+    "TransformerRetriever",
     "RetrievalHit",
     "RetrieverProtocol",
     "build_augmented_prompt",

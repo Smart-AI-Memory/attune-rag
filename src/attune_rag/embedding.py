@@ -42,6 +42,13 @@ class EmbeddingRetriever:
         content_chars: Cap on body text included per entry's embedding
             input (static embeddings are order-insensitive; the head of
             the doc carries the topical signal without unbounded cost).
+        query_prefix: Optional instruction prepended to the *query* (not
+            the corpus entries) before encoding. Enables asymmetric
+            retrieval models that expect a query instruction — e.g. BGE
+            wants "Represent this sentence for searching relevant
+            passages: ". Empty by default, so static/symmetric models
+            (model2vec) are unaffected. See
+            :class:`~attune_rag.transformer.TransformerRetriever`.
     """
 
     def __init__(
@@ -49,10 +56,12 @@ class EmbeddingRetriever:
         model_name: str = DEFAULT_MODEL,
         encoder: Any = None,
         content_chars: int = 1000,
+        query_prefix: str = "",
     ) -> None:
         self._model_name = model_name
         self._encoder = encoder
         self._content_chars = content_chars
+        self._query_prefix = query_prefix
         self._cache: dict[int, tuple[list[Any], Any]] = {}
 
     def _get_encoder(self) -> Any:
@@ -107,7 +116,8 @@ class EmbeddingRetriever:
         entries, mat = self._corpus_matrix(corpus)
         if not entries:
             return []
-        q = np.asarray(self._get_encoder().encode([query]), dtype="float32")
+        q_text = self._query_prefix + query if self._query_prefix else query
+        q = np.asarray(self._get_encoder().encode([q_text]), dtype="float32")
         q = q / _norms(q)
         sims = (mat @ q[0]).tolist()
         order = sorted(range(len(entries)), key=lambda i: (-sims[i], entries[i].path))[:k]

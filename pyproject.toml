@@ -57,11 +57,17 @@ author = ["attune-author>=0.13.0"]
 # dependency-light while adding semantic recall for unstructured/unseen
 # corpora. Opt-in: KeywordRetriever remains the default.
 embeddings = ["model2vec>=0.3,<1.0"]
+# Heavyweight opt-in dense retrieval: real transformer embeddings via
+# sentence-transformers (pulls torch, ~GB). For arbitrary corpora where
+# paraphrase recall matters and the torch-free static embeddings fall
+# short. Embedding-primary; never a default. See TransformerRetriever.
+transformers = ["sentence-transformers>=3.0,<6.0"]
 all = [
     "attune-help>=0.10.1,<0.11",
     "anthropic>=0.95,<1.0",
     "google-genai>=1.0,<2.0",
     "model2vec>=0.3,<1.0",
+    "sentence-transformers>=3.0,<6.0",
 ]
 dev = [
     "pytest>=8.0",

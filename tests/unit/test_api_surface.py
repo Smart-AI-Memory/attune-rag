@@ -44,6 +44,7 @@ EXPECTED_ROOT_ALL = frozenset(
         "KeywordRetriever",
         "EmbeddingRetriever",
         "HybridRetriever",
+        "TransformerRetriever",
         "RetrievalHit",
         "RetrieverProtocol",
         "build_augmented_prompt",

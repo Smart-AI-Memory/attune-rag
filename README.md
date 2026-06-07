@@ -182,6 +182,34 @@ raise it to fully protect a tuned corpus, lower toward `1.0` to maximize the
 embedding contribution. Falls back to keyword-only if the extra isn't
 installed.
 
+### Transformer retrieval (`[transformers]` extra) — heavyweight
+
+`TransformerRetriever` ranks by a real **sentence-transformers** model
+(default `BAAI/bge-small-en-v1.5`). This is the **heaviest** rung of the
+opt-in ladder (`keyword` → `[embeddings]` static → `[transformers]`):
+it pulls **torch (~GB)** and downloads a model once (then offline,
+~10–300 ms/query). Install: `pip install attune-rag[transformers]`.
+
+```python
+from attune_rag import RagPipeline, TransformerRetriever
+
+# Heavyweight opt-in — embedding-primary, for arbitrary corpora.
+pipeline = RagPipeline(retriever=TransformerRetriever())
+```
+
+**When to use it:** only on an **arbitrary corpus where paraphrasing is
+heavy** and the torch-free static embeddings fall short. It is
+embedding-primary and **tanks a keyword-tuned corpus's top-1 precision**,
+so it is never a default. Measured on two unseen corpora
+(`docs/specs/transformer-retriever/`): hard-tier paraphrase **precision@1
+≈0.50 (the torch-free ceiling) → 0.85–0.90, recall@3 → 1.00** — the one
+goal no torch-free retriever reaches. For a keyword-tuned corpus use
+`KeywordRetriever`; for a lexically-aligned arbitrary corpus the lighter
+`[embeddings]` `HybridRetriever` is usually enough.
+
+Pass `query_prefix=""` for symmetric models (e.g. `all-MiniLM-L6-v2`); the
+default prefix is tuned for BGE's asymmetric query instruction.
+
 ### Abstention — don't answer out-of-corpus queries
 
 By default the retriever returns its best match even for a question the
