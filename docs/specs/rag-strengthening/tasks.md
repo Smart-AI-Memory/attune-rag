@@ -75,7 +75,25 @@ that token overlap can't).
 
 ## Phase 5 — Faithfulness / abstention hardening
 
-- [ ] Drive `false_answer_rate` down: add a confidence/abstention threshold so out-of-corpus queries return nothing instead of a low-score hit. Add a hallucination test set. Re-measure against the Phase 1 negative set.
+**Status**: complete (2026-06-07).
+
+- [x] **5.1** Configurable abstention: `KeywordRetriever(min_score=T)` — when every candidate is below T the retriever returns nothing (abstains) instead of surfacing a weak match. Instance-level; default (2.0) unchanged.
+- [x] **5.2** Calibration tool: `attune-rag-benchmark --calibrate-abstention` sweeps T over the legit (`--queries`) + out-of-corpus (`--negatives`) sets and recommends `min_score=T` for THIS corpus (max negatives-abstained s.t. legit-kept ≥ 95%). The threshold is an absolute keyword score, so it must be calibrated per corpus.
+- [x] **5.3** Re-measured against the Phase 1 negative set (the hallucination/out-of-corpus set).
+- [x] **5.4** Tests (`tests/unit/test_abstention.py`, 8) + README/CHANGELOG.
+
+### Findings — the 91.7% false-answer rate is fixable
+
+Top-1 scores separate cleanly on attune-help (legit median **14.8** vs out-of-corpus median **3.4**):
+
+| min_score | legit kept | negatives abstained → false-answer rate |
+|---|---|---|
+| 2.0 (old default) | 100% | 8% → **92%** |
+| **5 (calibrated)** | **98%** | **92% → 8%** |
+
+`min_score=5` cuts the **false-answer rate 91.7% → 8%** for a 2pt legit-recall cost. Shipped as opt-in (`KeywordRetriever(min_score=…)`) with the calibration tool to pick T per corpus — **the default stays 2.0** (no behavior change).
+
+## Notes
 
 ## Notes
 

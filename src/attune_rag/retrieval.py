@@ -220,6 +220,20 @@ class KeywordRetriever:
     # crediting alias_hits. Set to 1 to restore pre-0.1.22 behavior.
     MIN_ALIAS_OVERLAP: int = 2
 
+    def __init__(self, min_score: float | None = None) -> None:
+        """Args:
+        min_score: Minimum hit score to keep — and thus to answer at
+            all. Hits below it are dropped; when *every* candidate is
+            below it the retriever returns nothing, i.e. it **abstains**
+            rather than surface a weak, likely-wrong match. Defaults to
+            the class ``MIN_SCORE`` (2.0). Raise it to cut the
+            false-answer rate on out-of-corpus queries. The right value
+            is corpus-specific — calibrate with
+            ``attune-rag-benchmark --calibrate-abstention``.
+        """
+        if min_score is not None:
+            self.MIN_SCORE = min_score
+
     def _category_weight(self, entry: RetrievalEntry) -> float:
         return self.CATEGORY_WEIGHTS.get(entry.category, self.DEFAULT_CATEGORY_WEIGHT)
 
