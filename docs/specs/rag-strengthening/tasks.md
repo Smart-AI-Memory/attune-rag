@@ -42,9 +42,32 @@ queries (hard tier) fail half the time** — one returned nothing at all.
 justified** for arbitrary user corpora (it would close the paraphrase gap
 that token overlap can't).
 
-## Phase 3 — Hybrid retrieval (data-gated on Phase 2) → **GO**
+## Phase 3 — Hybrid retrieval
 
-- [ ] Phase 2 confirmed keyword-only underperforms on unseen corpora (esp. paraphrases). Revive the deferred embedding retriever behind a `[embeddings]` extra + RRF fusion; measure the lift against `corpus_b` (target: recover the hard-tier 50%).
+**Status**: complete (2026-06-07).
+
+- [x] **3.1** `[embeddings]` extra = `model2vec` (static/distilled embeddings: no torch, offline, ms-encode). KeywordRetriever stays the default.
+- [x] **3.2** `EmbeddingRetriever` (cosine over static embeddings; per-corpus matrix cache; injectable encoder for tests; numpy/model2vec imported lazily so the module is import-safe without the extra).
+- [x] **3.3** `HybridRetriever` — keyword + embedding fused via **weighted RRF**; graceful fallback to keyword-only when the extra is absent.
+- [x] **3.4** Benchmark `--retriever {keyword,hybrid}` to measure either.
+- [x] **3.5** CI installs `[dev,embeddings]` so the new code is exercised (fake-encoder tests; no model download). 100% coverage on both new modules.
+
+### Findings — the lift is real, but corpus-dependent (no free lunch)
+
+| | attune-help (tuned) | corpus_b (unseen) |
+|---|---|---|
+| keyword (default) | P@1 100% / R@3 100% | P@1 73% / R@3 82% |
+| hybrid, naive RRF (1:1) | P@1 **80%** / R@3 100% | P@1 82% / R@3 91% |
+| hybrid, keyword-favoring (≥5:1) | P@1 **100%** / R@3 100% | P@1 73% / R@3 **91%** |
+
+- **recall@3 +9pts on the unseen corpus holds at every weight** — and at a keyword-favoring weight it costs **zero** regression on the tuned corpus. Since RAG feeds top-*k*, recall@3 is the metric that matters.
+- Equal-weight RRF trades away tuned-corpus top-1 precision (100→80). So: **keyword stays the pipeline default**; hybrid is **opt-in** with a keyword-favoring default weight (2:1) and tunable `keyword_weight`/`embedding_weight`.
+
+**Decision:** ship hybrid as an opt-in tool for unstructured/arbitrary corpora; don't change the default.
+
+## Phase 4 — Rerank stage (data-gated)
+
+- [ ] Optional cross-encoder / LLM reranker over top-k; measure precision lift against Phase 1/2 sets.
 
 ## Phase 4 — Rerank stage (data-gated)
 

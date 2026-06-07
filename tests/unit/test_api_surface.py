@@ -42,6 +42,8 @@ EXPECTED_ROOT_ALL = frozenset(
         "DirectoryCorpus",
         "AttuneHelpCorpus",
         "KeywordRetriever",
+        "EmbeddingRetriever",
+        "HybridRetriever",
         "RetrievalHit",
         "RetrieverProtocol",
         "build_augmented_prompt",

@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Hybrid retrieval (`[embeddings]` extra) — opt-in.** `EmbeddingRetriever`
+  (static `model2vec` embeddings: no torch, offline, ms-encode) and
+  `HybridRetriever` (keyword + embedding fused via weighted RRF, with
+  graceful keyword-only fallback when the extra is absent). Benchmark gains
+  `--retriever {keyword,hybrid}`. KeywordRetriever stays the pipeline
+  default. Measured (`docs/specs/rag-strengthening/` Phase 3): **+9pts
+  recall@3 on an unseen/unstructured corpus**; tuned-corpus default path
+  unchanged. Equal-weight RRF trades tuned-corpus top-1 precision, so the
+  default weighting favors keyword (`keyword_weight=2.0`, tunable).
+- **Generalization benchmark track (Phase 2).** `--corpus` /
+  `--corpus-queries` measure retrieval against an unseen second corpus
+  (`tests/golden/corpus_b/`); reported under `generalization` (advisory).
+
 ### Changed
 
 - **Corpus-quality guide §6.4 (“Wiring into CI”) hardened into a

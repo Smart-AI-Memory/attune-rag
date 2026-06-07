@@ -30,7 +30,9 @@ from .corpus import (
     DirectoryCorpus,
     RetrievalEntry,
 )
+from .embedding import EmbeddingRetriever
 from .expander import QueryExpander
+from .hybrid import HybridRetriever
 from .pipeline import RagPipeline, RagResult
 from .prompts import PROMPT_VARIANTS, build_augmented_prompt
 from .provenance import (
@@ -56,6 +58,8 @@ __all__ = [
     "DirectoryCorpus",
     "AttuneHelpCorpus",
     "KeywordRetriever",
+    "EmbeddingRetriever",
+    "HybridRetriever",
     "RetrievalHit",
     "RetrieverProtocol",
     "build_augmented_prompt",
