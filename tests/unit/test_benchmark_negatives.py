@@ -184,3 +184,131 @@ def test_main_includes_negatives_and_extended_in_json(tmp_path: Path) -> None:
     assert payload["retrieval"]["by_difficulty"]["easy"]["recall_at_k"] == 1.0
     assert payload["negatives"]["false_answer_rate"] == 1.0
     assert payload["extended"]["recall_at_k"] == 1.0
+
+
+# ---------------------------------------------------------------------------
+# Phase 1 polish — branch coverage that didn't land in the #161 merge
+# ---------------------------------------------------------------------------
+
+
+def test_print_summary_falls_back_when_no_by_difficulty(capsys) -> None:
+    from attune_rag.benchmark import _print_summary
+
+    report = {
+        "retriever": "X",
+        "corpus": "c",
+        "total_queries": 1,
+        "precision_at_1": 1.0,
+        "recall_at_k": 1.0,
+        "k": 3,
+        "mean_latency_ms": 1.0,
+        "max_latency_ms": 1.0,
+        "per_query": [
+            {
+                "id": "q1",
+                "difficulty": "easy",
+                "query": "x",
+                "expected": ["a.md"],
+                "actual": ["a.md"],
+                "top1_match": True,
+                "topk_match": True,
+            }
+        ],
+    }
+    _print_summary(report, verbose=False)
+    assert "Breakdown by difficulty" in capsys.readouterr().out
+
+
+def test_print_summary_empty_per_query_skips_breakdown(capsys) -> None:
+    from attune_rag.benchmark import _print_summary
+
+    report = {
+        "retriever": "X",
+        "corpus": "c",
+        "total_queries": 0,
+        "precision_at_1": 0.0,
+        "recall_at_k": 0.0,
+        "k": 3,
+        "mean_latency_ms": 0.0,
+        "max_latency_ms": 0.0,
+        "per_query": [],
+    }
+    _print_summary(report, verbose=False)
+    assert "Breakdown by difficulty" not in capsys.readouterr().out
+
+
+def test_main_skips_missing_advisory_files(tmp_path: Path) -> None:
+    q = _yaml(tmp_path / "q.yaml", [{"id": "mq", "query": "main", "expected_in_top_3": ["a.md"]}])
+    out = tmp_path / "dump.json"
+    pipeline = _FakePipeline({"main": [("a.md", 9.0)]})
+    with patch("attune_rag.RagPipeline", return_value=pipeline):
+        rc = main(
+            [
+                "--queries",
+                str(q),
+                "--negatives",
+                str(tmp_path / "nope.yaml"),
+                "--extended",
+                str(tmp_path / "nope2.yaml"),
+                "--corpus",
+                str(tmp_path / "no_corpus_dir"),
+                "--json",
+                str(out),
+                "--min-precision",
+                "0.5",
+            ]
+        )
+    assert rc == 0
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert "negatives" not in payload
+    assert "extended" not in payload
+    assert "generalization" not in payload
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 — generalization against an unseen corpus (real retriever, no mock)
+# ---------------------------------------------------------------------------
+
+
+def test_run_benchmark_against_unseen_corpus() -> None:
+    from attune_rag.benchmark import (
+        _default_corpus_b_path,
+        _default_corpus_b_queries_path,
+        _load_queries,
+    )
+    from attune_rag.corpus import DirectoryCorpus
+
+    corpus = DirectoryCorpus(_default_corpus_b_path())
+    qs = _load_queries(_default_corpus_b_queries_path())
+    rep = _run_benchmark(qs, k=3, corpus=corpus)
+
+    assert "corpus_b" in rep["corpus"]
+    assert rep["total_queries"] == len(qs)
+    assert 0.0 <= rep["precision_at_1"] <= 1.0
+    assert "hard" in rep["by_difficulty"]
+    # Sanity: direct/easy queries should retrieve well even on an unseen corpus.
+    assert rep["by_difficulty"]["easy"]["recall_at_k"] >= 0.75
+
+
+def test_main_includes_generalization_in_json(tmp_path: Path) -> None:
+    q = _yaml(tmp_path / "q.yaml", [{"id": "mq", "query": "main", "expected_in_top_3": ["a.md"]}])
+    out = tmp_path / "dump.json"
+    pipeline = _FakePipeline({"main": [("a.md", 9.0)]})
+    # Default --corpus points at the bundled corpus_b (exists) -> generalization runs.
+    with patch("attune_rag.RagPipeline", return_value=pipeline):
+        rc = main(
+            [
+                "--queries",
+                str(q),
+                "--negatives",
+                str(tmp_path / "none.yaml"),
+                "--extended",
+                str(tmp_path / "none.yaml"),
+                "--json",
+                str(out),
+                "--min-precision",
+                "0.5",
+            ]
+        )
+    assert rc == 0
+    assert "generalization" in json.loads(out.read_text(encoding="utf-8"))

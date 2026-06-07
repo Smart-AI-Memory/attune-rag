@@ -63,6 +63,18 @@ def _default_extended_path() -> Path:
     )
 
 
+def _default_corpus_b_path() -> Path:
+    """Resolve the bundled unseen second-corpus directory (generalization)."""
+    return Path(__file__).resolve().parent.parent.parent / "tests" / "golden" / "corpus_b"
+
+
+def _default_corpus_b_queries_path() -> Path:
+    """Resolve the golden queries for the unseen second corpus."""
+    return (
+        Path(__file__).resolve().parent.parent.parent / "tests" / "golden" / "queries_corpus_b.yaml"
+    )
+
+
 def _env_bool(name: str) -> bool:
     """Parse an env var as a boolean ("1"/"true"/"yes" → True)."""
     raw = os.environ.get(name, "").strip().lower()
@@ -100,8 +112,14 @@ def _load_queries(path: Path) -> list[dict[str, Any]]:
 def _run_benchmark(
     queries: list[dict[str, Any]],
     k: int,
+    corpus: Any = None,
 ) -> dict[str, Any]:
     """Run retrieval-only benchmark across ``queries`` and aggregate metrics.
+
+    ``corpus`` (optional): a CorpusProtocol to retrieve against. When
+    ``None`` the pipeline uses its default (bundled attune-help). Pass a
+    ``DirectoryCorpus`` here to measure generalization to an unseen
+    corpus (Phase 2).
 
     Returns a report dict with this shape (consumed by
     :func:`_print_summary`, the dashboard, and ``main``):
@@ -125,7 +143,7 @@ def _run_benchmark(
     """
     from . import RagPipeline
 
-    pipeline = RagPipeline()
+    pipeline = RagPipeline(corpus=corpus) if corpus is not None else RagPipeline()
     retriever_name = type(pipeline.retriever).__name__
     corpus_name = pipeline.corpus.name
 
@@ -194,9 +212,9 @@ def _aggregate_by_difficulty(per_query: list[dict[str, Any]]) -> dict[str, dict[
         if q["topk_match"]:
             b["topk"] += 1
     for b in buckets.values():
-        t = b["total"]
-        b["precision_at_1"] = b["top1"] / t if t else 0.0
-        b["recall_at_k"] = b["topk"] / t if t else 0.0
+        # A bucket only exists once a query landed in it, so total >= 1.
+        b["precision_at_1"] = b["top1"] / b["total"]
+        b["recall_at_k"] = b["topk"] / b["total"]
     return buckets
 
 
@@ -554,6 +572,26 @@ def main(argv: list[str] | None = None) -> int:
             "SHA lock intact)."
         ),
     )
+    parser.add_argument(
+        "--corpus",
+        type=Path,
+        default=_default_corpus_b_path(),
+        help=(
+            "Path to an UNSEEN second corpus directory for generalization "
+            f"measurement (default: {_default_corpus_b_path()}). Loaded as a "
+            "DirectoryCorpus and benchmarked with --corpus-queries. Skipped if "
+            "either is absent. Advisory; never gates."
+        ),
+    )
+    parser.add_argument(
+        "--corpus-queries",
+        type=Path,
+        default=_default_corpus_b_queries_path(),
+        help=(
+            "Golden queries for the --corpus generalization pass "
+            f"(default: {_default_corpus_b_queries_path()})."
+        ),
+    )
     parser.add_argument("-k", type=int, default=3, help="Top-k for recall (default 3)")
     parser.add_argument(
         "--min-precision",
@@ -684,6 +722,25 @@ def main(argv: list[str] | None = None) -> int:
         print("\n=== Extended (advisory hard) set ===")
         _print_summary(extended_report, verbose=args.verbose)
 
+    # Generalization pass: same retriever against an UNSEEN second corpus
+    # (advisory; never gates). Quantifies how far keyword+alias retrieval
+    # drops on a corpus it was not tuned on.
+    generalization_report: dict[str, Any] | None = None
+    if (
+        args.corpus
+        and args.corpus.is_dir()
+        and args.corpus_queries
+        and args.corpus_queries.is_file()
+    ):
+        from .corpus import DirectoryCorpus
+
+        corpus_b = DirectoryCorpus(args.corpus)
+        generalization_report = _run_benchmark(
+            _load_queries(args.corpus_queries), k=args.k, corpus=corpus_b
+        )
+        print(f"\n=== Generalization: unseen corpus ({args.corpus.name}) ===")
+        _print_summary(generalization_report, verbose=args.verbose)
+
     if report["precision_at_1"] < args.min_precision:
         print(
             f"\nFAIL: precision@1 {report['precision_at_1']:.2%} < gate {args.min_precision:.2%}",
@@ -705,6 +762,8 @@ def main(argv: list[str] | None = None) -> int:
             retrieval_payload["negatives"] = negatives_report
         if extended_report is not None:
             retrieval_payload["extended"] = extended_report
+        if generalization_report is not None:
+            retrieval_payload["generalization"] = generalization_report
         _dump_json(args.json, retrieval_payload)
 
     if args.with_faithfulness:
@@ -719,10 +778,6 @@ def main(argv: list[str] | None = None) -> int:
             "retrieval": report,
             "queries_path": str(args.queries),
         }
-        if negatives_report is not None:
-            json_payload["negatives"] = negatives_report
-        if extended_report is not None:
-            json_payload["extended"] = extended_report
 
         if args.compare_thinking:
             print(
