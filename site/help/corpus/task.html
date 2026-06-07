@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Work with corpus — task</title>
-  <meta name="description" content="Use a corpus implementation when you need to load and retrieve help templates — choose `DirectoryCorpus` to read markdown files from disk, `AttuneHelpCorpus` to wrap the bundled attune-help templates," />
-  <meta property="og:title" content="Work with corpus — task" />
-  <meta property="og:description" content="Use a corpus implementation when you need to load and retrieve help templates — choose `DirectoryCorpus` to read markdown files from disk, `AttuneHelpCorpus` to wrap the bundled attune-help templates," />
+  <title>Work with a corpus — task</title>
+  <meta name="description" content="Use a corpus implementation when you need to load and query a collection of retrieval entries — either from a directory of Markdown files (`DirectoryCorpus`), from the bundled attune-help templates (`" />
+  <meta property="og:title" content="Work with a corpus — task" />
+  <meta property="og:description" content="Use a corpus implementation when you need to load and query a collection of retrieval entries — either from a directory of Markdown files (`DirectoryCorpus`), from the bundled attune-help templates (`" />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/corpus/task" />
@@ -257,130 +257,173 @@
     <a class="api-link" href="https://github.com/Smart-AI-Memory/attune-rag">Source &amp; API &rarr;</a>
   </nav>
   <article class="markdown-body">
-<h1>Work with corpus</h1>
-<p>Use a corpus implementation when you need to load and retrieve help templates — choose <code>DirectoryCorpus</code> to read markdown files from disk, <code>AttuneHelpCorpus</code> to wrap the bundled attune-help templates, or implement <code>CorpusProtocol</code> directly to supply your own source.</p>
+<h1>Work with a corpus</h1>
+<p>Use a corpus implementation when you need to load and query a collection of retrieval entries — either from a directory of Markdown files (<code>DirectoryCorpus</code>), from the bundled attune-help templates (<code>AttuneHelpCorpus</code>), or from a custom source that satisfies <code>CorpusProtocol</code>.</p>
 <h2>Prerequisites</h2>
 <ul>
-<li>Access to the project source code</li>
-<li>Python <code>Path</code> available if you are instantiating <code>DirectoryCorpus</code></li>
+<li>Read access to the project source under <code>src/attune_rag/corpus/</code></li>
+<li>A working Python environment with the package installed</li>
 </ul>
-<h2>Key files</h2>
-<ul>
-<li><code>src/attune_rag/corpus/__init__.py</code></li>
-<li><code>src/attune_rag/corpus/base.py</code> — <code>CorpusProtocol</code>, <code>RetrievalEntry</code>, <code>AliasInfo</code>, <code>DuplicateAliasError</code></li>
-<li><code>src/attune_rag/corpus/directory.py</code> — <code>DirectoryCorpus</code></li>
-<li><code>src/attune_rag/corpus/attune_help.py</code> — <code>AttuneHelpCorpus</code></li>
-</ul>
-<h2>Steps</h2>
-<ol>
-<li>
-<p><strong>Choose the right corpus class for your use case.</strong></p>
+<h2>Choose a corpus implementation</h2>
+<p>The three concrete options map to distinct use cases:</p>
 <table>
 <thead>
 <tr>
-<th>Goal</th>
-<th>Class to use</th>
+<th>Class</th>
+<th>Use when</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Load markdown files from a local directory</td>
 <td><code>DirectoryCorpus</code></td>
+<td>You have a local directory of Markdown files to load as a corpus</td>
 </tr>
 <tr>
-<td>Wrap the bundled attune-help templates</td>
 <td><code>AttuneHelpCorpus</code></td>
+<td>You want to query the bundled attune-help templates directly</td>
 </tr>
 <tr>
-<td>Supply a custom template source</td>
-<td>Implement <code>CorpusProtocol</code></td>
+<td>Custom <code>CorpusProtocol</code></td>
+<td>You need a corpus backed by a source other than the filesystem</td>
 </tr>
 </tbody>
 </table>
-</li>
+<h2>Load a <code>DirectoryCorpus</code></h2>
+<ol>
 <li>
-<p><strong>Instantiate the corpus.</strong></p>
-<ul>
-<li>
-<p><strong><code>DirectoryCorpus</code></strong> — point it at a directory of <code>.md</code> files:</p>
-<pre><code class="language-python">from pathlib import Path
-from attune_rag.corpus import DirectoryCorpus
-
-corpus = DirectoryCorpus(
-    root=Path(&quot;path/to/templates&quot;),
-    summaries_file=&quot;summaries.json&quot;,   # optional
-    cross_links_file=&quot;links.json&quot;,     # optional
-    cache=True,                        # cache entries after first load
-)
+<p><strong>Import the class</strong> from the public API:</p>
+<pre><code class="language-python">from corpus import DirectoryCorpus
 </code></pre>
-<p>By default it globs <code>**/*.md</code>. Pass a custom <code>glob</code> string to restrict or expand which files are loaded.</p>
 </li>
 <li>
-<p><strong><code>AttuneHelpCorpus</code></strong> — use the class method to load the bundled templates:</p>
-<pre><code class="language-python">from attune_rag.corpus import AttuneHelpCorpus
+<p><strong>Instantiate it</strong> with the path to your Markdown directory:</p>
+<pre><code class="language-python">corpus = DirectoryCorpus(root=Path(&quot;docs/&quot;))
+</code></pre>
+<p>Pass optional arguments to refine loading behavior:</p>
+<ul>
+<li><code>summaries_file</code> — path to a file that provides per-entry summaries</li>
+<li><code>cross_links_file</code> — path to a file that provides cross-link relationships</li>
+<li><code>extra_aliases</code> or <code>extra_aliases_file</code> — additional aliases beyond what templates declare</li>
+<li><code>glob</code> — override the default <code>**/*.md</code> pattern to match a different set of files</li>
+<li><code>cache=False</code> — disable caching if you need entries to reflect live file changes</li>
+<li><code>warn_alias_overlap=False</code> — suppress warnings when aliases collide across templates</li>
+</ul>
+</li>
+<li>
+<p><strong>Iterate over entries</strong> to access all loaded templates:</p>
+<pre><code class="language-python">for entry in corpus.entries():
+    print(entry.path, entry.category)
+</code></pre>
+</li>
+<li>
+<p><strong>Retrieve a single entry by path</strong> using <code>get</code>:</p>
+<pre><code class="language-python">entry = corpus.get(&quot;tasks/my-template.md&quot;)
+</code></pre>
+<p><code>get</code> returns <code>None</code> if no entry matches the path.</p>
+</li>
+<li>
+<p><strong>Look up entries and aliases by index</strong> for fast access:</p>
+<pre><code class="language-python">entry = corpus.path_index[&quot;tasks/my-template.md&quot;]
+alias_info = corpus.alias_index[&quot;my-alias&quot;]
+</code></pre>
+</li>
+</ol>
+<h2>Load an <code>AttuneHelpCorpus</code></h2>
+<ol>
+<li>
+<p><strong>Import and instantiate</strong> using the class method:</p>
+<pre><code class="language-python">from corpus import AttuneHelpCorpus
 
 corpus = AttuneHelpCorpus.from_attune_help()
 </code></pre>
 </li>
-</ul>
-</li>
 <li>
-<p><strong>Retrieve entries from the corpus.</strong></p>
-<ul>
-<li>Iterate over every entry:<pre><code class="language-python">for entry in corpus.entries():
-    print(entry.path, entry.category, entry.summary)
-</code></pre>
-</li>
-<li>Fetch a single entry by path:<pre><code class="language-python">entry = corpus.get(&quot;errors/not-found.md&quot;)
-if entry is None:
-    print(&quot;Template not found.&quot;)
-</code></pre>
-</li>
-</ul>
-<p>Each <code>RetrievalEntry</code> exposes <code>path</code>, <code>category</code>, <code>content</code>, and optionally <code>summary</code>, <code>related</code>, <code>aliases</code>, and <code>metadata</code>.</p>
-</li>
-<li>
-<p><strong>Inspect the alias and path indexes (DirectoryCorpus only).</strong></p>
-<p>Use <code>path_index</code> for a <code>{rel_path: RetrievalEntry}</code> mapping and <code>alias_index</code> for a <code>{alias: AliasInfo}</code> mapping:</p>
-<pre><code class="language-python">entry = corpus.path_index.get(&quot;how-to/configure.md&quot;)
-alias_info = corpus.alias_index.get(&quot;configure&quot;)
-</code></pre>
-<p>If two templates declare the same alias, <code>DirectoryCorpus</code> raises <code>DuplicateAliasError</code> with the conflicting paths. Catch it explicitly if you load untrusted template directories.</p>
-</li>
-<li>
-<p><strong>Implement a custom corpus (optional).</strong></p>
-<p>Create a class that satisfies <code>CorpusProtocol</code> by implementing <code>entries()</code>, <code>get()</code>, <code>name</code>, and <code>version</code>:</p>
-<pre><code class="language-python">from attune_rag.corpus import CorpusProtocol, RetrievalEntry
+<p><strong>Query entries</strong> the same way as <code>DirectoryCorpus</code> — both implement <code>CorpusProtocol</code>:</p>
+<pre><code class="language-python">for entry in corpus.entries():
+    print(entry.path)
 
-class MyCorpus:
-    @property
-    def name(self) -&gt; str:
-        return &quot;my-corpus&quot;
-
-    @property
-    def version(self) -&gt; str:
-        return &quot;1.0.0&quot;
-
-    def entries(self):
-        yield RetrievalEntry(path=&quot;example.md&quot;, category=&quot;how-to&quot;, content=&quot;…&quot;)
-
-    def get(self, path: str):
-        ...
-</code></pre>
-</li>
-<li>
-<p><strong>Run the corpus tests to confirm your changes are correct.</strong></p>
-<pre><code class="language-shell">pytest -k &quot;corpus&quot;
+entry = corpus.get(&quot;concepts/some-concept.md&quot;)
 </code></pre>
 </li>
 </ol>
-<h2>Verify success</h2>
-<p>The task is complete when:</p>
-<ul>
-<li><code>corpus.entries()</code> yields at least one <code>RetrievalEntry</code> with a non-empty <code>path</code> and <code>content</code>.</li>
-<li><code>corpus.get(&quot;your/template/path.md&quot;)</code> returns the expected entry rather than <code>None</code>.</li>
-<li><code>pytest -k &quot;corpus&quot;</code> passes with no failures or errors.</li>
-</ul>
+<h2>Implement a custom <code>CorpusProtocol</code></h2>
+<ol>
+<li>
+<p><strong>Import the protocol</strong>:</p>
+<pre><code class="language-python">from corpus import CorpusProtocol, RetrievalEntry
+</code></pre>
+</li>
+<li>
+<p><strong>Define a class</strong> that implements the four required members:</p>
+<pre><code class="language-python">class MyCorpus:
+    def entries(self) -&gt; Iterable[RetrievalEntry]:
+        ...
+
+    def get(self, path: str) -&gt; RetrievalEntry | None:
+        ...
+
+    @property
+    def name(self) -&gt; str:
+        ...
+
+    @property
+    def version(self) -&gt; str:
+        ...
+</code></pre>
+<p>Your class does not need to subclass <code>CorpusProtocol</code> — any object that satisfies the interface is accepted wherever a <code>CorpusProtocol</code> is expected.</p>
+</li>
+<li>
+<p><strong>Construct <code>RetrievalEntry</code> objects</strong> for each item your corpus exposes. The required fields are <code>path</code>, <code>category</code>, and <code>content</code>:</p>
+<pre><code class="language-python">entry = RetrievalEntry(
+    path=&quot;custom/my-entry.md&quot;,
+    category=&quot;tasks&quot;,
+    content=&quot;# My entry\n\nContent here.&quot;,
+    summary=&quot;A short description&quot;,
+    aliases=(&quot;my-entry&quot;, &quot;entry-alias&quot;),
+)
+</code></pre>
+</li>
+</ol>
+<h2>Handle <code>DuplicateAliasError</code></h2>
+<p>When two templates in the same corpus declare the same alias, <code>DirectoryCorpus</code> raises <code>DuplicateAliasError</code> (unless <code>warn_alias_overlap=False</code> is set, in which case it warns instead). Catch it if you load corpora programmatically:</p>
+<pre><code class="language-python">from corpus import DirectoryCorpus, DuplicateAliasError
+
+try:
+    corpus = DirectoryCorpus(root=Path(&quot;docs/&quot;))
+except DuplicateAliasError as e:
+    print(f&quot;Alias '{e.alias}' is claimed by both {e.first_path} and {e.second_path}&quot;)
+</code></pre>
+<h2>Verify the result</h2>
+<p>Run the corpus test suite to confirm everything loads correctly:</p>
+<pre><code>pytest -k &quot;corpus&quot;
+</code></pre>
+<p>A passing run confirms that all entries load without alias conflicts, <code>get</code> resolves paths correctly, and <code>entries()</code> returns the expected <code>RetrievalEntry</code> objects. You can also do a quick sanity check in a Python session:</p>
+<pre><code class="language-python">corpus = DirectoryCorpus(root=Path(&quot;docs/&quot;))
+assert corpus.name  # non-empty string
+assert any(True for _ in corpus.entries())  # at least one entry loaded
+print(f&quot;Loaded corpus '{corpus.name}' at version {corpus.version}&quot;)
+</code></pre>
+<h2>Unresolved references</h2>
+<blockquote>
+<p>Auto-generated by attune-author fact-check. Review and either
+fix the source code, fix this doc, or add an override.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Location</th>
+<th>Severity</th>
+<th>Issue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Line 138 (code fence)</td>
+<td>error</td>
+<td><code>from corpus import …</code> — module not importable</td>
+</tr>
+</tbody>
+</table>
 
   </article>
   <footer>

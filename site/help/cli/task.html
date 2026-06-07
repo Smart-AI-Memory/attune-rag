@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Run retrieval debugging from the command line — task</title>
-  <meta name="description" content="Use the `attune-rag` CLI when you need to query the RAG pipeline or inspect corpus statistics directly from your terminal without writing Python code." />
-  <meta property="og:title" content="Run retrieval debugging from the command line — task" />
-  <meta property="og:description" content="Use the `attune-rag` CLI when you need to query the RAG pipeline or inspect corpus statistics directly from your terminal without writing Python code." />
+  <title>Work with the attune-rag CLI — task</title>
+  <meta name="description" content="Use the `attune_rag.cli` module when you need to run retrieval queries or inspect corpus statistics from the command line." />
+  <meta property="og:title" content="Work with the attune-rag CLI — task" />
+  <meta property="og:description" content="Use the `attune_rag.cli` module when you need to run retrieval queries or inspect corpus statistics from the command line." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/cli/task" />
@@ -257,62 +257,49 @@
     <a class="api-link" href="https://github.com/Smart-AI-Memory/attune-rag">Source &amp; API &rarr;</a>
   </nav>
   <article class="markdown-body">
-<h1>Run retrieval debugging from the command line</h1>
-<p>Use the <code>attune-rag</code> CLI when you need to query the RAG pipeline or inspect corpus statistics directly from your terminal without writing Python code.</p>
+<h1>Work with the attune-rag CLI</h1>
+<p>Use the <code>attune_rag.cli</code> module when you need to run retrieval queries or inspect corpus statistics from the command line.</p>
 <h2>Prerequisites</h2>
 <ul>
-<li>A working installation of <code>attune-rag</code> with the CLI entry point available on your <code>PATH</code></li>
-<li>Access to <code>src/attune_rag/cli.py</code> if you intend to extend or modify CLI behavior</li>
+<li>Access to the project source code at <code>src/attune_rag/cli.py</code></li>
+<li>A working Python environment with <code>attune_rag</code> installed</li>
 </ul>
-<h2>Run a query or inspect the corpus</h2>
+<h2>Steps</h2>
 <ol>
 <li>
-<p><strong>Run a RAG query.</strong> Pass your question as an argument to get a grounded answer with citations:</p>
-<pre><code>attune-rag query &quot;What is the retrieval strategy?&quot;
-</code></pre>
+<p><strong>Review the two public entry points.</strong>
+Open <code>src/attune_rag/cli.py</code> and locate <code>build_parser()</code> and <code>main()</code>. <code>build_parser()</code> constructs the argument parser that defines all available subcommands and flags. <code>main()</code> is the entry point that parses <code>argv</code> and dispatches to the appropriate handler.</p>
 </li>
 <li>
-<p><strong>View corpus statistics.</strong> Run the <code>corpus-info</code> subcommand to print a summary of the current corpus:</p>
-<pre><code>attune-rag corpus-info
-</code></pre>
-</li>
-<li>
-<p><strong>Review available options.</strong> Use <code>--help</code> to see all subcommands and flags exposed by <code>build_parser()</code>:</p>
-<pre><code>attune-rag --help
-</code></pre>
-</li>
-</ol>
-<h2>Extend the CLI</h2>
-<ol>
-<li>
-<p><strong>Open the entry point file.</strong>
-All CLI logic lives in <code>src/attune_rag/cli.py</code>. The two functions you will work with are:</p>
+<p><strong>Identify which function owns the behavior you need.</strong></p>
 <ul>
-<li><code>build_parser()</code> — constructs and returns the <code>argparse.ArgumentParser</code>, including all subcommands and flags</li>
-<li><code>main(argv)</code> — parses arguments and dispatches to the appropriate handler; returns an integer exit code</li>
+<li>To add or modify a subcommand, flag, or argument, work in <code>build_parser()</code>.</li>
+<li>To change how the CLI dispatches, handles errors, or returns exit codes, work in <code>main()</code>.</li>
 </ul>
 </li>
 <li>
-<p><strong>Add or modify a subcommand in <code>build_parser()</code>.</strong> Add a new subparser or argument to the parser this function returns. Match the naming conventions and help-string style of the existing subcommands.</p>
+<p><strong>Edit the target function.</strong>
+Make your changes in <code>src/attune_rag/cli.py</code>. Keep argument names consistent with those already defined in <code>build_parser()</code>, and ensure <code>main()</code> returns an integer exit code.</p>
 </li>
 <li>
-<p><strong>Wire up the handler in <code>main()</code>.</strong> Add the corresponding dispatch logic so the new subcommand calls the right function and returns an explicit integer exit code (<code>0</code> for success, non-zero for failure).</p>
+<p><strong>Run the related tests.</strong>
+Execute <code>pytest -k &quot;cli&quot;</code> to catch regressions before they affect other developers.</p>
 </li>
 <li>
-<p><strong>Run the targeted tests</strong> to catch regressions before they affect other developers:</p>
-<pre><code>pytest -k &quot;cli&quot;
-</code></pre>
+<p><strong>Verify the CLI behaves as expected.</strong>
+Call <code>main()</code> directly with a list of arguments, or invoke the installed command from your shell. Confirm the output, exit code, and any error messages match your intent.</p>
 </li>
 </ol>
 <h2>Verify success</h2>
+<p>You know this task is complete when:</p>
 <ul>
-<li><code>attune-rag query</code> prints an answer followed by citation references and exits with code <code>0</code>.</li>
-<li><code>attune-rag corpus-info</code> prints corpus statistics and exits with code <code>0</code>.</li>
-<li><code>pytest -k &quot;cli&quot;</code> reports no failures.</li>
+<li><code>pytest -k &quot;cli&quot;</code> passes with no failures</li>
+<li>Calling <code>main()</code> with valid arguments returns <code>0</code></li>
+<li>Calling <code>main()</code> with invalid arguments returns a non-zero exit code and prints a usage message</li>
 </ul>
 <h2>Key files</h2>
 <ul>
-<li><code>src/attune_rag/cli.py</code></li>
+<li><code>src/attune_rag/cli.py</code> — contains <code>build_parser()</code> and <code>main()</code></li>
 </ul>
 
   </article>

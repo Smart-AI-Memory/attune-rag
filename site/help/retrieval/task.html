@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Work with retrieval — task</title>
-  <meta name="description" content="Use keyword retrieval when you need to score and rank corpus entries against a natural-language query — `KeywordRetriever` filters stopwords, applies suffix stemming, and weights matches across an ent" />
+  <meta name="description" content="Use `KeywordRetriever` when you need to search a corpus by keyword and get back ranked results — for example, to surface the most relevant entries before passing them to a language model." />
   <meta property="og:title" content="Work with retrieval — task" />
-  <meta property="og:description" content="Use keyword retrieval when you need to score and rank corpus entries against a natural-language query — `KeywordRetriever` filters stopwords, applies suffix stemming, and weights matches across an ent" />
+  <meta property="og:description" content="Use `KeywordRetriever` when you need to search a corpus by keyword and get back ranked results — for example, to surface the most relevant entries before passing them to a language model." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/retrieval/task" />
@@ -258,92 +258,85 @@
   </nav>
   <article class="markdown-body">
 <h1>Work with retrieval</h1>
-<p>Use keyword retrieval when you need to score and rank corpus entries against a natural-language query — <code>KeywordRetriever</code> filters stopwords, applies suffix stemming, and weights matches across an entry's path, summary, content, and related fields to return the top-k <code>RetrievalHit</code> results.</p>
+<p>Use <code>KeywordRetriever</code> when you need to search a corpus by keyword and get back ranked results — for example, to surface the most relevant entries before passing them to a language model.</p>
 <h2>Prerequisites</h2>
 <ul>
-<li>Read access to <code>src/attune_rag/retrieval.py</code></li>
+<li><code>attune_rag</code> installed and importable in your environment</li>
 <li>A corpus object that satisfies <code>CorpusProtocol</code></li>
 </ul>
-<h2>Understand the retrieval model</h2>
-<p>Before writing code, familiarise yourself with the three building blocks in <code>src/attune_rag/retrieval.py</code>:</p>
+<h2>Steps</h2>
+<ol>
+<li>
+<p><strong>Import the retrieval classes.</strong></p>
+<pre><code class="language-python">from attune_rag.retrieval import KeywordRetriever, RetrievalHit
+</code></pre>
+</li>
+<li>
+<p><strong>Instantiate <code>KeywordRetriever</code>.</strong></p>
+<p>Pass <code>min_score</code> if you want to discard low-confidence results. Omit it to return all scored hits.</p>
+<pre><code class="language-python">retriever = KeywordRetriever(min_score=0.1)
+</code></pre>
+</li>
+<li>
+<p><strong>Call <code>retrieve</code> with your query, corpus, and result count.</strong></p>
+<p><code>k</code> controls how many hits are returned (default: <code>3</code>).</p>
+<pre><code class="language-python">hits: list[RetrievalHit] = retriever.retrieve(
+    query=&quot;how to configure logging&quot;,
+    corpus=my_corpus,
+    k=5,
+)
+</code></pre>
+</li>
+<li>
+<p><strong>Inspect each <code>RetrievalHit</code>.</strong></p>
+<p>Each hit exposes three fields:</p>
 <table>
 <thead>
 <tr>
-<th>Class</th>
-<th>Role</th>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>RetrievalHit</code></td>
-<td>Dataclass wrapping a single result: a <code>RetrievalEntry</code>, a <code>float</code> score, and a <code>str</code> match reason.</td>
+<td><code>entry</code></td>
+<td><code>RetrievalEntry</code></td>
+<td>The matched corpus entry</td>
 </tr>
 <tr>
-<td><code>RetrieverProtocol</code></td>
-<td>Structural protocol — any object that exposes <code>retrieve(query, corpus, k)</code> qualifies.</td>
+<td><code>score</code></td>
+<td><code>float</code></td>
+<td>Relevance score assigned by the retriever</td>
 </tr>
 <tr>
-<td><code>KeywordRetriever</code></td>
-<td>Concrete token-overlap retriever. Strips <code>_STOPWORDS</code>, stems tokens using <code>_STEM_SUFFIXES</code>, then scores each entry by weighted field overlap.</td>
+<td><code>match_reason</code></td>
+<td><code>str</code></td>
+<td>Human-readable explanation of why this entry matched</td>
 </tr>
 </tbody>
 </table>
-<h2>Use <code>KeywordRetriever</code> directly</h2>
-<ol>
-<li>
-<p>Instantiate <code>KeywordRetriever</code> — it requires no constructor arguments.</p>
-<pre><code class="language-python">from attune_rag.retrieval import KeywordRetriever
-
-retriever = KeywordRetriever()
-</code></pre>
-</li>
-<li>
-<p>Call <code>retrieve</code> with your query string, a <code>CorpusProtocol</code> object, and the number of results you want.</p>
-<pre><code class="language-python">hits = retriever.retrieve(query=&quot;authentication tokens&quot;, corpus=my_corpus, k=5)
-</code></pre>
-</li>
-<li>
-<p>Iterate over the returned <code>list[RetrievalHit]</code> and read each hit's fields.</p>
 <pre><code class="language-python">for hit in hits:
     print(hit.score, hit.match_reason, hit.entry)
 </code></pre>
-<p><strong>Success criterion:</strong> <code>hits</code> is a list of up to <code>k</code> <code>RetrievalHit</code> objects ordered from highest to lowest score. If the list is empty, your query tokens were all stopwords or produced no overlap with the corpus.</p>
 </li>
-</ol>
-<h2>Implement a custom retriever</h2>
-<ol>
 <li>
-<p>Create a class that implements the <code>RetrieverProtocol</code> signature — no explicit inheritance is required.</p>
-<pre><code class="language-python">from collections.abc import Iterable
-from attune_rag.retrieval import RetrievalHit
-
-class SemanticRetriever:
-    def retrieve(
-        self,
-        query: str,
-        corpus: CorpusProtocol,
-        k: int = 3,
-    ) -&gt; Iterable[RetrievalHit]:
-        ...
+<p><strong>Swap in a custom retriever if needed.</strong></p>
+<p>If <code>KeywordRetriever</code> does not suit your use case, implement <code>RetrieverProtocol</code> instead. Any class with a <code>retrieve(self, query: str, corpus: CorpusProtocol, k: int = 3) -&gt; Iterable[RetrievalHit]</code> method satisfies the protocol and can be used anywhere <code>KeywordRetriever</code> is accepted.</p>
+<pre><code class="language-python">class MyRetriever:
+    def retrieve(self, query: str, corpus: CorpusProtocol, k: int = 3):
+        ...  # your logic here
 </code></pre>
 </li>
-<li>
-<p>Return <code>RetrievalHit</code> instances from your <code>retrieve</code> method. Populate <code>entry</code> with the matched <code>RetrievalEntry</code>, <code>score</code> with a numeric relevance value, and <code>match_reason</code> with a human-readable explanation.</p>
-</li>
-<li>
-<p>Pass your retriever wherever a <code>RetrieverProtocol</code> is expected — duck typing means no cast or adapter is needed.</p>
-<p><strong>Success criterion:</strong> Static type checkers and any runtime protocol checks accept your class without errors.</p>
-</li>
 </ol>
-<h2>Run the tests</h2>
-<p>Verify your changes against the existing test suite:</p>
-<pre><code class="language-shell">pytest -k &quot;retrieval&quot;
-</code></pre>
-<p>All tests pass when the output shows <code>no failed</code> for the <code>retrieval</code> suite.</p>
-<h2>Key files</h2>
+<h2>Verify the result</h2>
+<p>After calling <code>retrieve</code>, confirm that:</p>
 <ul>
-<li><code>src/attune_rag/retrieval.py</code> — contains <code>RetrievalHit</code>, <code>RetrieverProtocol</code>, <code>KeywordRetriever</code>, <code>_STOPWORDS</code>, and <code>_STEM_SUFFIXES</code></li>
+<li><code>hits</code> is a non-empty list when the corpus contains relevant entries.</li>
+<li>Each <code>hit.score</code> is greater than or equal to the <code>min_score</code> you set (if any).</li>
+<li>Each <code>hit.match_reason</code> is a non-empty string describing the match.</li>
 </ul>
+<p>If <code>hits</code> is empty and you expect matches, lower <code>min_score</code> or omit it entirely to check whether the retriever is scoring entries at all.</p>
 
   </article>
   <footer>

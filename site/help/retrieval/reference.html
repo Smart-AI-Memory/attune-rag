@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Retrieval reference — reference</title>
-  <meta name="description" content="Use this module to score and rank `RetrievalEntry` objects against a natural-language query. `KeywordRetriever` tokenizes the query, strips stopwords, applies suffix stemming, and weights matches acro" />
+  <meta name="description" content="Score and rank corpus entries against a query using `KeywordRetriever`, a token-overlap retriever that applies stemming, stopword filtering, and per-field weights across path, summary, content, and re" />
   <meta property="og:title" content="Retrieval reference — reference" />
-  <meta property="og:description" content="Use this module to score and rank `RetrievalEntry` objects against a natural-language query. `KeywordRetriever` tokenizes the query, strips stopwords, applies suffix stemming, and weights matches acro" />
+  <meta property="og:description" content="Score and rank corpus entries against a query using `KeywordRetriever`, a token-overlap retriever that applies stemming, stopword filtering, and per-field weights across path, summary, content, and re" />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/retrieval/reference" />
@@ -258,7 +258,7 @@
   </nav>
   <article class="markdown-body">
 <h1>Retrieval reference</h1>
-<p>Use this module to score and rank <code>RetrievalEntry</code> objects against a natural-language query. <code>KeywordRetriever</code> tokenizes the query, strips stopwords, applies suffix stemming, and weights matches across the path, summary, content, and related fields of each entry.</p>
+<p>Score and rank corpus entries against a query using <code>KeywordRetriever</code>, a token-overlap retriever that applies stemming, stopword filtering, and per-field weights across path, summary, content, and related fields.</p>
 <h2>Classes</h2>
 <table>
 <thead>
@@ -270,7 +270,7 @@
 <tbody>
 <tr>
 <td><code>RetrievalHit</code></td>
-<td>A single retrieval result.</td>
+<td>A single retrieval result holding the matched entry, its score, and the match reason.</td>
 </tr>
 <tr>
 <td><code>RetrieverProtocol</code></td>
@@ -282,9 +282,9 @@
 </tr>
 </tbody>
 </table>
-<h3><code>RetrievalHit</code></h3>
-<p><code>[dataclass]</code> — A single retrieval result.</p>
-<h4>Fields</h4>
+<h2><code>RetrievalHit</code></h2>
+<p><code>RetrievalHit</code> is a dataclass representing one item returned by a retriever.</p>
+<h3>Fields</h3>
 <table>
 <thead>
 <tr>
@@ -311,10 +311,9 @@
 </tr>
 </tbody>
 </table>
-<hr />
-<h3><code>RetrieverProtocol</code></h3>
-<p>Structural protocol for retriever objects. Any class that implements <code>retrieve(query, corpus, k)</code> with the signature below satisfies this protocol.</p>
-<h4>Methods</h4>
+<h2><code>RetrieverProtocol</code></h2>
+<p>Structural protocol — any class that implements <code>retrieve(query, corpus, k)</code> satisfies it.</p>
+<h3>Methods</h3>
 <table>
 <thead>
 <tr>
@@ -327,16 +326,34 @@
 <tbody>
 <tr>
 <td><code>retrieve</code></td>
-<td><code>self, query: str, corpus: CorpusProtocol, k: int = 3</code></td>
+<td><code>query: str</code>, <code>corpus: CorpusProtocol</code>, <code>k: int = 3</code></td>
 <td><code>Iterable[RetrievalHit]</code></td>
-<td>Retrieve the top-<code>k</code> hits from <code>corpus</code> for the given <code>query</code>.</td>
+<td>Retrieve the top-<code>k</code> hits for <code>query</code> from <code>corpus</code>.</td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h3><code>KeywordRetriever</code></h3>
-<p>Token-overlap retriever that scores entries by weighted keyword matches across path, summary, content, and related fields.</p>
-<h4>Methods</h4>
+<h2><code>KeywordRetriever</code></h2>
+<p>Token-overlap retriever that scores entries by stemmed keyword matches, weighted by field (path, summary, content, related). Entries below <code>min_score</code> are excluded when a threshold is set.</p>
+<h3>Constructor</h3>
+<table>
+<thead>
+<tr>
+<th>Parameters</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>min_score</code></td>
+<td><code>float | None</code></td>
+<td><code>None</code></td>
+<td>Minimum score threshold; hits below this value are excluded from results.</td>
+</tr>
+</tbody>
+</table>
+<h3>Methods</h3>
 <table>
 <thead>
 <tr>
@@ -349,16 +366,15 @@
 <tbody>
 <tr>
 <td><code>retrieve</code></td>
-<td><code>self, query: str, corpus: CorpusProtocol, k: int = 3</code></td>
+<td><code>query: str</code>, <code>corpus: CorpusProtocol</code>, <code>k: int = 3</code></td>
 <td><code>list[RetrievalHit]</code></td>
-<td>Retrieve the top-<code>k</code> scored <code>RetrievalHit</code> objects from <code>corpus</code> for the given <code>query</code>.</td>
+<td>Return the top-<code>k</code> scored and ranked <code>RetrievalHit</code> objects for <code>query</code>.</td>
 </tr>
 </tbody>
 </table>
-<hr />
-<h2>Module constants</h2>
+<h2>Constants</h2>
+<p>The following module-level constants control tokenization behavior during scoring.</p>
 <h3>Stopwords</h3>
-<p>Tokens filtered from the query before scoring.</p>
 <table>
 <thead>
 <tr>
@@ -376,24 +392,22 @@
 </tbody>
 </table>
 <h3>Stem suffixes</h3>
-<p>Suffixes stripped during tokenization, applied in the order listed.</p>
 <table>
 <thead>
 <tr>
 <th>Constant</th>
 <th>Type</th>
-<th>Members</th>
+<th>Members (in order)</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>_STEM_SUFFIXES</code></td>
 <td><code>tuple</code></td>
-<td><code>'ations'</code>, <code>'ation'</code>, <code>'ators'</code>, <code>'ator'</code>, <code>'ates'</code>, <code>'ate'</code>, <code>'ings'</code>, <code>'ing'</code>, <code>'ions'</code>, <code>'ion'</code>, <code>'ies'</code>, <code>'ers'</code>, <code>'ed'</code>, <code>'er'</code>, <code>'es'</code>, <code>'s'</code></td>
+<td><code>'ations'</code>, <code>'ation'</code>, <code>'ators'</code>, <code>'ator'</code>, <code>'ates'</code>, <code>'ate'</code>, <code>'ings'</code>, <code>'ing'</code>, <code>'ions'</code>, <code>'ion'</code>, <code>'ities'</code>, <code>'ity'</code>, <code>'ies'</code>, <code>'ers'</code>, <code>'ed'</code>, <code>'er'</code>, <code>'es'</code>, <code>'s'</code></td>
 </tr>
 </tbody>
 </table>
-<hr />
 <h2>Source files</h2>
 <ul>
 <li><code>src/attune_rag/retrieval.py</code></li>

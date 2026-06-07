@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Work with providers — task</title>
-  <meta name="description" content="Use an LLM provider when you need to send prompts to Claude or Gemini and receive generated text — or cited responses — through a consistent async interface without coupling your code to a specific SD" />
+  <meta name="description" content="Use providers when you need to generate text or citation-backed responses from an LLM, and you want to swap between Claude and Gemini without changing your application code." />
   <meta property="og:title" content="Work with providers — task" />
-  <meta property="og:description" content="Use an LLM provider when you need to send prompts to Claude or Gemini and receive generated text — or cited responses — through a consistent async interface without coupling your code to a specific SD" />
+  <meta property="og:description" content="Use providers when you need to generate text or citation-backed responses from an LLM, and you want to swap between Claude and Gemini without changing your application code." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/providers/task" />
@@ -258,11 +258,11 @@
   </nav>
   <article class="markdown-body">
 <h1>Work with providers</h1>
-<p>Use an LLM provider when you need to send prompts to Claude or Gemini and receive generated text — or cited responses — through a consistent async interface without coupling your code to a specific SDK.</p>
+<p>Use providers when you need to generate text or citation-backed responses from an LLM, and you want to swap between Claude and Gemini without changing your application code.</p>
 <h2>Prerequisites</h2>
 <ul>
-<li>An API key for your chosen provider (Anthropic or Google)</li>
-<li>The matching optional dependency installed:
+<li>An API key for the provider you want to use (Anthropic for Claude, Google for Gemini)</li>
+<li>The matching optional SDK installed:
 <ul>
 <li>Claude: <code>pip install attune-rag[claude]</code></li>
 <li>Gemini: <code>pip install attune-rag[gemini]</code></li>
@@ -270,71 +270,76 @@
 </li>
 </ul>
 <h2>Steps</h2>
+<h3>Check which providers are available</h3>
 <ol>
 <li>
-<p><strong>Check which providers are available in your environment.</strong>
-Call <code>list_available()</code> to see which provider SDKs are currently importable:</p>
-<pre><code class="language-python">from attune_rag.providers import list_available
+<p>Import <code>list_available</code> from <code>providers</code>:</p>
+<pre><code class="language-python">from providers import list_available
 
-print(list_available())  # e.g. [&quot;claude&quot;, &quot;gemini&quot;]
+print(list_available())
 </code></pre>
-</li>
-<li>
-<p><strong>Instantiate a provider.</strong>
-Call <code>get_provider()</code> with the provider name and your API key. If the name is not recognised, it raises a <code>ValueError</code> listing the known providers.</p>
-<pre><code class="language-python">from attune_rag.providers import get_provider
-
-provider = get_provider(&quot;claude&quot;, api_key=&quot;YOUR_API_KEY&quot;)
-# or
-provider = get_provider(&quot;gemini&quot;, api_key=&quot;YOUR_API_KEY&quot;)
-</code></pre>
-<p>Alternatively, instantiate a provider class directly if you want to supply a pre-configured SDK client:</p>
-<pre><code class="language-python">from attune_rag.providers.claude import ClaudeProvider
-from anthropic import AsyncAnthropic
-
-provider = ClaudeProvider(client=AsyncAnthropic(api_key=&quot;YOUR_API_KEY&quot;))
-</code></pre>
-</li>
-<li>
-<p><strong>Generate a response from a prompt.</strong>
-Call <code>generate()</code> with a prompt string. Optionally specify <code>model</code>, <code>max_tokens</code> (default <code>2048</code>), or a <code>cached_prefix</code> for prompt caching:</p>
-<pre><code class="language-python">text = await provider.generate(
-    prompt=&quot;Summarise the history of Rome.&quot;,
-    model=&quot;claude-opus-4-5&quot;,
-    max_tokens=512,
-)
-print(text)
-</code></pre>
-</li>
-<li>
-<p><strong>Generate a cited response from source documents</strong> <em>(Claude only).</em>
-Build a list of <code>CitationDocument</code> objects and call <code>generate_with_citations()</code>. The returned <code>CitedResponse</code> contains the generated text and a tuple of claim-level citations.</p>
-<pre><code class="language-python">from attune_rag.providers import CitationDocument
-
-documents = [
-    CitationDocument(title=&quot;Rome Wikipedia&quot;, text=&quot;Rome was founded in 753 BC...&quot;),
-    CitationDocument(title=&quot;Ancient History Encyclopedia&quot;, text=&quot;The Roman Republic began...&quot;),
-]
-
-response = await provider.generate_with_citations(
-    documents=documents,
-    query=&quot;When was Rome founded?&quot;,
-    system=&quot;Answer only from the provided documents.&quot;,
-)
-
-print(response.text)
-print(response.claim_citations)
-</code></pre>
-<blockquote>
-<p><strong>Note:</strong> <code>GeminiProvider</code> does not implement <code>generate_with_citations</code>.</p>
-</blockquote>
+<p><code>list_available()</code> returns the names of providers whose SDKs are currently importable. If a provider's SDK is not installed, it does not appear in the list.</p>
 </li>
 </ol>
-<h2>Verify success</h2>
+<h3>Get a provider instance</h3>
+<ol start="2">
+<li>
+<p>Call <code>get_provider(name, **kwargs)</code> with the provider name and any constructor arguments:</p>
+<pre><code class="language-python">from providers import get_provider
+
+provider = get_provider(&quot;claude&quot;, api_key=&quot;sk-...&quot;)
+</code></pre>
+<p>Pass <code>api_key</code> to authenticate. If you omit it, the provider reads the key from its default environment variable. <code>get_provider</code> raises <code>ValueError</code> if the name is not recognized, with a message listing the known providers.</p>
+</li>
+</ol>
+<h3>Generate text</h3>
+<ol start="3">
+<li>
+<p>Call <code>generate</code> on the provider instance:</p>
+<pre><code class="language-python">response = await provider.generate(
+    prompt=&quot;Summarize the history of functional programming.&quot;,
+    model=None,        # uses the provider's default model
+    max_tokens=2048,
+)
+print(response)
+</code></pre>
+<p>Pass <code>cached_prefix</code> if you want to reuse a long shared context across multiple calls.</p>
+</li>
+</ol>
+<h3>Generate a response with citations</h3>
+<ol start="4">
+<li>
+<p>Build a list of <code>CitationDocument</code> objects, one per source document:</p>
+<pre><code class="language-python">from providers.base import CitationDocument
+
+documents = [
+    CitationDocument(title=&quot;SICP&quot;, text=&quot;...chapter text...&quot;),
+    CitationDocument(title=&quot;TAPL&quot;, text=&quot;...chapter text...&quot;),
+]
+</code></pre>
+</li>
+<li>
+<p>Call <code>generate_with_citations</code> on a provider that supports it (for example, <code>ClaudeProvider</code>):</p>
+<pre><code class="language-python">result = await provider.generate_with_citations(
+    documents=documents,
+    query=&quot;What is a lambda calculus?&quot;,
+    system=&quot;You are a computer science tutor.&quot;,
+    max_tokens=2048,
+)
+</code></pre>
+<p>The method returns a <code>CitedResponse</code> with two fields:</p>
 <ul>
-<li><code>list_available()</code> returns a non-empty list that includes your target provider.</li>
-<li><code>generate()</code> returns a non-empty string without raising an exception.</li>
-<li><code>generate_with_citations()</code> returns a <code>CitedResponse</code> whose <code>claim_citations</code> tuple contains at least one entry referencing one of your input documents.</li>
+<li><code>text</code> — the generated answer</li>
+<li><code>claim_citations</code> — a tuple of <code>ClaimCitation</code> objects linking claims in the answer to source documents</li>
+</ul>
+</li>
+</ol>
+<h2>Verify the task worked</h2>
+<ul>
+<li><code>list_available()</code> returns a non-empty list that includes your target provider name.</li>
+<li><code>get_provider(name)</code> returns an object without raising <code>ValueError</code>.</li>
+<li><code>generate(...)</code> returns a non-empty string.</li>
+<li>For citation calls, <code>result.text</code> is non-empty and <code>result.claim_citations</code> contains at least one entry when the answer draws on the supplied documents.</li>
 </ul>
 
   </article>

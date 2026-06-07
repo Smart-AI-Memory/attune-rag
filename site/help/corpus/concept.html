@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Corpus — concept</title>
-  <meta name="description" content="A corpus is a searchable collection of `RetrievalEntry` objects that your retrieval pipeline queries to find relevant help templates." />
+  <meta name="description" content="A corpus is a searchable collection of `RetrievalEntry` objects that the retrieval layer queries by path or by iterating all entries — the `CorpusProtocol` defines that contract, and the concrete impl" />
   <meta property="og:title" content="Corpus — concept" />
-  <meta property="og:description" content="A corpus is a searchable collection of `RetrievalEntry` objects that your retrieval pipeline queries to find relevant help templates." />
+  <meta property="og:description" content="A corpus is a searchable collection of `RetrievalEntry` objects that the retrieval layer queries by path or by iterating all entries — the `CorpusProtocol` defines that contract, and the concrete impl" />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/corpus/concept" />
@@ -258,16 +258,18 @@
   </nav>
   <article class="markdown-body">
 <h1>Corpus</h1>
-<p>A corpus is a searchable collection of <code>RetrievalEntry</code> objects that your retrieval pipeline queries to find relevant help templates.</p>
-<h2>Mental model</h2>
-<p>The corpus layer separates <em>what you load</em> from <em>how you load it</em>. <code>CorpusProtocol</code> defines the contract every corpus must satisfy — <code>entries()</code>, <code>get(path)</code>, <code>name</code>, and <code>version</code> — so the rest of the codebase never depends on a specific source format.</p>
-<p>Two concrete implementations ship out of the box:</p>
+<p>A corpus is a searchable collection of <code>RetrievalEntry</code> objects that the retrieval layer queries by path or by iterating all entries — the <code>CorpusProtocol</code> defines that contract, and the concrete implementations decide where the content comes from.</p>
+<h2>The retrieval contract</h2>
+<p><code>CorpusProtocol</code> declares the four methods every corpus must expose:</p>
 <ul>
-<li><strong><code>DirectoryCorpus</code></strong> scans a directory for markdown files matching <code>**/*.md</code> (configurable via <code>glob</code>). It builds a <code>path_index</code> (relative path → entry) and an <code>alias_index</code> (alias string → <code>AliasInfo</code>) for fast lookup, and computes a stable SHA-256 <code>version</code> fingerprint over the loaded files. Optional <code>summaries_file</code> and <code>cross_links_file</code> arguments let you augment entries without editing the markdown source.</li>
-<li><strong><code>AttuneHelpCorpus</code></strong> is a thin adapter over the bundled attune-help templates. Rather than reading the filesystem at runtime, you construct it via <code>AttuneHelpCorpus.from_attune_help()</code>, which wires up the bundled <code>HelpCorpusAdapter</code> for you.</li>
+<li><code>entries()</code> — iterate every <code>RetrievalEntry</code> in the collection</li>
+<li><code>get(path)</code> — fetch a single entry by its path string, returning <code>None</code> if it doesn't exist</li>
+<li><code>name</code> — a human-readable label for the corpus</li>
+<li><code>version</code> — a stable identifier for the loaded snapshot (for <code>DirectoryCorpus</code>, this is a SHA-256 fingerprint of the loaded content)</li>
 </ul>
-<h2>RetrievalEntry — the unit of content</h2>
-<p>Every piece of content in a corpus is a <code>RetrievalEntry</code> dataclass with these fields:</p>
+<p>Any object that satisfies this protocol can be used wherever a corpus is expected, regardless of where its content originates.</p>
+<h2>What a RetrievalEntry holds</h2>
+<p>Each document in a corpus is a <code>RetrievalEntry</code> dataclass with the following fields:</p>
 <table>
 <thead>
 <tr>
@@ -280,70 +282,68 @@
 <tr>
 <td><code>path</code></td>
 <td><code>str</code></td>
-<td>Unique identifier for the entry (typically its relative file path)</td>
+<td>Unique identifier and lookup key</td>
 </tr>
 <tr>
 <td><code>category</code></td>
 <td><code>str</code></td>
-<td>Groups related entries for filtering</td>
+<td>Groups related entries</td>
 </tr>
 <tr>
 <td><code>content</code></td>
 <td><code>str</code></td>
-<td>Full markdown body of the template</td>
+<td>Full text of the document</td>
 </tr>
 <tr>
 <td><code>summary</code></td>
 <td><code>str | None</code></td>
-<td>Optional short description used in search result previews</td>
+<td>Optional short description</td>
 </tr>
 <tr>
 <td><code>related</code></td>
 <td><code>tuple[str, ...]</code></td>
-<td>Paths of entries the retriever should consider alongside this one</td>
+<td>Paths of cross-linked entries</td>
 </tr>
 <tr>
 <td><code>aliases</code></td>
 <td><code>tuple[str, ...]</code></td>
-<td>Alternative names that resolve to this entry</td>
+<td>Alternative names for this entry</td>
 </tr>
 <tr>
 <td><code>metadata</code></td>
 <td><code>dict[str, Any]</code></td>
-<td>Arbitrary key/value data for downstream consumers</td>
+<td>Arbitrary extra data</td>
 </tr>
 </tbody>
 </table>
-<h2>Alias indexing and conflict detection</h2>
-<p>When <code>DirectoryCorpus</code> loads a template that declares <code>aliases</code>, it indexes each alias in <code>alias_index</code> for O(1) lookup. If two templates declare the same alias string, <code>DuplicateAliasError</code> is raised immediately, identifying both the conflicting alias and the paths of the two templates involved. This prevents silent resolution ambiguity at load time rather than at query time.</p>
-<h2>Integration points</h2>
-<p>Any object that satisfies <code>CorpusProtocol</code> can be dropped in wherever a corpus is expected. To implement your own source, expose the four protocol members:</p>
-<table>
-<thead>
-<tr>
-<th>Member</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>entries() -&gt; Iterable[RetrievalEntry]</code></td>
-<td>Yields every entry in the corpus</td>
-</tr>
-<tr>
-<td><code>get(path: str) -&gt; RetrievalEntry | None</code></td>
-<td>Returns a single entry by path, or <code>None</code></td>
-</tr>
-<tr>
-<td><code>name</code></td>
-<td>Human-readable label for the corpus</td>
-</tr>
-<tr>
-<td><code>version</code></td>
-<td>Opaque string that changes when content changes (used for cache invalidation)</td>
-</tr>
-</tbody>
-</table>
+<p>The <code>aliases</code> field is what makes alternative-name lookup possible. When a corpus indexes its entries, each alias maps back to the entry's <code>path</code> through an <code>AliasInfo</code> record.</p>
+<h2>Concrete corpus implementations</h2>
+<p>Two implementations ship out of the box.</p>
+<p><strong><code>DirectoryCorpus</code></strong> loads markdown files from a directory tree. By default it scans <code>**/*.md</code> (the <code>DEFAULT_GLOB</code> pattern). You can supply:</p>
+<ul>
+<li><code>summaries_file</code> and <code>cross_links_file</code> to load pre-computed summaries and relationships from separate files</li>
+<li><code>extra_summaries</code>, <code>extra_aliases</code>, and <code>extra_aliases_file</code> to inject additional metadata without modifying the source files</li>
+<li><code>cache=True</code> (the default) to avoid rescanning the directory on repeated access</li>
+</ul>
+<p>After loading, <code>DirectoryCorpus</code> exposes two indexed views in addition to the standard protocol methods:</p>
+<ul>
+<li><code>path_index</code> — a <code>dict[str, RetrievalEntry]</code> keyed by relative path</li>
+<li><code>alias_index</code> — a <code>dict[str, AliasInfo]</code> keyed by alias string</li>
+</ul>
+<p><strong><code>AttuneHelpCorpus</code></strong> wraps the bundled attune-help templates. Rather than pointing at a directory you control, you call <code>AttuneHelpCorpus.from_attune_help()</code> to get a corpus backed by the templates that ship with the library.</p>
+<h2>Alias collision detection</h2>
+<p>If two entries declare the same alias, <code>DirectoryCorpus</code> raises <code>DuplicateAliasError</code>, which carries the conflicting <code>alias</code>, <code>first_path</code>, and <code>second_path</code>. Set <code>warn_alias_overlap=True</code> (the default) to surface these collisions as warnings during loading rather than letting them go unnoticed.</p>
+<h2>How the pieces fit together</h2>
+<pre><code>CorpusProtocol          (interface)
+    ├── DirectoryCorpus (reads **/*.md from a root Path)
+    │       ├── path_index   → {rel_path: RetrievalEntry}
+    │       └── alias_index  → {alias: AliasInfo}
+    └── AttuneHelpCorpus (wraps bundled attune-help content)
+
+RetrievalEntry          (the document unit both implementations produce)
+DuplicateAliasError     (raised when alias_index would have a collision)
+</code></pre>
+<p>Retrieval code works against <code>CorpusProtocol</code>, so you can swap <code>DirectoryCorpus</code> for <code>AttuneHelpCorpus</code> — or a custom implementation — without changing any call sites.</p>
 
   </article>
   <footer>

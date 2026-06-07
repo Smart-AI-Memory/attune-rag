@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Query Expander — concept</title>
-  <meta name="description" content="`QueryExpander` is an LLM-powered component that rewrites a single user query into 3–5 alternative phrasings, improving retrieval recall when the user&#x27;s wording differs from the terminology used in yo" />
-  <meta property="og:title" content="Query Expander — concept" />
-  <meta property="og:description" content="`QueryExpander` is an LLM-powered component that rewrites a single user query into 3–5 alternative phrasings, improving retrieval recall when the user&#x27;s wording differs from the terminology used in yo" />
+  <title>Expander — concept</title>
+  <meta name="description" content="`QueryExpander` is a retrieval utility that rewrites a single user query into 3–5 alternative phrasings using Claude Haiku, so that keyword search can match documents even when the user&#x27;s wording does" />
+  <meta property="og:title" content="Expander — concept" />
+  <meta property="og:description" content="`QueryExpander` is a retrieval utility that rewrites a single user query into 3–5 alternative phrasings using Claude Haiku, so that keyword search can match documents even when the user&#x27;s wording does" />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/expander/concept" />
@@ -257,18 +257,23 @@
     <a class="api-link" href="https://github.com/Smart-AI-Memory/attune-rag">Source &amp; API &rarr;</a>
   </nav>
   <article class="markdown-body">
-<h1>Query Expander</h1>
-<p><code>QueryExpander</code> is an LLM-powered component that rewrites a single user query into 3–5 alternative phrasings, improving retrieval recall when the user's wording differs from the terminology used in your documentation.</p>
-<h2>The problem it solves</h2>
-<p>Keyword-based retrieval fails when the user's vocabulary doesn't match the documents. For example, a developer asking &quot;how do I set up auth&quot; might miss documents that use &quot;authentication configuration&quot; or &quot;OAuth integration.&quot; <code>QueryExpander</code> bridges this gap by generating synonyms, feature names, tool categories, and developer jargon that expose the user's actual intent before the retrieval step runs.</p>
-<h2>How query expansion works</h2>
-<p>When you call <code>expand()</code> or <code>expand_async()</code> on a query string, <code>QueryExpander</code> sends the query to Claude Haiku with a system prompt that instructs the model to return a JSON array of alternative phrasings — nothing else, no explanation or markdown. The result is a list of strings you can pass to your retrieval pipeline alongside or instead of the original query.</p>
-<p>For instance, a query like <code>&quot;CI pipeline caching&quot;</code> might expand to:</p>
-<pre><code class="language-json">[&quot;CI cache configuration&quot;, &quot;build cache in GitHub Actions&quot;, &quot;pipeline dependency caching&quot;, &quot;cache layers in CI/CD&quot;, &quot;speed up CI with caching&quot;]
+<h1>Expander</h1>
+<p><code>QueryExpander</code> is a retrieval utility that rewrites a single user query into 3–5 alternative phrasings using Claude Haiku, so that keyword search can match documents even when the user's wording doesn't overlap with the indexed text.</p>
+<h2>The retrieval recall problem</h2>
+<p>Keyword-based retrieval fails when the user's phrasing doesn't share surface-level tokens with the target document. A developer asking &quot;how do I silence a linter warning?&quot; will miss documents indexed under &quot;suppressing diagnostic rules&quot; or &quot;disabling checks.&quot; Query expansion closes this gap by generating synonymous phrasings before the retrieval step runs.</p>
+<h2>How <code>QueryExpander</code> works</h2>
+<p>When you call <code>expand(query)</code> or <code>expand_async(query)</code>, <code>QueryExpander</code> sends the query to Claude Haiku with a system prompt that instructs the model to expose the user's underlying intent — feature names, tool categories, workflow synonyms, and developer jargon — and return the results as a JSON array of strings. Your retrieval layer then fans out across all returned phrasings instead of the original query alone.</p>
+<p>If the API call fails for any reason, <code>QueryExpander</code> falls back to the original query, so a network hiccup or quota error never blocks retrieval entirely.</p>
+<p>Caching is on by default (<code>cache=True</code>). Repeated calls with the same query string reuse the previously generated expansions rather than making a second API call.</p>
+<h2>Construction and defaults</h2>
+<pre><code class="language-python">from attune_rag.expander import QueryExpander
+
+expander = QueryExpander(
+    model=&quot;claude-haiku-4-5&quot;,  # default
+    api_key=None,              # falls back to environment credential
+    cache=True,                # deduplicates identical queries
+)
 </code></pre>
-<p>Each alternative targets a different surface form of the same underlying intent.</p>
-<h2>Component overview</h2>
-<p><code>QueryExpander</code> (defined in <code>src/attune_rag/expander.py</code>) is the single class in this module. Its constructor accepts three parameters:</p>
 <table>
 <thead>
 <tr>
@@ -280,32 +285,36 @@
 <tbody>
 <tr>
 <td><code>model</code></td>
-<td><code>claude-haiku-4-5-20251001</code></td>
-<td>The Claude model used for expansion</td>
+<td><code>'claude-haiku-4-5'</code></td>
+<td>Which Claude model generates the expansions</td>
 </tr>
 <tr>
 <td><code>api_key</code></td>
 <td><code>None</code></td>
-<td>Anthropic API key; falls back to environment variable if omitted</td>
+<td>Explicit API key; omit to use the environment credential</td>
 </tr>
 <tr>
 <td><code>cache</code></td>
 <td><code>True</code></td>
-<td>Caches expansion results to avoid redundant API calls for repeated queries</td>
+<td>Caches results per unique query string</td>
 </tr>
 </tbody>
 </table>
-<p>Both <code>expand()</code> and <code>expand_async()</code> accept a query string and return <code>list[str]</code>. Use <code>expand_async()</code> in async retrieval pipelines to avoid blocking.</p>
-<h2>Failure behavior</h2>
-<p><code>QueryExpander</code> is designed to be fail-safe. If the API call fails or the model returns malformed output, the expander falls back gracefully so your retrieval pipeline continues with the original query rather than raising an exception.</p>
-<h2>When query expansion matters</h2>
-<p>Query expansion is most valuable when:</p>
+<h2>Sync and async interfaces</h2>
+<p><code>QueryExpander</code> exposes two methods with identical semantics:</p>
 <ul>
-<li>Your documentation uses precise technical terminology that users are unlikely to reproduce verbatim.</li>
-<li>You are running hybrid or semantic retrieval and want to increase candidate recall before a reranking step.</li>
-<li>Users are exploring unfamiliar tooling and may not yet know the canonical names for features they need.</li>
+<li><strong><code>expand(query: str) -&gt; list[str]</code></strong> — blocking call; use this in synchronous retrieval pipelines.</li>
+<li><strong><code>expand_async(query: str) -&gt; list[str]</code></strong> — non-blocking call; use this when your retrieval layer is already async.</li>
 </ul>
-<p>It adds latency and an API call for each unique query, so consider whether the recall improvement justifies the cost for your use case, particularly if your queries are already highly structured.</p>
+<p>Both return a list of alternative query strings. Pass each string to your retrieval backend and merge the results before ranking.</p>
+<h2>When query expansion matters</h2>
+<p>Query expansion has the most impact when:</p>
+<ul>
+<li>Your document corpus uses technical jargon or product-specific terminology that users are unlikely to reproduce verbatim.</li>
+<li>You're running BM25 or another token-overlap retrieval strategy with no semantic embedding fallback.</li>
+<li>Query volume is low enough that the added latency and API cost per call is acceptable.</li>
+</ul>
+<p>If your retrieval pipeline already uses dense vector search with broad semantic coverage, the incremental recall gain from expansion is smaller and may not justify the extra API call.</p>
 
   </article>
   <footer>

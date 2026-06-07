@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Corpus reference — reference</title>
-  <meta name="description" content="Use this API to load, index, and retrieve help templates from a corpus. `CorpusProtocol` defines the interface every corpus must satisfy; `DirectoryCorpus` loads markdown files from disk; `AttuneHelpC" />
+  <meta name="description" content="Use the corpus API to load and query collections of retrieval entries. `CorpusProtocol` defines the interface; `DirectoryCorpus` loads markdown files from disk; `AttuneHelpCorpus` wraps the bundled at" />
   <meta property="og:title" content="Corpus reference — reference" />
-  <meta property="og:description" content="Use this API to load, index, and retrieve help templates from a corpus. `CorpusProtocol` defines the interface every corpus must satisfy; `DirectoryCorpus` loads markdown files from disk; `AttuneHelpC" />
+  <meta property="og:description" content="Use the corpus API to load and query collections of retrieval entries. `CorpusProtocol` defines the interface; `DirectoryCorpus` loads markdown files from disk; `AttuneHelpCorpus` wraps the bundled at" />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/corpus/reference" />
@@ -258,24 +258,7 @@
   </nav>
   <article class="markdown-body">
 <h1>Corpus reference</h1>
-<p>Use this API to load, index, and retrieve help templates from a corpus. <code>CorpusProtocol</code> defines the interface every corpus must satisfy; <code>DirectoryCorpus</code> loads markdown files from disk; <code>AttuneHelpCorpus</code> wraps the bundled attune-help templates.</p>
-<h2>Constants</h2>
-<table>
-<thead>
-<tr>
-<th>Constant</th>
-<th>Type</th>
-<th>Value</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>DEFAULT_GLOB</code></td>
-<td><code>str</code></td>
-<td><code>'**/*.md'</code></td>
-</tr>
-</tbody>
-</table>
+<p>Use the corpus API to load and query collections of retrieval entries. <code>CorpusProtocol</code> defines the interface; <code>DirectoryCorpus</code> loads markdown files from disk; <code>AttuneHelpCorpus</code> wraps the bundled attune-help templates.</p>
 <h2>Classes</h2>
 <table>
 <thead>
@@ -286,12 +269,20 @@
 </thead>
 <tbody>
 <tr>
+<td><code>CorpusProtocol</code></td>
+<td>Any object that exposes a collection of <code>RetrievalEntry</code>.</td>
+</tr>
+<tr>
+<td><code>DirectoryCorpus</code></td>
+<td>Loads a directory of markdown files as a corpus.</td>
+</tr>
+<tr>
 <td><code>AttuneHelpCorpus</code></td>
 <td>Loads an attune-help-shaped corpus of templates.</td>
 </tr>
 <tr>
 <td><code>RetrievalEntry</code></td>
-<td>A single corpus entry.</td>
+<td>A single corpus entry returned by a corpus lookup.</td>
 </tr>
 <tr>
 <td><code>AliasInfo</code></td>
@@ -301,20 +292,12 @@
 <td><code>DuplicateAliasError</code></td>
 <td>Raised when two templates declare the same alias.</td>
 </tr>
-<tr>
-<td><code>CorpusProtocol</code></td>
-<td>Any object that exposes a collection of <code>RetrievalEntry</code>.</td>
-</tr>
-<tr>
-<td><code>DirectoryCorpus</code></td>
-<td>Loads a directory of markdown files as a corpus.</td>
-</tr>
 </tbody>
 </table>
 <hr />
-<h3><code>CorpusProtocol</code></h3>
-<p>Any object that exposes a collection of <code>RetrievalEntry</code>. Implement this protocol to plug a custom corpus into the retrieval pipeline.</p>
-<h4>Methods</h4>
+<h2><code>CorpusProtocol</code></h2>
+<p>Any object that exposes a collection of <code>RetrievalEntry</code>. Implement this protocol to make a custom corpus source compatible with the retrieval engine.</p>
+<h3>Methods</h3>
 <table>
 <thead>
 <tr>
@@ -327,19 +310,19 @@
 <tbody>
 <tr>
 <td><code>entries</code></td>
-<td><code>self</code></td>
+<td>—</td>
 <td><code>Iterable[RetrievalEntry]</code></td>
-<td>Yields every entry in the corpus.</td>
+<td>Yields all entries in the corpus.</td>
 </tr>
 <tr>
 <td><code>get</code></td>
-<td><code>self</code>, <code>path: str</code></td>
+<td><code>path: str</code></td>
 <td><code>RetrievalEntry | None</code></td>
-<td>Returns the entry at the given path, or <code>None</code> if not found.</td>
+<td>Returns the entry at <code>path</code>, or <code>None</code> if not found.</td>
 </tr>
 </tbody>
 </table>
-<h4>Properties</h4>
+<h3>Properties</h3>
 <table>
 <thead>
 <tr>
@@ -352,155 +335,19 @@
 <tr>
 <td><code>name</code></td>
 <td><code>str</code></td>
-<td>Human-readable name of this corpus.</td>
+<td>Human-readable name of the corpus.</td>
 </tr>
 <tr>
 <td><code>version</code></td>
 <td><code>str</code></td>
-<td>Version identifier for this corpus.</td>
+<td>Version identifier for the corpus.</td>
 </tr>
 </tbody>
 </table>
 <hr />
-<h3><code>RetrievalEntry</code></h3>
-<p><code>[dataclass]</code> A single corpus entry, representing one loaded template.</p>
-<h4>Fields</h4>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Type</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>path</code></td>
-<td><code>str</code></td>
-<td>—</td>
-</tr>
-<tr>
-<td><code>category</code></td>
-<td><code>str</code></td>
-<td>—</td>
-</tr>
-<tr>
-<td><code>content</code></td>
-<td><code>str</code></td>
-<td>—</td>
-</tr>
-<tr>
-<td><code>summary</code></td>
-<td><code>str | None</code></td>
-<td><code>None</code></td>
-</tr>
-<tr>
-<td><code>related</code></td>
-<td><code>tuple[str, ...]</code></td>
-<td><code>()</code></td>
-</tr>
-<tr>
-<td><code>aliases</code></td>
-<td><code>tuple[str, ...]</code></td>
-<td><code>()</code></td>
-</tr>
-<tr>
-<td><code>metadata</code></td>
-<td><code>dict[str, Any]</code></td>
-<td><code>field(default_factory=dict)</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h3><code>AttuneHelpCorpus</code></h3>
-<p>Thin adapter over the bundled attune-help templates. Use <code>from_attune_help()</code> to construct an instance without managing the underlying adapter directly.</p>
-<h4>Constructor</h4>
-<table>
-<thead>
-<tr>
-<th>Parameter</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>adapter</code></td>
-<td><code>HelpCorpusAdapter</code></td>
-<td>Adapter that provides access to the bundled template data.</td>
-</tr>
-</tbody>
-</table>
-<h4>Class methods</h4>
-<table>
-<thead>
-<tr>
-<th>Method</th>
-<th>Parameters</th>
-<th>Returns</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>from_attune_help</code></td>
-<td><code>cls</code></td>
-<td><code>AttuneHelpCorpus</code></td>
-<td>Constructs an <code>AttuneHelpCorpus</code> from the bundled attune-help data.</td>
-</tr>
-</tbody>
-</table>
-<h4>Methods</h4>
-<table>
-<thead>
-<tr>
-<th>Method</th>
-<th>Parameters</th>
-<th>Returns</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>entries</code></td>
-<td><code>self</code></td>
-<td><code>Iterable[RetrievalEntry]</code></td>
-<td>Yields every entry in the corpus.</td>
-</tr>
-<tr>
-<td><code>get</code></td>
-<td><code>self</code>, <code>path: str</code></td>
-<td><code>RetrievalEntry | None</code></td>
-<td>Returns the entry at the given path, or <code>None</code> if not found.</td>
-</tr>
-</tbody>
-</table>
-<h4>Properties</h4>
-<table>
-<thead>
-<tr>
-<th>Property</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>name</code></td>
-<td><code>str</code></td>
-<td>Human-readable name of this corpus.</td>
-</tr>
-<tr>
-<td><code>version</code></td>
-<td><code>str</code></td>
-<td>Version identifier for this corpus.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h3><code>DirectoryCorpus</code></h3>
-<p>Loads a directory of markdown files as a corpus. Supports optional summaries, cross-links, and alias indexing. Entries are cached by default after the first load.</p>
-<h4>Constructor</h4>
+<h2><code>DirectoryCorpus</code></h2>
+<p>Loads a directory of markdown files as a corpus. Supports summaries, cross-links, aliases, and optional result caching.</p>
+<h3>Constructor</h3>
 <table>
 <thead>
 <tr>
@@ -521,25 +368,37 @@
 <td><code>summaries_file</code></td>
 <td><code>str | None</code></td>
 <td><code>None</code></td>
-<td>Path to a file providing per-entry summaries.</td>
+<td>Path to a file containing per-entry summaries.</td>
 </tr>
 <tr>
 <td><code>cross_links_file</code></td>
 <td><code>str | None</code></td>
 <td><code>None</code></td>
-<td>Path to a file providing cross-link relationships.</td>
+<td>Path to a file containing cross-link rules.</td>
 </tr>
 <tr>
 <td><code>extra_summaries</code></td>
 <td><code>dict[str, str | None] | None</code></td>
 <td><code>None</code></td>
-<td>Additional summaries supplied directly as a dict.</td>
+<td>Additional summaries supplied programmatically.</td>
+</tr>
+<tr>
+<td><code>extra_aliases</code></td>
+<td><code>dict[str, Iterable[str]] | None</code></td>
+<td><code>None</code></td>
+<td>Additional aliases supplied programmatically.</td>
+</tr>
+<tr>
+<td><code>extra_aliases_file</code></td>
+<td><code>Path | str | None</code></td>
+<td><code>None</code></td>
+<td>Path to a file containing additional aliases.</td>
 </tr>
 <tr>
 <td><code>cache</code></td>
 <td><code>bool</code></td>
 <td><code>True</code></td>
-<td>Whether to cache loaded entries after the first scan.</td>
+<td>Whether to cache loaded entries.</td>
 </tr>
 <tr>
 <td><code>glob</code></td>
@@ -547,9 +406,15 @@
 <td><code>DEFAULT_GLOB</code></td>
 <td>Glob pattern used to discover files under <code>root</code>.</td>
 </tr>
+<tr>
+<td><code>warn_alias_overlap</code></td>
+<td><code>bool</code></td>
+<td><code>True</code></td>
+<td>Whether to emit a warning when aliases overlap across entries.</td>
+</tr>
 </tbody>
 </table>
-<h4>Methods</h4>
+<h3>Methods</h3>
 <table>
 <thead>
 <tr>
@@ -562,19 +427,19 @@
 <tbody>
 <tr>
 <td><code>entries</code></td>
-<td><code>self</code></td>
+<td>—</td>
 <td><code>Iterable[RetrievalEntry]</code></td>
-<td>Yields every entry discovered under <code>root</code>.</td>
+<td>Yields all entries loaded from the directory.</td>
 </tr>
 <tr>
 <td><code>get</code></td>
-<td><code>self</code>, <code>path: str</code></td>
+<td><code>path: str</code></td>
 <td><code>RetrievalEntry | None</code></td>
-<td>Returns the entry at the given path, or <code>None</code> if not found.</td>
+<td>Returns the entry at <code>path</code>, or <code>None</code> if not found.</td>
 </tr>
 </tbody>
 </table>
-<h4>Properties</h4>
+<h3>Properties</h3>
 <table>
 <thead>
 <tr>
@@ -597,7 +462,7 @@
 <tr>
 <td><code>name</code></td>
 <td><code>str</code></td>
-<td>Human-readable name of this corpus.</td>
+<td>Human-readable name of the corpus.</td>
 </tr>
 <tr>
 <td><code>version</code></td>
@@ -607,12 +472,143 @@
 </tbody>
 </table>
 <hr />
-<h3><code>AliasInfo</code></h3>
-<p>An alias declared by a template, indexed for fast lookup.</p>
+<h2><code>AttuneHelpCorpus</code></h2>
+<p>Thin adapter over the bundled attune-help templates. Use <code>from_attune_help()</code> to construct an instance without supplying an adapter directly.</p>
+<h3>Constructor</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>adapter</code></td>
+<td><code>HelpCorpusAdapter</code></td>
+<td>Adapter that provides access to the underlying template store.</td>
+</tr>
+</tbody>
+</table>
+<h3>Methods</h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Parameters</th>
+<th>Returns</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>from_attune_help</code></td>
+<td>—</td>
+<td><code>AttuneHelpCorpus</code></td>
+<td>Class method. Constructs an <code>AttuneHelpCorpus</code> from the bundled attune-help templates.</td>
+</tr>
+<tr>
+<td><code>entries</code></td>
+<td>—</td>
+<td><code>Iterable[RetrievalEntry]</code></td>
+<td>Yields all entries in the corpus.</td>
+</tr>
+<tr>
+<td><code>get</code></td>
+<td><code>path: str</code></td>
+<td><code>RetrievalEntry | None</code></td>
+<td>Returns the entry at <code>path</code>, or <code>None</code> if not found.</td>
+</tr>
+</tbody>
+</table>
+<h3>Properties</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><code>str</code></td>
+<td>Human-readable name of the corpus.</td>
+</tr>
+<tr>
+<td><code>version</code></td>
+<td><code>str</code></td>
+<td>Version identifier for the corpus.</td>
+</tr>
+</tbody>
+</table>
 <hr />
-<h3><code>DuplicateAliasError</code></h3>
+<h2><code>RetrievalEntry</code></h2>
+<p>A single corpus entry. Every entry loaded by a corpus implementation is returned as a <code>RetrievalEntry</code>.</p>
+<h3>Fields</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>path</code></td>
+<td><code>str</code></td>
+<td>—</td>
+<td>Relative path that identifies this entry within the corpus.</td>
+</tr>
+<tr>
+<td><code>category</code></td>
+<td><code>str</code></td>
+<td>—</td>
+<td>Category label for the entry.</td>
+</tr>
+<tr>
+<td><code>content</code></td>
+<td><code>str</code></td>
+<td>—</td>
+<td>Full text content of the entry.</td>
+</tr>
+<tr>
+<td><code>summary</code></td>
+<td><code>str | None</code></td>
+<td><code>None</code></td>
+<td>Short summary of the entry, if available.</td>
+</tr>
+<tr>
+<td><code>related</code></td>
+<td><code>tuple[str, ...]</code></td>
+<td><code>()</code></td>
+<td>Paths of related entries.</td>
+</tr>
+<tr>
+<td><code>aliases</code></td>
+<td><code>tuple[str, ...]</code></td>
+<td><code>()</code></td>
+<td>Alternative lookup keys for this entry.</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td><code>dict[str, Any]</code></td>
+<td><code>field(default_factory=dict)</code></td>
+<td>Arbitrary metadata attached to the entry.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2><code>AliasInfo</code></h2>
+<p>An alias declared by a template, indexed for fast lookup by <code>DirectoryCorpus.alias_index</code>.</p>
+<hr />
+<h2><code>DuplicateAliasError</code></h2>
 <p>Raised when two templates declare the same alias.</p>
-<h4>Constructor</h4>
+<h3>Constructor</h3>
 <table>
 <thead>
 <tr>
@@ -625,20 +621,39 @@
 <tr>
 <td><code>alias</code></td>
 <td><code>str</code></td>
-<td>The alias string that was declared more than once.</td>
+<td>The alias string that appears in both templates.</td>
 </tr>
 <tr>
 <td><code>first_path</code></td>
 <td><code>str</code></td>
-<td>Path of the template that first declared the alias.</td>
+<td>Path of the first template that declared the alias.</td>
 </tr>
 <tr>
 <td><code>second_path</code></td>
 <td><code>str</code></td>
-<td>Path of the template that declared the alias again.</td>
+<td>Path of the second template that declared the alias.</td>
 </tr>
 </tbody>
 </table>
+<hr />
+<h2>Module constants</h2>
+<table>
+<thead>
+<tr>
+<th>Constant</th>
+<th>Type</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DEFAULT_GLOB</code></td>
+<td><code>str</code></td>
+<td><code>'**/*.md'</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
 <h2>Source files</h2>
 <ul>
 <li><code>src/attune_rag/corpus/__init__.py</code></li>
@@ -646,8 +661,6 @@
 <li><code>src/attune_rag/corpus/directory.py</code></li>
 <li><code>src/attune_rag/corpus/attune_help.py</code></li>
 </ul>
-<h2>Tags</h2>
-<p><code>corpus</code>, <code>loader</code>, <code>markdown</code>, <code>attune-help</code></p>
 
   </article>
   <footer>

@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>CLI — concept</title>
-  <meta name="description" content="The `cli` module is the command-line entry point for interacting with attune-rag, letting you run retrieval-augmented queries and inspect your corpus directly from a terminal." />
+  <meta name="description" content="The `attune_rag.cli` module is the command-line entry point for debugging retrieval — it lets you run RAG queries and inspect corpus statistics without writing any Python." />
   <meta property="og:title" content="CLI — concept" />
-  <meta property="og:description" content="The `cli` module is the command-line entry point for interacting with attune-rag, letting you run retrieval-augmented queries and inspect your corpus directly from a terminal." />
+  <meta property="og:description" content="The `attune_rag.cli` module is the command-line entry point for debugging retrieval — it lets you run RAG queries and inspect corpus statistics without writing any Python." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/cli/concept" />
@@ -258,28 +258,23 @@
   </nav>
   <article class="markdown-body">
 <h1>CLI</h1>
-<h2>Overview</h2>
-<p>The <code>cli</code> module is the command-line entry point for interacting with attune-rag, letting you run retrieval-augmented queries and inspect your corpus directly from a terminal.</p>
-<p>Two commands are available:</p>
-<ul>
-<li><code>attune-rag query</code> — runs a RAG query and prints a grounded answer with citations.</li>
-<li><code>attune-rag corpus-info</code> — displays statistics about the loaded corpus.</li>
-</ul>
-<p>This makes the CLI the primary debugging surface for retrieval behavior: you can fire a query and immediately see what the system retrieved and cited, without writing any Python.</p>
+<p>The <code>attune_rag.cli</code> module is the command-line entry point for debugging retrieval — it lets you run RAG queries and inspect corpus statistics without writing any Python.</p>
 <h2>How the pieces fit together</h2>
-<p>Two functions form the module's structure:</p>
+<p>Two public functions define the entire interface:</p>
 <ul>
-<li><strong><code>build_parser()</code></strong> constructs the <code>argparse.ArgumentParser</code> that defines both subcommands and their arguments. It is the single place where the CLI's interface is declared.</li>
-<li><strong><code>main(argv)</code></strong> is the executable entry point. It calls <code>build_parser()</code>, parses the provided argument list (or <code>sys.argv</code> when <code>argv</code> is <code>None</code>), dispatches to the appropriate subcommand, and returns an integer exit code.</li>
+<li><strong><code>build_parser()</code></strong> constructs the <code>argparse.ArgumentParser</code> that defines available subcommands and their flags. Separating parser construction from execution makes it straightforward to inspect or extend the argument structure in tests and tooling.</li>
+<li><strong><code>main(argv)</code></strong> wires the parser to actual execution. Pass a list of strings to drive it programmatically, or omit <code>argv</code> (defaulting to <code>None</code>) to read from the real command line.</li>
 </ul>
-<p>When you run <code>attune-rag</code> from the shell, your terminal invokes <code>main()</code>. Everything else — argument validation, subcommand routing, and output — flows from there.</p>
+<p>At runtime, <code>main()</code> calls <code>build_parser()</code> internally, so the two functions represent a single pipeline: parse → dispatch → output.</p>
 <h2>When this matters</h2>
-<p>The CLI is most useful when you want to:</p>
+<p>You interact with this module whenever you need to:</p>
 <ul>
-<li><strong>Verify retrieval quality</strong> — run a query and check whether the returned citations match what you expect.</li>
-<li><strong>Inspect corpus state</strong> — use <code>corpus-info</code> to confirm that documents were indexed correctly before running queries.</li>
-<li><strong>Integrate with scripts</strong> — because <code>main()</code> returns an integer exit code, you can call it from shell scripts or CI pipelines and branch on success or failure.</li>
+<li><strong>Debug retrieval results</strong> — run a query end-to-end from the shell and see the grounded answer with citations, without setting up a Python session.</li>
+<li><strong>Inspect corpus state</strong> — check corpus statistics to verify that documents were indexed as expected before troubleshooting a query.</li>
 </ul>
+<p>Because <code>main()</code> accepts an explicit <code>argv</code> list, you can also invoke the CLI from integration tests or scripts with full control over arguments, without spawning a subprocess.</p>
+<h2>Entry point</h2>
+<p><code>attune_rag.cli.main</code> is registered as the console script entry point for the package. Calling <code>attune-rag</code> on the command line resolves to this function.</p>
 
   </article>
   <footer>
