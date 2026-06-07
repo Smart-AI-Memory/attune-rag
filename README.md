@@ -3,6 +3,8 @@
 Lightweight, LLM-agnostic RAG pipeline with pluggable
 corpora. Works with Claude, Gemini, or any LLM.
 
+🌐 **Docs & guides: [attune-rag.dev](https://attune-rag.dev)**
+
 - **No LLM SDK at install time.** All provider deps are
   optional extras. Two required runtime deps: `structlog`,
   `jinja2`.
@@ -12,10 +14,13 @@ corpora. Works with Claude, Gemini, or any LLM.
   — `pipeline.run()` never opens a network connection. You
   call your own LLM however you like. Optional provider
   adapters ship convenience wrappers.
-- **Optional hybrid retrieval.** `QueryExpander` and
-  `LLMReranker` layer Claude Haiku on top of keyword
-  retrieval to improve recall and precision — both opt-in,
-  both fail-safe.
+- **Opt-in retrieval ladder.** Keyword retrieval by default;
+  add a torch-free static-embedding `HybridRetriever`
+  (`[embeddings]`) or a `TransformerRetriever` (`[transformers]`)
+  for paraphrase-heavy corpora, plus configurable **abstention**
+  (`min_score=`) to suppress confident out-of-corpus answers.
+  Every rung is opt-in and fail-safe; the keyword default is
+  unchanged.
 
 ## Why attune-rag
 

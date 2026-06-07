@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "attune-rag"
-version = "0.2.0"
+version = "0.5.0"
 description = "Lightweight, LLM-agnostic RAG pipeline with pluggable corpora. Works with Claude, Gemini, or any LLM."
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.10"
@@ -88,7 +88,7 @@ attune-rag = "attune_rag.cli:main"
 attune-rag-measure = "attune_rag.measure_corpus:main"
 
 [project.urls]
-Homepage = "https://github.com/Smart-AI-Memory/attune-rag"
+Homepage = "https://attune-rag.dev"
 Repository = "https://github.com/Smart-AI-Memory/attune-rag"
 Documentation = "https://github.com/Smart-AI-Memory/attune-rag/blob/main/README.md"
 Changelog = "https://github.com/Smart-AI-Memory/attune-rag/blob/main/CHANGELOG.md"
