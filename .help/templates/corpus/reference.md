@@ -3,154 +3,156 @@ type: reference
 name: corpus-reference
 feature: corpus
 depth: reference
-generated_at: 2026-05-20T03:23:24.656613+00:00
-source_hash: 4acdd163679b03efe44559300b991a4426e0e3b739b30950c8f3ec8964e7efc0
+generated_at: 2026-06-07T07:12:58.880357+00:00
+source_hash: bb71c896e8cc106a568f8d74dd8255cae43c6041f2a7aeb69b2c5dc10e8889f9
 status: generated
 ---
 
 # Corpus reference
 
-Use this API to load, index, and retrieve help templates from a corpus. `CorpusProtocol` defines the interface every corpus must satisfy; `DirectoryCorpus` loads markdown files from disk; `AttuneHelpCorpus` wraps the bundled attune-help templates.
-
-## Constants
-
-| Constant | Type | Value |
-|----------|------|-------|
-| `DEFAULT_GLOB` | `str` | `'**/*.md'` |
+Use the corpus API to load and query collections of retrieval entries. `CorpusProtocol` defines the interface; `DirectoryCorpus` loads markdown files from disk; `AttuneHelpCorpus` wraps the bundled attune-help templates.
 
 ## Classes
 
 | Class | Description |
 |-------|-------------|
-| `AttuneHelpCorpus` | Loads an attune-help-shaped corpus of templates. |
-| `RetrievalEntry` | A single corpus entry. |
-| `AliasInfo` | An alias declared by a template, indexed for fast lookup. |
-| `DuplicateAliasError` | Raised when two templates declare the same alias. |
 | `CorpusProtocol` | Any object that exposes a collection of `RetrievalEntry`. |
 | `DirectoryCorpus` | Loads a directory of markdown files as a corpus. |
+| `AttuneHelpCorpus` | Loads an attune-help-shaped corpus of templates. |
+| `RetrievalEntry` | A single corpus entry returned by a corpus lookup. |
+| `AliasInfo` | An alias declared by a template, indexed for fast lookup. |
+| `DuplicateAliasError` | Raised when two templates declare the same alias. |
 
 ---
 
-### `CorpusProtocol`
+## `CorpusProtocol`
 
-Any object that exposes a collection of `RetrievalEntry`. Implement this protocol to plug a custom corpus into the retrieval pipeline.
+Any object that exposes a collection of `RetrievalEntry`. Implement this protocol to make a custom corpus source compatible with the retrieval engine.
 
-#### Methods
+### Methods
 
 | Method | Parameters | Returns | Description |
 |--------|------------|---------|-------------|
-| `entries` | `self` | `Iterable[RetrievalEntry]` | Yields every entry in the corpus. |
-| `get` | `self`, `path: str` | `RetrievalEntry \| None` | Returns the entry at the given path, or `None` if not found. |
+| `entries` | — | `Iterable[RetrievalEntry]` | Yields all entries in the corpus. |
+| `get` | `path: str` | `RetrievalEntry \| None` | Returns the entry at `path`, or `None` if not found. |
 
-#### Properties
+### Properties
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `name` | `str` | Human-readable name of this corpus. |
-| `version` | `str` | Version identifier for this corpus. |
+| `name` | `str` | Human-readable name of the corpus. |
+| `version` | `str` | Version identifier for the corpus. |
 
 ---
 
-### `RetrievalEntry`
+## `DirectoryCorpus`
 
-`[dataclass]` A single corpus entry, representing one loaded template.
+Loads a directory of markdown files as a corpus. Supports summaries, cross-links, aliases, and optional result caching.
 
-#### Fields
-
-| Field | Type | Default |
-|-------|------|---------|
-| `path` | `str` | — |
-| `category` | `str` | — |
-| `content` | `str` | — |
-| `summary` | `str \| None` | `None` |
-| `related` | `tuple[str, ...]` | `()` |
-| `aliases` | `tuple[str, ...]` | `()` |
-| `metadata` | `dict[str, Any]` | `field(default_factory=dict)` |
-
----
-
-### `AttuneHelpCorpus`
-
-Thin adapter over the bundled attune-help templates. Use `from_attune_help()` to construct an instance without managing the underlying adapter directly.
-
-#### Constructor
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `adapter` | `HelpCorpusAdapter` | Adapter that provides access to the bundled template data. |
-
-#### Class methods
-
-| Method | Parameters | Returns | Description |
-|--------|------------|---------|-------------|
-| `from_attune_help` | `cls` | `AttuneHelpCorpus` | Constructs an `AttuneHelpCorpus` from the bundled attune-help data. |
-
-#### Methods
-
-| Method | Parameters | Returns | Description |
-|--------|------------|---------|-------------|
-| `entries` | `self` | `Iterable[RetrievalEntry]` | Yields every entry in the corpus. |
-| `get` | `self`, `path: str` | `RetrievalEntry \| None` | Returns the entry at the given path, or `None` if not found. |
-
-#### Properties
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `name` | `str` | Human-readable name of this corpus. |
-| `version` | `str` | Version identifier for this corpus. |
-
----
-
-### `DirectoryCorpus`
-
-Loads a directory of markdown files as a corpus. Supports optional summaries, cross-links, and alias indexing. Entries are cached by default after the first load.
-
-#### Constructor
+### Constructor
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `root` | `Path` | — | Root directory to scan for markdown files. |
-| `summaries_file` | `str \| None` | `None` | Path to a file providing per-entry summaries. |
-| `cross_links_file` | `str \| None` | `None` | Path to a file providing cross-link relationships. |
-| `extra_summaries` | `dict[str, str \| None] \| None` | `None` | Additional summaries supplied directly as a dict. |
-| `cache` | `bool` | `True` | Whether to cache loaded entries after the first scan. |
+| `summaries_file` | `str \| None` | `None` | Path to a file containing per-entry summaries. |
+| `cross_links_file` | `str \| None` | `None` | Path to a file containing cross-link rules. |
+| `extra_summaries` | `dict[str, str \| None] \| None` | `None` | Additional summaries supplied programmatically. |
+| `extra_aliases` | `dict[str, Iterable[str]] \| None` | `None` | Additional aliases supplied programmatically. |
+| `extra_aliases_file` | `Path \| str \| None` | `None` | Path to a file containing additional aliases. |
+| `cache` | `bool` | `True` | Whether to cache loaded entries. |
 | `glob` | `str` | `DEFAULT_GLOB` | Glob pattern used to discover files under `root`. |
+| `warn_alias_overlap` | `bool` | `True` | Whether to emit a warning when aliases overlap across entries. |
 
-#### Methods
+### Methods
 
 | Method | Parameters | Returns | Description |
 |--------|------------|---------|-------------|
-| `entries` | `self` | `Iterable[RetrievalEntry]` | Yields every entry discovered under `root`. |
-| `get` | `self`, `path: str` | `RetrievalEntry \| None` | Returns the entry at the given path, or `None` if not found. |
+| `entries` | — | `Iterable[RetrievalEntry]` | Yields all entries loaded from the directory. |
+| `get` | `path: str` | `RetrievalEntry \| None` | Returns the entry at `path`, or `None` if not found. |
 
-#### Properties
+### Properties
 
 | Property | Type | Description |
 |----------|------|-------------|
 | `path_index` | `dict[str, RetrievalEntry]` | `rel_path -> RetrievalEntry` for every loaded template. |
 | `alias_index` | `dict[str, AliasInfo]` | `alias -> AliasInfo` for every alias declared in the corpus. |
-| `name` | `str` | Human-readable name of this corpus. |
+| `name` | `str` | Human-readable name of the corpus. |
 | `version` | `str` | Stable SHA-256 fingerprint of the loaded corpus. |
 
 ---
 
-### `AliasInfo`
+## `AttuneHelpCorpus`
 
-An alias declared by a template, indexed for fast lookup.
+Thin adapter over the bundled attune-help templates. Use `from_attune_help()` to construct an instance without supplying an adapter directly.
 
----
-
-### `DuplicateAliasError`
-
-Raised when two templates declare the same alias.
-
-#### Constructor
+### Constructor
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `alias` | `str` | The alias string that was declared more than once. |
-| `first_path` | `str` | Path of the template that first declared the alias. |
-| `second_path` | `str` | Path of the template that declared the alias again. |
+| `adapter` | `HelpCorpusAdapter` | Adapter that provides access to the underlying template store. |
+
+### Methods
+
+| Method | Parameters | Returns | Description |
+|--------|------------|---------|-------------|
+| `from_attune_help` | — | `AttuneHelpCorpus` | Class method. Constructs an `AttuneHelpCorpus` from the bundled attune-help templates. |
+| `entries` | — | `Iterable[RetrievalEntry]` | Yields all entries in the corpus. |
+| `get` | `path: str` | `RetrievalEntry \| None` | Returns the entry at `path`, or `None` if not found. |
+
+### Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | `str` | Human-readable name of the corpus. |
+| `version` | `str` | Version identifier for the corpus. |
+
+---
+
+## `RetrievalEntry`
+
+A single corpus entry. Every entry loaded by a corpus implementation is returned as a `RetrievalEntry`.
+
+### Fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `path` | `str` | — | Relative path that identifies this entry within the corpus. |
+| `category` | `str` | — | Category label for the entry. |
+| `content` | `str` | — | Full text content of the entry. |
+| `summary` | `str \| None` | `None` | Short summary of the entry, if available. |
+| `related` | `tuple[str, ...]` | `()` | Paths of related entries. |
+| `aliases` | `tuple[str, ...]` | `()` | Alternative lookup keys for this entry. |
+| `metadata` | `dict[str, Any]` | `field(default_factory=dict)` | Arbitrary metadata attached to the entry. |
+
+---
+
+## `AliasInfo`
+
+An alias declared by a template, indexed for fast lookup by `DirectoryCorpus.alias_index`.
+
+---
+
+## `DuplicateAliasError`
+
+Raised when two templates declare the same alias.
+
+### Constructor
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `alias` | `str` | The alias string that appears in both templates. |
+| `first_path` | `str` | Path of the first template that declared the alias. |
+| `second_path` | `str` | Path of the second template that declared the alias. |
+
+---
+
+## Module constants
+
+| Constant | Type | Value |
+|----------|------|-------|
+| `DEFAULT_GLOB` | `str` | `'**/*.md'` |
+
+---
 
 ## Source files
 
@@ -158,7 +160,3 @@ Raised when two templates declare the same alias.
 - `src/attune_rag/corpus/base.py`
 - `src/attune_rag/corpus/directory.py`
 - `src/attune_rag/corpus/attune_help.py`
-
-## Tags
-
-`corpus`, `loader`, `markdown`, `attune-help`

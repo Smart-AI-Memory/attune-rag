@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Expander reference — reference</title>
-  <meta name="description" content="Use `QueryExpander` to expand a user query into alternative phrasings before retrieval. The class calls Claude Haiku to generate 3–5 rewordings that surface feature names, tool categories, workflow sy" />
+  <meta name="description" content="Use `QueryExpander` to broaden a user query into alternative phrasings before retrieval. The expander calls Claude Haiku to generate 3–5 rephrased versions of the original query, improving recall when" />
   <meta property="og:title" content="Expander reference — reference" />
-  <meta property="og:description" content="Use `QueryExpander` to expand a user query into alternative phrasings before retrieval. The class calls Claude Haiku to generate 3–5 rewordings that surface feature names, tool categories, workflow sy" />
+  <meta property="og:description" content="Use `QueryExpander` to broaden a user query into alternative phrasings before retrieval. The expander calls Claude Haiku to generate 3–5 rephrased versions of the original query, improving recall when" />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/expander/reference" />
@@ -258,7 +258,7 @@
   </nav>
   <article class="markdown-body">
 <h1>Expander reference</h1>
-<p>Use <code>QueryExpander</code> to expand a user query into alternative phrasings before retrieval. The class calls Claude Haiku to generate 3–5 rewordings that surface feature names, tool categories, workflow synonyms, and developer jargon, improving recall when the original query has low surface-level overlap with target documents.</p>
+<p>Use <code>QueryExpander</code> to broaden a user query into alternative phrasings before retrieval. The expander calls Claude Haiku to generate 3–5 rephrased versions of the original query, improving recall when the query has low surface-level overlap with target documents. Any API error falls back to the original query unchanged.</p>
 <h2>Classes</h2>
 <table>
 <thead>
@@ -270,11 +270,13 @@
 <tbody>
 <tr>
 <td><code>QueryExpander</code></td>
-<td>Uses Claude Haiku to expand a query into alternative phrasings.</td>
+<td>Expands a query into alternative phrasings using Claude Haiku.</td>
 </tr>
 </tbody>
 </table>
 <h3><code>QueryExpander</code></h3>
+<pre><code class="language-python">from attune_rag.expander import QueryExpander
+</code></pre>
 <h4>Constructor</h4>
 <table>
 <thead>
@@ -282,27 +284,23 @@
 <th>Parameters</th>
 <th>Type</th>
 <th>Default</th>
-<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>model</code></td>
 <td><code>str</code></td>
-<td><code>'claude-haiku-4-5-20251001'</code></td>
-<td>Claude model to use for expansion.</td>
+<td><code>'claude-haiku-4-5'</code></td>
 </tr>
 <tr>
 <td><code>api_key</code></td>
-<td><code>str | None</code></td>
-<td><code>None</code></td>
-<td>Anthropic API key. If <code>None</code>, falls back to the environment variable.</td>
+<td>`str</td>
+<td>None`</td>
 </tr>
 <tr>
 <td><code>cache</code></td>
 <td><code>bool</code></td>
 <td><code>True</code></td>
-<td>Whether to cache expansion results.</td>
 </tr>
 </tbody>
 </table>
@@ -321,28 +319,29 @@
 <td><code>expand</code></td>
 <td><code>query: str</code></td>
 <td><code>list[str]</code></td>
-<td>Synchronously expands a query into alternative phrasings.</td>
+<td>Expands a query into alternative phrasings synchronously.</td>
 </tr>
 <tr>
 <td><code>expand_async</code></td>
 <td><code>query: str</code></td>
 <td><code>list[str]</code></td>
-<td>Asynchronously expands a query into alternative phrasings.</td>
+<td>Expands a query into alternative phrasings asynchronously.</td>
 </tr>
 </tbody>
 </table>
-<h2>System prompt</h2>
-<p>The <code>_SYSTEM</code> constant controls the instruction sent to Claude Haiku on every expansion request.</p>
+<h2>Constants</h2>
 <table>
 <thead>
 <tr>
 <th>Constant</th>
+<th>Type</th>
 <th>Value</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>_SYSTEM</code></td>
+<td><code>str</code></td>
 <td><code>&quot;You expand developer queries for a documentation retrieval system.\nGiven a query about developer workflows and tooling, return 3-5 alternative\nphrasings as a JSON array of strings. Expose the user's actual intent:\nfeature names, tool categories, workflow synonyms, and developer jargon.\nReturn ONLY the JSON array — no explanation, no markdown fences.&quot;</code></td>
 </tr>
 </tbody>

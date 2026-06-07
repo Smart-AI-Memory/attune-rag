@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Run a RAG pipeline — task</title>
-  <meta name="description" content="Use `RagPipeline` when you want to retrieve grounded context from a corpus, assemble a prompt, and generate a cited answer — all in a single call." />
-  <meta property="og:title" content="Run a RAG pipeline — task" />
-  <meta property="og:description" content="Use `RagPipeline` when you want to retrieve grounded context from a corpus, assemble a prompt, and generate a cited answer — all in a single call." />
+  <title>Work with pipeline — task</title>
+  <meta name="description" content="Use pipeline when you need to orchestrate retrieval, prompt assembly, and llm generation in a single ragpipeline.run() call — returns ragresult with the answer and citationrecord provenance." />
+  <meta property="og:title" content="Work with pipeline — task" />
+  <meta property="og:description" content="Use pipeline when you need to orchestrate retrieval, prompt assembly, and llm generation in a single ragpipeline.run() call — returns ragresult with the answer and citationrecord provenance." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/pipeline/task" />
@@ -257,115 +257,51 @@
     <a class="api-link" href="https://github.com/Smart-AI-Memory/attune-rag">Source &amp; API &rarr;</a>
   </nav>
   <article class="markdown-body">
-<h1>Run a RAG pipeline</h1>
-<p>Use <code>RagPipeline</code> when you want to retrieve grounded context from a corpus, assemble a prompt, and generate a cited answer — all in a single call.</p>
+<h1>Work with pipeline</h1>
+<p>Use pipeline when you need to orchestrate retrieval, prompt assembly, and llm generation in a single ragpipeline.run() call — returns ragresult with the answer and citationrecord provenance.</p>
 <h2>Prerequisites</h2>
 <ul>
-<li>A corpus that implements <code>CorpusProtocol</code> (for example, <code>DirectoryCorpus</code> or <code>AttuneHelpCorpus</code>)</li>
-<li>Optional: a custom <code>RetrieverProtocol</code> implementation, a <code>QueryExpander</code>, or an <code>LLMReranker</code></li>
+<li>Access to the project source code</li>
+<li>Familiarity with the files under src/attune_rag/pipeline.py</li>
 </ul>
 <h2>Steps</h2>
 <ol>
 <li>
-<p><strong>Instantiate <code>RagPipeline</code>.</strong>
-Pass your corpus and any optional components to the constructor:</p>
-<pre><code class="language-python">from attune_rag import RagPipeline, DirectoryCorpus
-
-corpus = DirectoryCorpus(&quot;path/to/docs&quot;)
-pipeline = RagPipeline(corpus=corpus)
-</code></pre>
-<p>Pass a <code>retriever</code>, <code>expander</code>, or <code>reranker</code> argument if you need non-default retrieval or reranking behavior.</p>
-</li>
-<li>
-<p><strong>Choose how to run the pipeline.</strong></p>
+<p><strong>Understand the class hierarchy.</strong>
+Read the interfaces to see how pipeline
+is structured before extending or modifying.
+The key classes are:</p>
 <ul>
-<li>
-<p>To retrieve context and build an augmented prompt <em>without</em> calling an LLM, use <code>RagPipeline.run</code>:</p>
-<pre><code class="language-python">result = pipeline.run(query=&quot;How do I configure workflows?&quot;, k=3)
-print(result.augmented_prompt)
-</code></pre>
-</li>
-<li>
-<p>To retrieve context <em>and</em> generate a response from an LLM in one step, use <code>RagPipeline.run_and_generate</code>:</p>
-<pre><code class="language-python">answer, result = pipeline.run_and_generate(
-    query=&quot;How do I configure workflows?&quot;,
-    provider=&quot;openai&quot;,
-    k=3,
-    model=&quot;gpt-4o&quot;,
-    prompt_variant=&quot;citation&quot;,
-)
-print(answer)
-</code></pre>
-</li>
+<li><code>RagResult</code> in <code>src/attune_rag/pipeline.py</code> — Output of <code>RagPipeline.run</code>.</li>
+<li><code>RagPipeline</code> in <code>src/attune_rag/pipeline.py</code> — LLM-agnostic RAG pipeline.</li>
 </ul>
 </li>
 <li>
-<p><strong>Inspect the <code>RagResult</code>.</strong>
-Both methods return a <code>RagResult</code> dataclass. Check the fields that matter for your use case:</p>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>What it tells you</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>augmented_prompt</code></td>
-<td>The fully assembled prompt sent to the LLM</td>
-</tr>
-<tr>
-<td><code>citation</code></td>
-<td>A <code>CitationRecord</code> with source provenance</td>
-</tr>
-<tr>
-<td><code>confidence</code></td>
-<td>Retrieval confidence score</td>
-</tr>
-<tr>
-<td><code>fallback_used</code></td>
-<td><code>True</code> if no grounding context was found in the corpus</td>
-</tr>
-<tr>
-<td><code>elapsed_ms</code></td>
-<td>Total pipeline latency in milliseconds</td>
-</tr>
-<tr>
-<td><code>context</code></td>
-<td>Raw retrieved context text</td>
-</tr>
-<tr>
-<td><code>claim_citations</code></td>
-<td>Per-claim <code>ClaimCitation</code> tuples</td>
-</tr>
-<tr>
-<td><code>used_native_citations</code></td>
-<td><code>True</code> if the LLM's native citation format was used</td>
-</tr>
-</tbody>
-</table>
+<p><strong>Decide whether to extend or modify.</strong>
+If the class has subclasses, extend with a new one
+rather than changing the base. If it stands alone,
+modify directly.</p>
 </li>
 <li>
-<p><strong>Handle the fallback case.</strong>
-When <code>result.fallback_used</code> is <code>True</code>, the pipeline found no grounding context. The prompt instructs the LLM to answer honestly and avoid inventing APIs or commands. Decide in your application whether to surface a warning to the user or suppress the response.</p>
+<p><strong>Make your change.</strong>
+Follow existing patterns — naming, error handling,
+and logging style.</p>
 </li>
 <li>
-<p><strong>Format citations for display.</strong>
-Use <code>format_citations_markdown(result.citation)</code> to render source citations, or <code>format_claim_citations_markdown(result.claim_citations)</code> to render per-claim citations.</p>
+<p><strong>Run the related tests.</strong>
+Target with <code>pytest -k &quot;pipeline&quot;</code>.</p>
 </li>
 </ol>
-<h2>Verify success</h2>
-<p>A successful run produces a <code>RagResult</code> where:</p>
-<ul>
-<li><code>augmented_prompt</code> is a non-empty string</li>
-<li><code>elapsed_ms</code> is greater than <code>0</code></li>
-<li><code>fallback_used</code> is <code>False</code> (confirming the corpus returned at least one relevant document)</li>
-<li><code>citation</code> contains at least one cited source</li>
-</ul>
 <h2>Key files</h2>
 <ul>
-<li><code>src/attune_rag/pipeline.py</code> — <code>RagPipeline</code> and <code>RagResult</code> definitions</li>
-<li><code>src/attune_rag/__init__.py</code> — public exports including <code>PROMPT_VARIANTS</code> and citation formatting helpers</li>
+<li><code>src/attune_rag/pipeline.py</code></li>
+<li><code>src/attune_rag/__init__.py</code></li>
+</ul>
+<h2>Common modifications</h2>
+<p>Classes you are most likely to extend:</p>
+<ul>
+<li><code>RagResult</code> in <code>src/attune_rag/pipeline.py</code></li>
+<li><code>RagPipeline</code> in <code>src/attune_rag/pipeline.py</code></li>
 </ul>
 
   </article>

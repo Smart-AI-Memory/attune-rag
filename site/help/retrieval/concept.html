@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Retrieval — concept</title>
-  <meta name="description" content="Retrieval is the process of scoring and ranking corpus entries against a query, returning the top-k matches as `RetrievalHit` objects. The default implementation uses token overlap — stripping stopwor" />
+  <meta name="description" content="Retrieval is the process of scoring and ranking corpus entries against a query so that the most relevant results surface first." />
   <meta property="og:title" content="Retrieval — concept" />
-  <meta property="og:description" content="Retrieval is the process of scoring and ranking corpus entries against a query, returning the top-k matches as `RetrievalHit` objects. The default implementation uses token overlap — stripping stopwor" />
+  <meta property="og:description" content="Retrieval is the process of scoring and ranking corpus entries against a query so that the most relevant results surface first." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/retrieval/concept" />
@@ -258,51 +258,41 @@
   </nav>
   <article class="markdown-body">
 <h1>Retrieval</h1>
-<h2>Overview</h2>
-<p>Retrieval is the process of scoring and ranking corpus entries against a query, returning the top-k matches as <code>RetrievalHit</code> objects. The default implementation uses token overlap — stripping stopwords and stemming query and entry tokens — to produce a ranked list of results.</p>
-<h2>Mental model</h2>
-<p>A retriever takes three inputs — a query string, a corpus, and a result count <code>k</code> — and returns an ordered list of <code>RetrievalHit</code> objects. Each hit wraps a <code>RetrievalEntry</code> together with a numeric <code>score</code> and a human-readable <code>match_reason</code> that explains why the entry ranked.</p>
-<p><code>KeywordRetriever</code> applies this pattern using weighted token overlap. It tokenizes the query, removes common stopwords (such as <code>a</code>, <code>the</code>, <code>how</code>, and <code>is</code>), and strips suffixes (such as <code>ation</code>, <code>ing</code>, and <code>er</code>) to normalize tokens before comparing them against each entry's path, summary, content, and related fields. Each field carries its own weight, so a match in a path or summary can outrank the same token found only in body content.</p>
-<pre><code>query ──► tokenize &amp; stem ──► compare against corpus entries
-                                   │
-                         path · summary · content · related
-                         (weighted token overlap per field)
-                                   │
-                              score + match_reason
-                                   │
-                           top-k RetrievalHit list
+<p>Retrieval is the process of scoring and ranking corpus entries against a query so that the most relevant results surface first.</p>
+<h2>How keyword retrieval works</h2>
+<p><code>KeywordRetriever</code> implements retrieval through token overlap: it compares the meaningful words in a query against the words in each corpus entry, then returns the top <code>k</code> matches as a ranked list of <code>RetrievalHit</code> objects.</p>
+<p>Before comparing tokens, the retriever strips common stopwords — words like <code>&quot;the&quot;</code>, <code>&quot;is&quot;</code>, and <code>&quot;for&quot;</code> that carry no signal — and reduces remaining words to their stems by removing suffixes such as <code>&quot;ing&quot;</code>, <code>&quot;ation&quot;</code>, and <code>&quot;er&quot;</code>. This means a query for <code>&quot;configuring&quot;</code> matches entries that contain <code>&quot;configuration&quot;</code> or <code>&quot;configure&quot;</code>.</p>
+<p>Scoring is not uniform across an entry. The retriever weights matches differently depending on where in the entry the token appears — for example, a match in a path or summary contributes differently than a match in body content or a related-terms field. The final <code>score</code> on each <code>RetrievalHit</code> reflects this weighted overlap.</p>
+<p>You can set a <code>min_score</code> threshold when constructing a <code>KeywordRetriever</code> to discard low-confidence results before they reach the caller:</p>
+<pre><code class="language-python">retriever = KeywordRetriever(min_score=0.25)
+hits = retriever.retrieve(&quot;template design&quot;, corpus, k=5)
 </code></pre>
-<h2>Core types</h2>
+<h2>The three pieces and how they fit together</h2>
 <table>
 <thead>
 <tr>
-<th>Type</th>
+<th>Piece</th>
 <th>Role</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>RetrievalHit</code></td>
-<td>A single ranked result, holding a <code>RetrievalEntry</code>, a <code>float</code> score, and a <code>match_reason</code> string.</td>
-</tr>
-<tr>
 <td><code>RetrieverProtocol</code></td>
-<td>The structural interface any retriever must satisfy: a <code>retrieve(query, corpus, k)</code> method that returns an iterable of <code>RetrievalHit</code> objects.</td>
+<td>The interface any retriever must satisfy: a <code>retrieve(query, corpus, k)</code> method returning <code>Iterable[RetrievalHit]</code>. Code that consumes results depends on this protocol, not on <code>KeywordRetriever</code> directly.</td>
 </tr>
 <tr>
 <td><code>KeywordRetriever</code></td>
-<td>The built-in implementation of <code>RetrieverProtocol</code>, using stopword filtering and suffix stemming to compute token-overlap scores.</td>
+<td>The concrete implementation. Accepts an optional <code>min_score</code> floor and returns a <code>list[RetrievalHit]</code> sorted by score.</td>
+</tr>
+<tr>
+<td><code>RetrievalHit</code></td>
+<td>A single ranked result. Carries the matched <code>entry</code>, its <code>score</code>, and a <code>match_reason</code> string that explains why the entry was selected.</td>
 </tr>
 </tbody>
 </table>
-<h2>Token normalization</h2>
-<p><code>KeywordRetriever</code> normalizes tokens in two steps before scoring:</p>
-<ol>
-<li><strong>Stopword removal</strong> — tokens in <code>_STOPWORDS</code> (for example, <code>and</code>, <code>or</code>, <code>can</code>, <code>should</code>) are discarded so they do not inflate match scores.</li>
-<li><strong>Suffix stemming</strong> — suffixes in <code>_STEM_SUFFIXES</code> are stripped in length order (for example, <code>ations</code> → <code>ation</code> → <code>ate</code>) so that <code>configure</code>, <code>configuring</code>, and <code>configuration</code> resolve to the same root token.</li>
-</ol>
-<h2>Extension point</h2>
-<p>Because <code>RetrieverProtocol</code> is a structural protocol, any class that implements <code>retrieve(query, corpus, k)</code> with the correct signature works as a drop-in replacement for <code>KeywordRetriever</code>. You do not need to inherit from a base class; satisfying the method signature is sufficient.</p>
+<p>Because callers type against <code>RetrieverProtocol</code>, you can substitute any retriever — semantic, hybrid, or otherwise — without changing the code that processes <code>RetrievalHit</code> objects.</p>
+<h2>When retrieval matters</h2>
+<p>Retrieval sits between a raw user query and a final answer. It determines which corpus entries a downstream component sees, so the quality of retrieval directly bounds the quality of any response built on top of it. If <code>k</code> is too small or <code>min_score</code> is too high, relevant entries are excluded. If <code>min_score</code> is absent or very low, noisy entries pass through. Tuning these two parameters is the primary lever for controlling precision and recall in your pipeline.</p>
 
   </article>
   <footer>

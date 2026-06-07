@@ -6,6 +6,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] — 2026-06-07
+
+Packaging + docs corrections on top of 0.5.0. **No library code changes** —
+the retrieval behavior is identical to 0.5.0.
+
+### Changed
+- **Packaging metadata** that was intended for the 0.5.0 cut: Development
+  Status classifier `3 - Alpha` → `4 - Beta`; PyPI Homepage +
+  Documentation URLs → `https://attune-rag.dev`.
+- **README** now leads with the measured retrieval numbers (bundled
+  100%/100%; unseen-corpus hard-paraphrase precision@1 25%→90%, recall@3
+  25%→100% with the transformer tier; abstention 92%→8%) and a
+  lightweight-vs-transformer "two ways to run it" guide. **Install
+  instructions corrected** to list the `[embeddings]` and `[transformers]`
+  retrieval tiers.
+- **`.help/` corpus regenerated** to match the 0.5.0 retrieval code (6
+  features refreshed: retrieval, corpus, providers, cli, expander,
+  reranker).
+
 ## [0.5.0] — 2026-06-07
 
 The retrieval-capabilities release. A full opt-in retrieval ladder lands on

@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Reranker reference — reference</title>
-  <meta name="description" content="Use `LLMReranker` to improve retrieval precision by re-ranking keyword-retrieved candidates with Claude Haiku as a relevance judge. The reranker is opt-in and fail-safe — any API error falls back to t" />
+  <meta name="description" content="Use `LLMReranker` to re-order keyword-retrieved candidates by relevance using Claude as a judge. Any API error falls back to the original keyword-only order, so the reranker is safe to use in producti" />
   <meta property="og:title" content="Reranker reference — reference" />
-  <meta property="og:description" content="Use `LLMReranker` to improve retrieval precision by re-ranking keyword-retrieved candidates with Claude Haiku as a relevance judge. The reranker is opt-in and fail-safe — any API error falls back to t" />
+  <meta property="og:description" content="Use `LLMReranker` to re-order keyword-retrieved candidates by relevance using Claude as a judge. Any API error falls back to the original keyword-only order, so the reranker is safe to use in producti" />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/reranker/reference" />
@@ -258,7 +258,7 @@
   </nav>
   <article class="markdown-body">
 <h1>Reranker reference</h1>
-<p>Use <code>LLMReranker</code> to improve retrieval precision by re-ranking keyword-retrieved candidates with Claude Haiku as a relevance judge. The reranker is opt-in and fail-safe — any API error falls back to the original keyword-only order.</p>
+<p>Use <code>LLMReranker</code> to re-order keyword-retrieved candidates by relevance using Claude as a judge. Any API error falls back to the original keyword-only order, so the reranker is safe to use in production without a circuit breaker.</p>
 <h2>Classes</h2>
 <table>
 <thead>
@@ -270,44 +270,51 @@
 <tbody>
 <tr>
 <td><code>LLMReranker</code></td>
-<td>Uses Claude Haiku to re-rank keyword retrieval candidates by relevance.</td>
+<td>Re-ranks keyword retrieval candidates by relevance using Claude Haiku.</td>
 </tr>
 </tbody>
 </table>
-<h3><code>LLMReranker</code></h3>
-<h4>Constructor</h4>
+<h2><code>LLMReranker</code></h2>
+<pre><code class="language-python">from attune_rag.reranker import LLMReranker
+</code></pre>
+<h3>Constructor</h3>
 <table>
 <thead>
 <tr>
-<th>Parameters</th>
+<th>Parameter</th>
 <th>Type</th>
 <th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>model</code></td>
 <td><code>str</code></td>
-<td><code>'claude-haiku-4-5-20251001'</code></td>
+<td><code>'claude-haiku-4-5'</code></td>
+<td>Claude model used as the relevance judge.</td>
 </tr>
 <tr>
 <td><code>api_key</code></td>
 <td>`str</td>
 <td>None`</td>
+<td><code>None</code></td>
 </tr>
 <tr>
 <td><code>candidate_multiplier</code></td>
 <td><code>int</code></td>
 <td><code>3</code></td>
+<td>Multiplier applied to the requested result count to determine how many candidates to retrieve before re-ranking.</td>
 </tr>
 <tr>
 <td><code>timeout</code></td>
 <td><code>float</code></td>
 <td><code>60.0</code></td>
+<td>Request timeout in seconds for each Claude call.</td>
 </tr>
 </tbody>
 </table>
-<h4>Methods</h4>
+<h3>Methods</h3>
 <table>
 <thead>
 <tr>
@@ -322,12 +329,30 @@
 <td><code>rerank</code></td>
 <td><code>query: str</code>, <code>hits: list[RetrievalHit]</code></td>
 <td><code>list[RetrievalHit]</code></td>
-<td>Re-ranks retrieval hits by relevance to the query.</td>
+<td>Re-ranks <code>hits</code> against <code>query</code> and returns them in relevance order. Falls back to the original order if the API call fails.</td>
 </tr>
 </tbody>
 </table>
-<h2>System prompt</h2>
-<p>The relevance-ranking prompt sent to Claude Haiku instructs the model to return a JSON array of 0-based indices ordering candidates from most to least relevant. The full prompt text is:</p>
+<h2>Module constants</h2>
+<h3><code>_SYSTEM</code></h3>
+<p>System prompt passed to Claude on every rerank call. Instructs the model to act as a relevance judge and return a JSON array of 0-based indices ranked from most to least relevant.</p>
+<table>
+<thead>
+<tr>
+<th>Constant</th>
+<th>Type</th>
+<th>Value (stem)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>_SYSTEM</code></td>
+<td><code>str</code></td>
+<td><code>'You are a relevance judge for the attune-ai developer workflow documentation system…'</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Full value:</strong></p>
 <pre><code>You are a relevance judge for the attune-ai developer workflow documentation system.
 Given a user query and a numbered list of candidate documents (path + summary),
 return a JSON array of 0-based indices ranking candidates from most to least relevant.

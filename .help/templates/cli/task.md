@@ -3,63 +3,46 @@ type: task
 name: cli-task
 feature: cli
 depth: task
-generated_at: 2026-05-20T03:30:50.381478+00:00
+generated_at: 2026-06-07T07:13:42.568215+00:00
 source_hash: 96db3d6bf557349fb1cbc8ae947bdd3fa30475c1926eb4172b0875e533ece578
 status: generated
 ---
 
-# Run retrieval debugging from the command line
+# Work with the attune-rag CLI
 
-Use the `attune-rag` CLI when you need to query the RAG pipeline or inspect corpus statistics directly from your terminal without writing Python code.
+Use the `attune_rag.cli` module when you need to run retrieval queries or inspect corpus statistics from the command line.
 
 ## Prerequisites
 
-- A working installation of `attune-rag` with the CLI entry point available on your `PATH`
-- Access to `src/attune_rag/cli.py` if you intend to extend or modify CLI behavior
+- Access to the project source code at `src/attune_rag/cli.py`
+- A working Python environment with `attune_rag` installed
 
-## Run a query or inspect the corpus
+## Steps
 
-1. **Run a RAG query.** Pass your question as an argument to get a grounded answer with citations:
+1. **Review the two public entry points.**
+   Open `src/attune_rag/cli.py` and locate `build_parser()` and `main()`. `build_parser()` constructs the argument parser that defines all available subcommands and flags. `main()` is the entry point that parses `argv` and dispatches to the appropriate handler.
 
-   ```
-   attune-rag query "What is the retrieval strategy?"
-   ```
+2. **Identify which function owns the behavior you need.**
+   - To add or modify a subcommand, flag, or argument, work in `build_parser()`.
+   - To change how the CLI dispatches, handles errors, or returns exit codes, work in `main()`.
 
-2. **View corpus statistics.** Run the `corpus-info` subcommand to print a summary of the current corpus:
+3. **Edit the target function.**
+   Make your changes in `src/attune_rag/cli.py`. Keep argument names consistent with those already defined in `build_parser()`, and ensure `main()` returns an integer exit code.
 
-   ```
-   attune-rag corpus-info
-   ```
+4. **Run the related tests.**
+   Execute `pytest -k "cli"` to catch regressions before they affect other developers.
 
-3. **Review available options.** Use `--help` to see all subcommands and flags exposed by `build_parser()`:
-
-   ```
-   attune-rag --help
-   ```
-
-## Extend the CLI
-
-1. **Open the entry point file.**
-   All CLI logic lives in `src/attune_rag/cli.py`. The two functions you will work with are:
-   - `build_parser()` — constructs and returns the `argparse.ArgumentParser`, including all subcommands and flags
-   - `main(argv)` — parses arguments and dispatches to the appropriate handler; returns an integer exit code
-
-2. **Add or modify a subcommand in `build_parser()`.** Add a new subparser or argument to the parser this function returns. Match the naming conventions and help-string style of the existing subcommands.
-
-3. **Wire up the handler in `main()`.** Add the corresponding dispatch logic so the new subcommand calls the right function and returns an explicit integer exit code (`0` for success, non-zero for failure).
-
-4. **Run the targeted tests** to catch regressions before they affect other developers:
-
-   ```
-   pytest -k "cli"
-   ```
+5. **Verify the CLI behaves as expected.**
+   Call `main()` directly with a list of arguments, or invoke the installed command from your shell. Confirm the output, exit code, and any error messages match your intent.
 
 ## Verify success
 
-- `attune-rag query` prints an answer followed by citation references and exits with code `0`.
-- `attune-rag corpus-info` prints corpus statistics and exits with code `0`.
-- `pytest -k "cli"` reports no failures.
+You know this task is complete when:
+
+- `pytest -k "cli"` passes with no failures
+- Calling `main()` with valid arguments returns `0`
+- Calling `main()` with invalid arguments returns a non-zero exit code and prints a usage message
 
 ## Key files
 
-- `src/attune_rag/cli.py`
+- `src/attune_rag/cli.py` — contains `build_parser()` and `main()`

@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pipeline reference — reference</title>
-  <meta name="description" content="Use `RagPipeline` to orchestrate corpus retrieval, prompt assembly, and LLM generation in a single call. Each run returns a `RagResult` dataclass containing the augmented prompt, a `CitationRecord` fo" />
+  <meta name="description" content="- `src/attune_rag/pipeline.py` - `src/attune_rag/__init__.py`" />
   <meta property="og:title" content="Pipeline reference — reference" />
-  <meta property="og:description" content="Use `RagPipeline` to orchestrate corpus retrieval, prompt assembly, and LLM generation in a single call. Each run returns a `RagResult` dataclass containing the augmented prompt, a `CitationRecord` fo" />
+  <meta property="og:description" content="- `src/attune_rag/pipeline.py` - `src/attune_rag/__init__.py`" />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/pipeline/reference" />
@@ -258,178 +258,25 @@
   </nav>
   <article class="markdown-body">
 <h1>Pipeline reference</h1>
-<p>Use <code>RagPipeline</code> to orchestrate corpus retrieval, prompt assembly, and LLM generation in a single call. Each run returns a <code>RagResult</code> dataclass containing the augmented prompt, a <code>CitationRecord</code> for provenance, and confidence metadata.</p>
 <h2>Classes</h2>
 <table>
 <thead>
 <tr>
 <th>Class</th>
 <th>Description</th>
+<th>File</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>RagResult</code></td>
 <td>Output of <code>RagPipeline.run</code>.</td>
+<td><code>src/attune_rag/pipeline.py</code></td>
 </tr>
 <tr>
 <td><code>RagPipeline</code></td>
 <td>LLM-agnostic RAG pipeline.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h3><code>RagResult</code></h3>
-<p><code>[dataclass]</code> — Output of <code>RagPipeline.run</code>.</p>
-<h4>Fields</h4>
-<table>
-<thead>
-<tr>
-<th>Field</th>
-<th>Type</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>augmented_prompt</code></td>
-<td><code>str</code></td>
-<td>—</td>
-</tr>
-<tr>
-<td><code>citation</code></td>
-<td><code>CitationRecord</code></td>
-<td>—</td>
-</tr>
-<tr>
-<td><code>confidence</code></td>
-<td><code>float</code></td>
-<td>—</td>
-</tr>
-<tr>
-<td><code>fallback_used</code></td>
-<td><code>bool</code></td>
-<td>—</td>
-</tr>
-<tr>
-<td><code>elapsed_ms</code></td>
-<td><code>float</code></td>
-<td>—</td>
-</tr>
-<tr>
-<td><code>context</code></td>
-<td><code>str</code></td>
-<td><code>''</code></td>
-</tr>
-<tr>
-<td><code>claim_citations</code></td>
-<td><code>tuple[ClaimCitation, ...]</code></td>
-<td><code>()</code></td>
-</tr>
-<tr>
-<td><code>used_native_citations</code></td>
-<td><code>bool</code></td>
-<td><code>False</code></td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h3><code>RagPipeline</code></h3>
-<p>LLM-agnostic RAG pipeline that composes a corpus, retriever, optional query expander, and optional reranker.</p>
-<h4>Constructor</h4>
-<table>
-<thead>
-<tr>
-<th>Parameters</th>
-<th>Type</th>
-<th>Default</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>corpus</code></td>
-<td><code>CorpusProtocol | None</code></td>
-<td><code>None</code></td>
-</tr>
-<tr>
-<td><code>retriever</code></td>
-<td><code>RetrieverProtocol | None</code></td>
-<td><code>None</code></td>
-</tr>
-<tr>
-<td><code>expander</code></td>
-<td><code>QueryExpander | None</code></td>
-<td><code>None</code></td>
-</tr>
-<tr>
-<td><code>reranker</code></td>
-<td><code>LLMReranker | None</code></td>
-<td><code>None</code></td>
-</tr>
-</tbody>
-</table>
-<h4>Properties</h4>
-<table>
-<thead>
-<tr>
-<th>Property</th>
-<th>Type</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>corpus</code></td>
-<td><code>CorpusProtocol</code></td>
-<td>The corpus this pipeline retrieves from.</td>
-</tr>
-</tbody>
-</table>
-<h4>Methods</h4>
-<table>
-<thead>
-<tr>
-<th>Method</th>
-<th>Parameters</th>
-<th>Returns</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>run</code></td>
-<td><code>query: str</code>, <code>k: int = 3</code>, <code>prompt_variant: str = 'citation'</code></td>
-<td><code>RagResult</code></td>
-<td>Retrieves context and assembles an augmented prompt; returns a <code>RagResult</code> without calling an LLM.</td>
-</tr>
-<tr>
-<td><code>run_and_generate</code></td>
-<td><code>query: str</code>, <code>provider: LLMProvider | str</code>, <code>k: int = 3</code>, <code>model: str | None = None</code>, <code>max_tokens: int = 2048</code>, <code>prompt_variant: str = 'citation'</code>, <code>use_native_citations: bool = False</code></td>
-<td><code>tuple[str, RagResult]</code></td>
-<td>Retrieves context, assembles a prompt, calls the specified LLM provider, and returns the generated text alongside a <code>RagResult</code>.</td>
-</tr>
-</tbody>
-</table>
-<hr />
-<h2>Constants</h2>
-<table>
-<thead>
-<tr>
-<th>Constant</th>
-<th>Type</th>
-<th>Value</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>FALLBACK_PROMPT_TEMPLATE</code></td>
-<td><code>str</code></td>
-<td><code>&quot;### USER REQUEST\n\n{query}\n\n### INSTRUCTION\n\nNo grounding context was found in the corpus for this\nrequest. Answer honestly about what you do and do not\nknow. Do not invent attune APIs, workflow names, or CLI\ncommands. If the user is asking about something outside\nthe corpus's scope, say so.&quot;</code></td>
-</tr>
-<tr>
-<td><code>__version__</code></td>
-<td><code>str</code></td>
-<td><code>'0.1.19'</code></td>
+<td><code>src/attune_rag/pipeline.py</code></td>
 </tr>
 </tbody>
 </table>

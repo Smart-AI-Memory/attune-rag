@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>CLI reference — reference</title>
-  <meta name="description" content="Use this module to invoke retrieval debugging from the command line. The `attune-rag` entry point supports two subcommands: `query` runs a RAG query and prints the grounded answer with citations; `cor" />
+  <meta name="description" content="Command-line entry point for debugging retrieval. Use `attune-rag query` to run a RAG query and print the grounded answer with citations, or `attune-rag corpus-info` to show corpus statistics." />
   <meta property="og:title" content="CLI reference — reference" />
-  <meta property="og:description" content="Use this module to invoke retrieval debugging from the command line. The `attune-rag` entry point supports two subcommands: `query` runs a RAG query and prints the grounded answer with citations; `cor" />
+  <meta property="og:description" content="Command-line entry point for debugging retrieval. Use `attune-rag query` to run a RAG query and print the grounded answer with citations, or `attune-rag corpus-info` to show corpus statistics." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/cli/reference" />
@@ -258,7 +258,7 @@
   </nav>
   <article class="markdown-body">
 <h1>CLI reference</h1>
-<p>Use this module to invoke retrieval debugging from the command line. The <code>attune-rag</code> entry point supports two subcommands: <code>query</code> runs a RAG query and prints the grounded answer with citations; <code>corpus-info</code> shows corpus statistics.</p>
+<p>Command-line entry point for debugging retrieval. Use <code>attune-rag query</code> to run a RAG query and print the grounded answer with citations, or <code>attune-rag corpus-info</code> to show corpus statistics.</p>
 <h2>Functions</h2>
 <table>
 <thead>
@@ -274,13 +274,13 @@
 <td><code>build_parser</code></td>
 <td>—</td>
 <td><code>argparse.ArgumentParser</code></td>
-<td>Constructs and returns the argument parser for the <code>attune-rag</code> command.</td>
+<td>Constructs and returns the argument parser for the <code>attune-rag</code> CLI.</td>
 </tr>
 <tr>
 <td><code>main</code></td>
 <td><code>argv: list[str] | None = None</code></td>
 <td><code>int</code></td>
-<td>Parses arguments and dispatches to the appropriate subcommand; returns an exit code.</td>
+<td>Runs the CLI with the given argument list, or reads from <code>sys.argv</code> when <code>argv</code> is <code>None</code>. Returns an exit code.</td>
 </tr>
 </tbody>
 </table>

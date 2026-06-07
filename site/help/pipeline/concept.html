@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pipeline — concept</title>
-  <meta name="description" content="`RagPipeline` is a lightweight, LLM-agnostic orchestrator that connects a document corpus, a retriever, and a prompt builder so that a single `run()` call returns a grounded, citable answer." />
+  <meta name="description" content="Orchestrate retrieval, prompt assembly, and LLM generation in a single RagPipeline.run() call — returns RagResult with the answer and CitationRecord provenance." />
   <meta property="og:title" content="Pipeline — concept" />
-  <meta property="og:description" content="`RagPipeline` is a lightweight, LLM-agnostic orchestrator that connects a document corpus, a retriever, and a prompt builder so that a single `run()` call returns a grounded, citable answer." />
+  <meta property="og:description" content="Orchestrate retrieval, prompt assembly, and LLM generation in a single RagPipeline.run() call — returns RagResult with the answer and CitationRecord provenance." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/pipeline/concept" />
@@ -258,79 +258,43 @@
   </nav>
   <article class="markdown-body">
 <h1>Pipeline</h1>
-<h2>Overview</h2>
-<p><code>RagPipeline</code> is a lightweight, LLM-agnostic orchestrator that connects a document corpus, a retriever, and a prompt builder so that a single <code>run()</code> call returns a grounded, citable answer.</p>
-<h2>How the pieces fit together</h2>
-<p>When you call <code>RagPipeline.run(query, k=3)</code>, the pipeline:</p>
-<ol>
-<li>Retrieves the top-<code>k</code> passages from the attached <code>CorpusProtocol</code> using the configured <code>RetrieverProtocol</code>.</li>
-<li>Optionally expands the query with <code>QueryExpander</code> and re-ranks hits with <code>LLMReranker</code>.</li>
-<li>Assembles an augmented prompt from the retrieved context using one of the built-in <code>PROMPT_VARIANTS</code> (default: <code>&quot;citation&quot;</code>).</li>
-<li>Returns a <code>RagResult</code> that packages the augmented prompt, a <code>CitationRecord</code>, a confidence score, elapsed time, and a <code>fallback_used</code> flag.</li>
-</ol>
-<p>If no grounding context is found, the pipeline substitutes a fallback prompt that instructs the LLM to answer honestly rather than invent APIs, workflow names, or CLI commands.</p>
-<p>To go further in one step, <code>run_and_generate()</code> accepts an <code>LLMProvider</code> and returns both the generated text and the <code>RagResult</code>, making it straightforward to hand the result directly to a UI or downstream service.</p>
-<h2>Core data structures</h2>
-<h3><code>RagPipeline</code></h3>
-<p>The central orchestrator. Constructed with optional components:</p>
-<pre><code class="language-python">RagPipeline(
-    corpus=...,      # CorpusProtocol — document store to retrieve from
-    retriever=...,   # RetrieverProtocol — scoring and ranking logic
-    expander=...,    # QueryExpander — optional query rewriting
-    reranker=...,    # LLMReranker — optional LLM-based re-ranking
-)
-</code></pre>
-<p>You can read back the attached corpus at any time via the <code>corpus</code> property.</p>
-<h3><code>RagResult</code></h3>
-<p>The structured output of every <code>run()</code> call. Key fields:</p>
+<h2>How it works</h2>
+<p>Orchestrate retrieval, prompt assembly, and LLM generation in a single RagPipeline.run() call — returns RagResult with the answer and CitationRecord provenance.</p>
+<p>The main building blocks are:</p>
+<ul>
+<li><strong><code>RagResult</code></strong> — Output of <code>RagPipeline.run</code>.</li>
+<li><strong><code>RagPipeline</code></strong> — LLM-agnostic RAG pipeline.</li>
+</ul>
+<p>Under the hood, this feature spans 2 source
+files covering:</p>
+<ul>
+<li>Lightweight, LLM-agnostic RAG pipeline.</li>
+</ul>
+<h2>What connects to it</h2>
+<p>This feature relates to: pipeline, orchestration, rag, result.</p>
+<p>Other parts of the codebase interact with
+pipeline through these interfaces:</p>
 <table>
 <thead>
 <tr>
-<th>Field</th>
-<th>Type</th>
-<th>What it tells you</th>
+<th>Interface</th>
+<th>Purpose</th>
+<th>File</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>augmented_prompt</code></td>
-<td><code>str</code></td>
-<td>The prompt actually sent to the LLM, with retrieved context injected</td>
+<td><code>RagResult</code></td>
+<td>Output of <code>RagPipeline.run</code>.</td>
+<td><code>src/attune_rag/pipeline.py</code></td>
 </tr>
 <tr>
-<td><code>citation</code></td>
-<td><code>CitationRecord</code></td>
-<td>Source provenance for the answer</td>
-</tr>
-<tr>
-<td><code>claim_citations</code></td>
-<td><code>tuple[ClaimCitation, ...]</code></td>
-<td>Per-claim attribution when native citations are active</td>
-</tr>
-<tr>
-<td><code>confidence</code></td>
-<td><code>float</code></td>
-<td>Retrieval confidence score</td>
-</tr>
-<tr>
-<td><code>fallback_used</code></td>
-<td><code>bool</code></td>
-<td><code>True</code> when no corpus context was found</td>
-</tr>
-<tr>
-<td><code>elapsed_ms</code></td>
-<td><code>float</code></td>
-<td>End-to-end pipeline latency</td>
-</tr>
-<tr>
-<td><code>context</code></td>
-<td><code>str</code></td>
-<td>Raw retrieved context passed to the prompt</td>
+<td><code>RagPipeline</code></td>
+<td>LLM-agnostic RAG pipeline.</td>
+<td><code>src/attune_rag/pipeline.py</code></td>
 </tr>
 </tbody>
 </table>
-<h2>When this matters</h2>
-<p>Use <code>RagPipeline</code> when you need retrieval-augmented generation that is not coupled to a specific LLM provider. Because the pipeline separates corpus management, retrieval, and prompt assembly into swappable components, you can change any one of them — for example, substituting <code>KeywordRetriever</code> for a dense retriever — without touching the rest of your application.</p>
 
   </article>
   <footer>

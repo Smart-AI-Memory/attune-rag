@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Providers — concept</title>
-  <meta name="description" content="Providers are optional, installable adapters that connect attune-rag to an external LLM API through a common async interface — the `LLMProvider` protocol — so the rest of the codebase never depends di" />
+  <meta name="description" content="The `providers` module is a set of optional LLM adapter classes that share a common `LLMProvider` protocol, letting the rest of the codebase call a single interface regardless of which underlying API " />
   <meta property="og:title" content="Providers — concept" />
-  <meta property="og:description" content="Providers are optional, installable adapters that connect attune-rag to an external LLM API through a common async interface — the `LLMProvider` protocol — so the rest of the codebase never depends di" />
+  <meta property="og:description" content="The `providers` module is a set of optional LLM adapter classes that share a common `LLMProvider` protocol, letting the rest of the codebase call a single interface regardless of which underlying API " />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/providers/concept" />
@@ -258,55 +258,114 @@
   </nav>
   <article class="markdown-body">
 <h1>Providers</h1>
-<h2>How providers work</h2>
-<p>Providers are optional, installable adapters that connect attune-rag to an external LLM API through a common async interface — the <code>LLMProvider</code> protocol — so the rest of the codebase never depends directly on a specific SDK.</p>
-<p>Each concrete provider is a thin async wrapper that translates <code>LLMProvider</code> method calls into the corresponding API requests:</p>
+<p>The <code>providers</code> module is a set of optional LLM adapter classes that share a common <code>LLMProvider</code> protocol, letting the rest of the codebase call a single interface regardless of which underlying API — Anthropic or Google — handles the request.</p>
+<h2>Mental model</h2>
+<p>Every provider in this module is a thin async wrapper over a vendor SDK. You interact with any provider through two methods defined on <code>LLMProvider</code>:</p>
 <ul>
-<li><strong><code>ClaudeProvider</code></strong> wraps Anthropic's Messages API. Install it with the <code>attune-rag[claude]</code> extra.</li>
-<li><strong><code>GeminiProvider</code></strong> wraps Google's genai models API. Install it with the <code>attune-rag[gemini]</code> extra.</li>
+<li><strong><code>generate</code></strong> — sends a <code>prompt</code> string and returns a text response. Pass <code>cached_prefix</code> to reuse a prompt prefix across calls without resending it to the API each time.</li>
+<li><strong><code>generate_with_citations</code></strong> — sends a list of <code>CitationDocument</code> objects alongside a <code>query</code>, and returns a <code>CitedResponse</code> that pairs the generated text with per-claim citation data.</li>
 </ul>
-<p>Because each provider's SDK is imported lazily, installing attune-rag without any extras succeeds cleanly. You can call <code>list_available()</code> at runtime to see which providers have importable SDKs in the current environment, and <code>get_provider(name, **kwargs)</code> to retrieve a ready-to-use instance by name.</p>
-<h3>The <code>LLMProvider</code> protocol</h3>
-<p><code>LLMProvider</code> declares two async methods that concrete providers implement:</p>
-<ul>
-<li><strong><code>generate(prompt, model, max_tokens, cached_prefix)</code></strong> — Sends a plain prompt and returns the model's response as a string. <code>cached_prefix</code> lets you mark a portion of the prompt for prompt-caching where the API supports it.</li>
-<li><strong><code>generate_with_citations(documents, query, system, model, max_tokens)</code></strong> — Sends a list of source documents alongside a query and returns a <code>CitedResponse</code> that pairs the answer text with structured claim-level citations.</li>
-</ul>
-<h3>Citation data structures</h3>
-<p>Two dataclasses support the citations workflow:</p>
-<ul>
-<li><strong><code>CitationDocument</code></strong> — A single source document with a <code>title</code> (str) and <code>text</code> (str) field, passed as a list to <code>generate_with_citations</code>.</li>
-<li><strong><code>CitedResponse</code></strong> — The structured result returned by <code>generate_with_citations</code>, containing the response <code>text</code> and a tuple of <code>ClaimCitation</code> objects that map individual claims back to their source documents.</li>
-</ul>
-<h2>Integration points</h2>
-<p>Other parts of the codebase interact with providers through these interfaces:</p>
+<p>Because each concrete class lazy-imports its vendor SDK, installing the core package does not pull in Anthropic or Google dependencies. You opt in with the <code>attune-rag[claude]</code> or <code>attune-rag[gemini]</code> extras.</p>
+<p>To find and instantiate a provider without hardcoding a class import, use the two helpers the module exports:</p>
+<pre><code class="language-python">from providers import list_available, get_provider
+
+# See which provider SDKs are currently importable
+print(list_available())          # e.g. [&quot;claude&quot;, &quot;gemini&quot;]
+
+# Get an instance by name; extra kwargs go to __init__
+provider = get_provider(&quot;claude&quot;, api_key=&quot;sk-...&quot;)
+</code></pre>
+<p><code>list_available()</code> returns only the names whose SDKs are importable in the current environment. <code>get_provider()</code> raises <code>ValueError</code> if you pass an unrecognised name.</p>
+<h2>Core types</h2>
 <table>
 <thead>
 <tr>
-<th>Interface</th>
-<th>Purpose</th>
+<th>Type</th>
+<th>Role</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>LLMProvider</code></td>
-<td>Protocol that all providers implement; the only type the rest of the codebase needs to reference.</td>
-</tr>
-<tr>
-<td><code>CitationDocument</code></td>
-<td>Input type for citation-aware generation; construct one per source document you want the model to reason over.</td>
-</tr>
-<tr>
-<td><code>CitedResponse</code></td>
-<td>Output type carrying both the generated text and structured claim citations.</td>
+<td>Protocol that <code>ClaudeProvider</code> and <code>GeminiProvider</code> both satisfy. Defines <code>generate</code> and <code>generate_with_citations</code>.</td>
 </tr>
 <tr>
 <td><code>ClaudeProvider</code></td>
-<td>Concrete implementation for Anthropic; requires <code>attune-rag[claude]</code>.</td>
+<td>Wraps <code>AsyncAnthropic</code>. Accepts an <code>api_key</code> or a pre-built <code>AsyncAnthropic</code> client. Supports both <code>generate</code> and <code>generate_with_citations</code>.</td>
 </tr>
 <tr>
 <td><code>GeminiProvider</code></td>
-<td>Concrete implementation for Google; requires <code>attune-rag[gemini]</code>.</td>
+<td>Wraps <code>GenAIClient</code>. Accepts an <code>api_key</code> or a pre-built <code>GenAIClient</code>. Supports <code>generate</code>; citation support is not part of its current interface.</td>
+</tr>
+<tr>
+<td><code>CitationDocument</code></td>
+<td>A dataclass with <code>title: str</code> and <code>text: str</code> fields. Represents one source document passed to <code>generate_with_citations</code>.</td>
+</tr>
+<tr>
+<td><code>CitedResponse</code></td>
+<td>A dataclass with <code>text: str</code> and <code>claim_citations: tuple[ClaimCitation, ...]</code>. Returned by <code>generate_with_citations</code>, pairing the answer text with structured citation data.</td>
+</tr>
+</tbody>
+</table>
+<h2>How the pieces fit together</h2>
+<p>When you call <code>generate_with_citations</code>, you assemble a list of <code>CitationDocument</code> objects — each holding a <code>title</code> and <code>text</code> — and pass them alongside your <code>query</code>. The provider sends both to the underlying API and returns a <code>CitedResponse</code>. The <code>claim_citations</code> tuple on that response lets you trace which claims in the generated <code>text</code> came from which source documents.</p>
+<pre><code class="language-python">from providers.base import CitationDocument
+from providers import get_provider
+
+docs = [
+    CitationDocument(title=&quot;Q3 Report&quot;, text=&quot;Revenue grew 12% YoY...&quot;),
+    CitationDocument(title=&quot;Risk Factors&quot;, text=&quot;Supply chain delays...&quot;),
+]
+
+provider = get_provider(&quot;claude&quot;)
+response = provider.generate_with_citations(docs, query=&quot;What drove revenue growth?&quot;)
+
+print(response.text)
+print(response.claim_citations)   # tuple of ClaimCitation objects
+</code></pre>
+<h2>Installation requirements</h2>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th>Extra required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ClaudeProvider</code></td>
+<td><code>attune-rag[claude]</code></td>
+</tr>
+<tr>
+<td><code>GeminiProvider</code></td>
+<td><code>attune-rag[gemini]</code></td>
+</tr>
+</tbody>
+</table>
+<p>Neither SDK is imported at module load time, so importing <code>providers</code> in an environment that has neither extra installed is safe — <code>list_available()</code> will simply return an empty list.</p>
+<h2>Unresolved references</h2>
+<blockquote>
+<p>Auto-generated by attune-author fact-check. Review and either
+fix the source code, fix this doc, or add an override.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Location</th>
+<th>Severity</th>
+<th>Issue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Line 26 (code fence)</td>
+<td>error</td>
+<td><code>from providers import …</code> — module not importable</td>
+</tr>
+<tr>
+<td>Line 52 (code fence)</td>
+<td>error</td>
+<td><code>from providers.base import …</code> — module not importable</td>
 </tr>
 </tbody>
 </table>

@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Use the LLM reranker — task</title>
-  <meta name="description" content="Use `LLMReranker` when you want to improve retrieval precision by re-scoring keyword search candidates with Claude Haiku before returning results to the user." />
-  <meta property="og:title" content="Use the LLM reranker — task" />
-  <meta property="og:description" content="Use `LLMReranker` when you want to improve retrieval precision by re-scoring keyword search candidates with Claude Haiku before returning results to the user." />
+  <title>Rerank retrieval results with LLMReranker — task</title>
+  <meta name="description" content="Use `LLMReranker` when keyword retrieval returns too many loosely relevant hits and you need Claude to score and reorder them by relevance before presenting results to the user." />
+  <meta property="og:title" content="Rerank retrieval results with LLMReranker — task" />
+  <meta property="og:description" content="Use `LLMReranker` when keyword retrieval returns too many loosely relevant hits and you need Claude to score and reorder them by relevance before presenting results to the user." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="https://attune-rag.dev/og.png" />
   <link rel="canonical" href="https://attune-rag.dev/help/reranker/task" />
@@ -257,57 +257,51 @@
     <a class="api-link" href="https://github.com/Smart-AI-Memory/attune-rag">Source &amp; API &rarr;</a>
   </nav>
   <article class="markdown-body">
-<h1>Use the LLM reranker</h1>
-<p>Use <code>LLMReranker</code> when you want to improve retrieval precision by re-scoring keyword search candidates with Claude Haiku before returning results to the user.</p>
+<h1>Rerank retrieval results with LLMReranker</h1>
+<p>Use <code>LLMReranker</code> when keyword retrieval returns too many loosely relevant hits and you need Claude to score and reorder them by relevance before presenting results to the user.</p>
 <h2>Prerequisites</h2>
 <ul>
-<li>A Claude API key (set via the <code>api_key</code> parameter or your environment)</li>
-<li>Access to <code>src/attune_rag/reranker.py</code></li>
+<li>An Anthropic API key with access to <code>claude-haiku-4-5</code></li>
+<li>A list of <code>RetrievalHit</code> objects from your keyword retrieval step</li>
+<li><code>attune_rag.reranker</code> available in your Python environment</li>
 </ul>
-<h2>Instantiate and call the reranker</h2>
+<h2>Steps</h2>
 <ol>
 <li>
-<p><strong>Import <code>LLMReranker</code></strong> from <code>src/attune_rag/reranker.py</code>.</p>
+<p><strong>Import <code>LLMReranker</code> from <code>attune_rag.reranker</code>.</strong></p>
+<pre><code class="language-python">from attune_rag.reranker import LLMReranker
+</code></pre>
 </li>
 <li>
-<p><strong>Create an instance</strong>, passing your API key and any tuning parameters:</p>
+<p><strong>Instantiate <code>LLMReranker</code> with your configuration.</strong></p>
+<p>Pass your API key and, optionally, adjust <code>candidate_multiplier</code> to control how many candidates Claude evaluates relative to the number of results you want returned. The default <code>candidate_multiplier</code> is <code>3</code> and the default <code>timeout</code> is <code>60.0</code> seconds.</p>
 <pre><code class="language-python">reranker = LLMReranker(
-    model=&quot;claude-haiku-4-5-20251001&quot;,  # default
+    model=&quot;claude-haiku-4-5&quot;,
     api_key=&quot;YOUR_API_KEY&quot;,
-    candidate_multiplier=3,             # fetch 3× more candidates than needed
-    timeout=60.0,                       # seconds before falling back to keyword order
+    candidate_multiplier=3,
+    timeout=60.0,
 )
 </code></pre>
-<ul>
-<li><code>candidate_multiplier</code> controls how many keyword-retrieved candidates are passed to Claude for scoring. A value of <code>3</code> means Claude sees three times as many hits as your final result count.</li>
-<li>If the Claude API call fails or times out, <code>LLMReranker</code> automatically falls back to the original keyword-retrieval order — no exception is raised.</li>
-</ul>
 </li>
 <li>
-<p><strong>Call <code>rerank</code></strong> with the user query and the list of <code>RetrievalHit</code> objects returned by your keyword retriever:</p>
-<pre><code class="language-python">reranked_hits = reranker.rerank(query=&quot;version bump&quot;, hits=keyword_hits)
+<p><strong>Call <code>rerank</code> with your query and retrieved hits.</strong></p>
+<p>Pass the user query string and the list of <code>RetrievalHit</code> objects from your retrieval step. <code>rerank</code> returns a new list of <code>RetrievalHit</code> objects sorted from most to least relevant.</p>
+<pre><code class="language-python">reranked_hits = reranker.rerank(query=user_query, hits=keyword_hits)
 </code></pre>
-<p>Claude acts as a relevance judge, applying ranking rules such as preferring <code>tool-release-prep.md</code> for release-related queries and <code>tool-fix-test.md</code> for test-failure queries.</p>
+<p>If the API call fails for any reason, <code>rerank</code> falls back to the original keyword-retrieval order, so your application continues to return results.</p>
 </li>
 <li>
-<p><strong>Use the returned list</strong> as your final result set. The hits are ordered from most to least relevant according to Claude's judgment.</p>
+<p><strong>Use the reranked list in your response pipeline.</strong></p>
+<p>Replace your existing hit list with <code>reranked_hits</code>. The first item in the list is the hit Claude judged most relevant to the query.</p>
+</li>
+<li>
+<p><strong>Run the reranker tests to confirm nothing is broken.</strong></p>
+<pre><code class="language-shell">pytest -k &quot;reranker&quot;
+</code></pre>
 </li>
 </ol>
-<h2>Run the tests</h2>
-<p>Verify your integration with:</p>
-<pre><code class="language-bash">pytest -k &quot;reranker&quot;
-</code></pre>
-<p>All tests should pass, and no test should make a live API call (mock the Claude client in your test fixtures).</p>
-<h2>Confirm success</h2>
-<p>You know the reranker is working correctly when:</p>
-<ul>
-<li><code>reranker.rerank(...)</code> returns the same <code>RetrievalHit</code> objects as the input, but in a different order that places semantically relevant results first.</li>
-<li>Passing an invalid API key (or simulating a timeout) returns the original keyword order unchanged, with no exception raised.</li>
-</ul>
-<h2>Key files</h2>
-<ul>
-<li><code>src/attune_rag/reranker.py</code> — contains <code>LLMReranker</code> and the relevance-judge system prompt</li>
-</ul>
+<h2>Verify the task worked</h2>
+<p>After calling <code>rerank</code>, inspect the first element of the returned list and confirm it corresponds to the document you would expect to be most relevant for your test query. If Claude's judgment differs from keyword rank order, the reranker is working. If the API is unreachable, the returned list should match your original <code>hits</code> order exactly, confirming the fallback behavior is active.</p>
 
   </article>
   <footer>
