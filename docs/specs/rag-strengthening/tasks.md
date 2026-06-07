@@ -67,11 +67,27 @@ that token overlap can't).
 
 ## Phase 4 — Rerank stage (data-gated)
 
-- [ ] Optional cross-encoder / LLM reranker over top-k; measure precision lift against Phase 1/2 sets.
+**Status**: closed — **data-gated out** (2026-06-07). The reranker code (`src/attune_rag/reranker.py`, `LLMReranker`) and the pipeline over-fetch path already exist; the gate measurement says **don't promote it** to a shipped/tuned stage. No PR.
 
-## Phase 4 — Rerank stage (data-gated)
+- [x] **4.1** Gate measurement: P@1 / R@3 for keyword vs hybrid vs hybrid+rerank on BOTH the tuned corpus (attune-help, `queries.yaml`, n=40) and the unseen corpus (corpus_b, `queries_corpus_b.yaml`, n=11). `LLMReranker` = Claude Haiku 4.5, `candidate_multiplier=3`. ~51 LLM calls — the only API-spending step in the whole program.
 
-- [ ] Optional cross-encoder / LLM reranker over top-k; measure precision lift against Phase 1/2 sets.
+### Findings — rerank does not earn its dependency
+
+| corpus | config | P@1 | R@3 | hard P@1 | hard R@3 |
+|---|---|---|---|---|---|
+| attune-help (tuned) | keyword | **1.000** | 1.000 | **1.000** | 1.000 |
+| attune-help | hybrid | 0.850 | 1.000 | 0.667 | 1.000 |
+| attune-help | hybrid+rerank | 0.900 | 1.000 | 0.667 | 1.000 |
+| corpus_b (unseen) | keyword | 0.727 | 0.818 | 0.500 | 0.500 |
+| corpus_b | hybrid | 0.727 | **0.909** | 0.500 | **0.750** |
+| corpus_b | **hybrid+rerank** | 0.727 | 0.909 | 0.500 | 0.750 |
+
+- **On the unseen corpus (the generalization target that matters most), rerank gives ZERO lift over hybrid — every metric identical** (P@1, R@3, hard P@1, hard R@3). Hybrid's RRF already maxed what's reachable here.
+- On the tuned corpus, rerank only *partially repairs* hybrid's own top-1 regression (0.85→0.90) and still lands **below plain keyword (1.000)**; R@3 was already 1.000 with no reranker. Hard-tier P@1 is unmoved (0.667).
+- Rerank's lever is top-1 ordering, but RAG feeds top-*k* — R@3 is the metric that matters, and rerank moved it nowhere on either corpus.
+- Cost of promoting it: the `[claude]` extra + an `ANTHROPIC_API_KEY` + network + per-query Haiku latency (~1.2s/query: 49s for 40 queries vs <1s keyword/hybrid) + token spend — for **no measured recall gain**.
+
+**Decision:** close Phase 4 — do **not** build/tune a rerank stage. `LLMReranker` stays in-tree as a defined, opt-in escape hatch (`RagPipeline(reranker=LLMReranker())`) for future arbitrary corpora, but it is **not** promoted, not a default, and not part of the shipped retrieval story. This was the last open phase → **the rag-strengthening program is DONE** (Phases 1, 2, 3, 5 merged; Phase 4 data-gated out).
 
 ## Phase 5 — Faithfulness / abstention hardening
 
@@ -92,8 +108,6 @@ Top-1 scores separate cleanly on attune-help (legit median **14.8** vs out-of-co
 | **5 (calibrated)** | **98%** | **92% → 8%** |
 
 `min_score=5` cuts the **false-answer rate 91.7% → 8%** for a 2pt legit-recall cost. Shipped as opt-in (`KeywordRetriever(min_score=…)`) with the calibration tool to pick T per corpus — **the default stays 2.0** (no behavior change).
-
-## Notes
 
 ## Notes
 
