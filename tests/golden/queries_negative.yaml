@@ -1,0 +1,60 @@
+# Out-of-corpus (negative) queries for attune-rag.
+#
+# These ask things the bundled attune-help corpus genuinely cannot
+# answer. The CORRECT behavior is for the retriever to ABSTAIN —
+# return no hit above MIN_SCORE — rather than confidently surface an
+# unrelated template.
+#
+# Used by src/attune_rag/benchmark.py (_run_negative_benchmark) to
+# report false_answer_rate / abstention_rate. Advisory measurement,
+# NOT a CI gate (see docs/specs/rag-strengthening/requirements.md).
+#
+# Two flavors:
+#   far   — clearly unrelated domains (cooking, geography, sports)
+#   near  — plausible dev-tooling vocabulary the corpus still
+#           does NOT cover (k8s, terraform, mobile, SQL tuning) —
+#           the harder abstention case, where token overlap with
+#           generic words ("run", "configure", "check") can leak.
+
+version: 1
+
+queries:
+  # -------- far: clearly out of domain --------
+  - id: neg-001
+    query: "what is the capital of France"
+    flavor: far
+  - id: neg-002
+    query: "how do I bake a sourdough loaf from scratch"
+    flavor: far
+  - id: neg-003
+    query: "who won the 2022 world cup final"
+    flavor: far
+  - id: neg-004
+    query: "convert 100 fahrenheit to celsius"
+    flavor: far
+  - id: neg-005
+    query: "best exercises for lower back pain"
+    flavor: far
+
+  # -------- near: dev vocabulary the corpus does not cover --------
+  - id: neg-006
+    query: "configure a kubernetes ingress controller with TLS"
+    flavor: near
+  - id: neg-007
+    query: "write a terraform module for an AWS VPC"
+    flavor: near
+  - id: neg-008
+    query: "optimize a slow PostgreSQL join with an index"
+    flavor: near
+  - id: neg-009
+    query: "set up push notifications in a React Native app"
+    flavor: near
+  - id: neg-010
+    query: "debug a CORS preflight failure in a browser"
+    flavor: near
+  - id: neg-011
+    query: "tune JVM garbage collection for low latency"
+    flavor: near
+  - id: neg-012
+    query: "implement OAuth2 PKCE flow in a mobile client"
+    flavor: near

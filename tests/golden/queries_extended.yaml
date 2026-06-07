@@ -1,0 +1,56 @@
+# Extended (advisory) hard query set for attune-rag.
+#
+# These are deliberately HARD — oblique wording with few/no direct
+# feature keywords. They exist to give the eval headroom on the hard
+# tier and surface regressions that the easy/medium-dominated locked
+# set (tests/golden/queries.yaml) masks at ceiling.
+#
+# ADVISORY ONLY. This set is measured and reported by
+# src/attune_rag/benchmark.py (--extended) but is NOT part of the
+# SHA-locked CI gate — queries.yaml stays frozen so thresholds.json's
+# queries_sha256 lock holds. Once these stabilize over N runs they can
+# be promoted into the gated set with a fresh threshold re-lock (a
+# separate baseline task, per the release-quality-baseline method).
+
+version: 1
+
+queries:
+  - id: ext-001
+    query: "my pull request keeps getting flagged for risky changes"
+    expected_feature: bug-predict
+    expected_in_top_3:
+      - concepts/tool-bug-predict.md
+      - references/tool-deep-review.md
+    difficulty: hard
+
+  - id: ext-002
+    query: "the docs drifted from the code again"
+    expected_feature: doc-gen
+    expected_in_top_3:
+      - references/tool-doc-audit.md
+      - concepts/tool-doc-gen.md
+    difficulty: hard
+
+  - id: ext-003
+    query: "untangle this module before we pile more onto it"
+    expected_feature: refactor-plan
+    expected_in_top_3:
+      - concepts/tool-refactor-plan.md
+      - references/tool-refactor-plan.md
+    difficulty: hard
+
+  - id: ext-004
+    query: "make sure we didn't accidentally ship a credential"
+    expected_feature: security-audit
+    expected_in_top_3:
+      - concepts/tool-security-audit.md
+      - quickstarts/run-security-audit.md
+    difficulty: hard
+
+  - id: ext-005
+    query: "get the package ready to publish"
+    expected_feature: release-prep
+    expected_in_top_3:
+      - concepts/tool-release-prep.md
+      - references/tool-release-prep.md
+    difficulty: hard

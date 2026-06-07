@@ -49,6 +49,20 @@ def _default_queries_path() -> Path:
     return Path(__file__).resolve().parent.parent.parent / "tests" / "golden" / "queries.yaml"
 
 
+def _default_negatives_path() -> Path:
+    """Resolve the bundled out-of-corpus (negative) query set's path."""
+    return (
+        Path(__file__).resolve().parent.parent.parent / "tests" / "golden" / "queries_negative.yaml"
+    )
+
+
+def _default_extended_path() -> Path:
+    """Resolve the bundled extended (advisory hard) query set's path."""
+    return (
+        Path(__file__).resolve().parent.parent.parent / "tests" / "golden" / "queries_extended.yaml"
+    )
+
+
 def _env_bool(name: str) -> bool:
     """Parse an env var as a boolean ("1"/"true"/"yes" → True)."""
     raw = os.environ.get(name, "").strip().lower()
@@ -157,6 +171,72 @@ def _run_benchmark(
         "k": k,
         "mean_latency_ms": sum(latencies_ms) / len(latencies_ms) if latencies_ms else 0.0,
         "max_latency_ms": max(latencies_ms) if latencies_ms else 0.0,
+        "by_difficulty": _aggregate_by_difficulty(per_query_results),
+        "per_query": per_query_results,
+    }
+
+
+def _aggregate_by_difficulty(per_query: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Group precision@1 / recall@k counts by difficulty tier.
+
+    Promoted into the report dict (not just the printed summary) so the
+    JSON artifact carries per-difficulty signal — a regression on the few
+    ``hard`` queries is invisible in the corpus-wide average when easy
+    queries sit at ceiling.
+    """
+    buckets: dict[str, dict[str, Any]] = {}
+    for q in per_query:
+        d = q.get("difficulty") or "unknown"
+        b = buckets.setdefault(d, {"total": 0, "top1": 0, "topk": 0})
+        b["total"] += 1
+        if q["top1_match"]:
+            b["top1"] += 1
+        if q["topk_match"]:
+            b["topk"] += 1
+    for b in buckets.values():
+        t = b["total"]
+        b["precision_at_1"] = b["top1"] / t if t else 0.0
+        b["recall_at_k"] = b["topk"] / t if t else 0.0
+    return buckets
+
+
+def _run_negative_benchmark(neg_queries: list[dict[str, Any]], k: int) -> dict[str, Any]:
+    """Measure abstention on out-of-corpus queries.
+
+    A negative query has no correct answer in the corpus, so the right
+    behavior is to **abstain** — return no hit above the retriever's
+    ``MIN_SCORE``. ``false_answer_rate`` is the fraction that returned at
+    least one hit anyway (lower is better); ``abstention_rate`` is its
+    complement. This is measurement only: the retriever is unchanged, so
+    the number establishes a baseline for the false-positive blind spot.
+    """
+    from . import RagPipeline
+
+    pipeline = RagPipeline()
+    false_answers = 0
+    per_query_results: list[dict[str, Any]] = []
+    for entry in neg_queries:
+        result = pipeline.run(entry["query"], k=k)
+        hit_paths = [h.template_path for h in result.citation.hits]
+        top_score = result.citation.hits[0].score if result.citation.hits else 0.0
+        answered = bool(hit_paths)
+        if answered:
+            false_answers += 1
+        per_query_results.append(
+            {
+                "id": entry["id"],
+                "query": entry["query"],
+                "abstained": not answered,
+                "leaked_hits": hit_paths[:k],
+                "top_score": top_score,
+            }
+        )
+    total = len(neg_queries)
+    return {
+        "total_negatives": total,
+        "false_answers": false_answers,
+        "false_answer_rate": false_answers / total if total else 0.0,
+        "abstention_rate": (total - false_answers) / total if total else 0.0,
         "per_query": per_query_results,
     }
 
@@ -174,16 +254,7 @@ def _print_summary(report: dict[str, Any], verbose: bool) -> None:
     print(f"Mean latency: {report['mean_latency_ms']:.2f}ms")
     print(f"Max latency:  {report['max_latency_ms']:.2f}ms")
 
-    by_difficulty: dict[str, dict[str, int]] = {}
-    for q in report["per_query"]:
-        d = q.get("difficulty", "unknown") or "unknown"
-        bucket = by_difficulty.setdefault(d, {"total": 0, "top1": 0, "topk": 0})
-        bucket["total"] += 1
-        if q["top1_match"]:
-            bucket["top1"] += 1
-        if q["topk_match"]:
-            bucket["topk"] += 1
-
+    by_difficulty = report.get("by_difficulty") or _aggregate_by_difficulty(report["per_query"])
     if by_difficulty:
         print("\nBreakdown by difficulty:")
         for d in ("easy", "medium", "hard"):
@@ -201,6 +272,28 @@ def _print_summary(report: dict[str, Any], verbose: bool) -> None:
             if not q["topk_match"]:
                 print(f"        expected: {q['expected']}")
                 print(f"        actual:   {q['actual']}")
+
+
+def _print_negatives(neg: dict[str, Any], verbose: bool) -> None:
+    """Print the out-of-corpus abstention summary."""
+    total = neg["total_negatives"]
+    print("\nOut-of-corpus (negative) set:")
+    print(f"  Negatives:        {total}")
+    print(
+        f"  Abstention rate:  {neg['abstention_rate']:.2%} "
+        f"({total - neg['false_answers']}/{total} correctly returned nothing)"
+    )
+    print(
+        f"  False-answer rate:{neg['false_answer_rate']:.2%} "
+        f"({neg['false_answers']}/{total} confidently answered an unanswerable query)"
+    )
+    if verbose:
+        for q in neg["per_query"]:
+            if not q["abstained"]:
+                print(
+                    f"    LEAK {q['id']}: {q['query']!r} -> "
+                    f"{q['leaked_hits']} (score {q['top_score']:.1f})"
+                )
 
 
 async def _score_faithfulness(
@@ -440,6 +533,27 @@ def main(argv: list[str] | None = None) -> int:
         default=_default_queries_path(),
         help=f"Path to queries.yaml (default: {_default_queries_path()})",
     )
+    parser.add_argument(
+        "--negatives",
+        type=Path,
+        default=_default_negatives_path(),
+        help=(
+            "Path to the out-of-corpus negative query set "
+            f"(default: {_default_negatives_path()}). Skipped if absent. "
+            "Measures abstention / false-answer rate (advisory, not gated)."
+        ),
+    )
+    parser.add_argument(
+        "--extended",
+        type=Path,
+        default=_default_extended_path(),
+        help=(
+            "Path to the extended advisory hard-query set "
+            f"(default: {_default_extended_path()}). Skipped if absent. "
+            "Measured + reported separately; never gates (keeps queries.yaml "
+            "SHA lock intact)."
+        ),
+    )
     parser.add_argument("-k", type=int, default=3, help="Top-k for recall (default 3)")
     parser.add_argument(
         "--min-precision",
@@ -557,6 +671,19 @@ def main(argv: list[str] | None = None) -> int:
     report = _run_benchmark(queries, k=args.k)
     _print_summary(report, verbose=args.verbose)
 
+    # Out-of-corpus abstention measurement (advisory; never gates).
+    negatives_report: dict[str, Any] | None = None
+    if args.negatives and args.negatives.is_file():
+        negatives_report = _run_negative_benchmark(_load_queries(args.negatives), k=args.k)
+        _print_negatives(negatives_report, verbose=args.verbose)
+
+    # Extended advisory hard-query pass (advisory; never gates).
+    extended_report: dict[str, Any] | None = None
+    if args.extended and args.extended.is_file():
+        extended_report = _run_benchmark(_load_queries(args.extended), k=args.k)
+        print("\n=== Extended (advisory hard) set ===")
+        _print_summary(extended_report, verbose=args.verbose)
+
     if report["precision_at_1"] < args.min_precision:
         print(
             f"\nFAIL: precision@1 {report['precision_at_1']:.2%} < gate {args.min_precision:.2%}",
@@ -570,10 +697,15 @@ def main(argv: list[str] | None = None) -> int:
     # treat the absence of `faithfulness_legacy` as
     # "retrieval-only run".
     if args.json is not None and not args.with_faithfulness:
-        _dump_json(
-            args.json,
-            {"retrieval": report, "queries_path": str(args.queries)},
-        )
+        retrieval_payload: dict[str, Any] = {
+            "retrieval": report,
+            "queries_path": str(args.queries),
+        }
+        if negatives_report is not None:
+            retrieval_payload["negatives"] = negatives_report
+        if extended_report is not None:
+            retrieval_payload["extended"] = extended_report
+        _dump_json(args.json, retrieval_payload)
 
     if args.with_faithfulness:
         if not os.environ.get("ANTHROPIC_API_KEY"):
@@ -587,6 +719,10 @@ def main(argv: list[str] | None = None) -> int:
             "retrieval": report,
             "queries_path": str(args.queries),
         }
+        if negatives_report is not None:
+            json_payload["negatives"] = negatives_report
+        if extended_report is not None:
+            json_payload["extended"] = extended_report
 
         if args.compare_thinking:
             print(
