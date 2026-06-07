@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-06-07
+
+The retrieval-capabilities release. A full opt-in retrieval ladder lands on
+top of the keyword default — static hybrid, configurable abstention, and a
+heavyweight transformer tier — each measured against an unseen-corpus
+benchmark and shipped without changing any default. The base install and
+the keyword retriever behave exactly as in 0.2.0.
+
 ### Added
 
 - **Transformer retrieval (`[transformers]` extra) — heavyweight opt-in.**
