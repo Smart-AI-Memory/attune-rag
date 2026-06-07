@@ -42,6 +42,42 @@ queries (hard tier) fail half the time** — one returned nothing at all.
 justified** for arbitrary user corpora (it would close the paraphrase gap
 that token overlap can't).
 
+### Hard-tier follow-up diagnostic — measured-out (2026-06-07)
+
+After Phases 3/5 shipped, the residual question was: can we lift the
+corpus_b **hard tier** (paraphrase, 50% P@1) further? Diagnostic traced
+all 4 hard queries, then ran an **LLM-query-expansion ceiling test**
+(Haiku rewrites each lay paraphrase into doc vocabulary, then keyword
+retrieval — ~4 LLM calls):
+
+| corpus_b hard tier (n=4) | P@1 | R@3 |
+|---|---|---|
+| keyword / hybrid (baseline) | 0.50 | 0.50–0.75 |
+| **+ LLM query expansion (ceiling)** | **0.75** | **0.75** |
+
+**Verdict: don't build hard-tier lift into the offline/deterministic core.**
+
+- **Offline levers structurally can't close it.** The failing queries have
+  *zero lexical overlap* with their target docs ("dying"↔"dead-letter",
+  "move back"↔"requeue"). Thesaurus expansion can't bridge domain jargon;
+  doc-side alias inference can't add words the doc never uses.
+- **The strongest lever only recovers half, via the gated-out dependency.**
+  LLM expansion took hard-tier 50%→75% — but that is the same
+  API/network/`[claude]` dependency **data-gated out for rerank**
+  ([#165](https://github.com/Smart-AI-Memory/attune-rag/pull/165)). Same
+  tradeoff, same verdict.
+- **The residual miss is irreducible.** cb-011 stays wrong even with ideal
+  vocabulary (its expansion contained the target's exact terms), because a
+  longer sibling doc legitimately out-scores the short target on shared
+  terms — concept-overlap ambiguity, not a retrieval defect.
+- **The metric is n=4** — "50%→75%" is one query (cb-008). Too small and
+  noise-dominated to justify dependency-adding infra.
+
+Future home if ever justified: an **opt-in LLM query-expansion companion to
+the opt-in reranker (v1.1.0+, same dependency class)** — not the v1.0.0
+default. **Reopen trigger:** a real user corpus + a ≥30-query hard set
+showing a sustained, *offline-reachable* gap.
+
 ## Phase 3 — Hybrid retrieval
 
 **Status**: complete (2026-06-07).
