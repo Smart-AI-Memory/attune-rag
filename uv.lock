@@ -110,7 +110,6 @@ all = [
     { name = "attune-help" },
     { name = "google-genai" },
     { name = "model2vec" },
-    { name = "sentence-transformers" },
 ]
 attune-help = [
     { name = "attune-help" },
@@ -169,7 +168,6 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "rich", specifier = ">=13.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.4.0" },
-    { name = "sentence-transformers", marker = "extra == 'all'", specifier = ">=3.0,<6.0" },
     { name = "sentence-transformers", marker = "extra == 'transformers'", specifier = ">=3.0,<6.0" },
     { name = "structlog", specifier = ">=24.0" },
     { name = "twine", marker = "extra == 'dev'", specifier = ">=5.0" },
