@@ -78,6 +78,41 @@ the opt-in reranker (v1.1.0+, same dependency class)** — not the v1.0.0
 default. **Reopen trigger:** a real user corpus + a ≥30-query hard set
 showing a sustained, *offline-reachable* gap.
 
+#### Amendment — a torch-free path *does* exist (2026-06-07, same day)
+
+The verdict above was correct for the levers tested (current static model,
+re-weighting, LLM) but **incomplete**: it had only measured the weak
+`potion-base-8M` static model and the LLM. Two more cheap (torch-free)
+levers were then run:
+
+| config | hard P@1 | corpus_b P@1 / R@3 | attune-help P@1 / R@3 |
+|---|---|---|---|
+| keyword (default) | 0.50 | 0.73 / 0.82 | 1.00 / 1.00 |
+| RRF re-weighting (any weight, 8M) | 0.50 | — | degrades help |
+| embedding-only `potion-retrieval-32M` | 0.75 | 0.91 / 0.91 | 0.28 💥 |
+| **confidence-gated fusion** (keyword-primary, 32M rescue, T=3) | **0.75** | **0.82 / 0.91** | **1.00 / 1.00** |
+
+- **RRF re-weighting is a dead end** — hard-tier P@1 pinned at 0.50 at
+  every weight; leaning embedding-heavy only trades away attune-help.
+- **A retrieval-tuned static model (`potion-retrieval-32M`, torch-free)
+  matches the LLM-expansion ceiling (0.75)** — but embedding-only tanks
+  the tuned corpus (0.28), so it can't be a global default.
+- **Confidence-gated fusion captures both:** route to embeddings only when
+  keyword top-1 is below a threshold. At T=3, hard-tier hits 0.75 **and
+  attune-help stays a perfect 1.00/1.00 — zero regression.** No torch, no
+  API, deterministic.
+
+**Revised bottom line:** the hard-tier lift is **not** measured-out — there
+is a dependency-light path (stronger static model + confidence-gated
+fusion). The same keyword-confidence signal unifies this with the
+abstention work (#166). This **reopens** the
+[`embedding-retriever` permanent defer](../embedding-retriever/) with a
+concrete torch-free design, scoped at
+[`confidence-gated-retrieval`](../confidence-gated-retrieval/). Caveats
+carried into that spec: hard tier is **n=4** (validate on a ≥30-query hard
+set first), `potion-retrieval-32M` is a heavier `[embeddings]` footprint,
+and the gate threshold T is corpus-relative (same lesson as `min_score`).
+
 ## Phase 3 — Hybrid retrieval
 
 **Status**: complete (2026-06-07).
