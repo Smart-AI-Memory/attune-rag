@@ -159,6 +159,29 @@ pipeline = RagPipeline(
 )
 ```
 
+### Embedding / hybrid retrieval (`[embeddings]` extra)
+
+`HybridRetriever` fuses the keyword retriever with static **model2vec**
+embeddings via Reciprocal Rank Fusion. No torch, no GPU, no API key —
+offline, millisecond encode. Install: `pip install attune-rag[embeddings]`.
+
+```python
+from attune_rag import RagPipeline, HybridRetriever
+
+# Opt-in. KeywordRetriever stays the default.
+pipeline = RagPipeline(retriever=HybridRetriever())
+```
+
+**When to use it:** on an **unstructured / arbitrary corpus** (raw markdown
+with no curated summaries or aliases), embeddings recover the paraphrase
+recall that token overlap misses — measured **+9pts recall@3** on an unseen
+corpus. On a corpus that's already **keyword-tuned** (curated
+summaries/aliases, like the bundled `.help/`), an equal blend trades away
+top-1 precision, so the default weighting favors keyword (`keyword_weight=2.0`);
+raise it to fully protect a tuned corpus, lower toward `1.0` to maximize the
+embedding contribution. Falls back to keyword-only if the extra isn't
+installed.
+
 ## Template editor primitives (`attune_rag.editor`)
 
 Headless toolkit for tools that need to validate, lint, and refactor a
@@ -327,28 +350,28 @@ For the methodology behind the `0.9686` threshold, the v1/v2 ground-truth
 calibration runs, and the extended-thinking-vs-default decision record, see
 [`docs/rag/faithfulness-thinking-calibration.md`](https://github.com/Smart-AI-Memory/attune-rag/blob/main/docs/rag/faithfulness-thinking-calibration.md).
 
-## Roadmap — embeddings (post-freeze 0.2.0+)
+## Embeddings — shipped (`[embeddings]` extra)
 
-Keyword retrieval + optional Claude reranker currently meet
-the locked `P@1 ≥ 0.95, R@3 = 1.00` thresholds against the
-attune-help golden set. The remaining hard queries
-(3 of 28, currently `xpass`-gated under `[no-embeddings]`)
-have zero token overlap against their target doc (e.g.
-"vulnerability scan" → `tool-security-audit.md`). Closing
-that gap needs vector search.
+Local, CPU-only, offline embeddings shipped via
+[`model2vec`](https://github.com/MinishLab/model2vec) static models (no
+torch, no API key). Keyword retrieval remains the default; embeddings
+layer in opt-in through `HybridRetriever` — see
+[Embedding / hybrid retrieval](#embedding--hybrid-retrieval-embeddings-extra)
+above.
 
-The plan is to ship `attune-rag[embeddings]` using
-[`fastembed`](https://github.com/qdrant/fastembed) for local,
-CPU-only embeddings — no new network dependency, no API key
-required at retrieval time. Keyword retrieval stays the default;
-embeddings layer in opt-in, same shape as `QueryExpander` and
-`LLMReranker`. With 0.2.0 cut, embeddings are a Phase 5
-candidate — see
-[`docs/specs/ROADMAP-v1.md`](docs/specs/ROADMAP-v1.md).
+**Measured impact** (`docs/specs/rag-strengthening/`): on an unseen,
+unstructured corpus, hybrid lifts **recall@3 +9pts**; on the keyword-tuned
+`.help/` corpus the default keyword path is unchanged. The benchmark can
+compare either retriever:
+
+```bash
+python -m attune_rag.benchmark --retriever keyword   # default
+python -m attune_rag.benchmark --retriever hybrid     # keyword + embeddings (RRF)
+```
 
 See
 [CHANGELOG.md](https://github.com/Smart-AI-Memory/attune-rag/blob/main/CHANGELOG.md)
-for the decision record and remaining-gap analysis.
+for the decision record.
 
 ## Prompt caching (Claude only)
 

@@ -113,6 +113,7 @@ def _run_benchmark(
     queries: list[dict[str, Any]],
     k: int,
     corpus: Any = None,
+    retriever: Any = None,
 ) -> dict[str, Any]:
     """Run retrieval-only benchmark across ``queries`` and aggregate metrics.
 
@@ -120,6 +121,11 @@ def _run_benchmark(
     ``None`` the pipeline uses its default (bundled attune-help). Pass a
     ``DirectoryCorpus`` here to measure generalization to an unseen
     corpus (Phase 2).
+
+    ``retriever`` (optional): a RetrieverProtocol. When ``None`` the
+    pipeline uses its default (KeywordRetriever). Pass a
+    ``HybridRetriever`` here to measure the keyword+embedding lift
+    (Phase 3).
 
     Returns a report dict with this shape (consumed by
     :func:`_print_summary`, the dashboard, and ``main``):
@@ -143,7 +149,12 @@ def _run_benchmark(
     """
     from . import RagPipeline
 
-    pipeline = RagPipeline(corpus=corpus) if corpus is not None else RagPipeline()
+    kwargs: dict[str, Any] = {}
+    if corpus is not None:
+        kwargs["corpus"] = corpus
+    if retriever is not None:
+        kwargs["retriever"] = retriever
+    pipeline = RagPipeline(**kwargs)
     retriever_name = type(pipeline.retriever).__name__
     corpus_name = pipeline.corpus.name
 
@@ -592,6 +603,17 @@ def main(argv: list[str] | None = None) -> int:
             f"(default: {_default_corpus_b_queries_path()})."
         ),
     )
+    parser.add_argument(
+        "--retriever",
+        choices=["keyword", "hybrid"],
+        default="keyword",
+        help=(
+            "Retriever to benchmark (default: keyword). 'hybrid' fuses "
+            "keyword + static embeddings via RRF — requires the "
+            "[embeddings] extra; use it to measure the generalization lift "
+            "on unseen corpora."
+        ),
+    )
     parser.add_argument("-k", type=int, default=3, help="Top-k for recall (default 3)")
     parser.add_argument(
         "--min-precision",
@@ -705,8 +727,14 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Queries file not found: {args.queries}", file=sys.stderr)
         return 2
 
+    retriever_obj: Any = None
+    if args.retriever == "hybrid":
+        from .hybrid import HybridRetriever
+
+        retriever_obj = HybridRetriever()
+
     queries = _load_queries(args.queries)
-    report = _run_benchmark(queries, k=args.k)
+    report = _run_benchmark(queries, k=args.k, retriever=retriever_obj)
     _print_summary(report, verbose=args.verbose)
 
     # Out-of-corpus abstention measurement (advisory; never gates).
@@ -718,7 +746,9 @@ def main(argv: list[str] | None = None) -> int:
     # Extended advisory hard-query pass (advisory; never gates).
     extended_report: dict[str, Any] | None = None
     if args.extended and args.extended.is_file():
-        extended_report = _run_benchmark(_load_queries(args.extended), k=args.k)
+        extended_report = _run_benchmark(
+            _load_queries(args.extended), k=args.k, retriever=retriever_obj
+        )
         print("\n=== Extended (advisory hard) set ===")
         _print_summary(extended_report, verbose=args.verbose)
 
@@ -736,7 +766,7 @@ def main(argv: list[str] | None = None) -> int:
 
         corpus_b = DirectoryCorpus(args.corpus)
         generalization_report = _run_benchmark(
-            _load_queries(args.corpus_queries), k=args.k, corpus=corpus_b
+            _load_queries(args.corpus_queries), k=args.k, corpus=corpus_b, retriever=retriever_obj
         )
         print(f"\n=== Generalization: unseen corpus ({args.corpus.name}) ===")
         _print_summary(generalization_report, verbose=args.verbose)

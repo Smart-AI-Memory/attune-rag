@@ -52,10 +52,16 @@ gemini = ["google-genai>=1.0,<2.0"]
 # unpolished output shipped as #20 was reverted in `revert(help): restore
 # polished benchmark templates`).
 author = ["attune-author>=0.13.0"]
+# Hybrid/dense retrieval. model2vec ships static (distilled) embeddings:
+# no torch, no GPU, offline, millisecond encode — keeps attune-rag
+# dependency-light while adding semantic recall for unstructured/unseen
+# corpora. Opt-in: KeywordRetriever remains the default.
+embeddings = ["model2vec>=0.3,<1.0"]
 all = [
     "attune-help>=0.10.1,<0.11",
     "anthropic>=0.95,<1.0",
     "google-genai>=1.0,<2.0",
+    "model2vec>=0.3,<1.0",
 ]
 dev = [
     "pytest>=8.0",
