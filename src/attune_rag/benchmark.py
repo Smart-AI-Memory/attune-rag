@@ -325,6 +325,78 @@ def _print_negatives(neg: dict[str, Any], verbose: bool) -> None:
                 )
 
 
+def _top1_scores(queries: list[dict[str, Any]], k: int, corpus: Any = None) -> list[float]:
+    """Top-1 retrieval score for each query (0.0 when the retriever abstains)."""
+    from . import RagPipeline
+
+    pipeline = RagPipeline(corpus=corpus) if corpus is not None else RagPipeline()
+    scores: list[float] = []
+    for entry in queries:
+        result = pipeline.run(entry["query"], k=k)
+        scores.append(result.citation.hits[0].score if result.citation.hits else 0.0)
+    return scores
+
+
+def _calibrate_abstention(
+    legit_queries: list[dict[str, Any]],
+    neg_queries: list[dict[str, Any]],
+    k: int,
+    corpus: Any = None,
+    target_legit_kept: float = 0.95,
+) -> dict[str, Any]:
+    """Sweep abstention thresholds and recommend one for THIS corpus.
+
+    The abstention threshold (``KeywordRetriever(min_score=T)``) is an
+    absolute keyword score, so the right value is corpus-specific. This
+    sweeps T over the observed score range and reports, per T, the
+    fraction of legit queries kept (top-1 score >= T) and the fraction of
+    out-of-corpus queries that abstain (top-1 score < T). The
+    recommendation is the T that maximizes negatives-abstained while
+    keeping >= ``target_legit_kept`` of legit queries.
+    """
+    legit = _top1_scores(legit_queries, k, corpus)
+    negs = _top1_scores(neg_queries, k, corpus)
+    hi = int(max([*legit, *negs, 1.0])) + 1
+    rows: list[dict[str, Any]] = []
+    for t in range(0, hi + 1):
+        kept = sum(s >= t for s in legit) / len(legit) if legit else 0.0
+        abst = sum(s < t for s in negs) / len(negs) if negs else 0.0
+        rows.append({"threshold": float(t), "legit_kept": kept, "negatives_abstained": abst})
+
+    # The T=0 row always keeps 100% of legit, so `eligible` is never empty
+    # for a sane target (<= 1.0). When no threshold separates the sets, the
+    # max lands on T=0 (negatives_abstained=0) — i.e. "don't abstain", the
+    # honest answer when there's no signal.
+    eligible = [r for r in rows if r["legit_kept"] >= target_legit_kept]
+    best = max(eligible, key=lambda r: (r["negatives_abstained"], r["legit_kept"]))
+    return {
+        "target_legit_kept": target_legit_kept,
+        "rows": rows,
+        "recommended_threshold": best["threshold"],
+        "recommended_legit_kept": best["legit_kept"],
+        "recommended_negatives_abstained": best["negatives_abstained"],
+        "recommended_false_answer_rate": 1.0 - best["negatives_abstained"],
+    }
+
+
+def _print_calibration(report: dict[str, Any]) -> None:
+    print("\n=== Abstention calibration ===")
+    print(f"  {'threshold':>9}  {'legit kept':>10}  {'neg abstained':>13}")
+    for r in report["rows"]:
+        print(
+            f"  {r['threshold']:>9.0f}  {r['legit_kept']:>10.0%}  "
+            f"{r['negatives_abstained']:>13.0%}"
+        )
+    t = report["recommended_threshold"]
+    print(
+        f"\n  Recommended: min_score={t:.0f}  "
+        f"(legit kept {report['recommended_legit_kept']:.0%}, "
+        f"false-answer rate {report['recommended_false_answer_rate']:.0%}, "
+        f"target legit-kept >= {report['target_legit_kept']:.0%})"
+    )
+    print(f"  Apply: RagPipeline(retriever=KeywordRetriever(min_score={t:.0f}))")
+
+
 async def _score_faithfulness(
     queries: list[dict[str, Any]],
     k: int,
@@ -573,6 +645,17 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--calibrate-abstention",
+        action="store_true",
+        help=(
+            "Sweep abstention thresholds over the legit (--queries) and "
+            "out-of-corpus (--negatives) sets and recommend a "
+            "KeywordRetriever(min_score=T) for THIS corpus, then exit. "
+            "The threshold is an absolute keyword score, so it must be "
+            "calibrated per corpus."
+        ),
+    )
+    parser.add_argument(
         "--extended",
         type=Path,
         default=_default_extended_path(),
@@ -734,6 +817,21 @@ def main(argv: list[str] | None = None) -> int:
         retriever_obj = HybridRetriever()
 
     queries = _load_queries(args.queries)
+
+    # Calibration mode: sweep abstention thresholds and exit (advisory).
+    # Uses the default keyword retriever — abstention thresholds are
+    # absolute keyword scores, so calibration is keyword-specific.
+    if args.calibrate_abstention:
+        if not (args.negatives and args.negatives.is_file()):
+            print(
+                "error: --calibrate-abstention needs a --negatives set.",
+                file=sys.stderr,
+            )
+            return 2
+        cal = _calibrate_abstention(queries, _load_queries(args.negatives), k=args.k)
+        _print_calibration(cal)
+        return 0
+
     report = _run_benchmark(queries, k=args.k, retriever=retriever_obj)
     _print_summary(report, verbose=args.verbose)
 

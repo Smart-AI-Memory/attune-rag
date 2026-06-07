@@ -182,6 +182,28 @@ raise it to fully protect a tuned corpus, lower toward `1.0` to maximize the
 embedding contribution. Falls back to keyword-only if the extra isn't
 installed.
 
+### Abstention — don't answer out-of-corpus queries
+
+By default the retriever returns its best match even for a question the
+corpus can't answer. Raise `min_score` so it **returns nothing** when no
+candidate clears the bar — cutting the false-answer rate on out-of-corpus
+queries (measured 92% → 8% on the bundled corpus at `min_score=5`, for a
+2pt recall cost).
+
+```python
+from attune_rag import RagPipeline, KeywordRetriever
+
+pipeline = RagPipeline(retriever=KeywordRetriever(min_score=5))
+```
+
+The threshold is an **absolute keyword score**, so calibrate it per corpus
+— the benchmark recommends one from your legit + out-of-corpus query sets:
+
+```bash
+python -m attune_rag.benchmark --calibrate-abstention
+# -> Recommended: min_score=5 (legit kept 98%, false-answer rate 8%)
+```
+
 ## Template editor primitives (`attune_rag.editor`)
 
 Headless toolkit for tools that need to validate, lint, and refactor a

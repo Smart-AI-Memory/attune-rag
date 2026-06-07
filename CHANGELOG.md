@@ -20,6 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Generalization benchmark track (Phase 2).** `--corpus` /
   `--corpus-queries` measure retrieval against an unseen second corpus
   (`tests/golden/corpus_b/`); reported under `generalization` (advisory).
+- **Abstention threshold + calibration (Phase 5).** `KeywordRetriever`
+  now accepts `min_score=` — when every candidate is below it the
+  retriever returns nothing (abstains) instead of surfacing a weak,
+  likely-wrong match. New `attune-rag-benchmark --calibrate-abstention`
+  sweeps the legit + out-of-corpus query sets and recommends a `min_score`
+  for the corpus (the threshold is an absolute keyword score, so it is
+  corpus-specific). Measured on the bundled corpus: `min_score=5` cuts the
+  false-answer rate **92% → 8%** for a 2pt legit-recall cost. Default
+  (`2.0`) unchanged — opt-in.
 
 ### Changed
 
