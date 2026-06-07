@@ -23,14 +23,48 @@ From [`design.md` §8](design.md#8-open-questions-for-scoping) /
 - [ ] Confirm joint design with `safe-abstention-defaults` (shared signal).
 
 ### M1 — Build + validate the ≥30-query hard set (the gate)
-- [ ] Author a **≥30-query paraphrase/hard set** (expand corpus_b and/or
-      add a second arbitrary corpus) as an advisory side-file (never
-      touch SHA-locked `queries.yaml`).
-- [ ] Promote `gated_fusion.py` / `static_levers.py` to `scripts/`.
-- [ ] Re-measure keyword vs embedding-only vs gated fusion on the ≥30-set.
-- [ ] **Decision gate (R1):** does the gated lift hold at n≥30 with zero
-      attune-help regression? **No → close this spec** (torch becomes the
-      next question). **Yes → proceed to M2.**
+- [x] Author a **≥30-query paraphrase/hard set**
+      (`tests/golden/queries_corpus_b_hard.yaml`, 32 queries: 26 hard + 6
+      medium, authored blind to retrieval behavior). Advisory side-file;
+      SHA-locked `queries.yaml` untouched.
+- [x] Promote the probe to `scripts/validate_gated_fusion.py`.
+- [x] Re-measure keyword vs hybrid vs embedding-only vs gated (T sweep) on
+      the expanded set + attune-help guard.
+
+### M1 results — validation PASSES the formal gates, but corrects the n=4 hype (2026-06-07)
+
+| config | hard P@1 | hard R@3 | full-cbh P@1/R@3 | attune-help P@1/R@3 |
+|---|---:|---:|---:|---:|
+| keyword (default) | 0.31 | 0.38 | 0.34 / 0.44 | 1.00 / 1.00 |
+| hybrid 2:1 (8M, **shipped**) | 0.50 | **0.73** | 0.53 / 0.78 | 0.85 / 1.00 |
+| embedding-only (ret-32M) | 0.46 | 0.69 | 0.53 / 0.75 | 0.28 / 0.68 |
+| **gated T=2 (ret-32M)** | **0.50** | 0.65 | 0.53 / 0.69 | **1.00 / 1.00** |
+| gated T=3–6 (ret-32M) | 0.46 | 0.65 | 0.50 / 0.69 | 1.00→0.95 |
+
+- **The 0.75 "ceiling" was an n=4 artifact.** At n=26 the torch-free
+  hard-tier ceiling is **~0.50 across every approach** (hybrid, embedding,
+  gated). The original 4-query sample over-stated the lift; this n≥30 gate
+  is exactly what caught it.
+- **Gated still passes R1/R2/R3:** hard P@1 0.31→0.50 (**+19pts**), R@3
+  0.38→0.65 (**+27pts**), attune-help held at **1.00/1.00**. T=2 is the
+  knee (max lift + zero regression).
+- **But the build case is weaker than it looked.** The already-shipped
+  `HybridRetriever` matches gated on hard P@1 (0.50) and beats it on hard
+  R@3 (0.73 vs 0.65). **Gated's *only* edge is zero tuned-corpus
+  regression (1.00 vs hybrid's 0.85)** — which matters for a
+  *default / bundled-safe* retriever, NOT for the opt-in BYO case (where
+  the user isn't querying attune-help and hybrid already suffices).
+
+**Decision gate (R1): PASS — but reframed.** Gated works as designed, yet
+its marginal value over shipped hybrid is the zero-regression property
+alone. So building it as *another opt-in BYO retriever* is **not**
+justified (hybrid already covers that). It is only worth building if the
+goal becomes **a single safe-everywhere retriever** — i.e. toward a
+better-than-keyword default or a bundled-corpus-safe option, designed
+jointly with [`safe-abstention-defaults`](../safe-abstention-defaults/).
+That scope decision is escalated before M2. (Also reframes the original
+question: ~0.50 is the torch-free hard ceiling, so "does torch exceed it"
+is now the sharper open question.)
 
 ### M2 — Mechanism bake-off
 - [ ] Measure hard-switch vs below-T RRF blend (Q1), and gate-on-score vs

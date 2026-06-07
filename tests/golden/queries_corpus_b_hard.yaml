@@ -1,0 +1,161 @@
+# Expanded HARD paraphrase set for the unseen corpus (corpus_b).
+#
+# Purpose: validate the confidence-gated-retrieval finding at n>=30 (the
+# original corpus_b hard tier was only 4 queries). These are natural
+# lay-language paraphrases that deliberately AVOID each target doc's
+# distinctive vocabulary — the generalization stress case where keyword
+# overlap is low and a retrieval-tuned embedding leg should rescue.
+#
+# Authored blind to retrieval behavior (grounded in each doc's TOPIC, not
+# its scoring) to avoid confirmation bias. Where two docs genuinely both
+# answer, both are listed (as in queries_corpus_b.yaml).
+#
+# Advisory side-file. Never gates; never edits the SHA-locked queries.yaml.
+# Used by docs/specs/confidence-gated-retrieval M1 validation.
+
+version: 1
+
+queries:
+  # -------- target: concepts/job-lifecycle.md --------
+  - id: cbh-001
+    query: "what are the different stages my work passes through"
+    expected_in_top_3: [concepts/job-lifecycle.md]
+    difficulty: hard
+  - id: cbh-002
+    query: "can I get notified when a task changes status"
+    expected_in_top_3: [concepts/job-lifecycle.md]
+    difficulty: hard
+  - id: cbh-003
+    query: "how do I tell if my task is still waiting or already being worked on"
+    expected_in_top_3: [concepts/job-lifecycle.md]
+    difficulty: hard
+  - id: cbh-004
+    query: "is there a way to watch something move from start to done"
+    expected_in_top_3: [concepts/job-lifecycle.md]
+    difficulty: medium
+
+  # -------- target: concepts/persistence.md --------
+  - id: cbh-005
+    query: "does my queued work get lost if the server reboots"
+    expected_in_top_3: [concepts/persistence.md]
+    difficulty: hard
+  - id: cbh-006
+    query: "after an unexpected shutdown does it pick up where it left off"
+    expected_in_top_3: [concepts/persistence.md]
+    difficulty: hard
+  - id: cbh-007
+    query: "where is unfinished work kept while the program is stopped"
+    expected_in_top_3: [concepts/persistence.md]
+    difficulty: hard
+  - id: cbh-008
+    query: "is task state saved somewhere durable"
+    expected_in_top_3: [concepts/persistence.md]
+    difficulty: medium
+
+  # -------- target: concepts/retries-and-backoff.md --------
+  - id: cbh-009
+    query: "how long does it pause between repeated tries after an error"
+    expected_in_top_3: [concepts/retries-and-backoff.md]
+    difficulty: hard
+  - id: cbh-010
+    query: "why does each repeated attempt take longer than the one before"
+    expected_in_top_3: [concepts/retries-and-backoff.md]
+    difficulty: hard
+  - id: cbh-011
+    query: "what happens after something has been re-attempted too many times"
+    expected_in_top_3: [concepts/retries-and-backoff.md, howto/handle-failures.md]
+    difficulty: hard
+  - id: cbh-012
+    query: "does it wait progressively longer before trying a broken task again"
+    expected_in_top_3: [concepts/retries-and-backoff.md]
+    difficulty: hard
+
+  # -------- target: howto/define-a-job.md --------
+  - id: cbh-013
+    query: "how do I turn an ordinary function into a background unit of work"
+    expected_in_top_3: [howto/define-a-job.md]
+    difficulty: hard
+  - id: cbh-014
+    query: "what do I add to my code so it can be queued and run later"
+    expected_in_top_3: [howto/define-a-job.md]
+    difficulty: hard
+  - id: cbh-015
+    query: "are the inputs to my function kept when I put it on the queue"
+    expected_in_top_3: [howto/define-a-job.md]
+    difficulty: hard
+  - id: cbh-016
+    query: "how do I register a piece of work to be processed"
+    expected_in_top_3: [howto/define-a-job.md]
+    difficulty: medium
+
+  # -------- target: howto/handle-failures.md --------
+  - id: cbh-017
+    query: "my task gave up after erroring out, how do I deal with it"
+    expected_in_top_3: [howto/handle-failures.md]
+    difficulty: hard
+  - id: cbh-018
+    query: "where do tasks end up when they can no longer succeed"
+    expected_in_top_3: [howto/handle-failures.md, concepts/retries-and-backoff.md]
+    difficulty: hard
+  - id: cbh-019
+    query: "how do I send an abandoned task back to run again"
+    expected_in_top_3: [howto/handle-failures.md, reference/cli.md]
+    difficulty: hard
+  - id: cbh-020
+    query: "how many times is a broken task allowed to run before it is given up on"
+    expected_in_top_3: [howto/handle-failures.md, reference/configuration.md]
+    difficulty: hard
+
+  # -------- target: howto/schedule-recurring-jobs.md --------
+  - id: cbh-021
+    query: "run something automatically every morning"
+    expected_in_top_3: [howto/schedule-recurring-jobs.md]
+    difficulty: hard
+  - id: cbh-022
+    query: "how do I make a task repeat on a regular basis"
+    expected_in_top_3: [howto/schedule-recurring-jobs.md]
+    difficulty: hard
+  - id: cbh-023
+    query: "kick off the same work hourly without doing it by hand"
+    expected_in_top_3: [howto/schedule-recurring-jobs.md]
+    difficulty: hard
+  - id: cbh-024
+    query: "set up a job that fires once a day on its own"
+    expected_in_top_3: [howto/schedule-recurring-jobs.md]
+    difficulty: medium
+
+  # -------- target: reference/cli.md --------
+  - id: cbh-025
+    query: "what can I run from the terminal"
+    expected_in_top_3: [reference/cli.md]
+    difficulty: hard
+  - id: cbh-026
+    query: "how do I start a process from the shell that picks up and runs jobs"
+    expected_in_top_3: [reference/cli.md]
+    difficulty: hard
+  - id: cbh-027
+    query: "from the terminal, how do I see how many jobs are waiting"
+    expected_in_top_3: [reference/cli.md]
+    difficulty: hard
+  - id: cbh-028
+    query: "how do I clear out finished jobs from the command line"
+    expected_in_top_3: [reference/cli.md]
+    difficulty: medium
+
+  # -------- target: reference/configuration.md --------
+  - id: cbh-029
+    query: "where do I set how many things run at the same time"
+    expected_in_top_3: [reference/configuration.md]
+    difficulty: hard
+  - id: cbh-030
+    query: "can I change these options through environment variables"
+    expected_in_top_3: [reference/configuration.md]
+    difficulty: hard
+  - id: cbh-031
+    query: "how long are dead tasks kept around before being cleaned up"
+    expected_in_top_3: [reference/configuration.md]
+    difficulty: hard
+  - id: cbh-032
+    query: "what knobs can I adjust in the settings file"
+    expected_in_top_3: [reference/configuration.md]
+    difficulty: medium

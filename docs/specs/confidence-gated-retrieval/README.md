@@ -35,7 +35,17 @@ P@1 / R@3 on corpus_b hard tier, full corpus_b, and attune-help
 | embedding-only `potion-retrieval-32M` | 0.75 | 0.91 / 0.91 | 0.28 💥 |
 | **confidence-gated fusion** (keyword-primary, 32M rescue, T=3) | **0.75** | **0.82 / 0.91** | **1.00 / 1.00** |
 
-Three findings drive the design:
+> ⚠️ **Corrected by the M1 validation (see [`tasks.md`](tasks.md)).** The
+> 0.75 here came from the original **n=4** corpus_b hard tier. At **n=26**
+> the torch-free hard ceiling is **~0.50 across all approaches** — 0.75 was
+> a 4-query artifact. Gated fusion still validates (hard P@1 0.31→0.50,
+> attune-help held 1.00/1.00), but its only edge over the already-shipped
+> hybrid is **zero tuned-corpus regression** — so it's worth building only
+> as a *safe-everywhere / default-candidate* retriever, not as another
+> opt-in BYO one. Scope reframed at M1; decision escalated before M2.
+
+Three findings drove the *initial* (n=4) design — see the M1 correction
+above for how they hold up at n=26:
 
 1. **RRF re-weighting is a dead end.** Hard-tier P@1 stays 0.50 at every
    keyword:embedding weight; leaning embedding-heavy only trades away
