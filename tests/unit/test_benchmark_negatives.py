@@ -9,6 +9,8 @@ Covers:
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -16,6 +18,7 @@ from attune_rag.benchmark import (
     _aggregate_by_difficulty,
     _run_benchmark,
     _run_negative_benchmark,
+    main,
 )
 
 
@@ -128,3 +131,56 @@ def test_negative_empty_set_no_divide_by_zero() -> None:
     assert rep["total_negatives"] == 0
     assert rep["false_answer_rate"] == 0.0
     assert rep["abstention_rate"] == 0.0
+
+
+# ---------------------------------------------------------------------------
+# main() integration — exercises --negatives / --extended wiring + JSON dump
+# ---------------------------------------------------------------------------
+
+
+def _yaml(path: Path, queries: list[dict]) -> Path:
+    import yaml
+
+    path.write_text(yaml.safe_dump({"version": 1, "queries": queries}), encoding="utf-8")
+    return path
+
+
+def test_main_includes_negatives_and_extended_in_json(tmp_path: Path) -> None:
+    q = _yaml(
+        tmp_path / "q.yaml",
+        [{"id": "mq", "query": "main", "expected_in_top_3": ["a.md"], "difficulty": "easy"}],
+    )
+    neg = _yaml(tmp_path / "neg.yaml", [{"id": "n1", "query": "offtopic"}])
+    ext = _yaml(
+        tmp_path / "ext.yaml",
+        [{"id": "e1", "query": "hardish", "expected_in_top_3": ["c.md"], "difficulty": "hard"}],
+    )
+    out = tmp_path / "dump.json"
+    pipeline = _FakePipeline(
+        {
+            "main": [("a.md", 9.0)],  # precision hit
+            "offtopic": [("x.md", 4.0)],  # negative leaks (false answer)
+            "hardish": [("c.md", 8.0)],  # extended hit
+        }
+    )
+    with patch("attune_rag.RagPipeline", return_value=pipeline):
+        rc = main(
+            [
+                "--queries",
+                str(q),
+                "--negatives",
+                str(neg),
+                "--extended",
+                str(ext),
+                "--json",
+                str(out),
+                "--min-precision",
+                "0.5",
+                "--verbose",
+            ]
+        )
+    assert rc == 0
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert payload["retrieval"]["by_difficulty"]["easy"]["recall_at_k"] == 1.0
+    assert payload["negatives"]["false_answer_rate"] == 1.0
+    assert payload["extended"]["recall_at_k"] == 1.0
