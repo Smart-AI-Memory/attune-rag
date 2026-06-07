@@ -3,70 +3,68 @@ type: task
 name: expander-task
 feature: expander
 depth: task
-generated_at: 2026-05-20T03:34:53.257151+00:00
-source_hash: 8d3d8b3b23e7c8dfce64df28069feb915c0f099b70568ec577cb0a58dddf9b78
+generated_at: 2026-06-07T07:13:53.297236+00:00
+source_hash: fee9ea3e96d976b16a96673b646ba25f945f41ad6136204efbd13aaa334ccf76
 status: generated
 ---
 
 # Expand queries with QueryExpander
 
-Use `QueryExpander` when you want to improve retrieval recall by automatically broadening a user's query into 3–5 alternative phrasings before searching your documentation.
+Use `QueryExpander` when retrieval results are missing relevant documents because the user's query shares little surface-level wording with your indexed content — expanding the query into 3–5 alternative phrasings improves recall without changing your retrieval pipeline.
 
 ## Prerequisites
 
-- A valid Anthropic API key (or set the `ANTHROPIC_API_KEY` environment variable)
-- Access to `src/attune_rag/expander.py`
+- An Anthropic API key, or the `ANTHROPIC_API_KEY` environment variable set in your shell
+- `attune_rag` installed in your Python environment
 
 ## Expand a query
 
-1. **Instantiate `QueryExpander`.**
-   Create an instance with your desired configuration. All parameters are optional:
+1. **Import `QueryExpander`** from `attune_rag.expander`:
 
    ```python
    from attune_rag.expander import QueryExpander
-
-   expander = QueryExpander(
-       model="claude-haiku-4-5-20251001",  # default
-       api_key="YOUR_API_KEY",             # or set via environment variable
-       cache=True,                         # cache results for repeated queries
-   )
    ```
 
-2. **Call `expand()` with your query string.**
-   Pass the user's raw query. The method returns a list of alternative phrasings as strings:
+2. **Instantiate the expander.** The constructor accepts three optional parameters:
+
+   - `model` — the Claude model to use (default: `'claude-haiku-4-5'`)
+   - `api_key` — your Anthropic API key; omit this if the key is already set as an environment variable
+   - `cache` — set to `False` to disable response caching (default: `True`)
 
    ```python
-   results = expander.expand("how do I configure logging")
+   expander = QueryExpander()
    ```
 
-   If your application is async, use `expand_async()` instead:
+   To supply an API key explicitly or swap the model:
 
    ```python
-   results = await expander.expand_async("how do I configure logging")
+   expander = QueryExpander(model='claude-haiku-4-5', api_key='sk-...', cache=True)
    ```
 
-3. **Pass the expanded queries to your retrieval pipeline.**
-   Use the returned list to query your documentation index. Each string is a standalone alternative phrasing of the original query, surfacing feature names, tool categories, workflow synonyms, and developer jargon:
+3. **Call `expand`** with the user's original query. The method returns a list of alternative phrasings:
 
    ```python
-   # results might look like:
-   # ["set up logging", "configure log output", "logging configuration options", ...]
-
-   all_hits = []
-   for phrase in results:
-       all_hits.extend(index.search(phrase))
+   variants = expander.expand("how do I set up pre-commit hooks")
    ```
 
-4. **Verify the output.**
-   Confirm the task succeeded: `expand()` returns a Python `list` of 3–5 strings. If the API call fails for any reason, `QueryExpander` falls back to returning the original query, so your retrieval pipeline continues without interruption.
+   If you are working in an async context, call `expand_async` instead:
 
-5. **Run the related tests.**
-   Confirm nothing is broken after any changes:
-
-   ```bash
-   pytest -k "expander"
+   ```python
+   variants = await expander.expand_async("how do I set up pre-commit hooks")
    ```
 
-## Key files
+4. **Pass the returned list to your retrieval pipeline.** Each string in `variants` is a standalone query you can use to broaden your keyword or vector search. If the API call fails, `QueryExpander` falls back to the original query automatically — no error handling is required on your end.
 
-- `src/attune_rag/expander.py` — contains `QueryExpander`, the only public class in this module
+## Verify the expansion worked
+
+Print `variants` and confirm it contains between 3 and 5 strings, each rephrasing the original intent:
+
+```python
+print(variants)
+# ['how do I set up pre-commit hooks',
+#  'configure git pre-commit automation',
+#  'install pre-commit framework hooks',
+#  'pre-commit hook setup workflow']
+```
+
+If the list contains exactly one entry that matches your original query, the API call fell back gracefully — check that your API key is valid and that the `claude-haiku-4-5` model is accessible on your account.

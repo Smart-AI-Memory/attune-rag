@@ -3,41 +3,53 @@ type: reference
 name: reranker-reference
 feature: reranker
 depth: reference
-generated_at: 2026-05-20T03:36:00.773254+00:00
-source_hash: e8daea3d6507f630a80c7cd27c8ac195aab73bcc409c0b5cadc15e215ce9e11d
+generated_at: 2026-06-07T07:14:09.705743+00:00
+source_hash: d9cc73a55820ef60156edf63a24310f219daaa440a814d281fee2195484a90ae
 status: generated
 ---
 
 # Reranker reference
 
-Use `LLMReranker` to improve retrieval precision by re-ranking keyword-retrieved candidates with Claude Haiku as a relevance judge. The reranker is opt-in and fail-safe — any API error falls back to the original keyword-only order.
+Use `LLMReranker` to re-order keyword-retrieved candidates by relevance using Claude as a judge. Any API error falls back to the original keyword-only order, so the reranker is safe to use in production without a circuit breaker.
 
 ## Classes
 
 | Class | Description |
 |-------|-------------|
-| `LLMReranker` | Uses Claude Haiku to re-rank keyword retrieval candidates by relevance. |
+| `LLMReranker` | Re-ranks keyword retrieval candidates by relevance using Claude Haiku. |
 
-### `LLMReranker`
+## `LLMReranker`
 
-#### Constructor
+```python
+from attune_rag.reranker import LLMReranker
+```
 
-| Parameters | Type | Default |
-|------------|------|---------|
-| `model` | `str` | `'claude-haiku-4-5-20251001'` |
-| `api_key` | `str | None` | `None` |
-| `candidate_multiplier` | `int` | `3` |
-| `timeout` | `float` | `60.0` |
+### Constructor
 
-#### Methods
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `model` | `str` | `'claude-haiku-4-5'` | Claude model used as the relevance judge. |
+| `api_key` | `str | None` | `None` | Anthropic API key. If `None`, the client reads from the environment. |
+| `candidate_multiplier` | `int` | `3` | Multiplier applied to the requested result count to determine how many candidates to retrieve before re-ranking. |
+| `timeout` | `float` | `60.0` | Request timeout in seconds for each Claude call. |
+
+### Methods
 
 | Method | Parameters | Returns | Description |
 |--------|------------|---------|-------------|
-| `rerank` | `query: str`, `hits: list[RetrievalHit]` | `list[RetrievalHit]` | Re-ranks retrieval hits by relevance to the query. |
+| `rerank` | `query: str`, `hits: list[RetrievalHit]` | `list[RetrievalHit]` | Re-ranks `hits` against `query` and returns them in relevance order. Falls back to the original order if the API call fails. |
 
-## System prompt
+## Module constants
 
-The relevance-ranking prompt sent to Claude Haiku instructs the model to return a JSON array of 0-based indices ordering candidates from most to least relevant. The full prompt text is:
+### `_SYSTEM`
+
+System prompt passed to Claude on every rerank call. Instructs the model to act as a relevance judge and return a JSON array of 0-based indices ranked from most to least relevant.
+
+| Constant | Type | Value (stem) |
+|----------|------|--------------|
+| `_SYSTEM` | `str` | `'You are a relevance judge for the attune-ai developer workflow documentation system…'` |
+
+**Full value:**
 
 ```
 You are a relevance judge for the attune-ai developer workflow documentation system.

@@ -5,9 +5,50 @@ corpora. Works with Claude, Gemini, or any LLM.
 
 🌐 **Docs & guides: [attune-rag.dev](https://attune-rag.dev)**
 
-- **No LLM SDK at install time.** All provider deps are
-  optional extras. Two required runtime deps: `structlog`,
-  `jinja2`.
+## Proven retrieval — the numbers
+
+Every figure is reproducible with `attune-rag-benchmark`. The bundled-corpus
+row is a **hard CI gate** — a PR that regresses it fails automatically.
+
+| | Bundled corpus¹ | Unseen corpus, overall² | Unseen corpus, **hard paraphrases**³ |
+|---|---|---|---|
+| **precision@1** | **100%** | 73% (lightweight, zero torch) | 25% lightweight → **90%** transformer tier |
+| **recall@3** | **100%** | 82% (lightweight, zero torch) | 25% lightweight → **100%** transformer tier |
+| **faithfulness** | **0.97** mean | — | — |
+
+Plus: configurable **abstention** drops out-of-corpus false answers from
+**92% → 8%** — so the retriever stays quiet instead of confidently wrong.
+
+The headline: on a corpus attune-rag has **never seen or been tuned on**,
+asking questions worded *nothing* like the docs, the transformer tier goes
+from a keyword baseline of **1-in-4** to **9-in-10** top-1 correct, and
+**finds the right doc in the top 3 every single time** (recall@3 100%).
+
+<sub>¹ bundled attune-help corpus, gated in CI at `P@1 ≥ 0.95 / R@3 = 1.00 /
+faithfulness ≥ 0.9686`; actuals shown.  ² lightweight keyword on an unseen
+corpus (`corpus_b`), no embeddings.  ³ pure-paraphrase stress test
+(`corpus_c`, queries with almost no vocabulary overlap with the docs) —
+measured in `docs/specs/transformer-retriever/`.</sub>
+
+## Two ways to run it
+
+- 🪶 **Lightweight (default).** Keyword retrieval, optionally fused with
+  **torch-free** static embeddings (`pip install attune-rag[embeddings]`).
+  5 pure-Python deps, no LLM SDK, no torch, fully offline, ~1 ms/query —
+  the dependency-light path that holds **100% / 100%** on a tuned corpus
+  and **73% precision@1** on an unseen one.
+- 🤖 **Transformer tier (opt-in).** Real sentence-transformers embeddings
+  (`pip install attune-rag[transformers]`) for paraphrase-heavy or arbitrary
+  corpora. On pure-paraphrase queries it lifts precision@1 **25% → 90%** and
+  recall@3 **25% → 100%** — the generalization no torch-free retriever
+  reaches. Heavyweight (pulls torch, ~GB); embedding-primary; never a default.
+
+- **No LLM SDK at install time; footprint scales with your setup.**
+  The base install pulls **5 small pure-Python deps** (`structlog`,
+  `jinja2`, `pyyaml`, `rich`, `jsonschema`) — no LLM SDK, no torch.
+  Retrieval tiers add only what they need: `[embeddings]` adds
+  torch-free `model2vec`; `[transformers]` adds the torch stack. You
+  pay for exactly the setup you choose.
 - **Pluggable corpus.** Use attune-help (the default), any
   markdown directory, or your own `CorpusProtocol`.
 - **Returns a prompt string + citation records** by default
@@ -40,7 +81,7 @@ automatically. Same for any latency hot-path regressing past
 
 | | attune-rag | LangChain | LlamaIndex |
 |---|---|---|---|
-| Required runtime deps | 2 | many (transitively, ~30+) | many (~25+) |
+| Required runtime deps | 5 (pure-Python) | many (transitively, ~30+) | many (~25+) |
 | LLM SDK at install | none | bundled | bundled |
 | Published quality regression thresholds | yes (P@1, R@3, faithfulness) | no | no |
 | Published perf thresholds (wall + CPU) | yes | no | no |
@@ -82,12 +123,21 @@ of these:
 ## Install
 
 ```bash
-pip install attune-rag                     # core only
-pip install 'attune-rag[attune-help]'      # + bundled help corpus
-pip install 'attune-rag[claude]'           # + Claude adapter
-pip install 'attune-rag[gemini]'           # + Gemini adapter
-pip install 'attune-rag[all]'              # everything
+pip install attune-rag                      # core — keyword retrieval, 5 pure-Python deps, no LLM SDK
+# Retrieval tiers (opt-in):
+pip install 'attune-rag[embeddings]'        # + torch-free static hybrid retrieval
+pip install 'attune-rag[transformers]'      # + transformer retrieval tier (pulls torch, ~GB)
+# Corpus & LLM adapters (opt-in):
+pip install 'attune-rag[attune-help]'       # + bundled help corpus
+pip install 'attune-rag[claude]'            # + Claude adapter
+pip install 'attune-rag[gemini]'            # + Gemini adapter
+# Convenience:
+pip install 'attune-rag[all]'               # every extra, incl. the transformer tier (pulls torch, ~GB)
 ```
+
+Extras compose, e.g. `pip install 'attune-rag[embeddings,claude]'`. The base
+install stays dependency-light on purpose; only `[transformers]` (and
+therefore `[all]`) pulls torch.
 
 ## Quick start — Claude
 
