@@ -1,0 +1,84 @@
+# Generalization golden queries for the UNSEEN second corpus
+# (tests/golden/corpus_b/ — a small job-scheduler doc set).
+#
+# Purpose: measure whether keyword+alias retrieval generalizes to a
+# corpus it was NOT tuned on. corpus_b has NO curated summaries and NO
+# aliases — the realistic "point attune-rag at an arbitrary docs
+# folder" case. Several queries use natural vocabulary that differs
+# from the doc wording (synonyms), which is exactly where token-overlap
+# retrieval is expected to struggle and embeddings would help.
+#
+# Advisory measurement only (Phase 2). Not gated.
+#
+# Difficulty:
+#   easy   — query shares obvious tokens with the target doc/path
+#   medium — partial overlap / competing docs
+#   hard   — paraphrase with little lexical overlap (the generalization
+#            stress case)
+
+version: 1
+
+queries:
+  # -------- easy: direct lexical overlap --------
+  - id: cb-001
+    query: "how do I define a job"
+    expected_in_top_3:
+      - howto/define-a-job.md
+    difficulty: easy
+  - id: cb-002
+    query: "schedule recurring jobs with cron"
+    expected_in_top_3:
+      - howto/schedule-recurring-jobs.md
+    difficulty: easy
+  - id: cb-003
+    query: "cli command reference"
+    expected_in_top_3:
+      - reference/cli.md
+    difficulty: easy
+  - id: cb-004
+    query: "configuration settings"
+    expected_in_top_3:
+      - reference/configuration.md
+    difficulty: easy
+
+  # -------- medium: partial overlap / competing docs --------
+  - id: cb-005
+    query: "retries and backoff policy"
+    expected_in_top_3:
+      - concepts/retries-and-backoff.md
+      - howto/handle-failures.md
+    difficulty: medium
+  - id: cb-006
+    query: "what states does a job pass through"
+    expected_in_top_3:
+      - concepts/job-lifecycle.md
+    difficulty: medium
+  - id: cb-007
+    query: "do jobs survive a restart"
+    expected_in_top_3:
+      - concepts/persistence.md
+    difficulty: medium
+
+  # -------- hard: paraphrase, low lexical overlap (generalization) --------
+  - id: cb-008
+    query: "my background work keeps dying, make it try again automatically"
+    expected_in_top_3:
+      - howto/handle-failures.md
+      - concepts/retries-and-backoff.md
+    difficulty: hard
+  - id: cb-009
+    query: "run a task every night without re-registering it"
+    expected_in_top_3:
+      - howto/schedule-recurring-jobs.md
+    difficulty: hard
+  - id: cb-010
+    query: "how does it remember pending work after the process crashes"
+    expected_in_top_3:
+      - concepts/persistence.md
+    difficulty: hard
+  - id: cb-011
+    query: "move a permanently-failed item back so it runs once more"
+    expected_in_top_3:
+      - howto/handle-failures.md
+      - reference/cli.md
+    difficulty: hard
