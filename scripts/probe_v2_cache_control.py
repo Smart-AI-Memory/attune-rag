@@ -64,7 +64,7 @@ def _make_documents() -> list[dict]:
 def _call(client, docs: list[dict], label: str) -> dict:
     t0 = time.perf_counter()
     resp = client.messages.create(
-        model="claude-sonnet-4-20250514",
+        model="claude-sonnet-4-6",
         max_tokens=128,
         messages=[
             {
