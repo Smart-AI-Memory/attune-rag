@@ -89,6 +89,7 @@ dev = [
 [project.scripts]
 attune-rag = "attune_rag.cli:main"
 attune-rag-measure = "attune_rag.measure_corpus:main"
+attune-rag-benchmark = "attune_rag.benchmark:main"
 
 [project.urls]
 Homepage = "https://attune-rag.dev"
@@ -101,6 +102,7 @@ Issues = "https://github.com/Smart-AI-Memory/attune-rag/issues"
 where = ["src"]
 
 [tool.setuptools.package-data]
+"attune_rag" = ["py.typed"]
 "attune_rag.dashboard" = ["templates/*.html"]
 "attune_rag.editor" = ["template_schema.json"]
 

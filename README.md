@@ -113,9 +113,10 @@ of these:
 - **Not a document-parsing toolkit.** Bring your markdown
   already-parsed; use `unstructured.io` or similar upstream.
 - **Not a vector DB integration.** Keyword retrieval is the
-  default; you wire your own vector store if you need one (an
-  `EmbeddingRetriever` is on the post-freeze roadmap — see
-  below).
+  default; the optional `[embeddings]` / `[transformers]` tiers
+  embed in-process (model2vec / sentence-transformers). There is
+  no external vector-store integration — you wire your own if
+  you need one.
 - **Not a one-line-install batteries-included framework.** That's
   LangChain / LlamaIndex. attune-rag is for the case where that's
   too much.
@@ -314,7 +315,7 @@ attune-gui editor's `/api/corpus/<id>/lint`, `/autocomplete`, and
 from attune_rag import DirectoryCorpus
 from attune_rag.editor import lint_template, plan_rename, apply_rename
 
-corpus = DirectoryCorpus(Path("./templates")).load()
+corpus = DirectoryCorpus(Path("./templates"))
 
 # Validate a template before saving
 diagnostics = lint_template(
@@ -493,17 +494,19 @@ header automatically.
 
 attune-rag's public surface is documented below and snapshot-tested
 in [tests/unit/test_api_surface.py](tests/unit/test_api_surface.py).
-Formal SemVer commitments are in effect as of 0.2.0 — see
+Formal SemVer commitments have been in effect since 0.2.0 — see
 [docs/POLICY.md](docs/POLICY.md) for the deprecation policy. Symbols
-PUBLIC in 0.2.x stay PUBLIC through every 0.2.z; the snapshot test
-catches drift.
+PUBLIC in a minor line stay PUBLIC through every patch of that line;
+the snapshot test catches drift.
 
 **Top-level (`from attune_rag import ...`):**
 
 - Pipeline — `RagPipeline`, `RagResult`
 - Corpus — `CorpusProtocol`, `RetrievalEntry`, `DirectoryCorpus`,
   `AttuneHelpCorpus`
-- Retrieval — `KeywordRetriever`, `RetrievalHit`, `RetrieverProtocol`
+- Retrieval — `KeywordRetriever`, `EmbeddingRetriever`,
+  `HybridRetriever`, `TransformerRetriever`, `RetrievalHit`,
+  `RetrieverProtocol`
 - Provenance — `CitationRecord`, `CitedSource`, `ClaimCitation`,
   `format_citations_markdown`, `format_claim_citations_markdown`
 - Prompting — `build_augmented_prompt`, `PROMPT_VARIANTS`
@@ -535,6 +538,10 @@ catches drift.
 - `attune-rag-measure` — quality measurement
   (`attune_rag.measure_corpus:main`); CI-suitable via `--watermark-r3`
   (non-zero exit on fail)
+- `attune-rag-benchmark` — retrieval + optional faithfulness
+  benchmark (`attune_rag.benchmark:main`). The default golden query
+  sets ship in the repo checkout, not the wheel — on a pip install,
+  point `--queries` (and optionally `--negatives`) at your own sets.
 
 Anything not listed above is INTERNAL and may change in any release.
 The underscore-prefixed editor modules (`attune_rag.editor._rename`
@@ -544,25 +551,20 @@ They are removed in 0.3.0.
 
 ## Status
 
-**0.2.0 — first SemVer-binding cut.** Phase 4 of the v1.0 roadmap
-landed cleanly: quality baselines (P@1 ≥ 0.95, R@3 = 1.00, mean
-faithfulness ≥ 0.9686) hold; per-hot-path perf thresholds re-locked
-under the V2 multi-run methodology (5 × 20 measurements); attune-gui
-downstream blocking gate stayed green throughout. From 0.2.0 forward,
-[`docs/POLICY.md`](docs/POLICY.md) §2 binds — symbols PUBLIC in 0.2.x
-stay PUBLIC through every 0.2.z.
+**0.5.1 — the retrieval-capabilities line.** 0.5.0 landed the full
+opt-in retrieval ladder — torch-free static hybrid (`[embeddings]`),
+transformer dense tier (`[transformers]`), and configurable
+abstention (`min_score=`); 0.5.1 is a packaging/docs correction on
+top. Quality baselines (P@1 ≥ 0.95, R@3 = 1.00, mean faithfulness ≥
+0.9686) hold and gate CI throughout.
 
-We hit our Phase 4 goals ~3 weeks ahead of the nominal calendar and
-opted to ship early via the freeze-override mechanism rather than let
-the cadence clock run out — getting the user-facing additions
-(`attune-rag-measure` console script + `attune_rag.measure_corpus`
-module for benchmarking your own corpus quality;
-`load_aliases_from_file()` for file-based alias customization) into
-your hands sooner. Override rationale + per-PR receipts at
-[`docs/specs/api-v0.2.0-cut/`](docs/specs/api-v0.2.0-cut/).
+SemVer commitments have been binding since 0.2.0 —
+[`docs/POLICY.md`](docs/POLICY.md) §2; symbols PUBLIC in a minor
+line stay PUBLIC through every patch of that line, and the snapshot
+test catches drift.
 
-Classifier stays at `3 - Alpha` — the Production/Stable flip is a
-Phase 5 deliverable.
+Classifier is `4 - Beta` — the Production/Stable flip is a v1.0.0
+deliverable.
 
 Part of the attune ecosystem
 ([attune-ai](https://github.com/Smart-AI-Memory/attune-ai),
