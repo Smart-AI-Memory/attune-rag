@@ -287,6 +287,13 @@ goal no torch-free retriever reaches. For a keyword-tuned corpus use
 Pass `query_prefix=""` for symmetric models (e.g. `all-MiniLM-L6-v2`); the
 default prefix is tuned for BGE's asymmetric query instruction.
 
+Measure the lift on **your** corpus before paying the torch install:
+
+```bash
+attune-rag-measure --corpus-path ./my-docs --queries ./queries.yaml \
+    --retriever transformer
+```
+
 ### Abstention — don't answer out-of-corpus queries
 
 By default the retriever returns its best match even for a question the
@@ -492,8 +499,9 @@ unstructured corpus, hybrid lifts **recall@3 +9pts**; on the keyword-tuned
 compare either retriever:
 
 ```bash
-python -m attune_rag.benchmark --retriever keyword   # default
-python -m attune_rag.benchmark --retriever hybrid     # keyword + embeddings (RRF)
+attune-rag-benchmark --retriever keyword      # default
+attune-rag-benchmark --retriever hybrid       # keyword + embeddings (RRF)
+attune-rag-benchmark --retriever transformer  # [transformers] tier
 ```
 
 See

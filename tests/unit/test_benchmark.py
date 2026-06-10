@@ -478,3 +478,49 @@ def test_dump_json_writes_indented_payload(tmp_path: Path) -> None:
     assert out.is_file()
     loaded = json.loads(out.read_text(encoding="utf-8"))
     assert loaded == {"x": 1, "y": [2, 3]}
+
+
+# ---------------------------------------------------------------------------
+# --retriever transformer (usability audit 2026-06-10, step 3)
+# ---------------------------------------------------------------------------
+
+
+def test_main_retriever_transformer_missing_extra_clean_error(
+    monkeypatch, tmp_path, capsys
+) -> None:
+    """--retriever transformer without the extra exits 2 with the install
+    hint, not a traceback."""
+    import yaml
+
+    from attune_rag import benchmark as bench_mod
+    from attune_rag.embedding import EmbeddingRetriever
+
+    queries = tmp_path / "queries.yaml"
+    queries.write_text(
+        yaml.safe_dump(
+            {
+                "queries": [
+                    {
+                        "id": "q1",
+                        "query": "anything",
+                        "expected_feature": "pipeline",
+                        "expected_in_top_3": ["concepts/pipeline.md"],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def _raise(self, corpus):
+        raise RuntimeError(
+            "TransformerRetriever requires the [transformers] extra. "
+            "Install with: pip install 'attune-rag[transformers]'"
+        )
+
+    monkeypatch.setattr(EmbeddingRetriever, "_corpus_matrix", _raise)
+    rc = bench_mod.main(["--queries", str(queries), "--retriever", "transformer"])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "error:" in err
+    assert "[transformers] extra" in err
