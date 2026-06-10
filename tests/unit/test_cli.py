@@ -270,13 +270,16 @@ def test_query_retriever_transformer_with_fake_encoder(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     np = pytest.importorskip("numpy")
-    from attune_rag.embedding import EmbeddingRetriever
+    # Patch the SUBCLASS override — TransformerRetriever defines its own
+    # _get_encoder, so patching EmbeddingRetriever's would silently fall
+    # through to the real sentence-transformers load.
+    from attune_rag.transformer import TransformerRetriever
 
     class FakeEncoder:
         def encode(self, texts):
             return np.ones((len(texts), 2))
 
-    monkeypatch.setattr(EmbeddingRetriever, "_get_encoder", lambda self: FakeEncoder())
+    monkeypatch.setattr(TransformerRetriever, "_get_encoder", lambda self: FakeEncoder())
     rc = main(["query", "security audit", "--retriever", "transformer"])
     assert rc == 0
     # All-equal similarities tie-break by path: alpha.md sorts first.
