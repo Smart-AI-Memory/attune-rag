@@ -93,3 +93,27 @@ answered at the top of [`tasks.md`](tasks.md) at the `/spec` pass:
 3. Does C3's relative heuristic clear a both-corpora legit-recall bar?
 4. Auto-calibration entry-point location.
 5. POLICY §7 wording after the change.
+6. Cross-tier abstention (from the 2026-06-10 audit finding below):
+   extend the safe default to the hybrid/transformer tiers, or scope
+   abstention as keyword-tier-only and document the loss on upgrade?
+
+## Audit input — abstention is keyword-tier-only (2026-06-10)
+
+Independent confirmation from the 2026-06-10 usability audit that this
+spec targets real user pain, plus a gap the scaffold didn't yet name:
+the abstention mechanism exists **only on `KeywordRetriever`**.
+
+- `EmbeddingRetriever` / `TransformerRetriever` always return top-k —
+  cosine similarity has no floor; they can never abstain.
+- `HybridRetriever` has no threshold of its own, and its keyword leg's
+  `min_score` does not gate the fused result — an embedding-leg hit
+  surfaces even when every keyword candidate was dropped.
+
+Consequence: a user who adopts abstention and later upgrades a tier —
+the README's own recommended path for paraphrase-heavy corpora —
+**silently loses out-of-corpus protection**. The audit's step-2
+remediation made the CLI contract explicit in the meantime:
+`attune-rag query --min-score` combined with a non-keyword
+`--retriever` is rejected with an error that names this spec. Open
+question 6 above decides whether that rejection is the permanent
+contract or a stopgap.
