@@ -78,3 +78,28 @@ prototypes.
 Carried from [`design.md` §8](design.md#8-open-questions-for-scoping):
 hard-switch vs blend; gate signal (score vs gap); class vs option;
 shared-vs-linked calibration; default model.
+
+Added 2026-06-10 (audit finding below): does the gated retriever also
+own **normalizing the public `RagResult.confidence`** (per-retriever
+calibration to a comparable `[0, 1]`), or is `confidence` documented as
+retriever-relative with the gate kept internal? Either way the contract
+must be stated — today it is undocumented and misleading.
+
+## Audit input — `RagResult.confidence` is incomparable across retrievers (2026-06-10)
+
+Finding from the 2026-06-10 usability audit. The existing
+`RagResult.confidence` (`pipeline.py`) computes
+`min(top_score / (MIN_SCORE * 2), 1.0)` with
+`getattr(retriever, "MIN_SCORE", 1.0)` — and only `KeywordRetriever`
+defines `MIN_SCORE`:
+
+- **Keyword:** top-1 keyword score / 4 — the signal this spec's gate
+  builds on. Meaningful, corpus-relative.
+- **Hybrid:** RRF-fused scores (~0.016–0.03) → confidence is a
+  near-constant **≈0.01 regardless of retrieval quality**.
+- **Transformer / embedding:** cosine similarity / 2 — a third,
+  unrelated scale.
+
+Any caller gating on `confidence` breaks silently when the retriever
+changes. This spec's gate signal (keyword top-1 score / gap, calibrated
+per corpus) is the natural fix vector — see the open question above.
