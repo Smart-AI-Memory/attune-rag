@@ -6,18 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- **`attune-rag-benchmark` is now an installed console script.** The
-  README, CHANGELOG, and docs have referenced it since 0.1.x, but it was
+### Fixed
+- **`attune-rag-benchmark` console script now actually installs.** The
+  README, CHANGELOG, and docs have documented it since 0.1.x, but it was
   never declared in `[project.scripts]` — every documented invocation
   failed with "command not found" and only `python -m attune_rag.benchmark`
-  worked. Note: the default golden query sets still ship in the repo
-  checkout, not the wheel — on a pip install, pass `--queries` explicitly.
-- **`py.typed` marker (PEP 561).** attune-rag has been fully annotated all
-  along; downstream mypy/pyright now actually see the types instead of
-  treating the package as untyped.
-
-### Fixed
+  worked. Packaging defect fix; no new functionality. Note: the default
+  golden query sets still ship in the repo checkout, not the wheel — on a
+  pip install, pass `--queries` explicitly.
+- **Type hints are no longer invisible downstream.** attune-rag has been
+  fully annotated all along, but without a `py.typed` marker (PEP 561)
+  mypy/pyright treated the package as untyped. The marker now ships in
+  the wheel.
 - **README editor example no longer calls a nonexistent
   `DirectoryCorpus.load()`** — the corpus API is lazy; constructing the
   corpus is enough.
