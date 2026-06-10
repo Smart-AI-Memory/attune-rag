@@ -196,6 +196,27 @@ result = pipeline.run("How do I...?")
 > strict-dominance measurement loop. The guide is the v0 forerunner
 > of the v1.0.0 framework framing (`user-corpus-onboarding` spec).
 
+## CLI
+
+Everything above is also reachable from the terminal — your own
+corpus, the retrieval tiers, and abstention included:
+
+```bash
+attune-rag query "how do I run a security audit?"   # bundled corpus
+attune-rag query "..." --corpus-path ./my-docs      # your markdown corpus
+attune-rag query "..." --retriever hybrid           # [embeddings] tier
+attune-rag query "..." --retriever transformer      # [transformers] tier
+attune-rag query "..." --min-score 5                # abstain below threshold
+attune-rag query "..." --prompt-variant strict      # prompt template
+attune-rag query "..." --provider claude            # full RAG + LLM call
+attune-rag query "..." --json                       # hits as JSON
+attune-rag corpus-info --corpus-path ./my-docs      # corpus stats
+attune-rag providers                                # installed LLM extras
+```
+
+The bundled default corpus requires the `[attune-help]` extra; on a
+bare `pip install attune-rag`, pass `--corpus-path`.
+
 ## Hybrid retrieval (optional)
 
 `QueryExpander` and `LLMReranker` require the `[claude]` extra and an

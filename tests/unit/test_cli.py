@@ -177,3 +177,157 @@ def test_dashboard_render_error_stderr_is_sanitized(
     err = capsys.readouterr().err
     assert "\x1b" not in err
     assert "PWN" in err  # readable form survives
+
+
+# ---------------------------------------------------------------------------
+# Feature-access flags: --corpus-path / --retriever / --min-score /
+# --prompt-variant (usability audit 2026-06-10, step 2)
+# ---------------------------------------------------------------------------
+
+
+def _write_md_corpus(root) -> None:
+    (root / "concepts").mkdir()
+    (root / "concepts" / "security-audit.md").write_text(
+        "---\nname: security-audit\n---\n\nRun a security audit to scan for vulnerabilities.",
+        encoding="utf-8",
+    )
+
+
+def test_query_corpus_path_uses_directory_corpus(
+    tmp_path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _write_md_corpus(tmp_path)
+    rc = main(["query", "security audit", "--corpus-path", str(tmp_path)])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "concepts/security-audit.md" in out
+
+
+def test_query_corpus_path_missing_is_clean_error(
+    tmp_path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    rc = main(["query", "x", "--corpus-path", str(tmp_path / "nope")])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert err.startswith("error:")
+    assert "not a directory" in err
+
+
+def test_query_min_score_abstains(capsys: pytest.CaptureFixture[str]) -> None:
+    rc = main(["query", "security audit", "--min-score", "1000"])
+    assert rc == 0
+    assert "No grounding context found" in capsys.readouterr().out
+
+
+def test_query_min_score_rejected_for_non_keyword(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    rc = main(["query", "x", "--retriever", "hybrid", "--min-score", "5"])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "--min-score only applies" in err
+
+
+def test_query_retriever_hybrid_falls_back_keyword_only(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Force the embedding leg off so the test never loads a model; the
+    # hybrid then degrades to keyword-only order, which is the documented
+    # base-install behavior.
+    from attune_rag.hybrid import HybridRetriever
+
+    monkeypatch.setattr(HybridRetriever, "_get_embedding", lambda self: None)
+    rc = main(["query", "security audit", "--retriever", "hybrid"])
+    assert rc == 0
+    assert "concepts/alpha.md" in capsys.readouterr().out
+
+
+def test_query_retriever_transformer_missing_extra_clean_error(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Simulate the [transformers] extra being absent: the encoder load
+    # raises RuntimeError with the install hint, and the CLI must turn
+    # that into a one-line error, not a traceback.
+    from attune_rag.embedding import EmbeddingRetriever
+
+    def _raise(self):
+        raise RuntimeError(
+            "TransformerRetriever requires the [transformers] extra. "
+            "Install with: pip install 'attune-rag[transformers]'"
+        )
+
+    # Patch _corpus_matrix (not just _get_encoder) because it runs first
+    # and would `import numpy` — absent on a true base install.
+    monkeypatch.setattr(EmbeddingRetriever, "_corpus_matrix", lambda self, corpus: _raise(self))
+    rc = main(["query", "security audit", "--retriever", "transformer"])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "[transformers] extra" in err
+    assert "Traceback" not in err
+
+
+def test_query_retriever_transformer_with_fake_encoder(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    np = pytest.importorskip("numpy")
+    # Patch the SUBCLASS override — TransformerRetriever defines its own
+    # _get_encoder, so patching EmbeddingRetriever's would silently fall
+    # through to the real sentence-transformers load.
+    from attune_rag.transformer import TransformerRetriever
+
+    class FakeEncoder:
+        def encode(self, texts):
+            return np.ones((len(texts), 2))
+
+    monkeypatch.setattr(TransformerRetriever, "_get_encoder", lambda self: FakeEncoder())
+    rc = main(["query", "security audit", "--retriever", "transformer"])
+    assert rc == 0
+    # All-equal similarities tie-break by path: alpha.md sorts first.
+    assert "concepts/alpha.md" in capsys.readouterr().out
+
+
+def test_query_prompt_variant_passthrough(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from attune_rag import pipeline as pipeline_mod
+
+    captured: dict[str, str] = {}
+    orig = pipeline_mod.RagPipeline.run
+
+    def spy(self, query, k=3, prompt_variant="citation"):
+        captured["variant"] = prompt_variant
+        return orig(self, query, k=k, prompt_variant=prompt_variant)
+
+    monkeypatch.setattr(pipeline_mod.RagPipeline, "run", spy)
+    rc = main(["query", "security audit", "--prompt-variant", "strict"])
+    assert rc == 0
+    assert captured["variant"] == "strict"
+
+
+def test_corpus_info_corpus_path(tmp_path, capsys: pytest.CaptureFixture[str]) -> None:
+    _write_md_corpus(tmp_path)
+    rc = main(["corpus-info", "--corpus-path", str(tmp_path)])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "directory:" in out
+    assert "Entries: 1" in out
+
+
+def test_corpus_info_missing_default_corpus_clean_error(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # With no corpus flag and the [attune-help] extra absent, the CLI
+    # must print the actionable install hint cleanly, not a traceback.
+    from attune_rag import pipeline as pipeline_mod
+
+    def _unavailable():
+        raise RuntimeError(
+            "No corpus provided and AttuneHelpCorpus is unavailable. "
+            "Either pass a corpus= (e.g. DirectoryCorpus) or install "
+            "'attune-rag[attune-help]'."
+        )
+
+    monkeypatch.setattr(pipeline_mod.RagPipeline, "_default_corpus", staticmethod(_unavailable))
+    rc = main(["corpus-info"])
+    assert rc == 2
+    assert "attune-rag[attune-help]" in capsys.readouterr().err

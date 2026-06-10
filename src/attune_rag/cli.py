@@ -3,8 +3,12 @@
 Usage:
 
     attune-rag query "how do I run a security audit?"
+    attune-rag query "..." --corpus-path ./my-docs
+    attune-rag query "..." --retriever hybrid
+    attune-rag query "..." --min-score 5
     attune-rag query "..." --provider claude
     attune-rag corpus-info
+    attune-rag corpus-info --corpus-path ./my-docs
 
 Uses argparse so the CLI works with only the core package
 installed (no typer / click dependency).
@@ -20,6 +24,7 @@ import sys
 from pathlib import Path
 
 from .pipeline import RagPipeline
+from .prompts import PROMPT_VARIANTS
 from .providers import list_available
 
 # C0/C1 control characters EXCEPT tab (\t), newline (\n), and carriage
@@ -32,6 +37,55 @@ _CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]")
 def _safe_stderr(msg: str) -> str:
     """Strip terminal control characters from ``msg`` before printing."""
     return _CTRL_RE.sub("?", msg)
+
+
+def _build_corpus(args: argparse.Namespace):
+    """Resolve ``--corpus-path`` to a :class:`DirectoryCorpus`.
+
+    Returns ``None`` when the flag is absent so the pipeline
+    falls back to the bundled default corpus. Raises
+    ``ValueError`` (from the ``DirectoryCorpus`` constructor)
+    when the path is not an existing directory.
+    """
+    corpus_path = getattr(args, "corpus_path", None)
+    if corpus_path is None:
+        return None
+    from .corpus import DirectoryCorpus
+
+    return DirectoryCorpus(Path(corpus_path).expanduser())
+
+
+def _build_retriever(args: argparse.Namespace):
+    """Resolve ``--retriever`` / ``--min-score`` to a retriever instance.
+
+    Returns ``None`` for the plain keyword default so the
+    pipeline constructs its own. ``--min-score`` is an absolute
+    keyword score, so it only composes with the keyword
+    retriever — the hybrid and transformer tiers have no
+    abstention threshold yet (see the safe-abstention-defaults
+    spec); combining the flags raises ``ValueError``.
+    """
+    name = getattr(args, "retriever", "keyword")
+    min_score = getattr(args, "min_score", None)
+    if name == "keyword":
+        if min_score is None:
+            return None
+        from .retrieval import KeywordRetriever
+
+        return KeywordRetriever(min_score=min_score)
+    if min_score is not None:
+        raise ValueError(
+            f"--min-score only applies to --retriever keyword (an absolute "
+            f"keyword score has no meaning for the {name!r} retriever, and "
+            f"the hybrid/transformer tiers do not support abstention yet)."
+        )
+    if name == "hybrid":
+        from .hybrid import HybridRetriever
+
+        return HybridRetriever()
+    from .transformer import TransformerRetriever
+
+    return TransformerRetriever()
 
 
 def _cmd_query(args: argparse.Namespace) -> int:
@@ -47,32 +101,43 @@ def _cmd_query(args: argparse.Namespace) -> int:
       is set.
 
     Returns 0 on success (including the "no grounding context
-    found" fallback). Does not catch exceptions from the
-    pipeline or providers; surfacing the traceback is
+    found" fallback) and 2 on a predictable setup error —
+    missing extra, bad ``--corpus-path``, conflicting flags —
+    which surfaces as a one-line message instead of a
+    traceback. Unexpected exceptions (e.g. provider API
+    failures) still raise; surfacing those tracebacks is
     intentional.
     """
-    pipeline = RagPipeline()
-    if args.provider:
-        response, result = asyncio.run(
-            pipeline.run_and_generate(
-                args.query,
-                provider=args.provider,
-                k=args.k,
-                model=args.model,
-                use_native_citations=args.native_citations,
-            )
+    try:
+        pipeline = RagPipeline(
+            corpus=_build_corpus(args),
+            retriever=_build_retriever(args),
         )
-        if result.used_native_citations:
-            from .provenance import format_claim_citations_markdown
+        if args.provider:
+            response, result = asyncio.run(
+                pipeline.run_and_generate(
+                    args.query,
+                    provider=args.provider,
+                    k=args.k,
+                    model=args.model,
+                    prompt_variant=args.prompt_variant,
+                    use_native_citations=args.native_citations,
+                )
+            )
+            if result.used_native_citations:
+                from .provenance import format_claim_citations_markdown
 
-            print(format_claim_citations_markdown(response, result.claim_citations))
-        else:
-            print(response)
-            print()
-            _print_citations(result)
-        return 0
+                print(format_claim_citations_markdown(response, result.claim_citations))
+            else:
+                print(response)
+                print()
+                _print_citations(result)
+            return 0
 
-    result = pipeline.run(args.query, k=args.k)
+        result = pipeline.run(args.query, k=args.k, prompt_variant=args.prompt_variant)
+    except (RuntimeError, ValueError) as exc:
+        print(f"error: {_safe_stderr(str(exc))}", file=sys.stderr)
+        return 2
     if args.json:
         payload = {
             "fallback_used": result.fallback_used,
@@ -106,16 +171,21 @@ def _cmd_query(args: argparse.Namespace) -> int:
 def _cmd_corpus_info(args: argparse.Namespace) -> int:
     """Handle ``attune-rag corpus-info``.
 
-    Loads the default corpus (currently :class:`AttuneHelpCorpus`)
-    and prints its name, version, total entry count, and a
-    per-category breakdown sorted by descending count then
-    alphabetical category. ``args`` is unused — the command
-    takes no flags. Returns 0.
+    Loads the corpus — ``--corpus-path`` as a
+    :class:`DirectoryCorpus` when given, the bundled default
+    otherwise — and prints its name, version, total entry
+    count, and a per-category breakdown sorted by descending
+    count then alphabetical category. Returns 0 on success, 2
+    on a predictable setup error (missing extra, bad
+    ``--corpus-path``).
     """
-    _ = args
-    pipeline = RagPipeline()
-    corpus = pipeline.corpus
-    entries = list(corpus.entries())
+    try:
+        pipeline = RagPipeline(corpus=_build_corpus(args))
+        corpus = pipeline.corpus
+        entries = list(corpus.entries())
+    except (RuntimeError, ValueError) as exc:
+        print(f"error: {_safe_stderr(str(exc))}", file=sys.stderr)
+        return 2
     categories: dict[str, int] = {}
     for entry in entries:
         categories[entry.category] = categories.get(entry.category, 0) + 1
@@ -221,6 +291,50 @@ def build_parser() -> argparse.ArgumentParser:
     query.add_argument("query", help="Question or request to ground.")
     query.add_argument("-k", type=int, default=3, help="Max hits to return (default 3).")
     query.add_argument(
+        "--corpus-path",
+        type=Path,
+        default=None,
+        metavar="DIR",
+        help=(
+            "Query a directory of markdown files (DirectoryCorpus) instead "
+            "of the bundled default corpus."
+        ),
+    )
+    query.add_argument(
+        "--retriever",
+        choices=["keyword", "hybrid", "transformer"],
+        default="keyword",
+        help=(
+            "Retrieval strategy (default: keyword). 'hybrid' fuses keyword "
+            "+ static embeddings via RRF (requires the [embeddings] extra; "
+            "falls back to keyword-only without it). 'transformer' ranks "
+            "with a sentence-transformers model (requires the heavyweight "
+            "[transformers] extra)."
+        ),
+    )
+    query.add_argument(
+        "--min-score",
+        type=float,
+        default=None,
+        metavar="SCORE",
+        help=(
+            "Abstention threshold (keyword retriever only): drop hits "
+            "scoring below SCORE; when nothing clears it, report 'no "
+            "grounding context' instead of a weak match. The score is "
+            "corpus-specific — calibrate with "
+            "'attune-rag-benchmark --calibrate-abstention'."
+        ),
+    )
+    query.add_argument(
+        "--prompt-variant",
+        choices=sorted(PROMPT_VARIANTS),
+        default="citation",
+        help=(
+            "Prompt template for the augmented prompt (default: citation, "
+            "selected via A/B sweep for the lowest hallucination rate)."
+        ),
+    )
+    query.add_argument(
         "--provider",
         choices=["claude", "gemini"],
         help="If set, call the named LLM and print its response.",
@@ -247,7 +361,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     query.set_defaults(func=_cmd_query)
 
-    info = subs.add_parser("corpus-info", help="Print stats about the default corpus.")
+    info = subs.add_parser(
+        "corpus-info",
+        help="Print stats about a corpus (bundled default or --corpus-path).",
+    )
+    info.add_argument(
+        "--corpus-path",
+        type=Path,
+        default=None,
+        metavar="DIR",
+        help=(
+            "Inspect a directory of markdown files (DirectoryCorpus) "
+            "instead of the bundled default corpus."
+        ),
+    )
     info.set_defaults(func=_cmd_corpus_info)
 
     provs = subs.add_parser("providers", help="List LLM providers whose extras are installed.")
