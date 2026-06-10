@@ -3,45 +3,58 @@ type: faq
 name: cli-faq
 feature: cli
 depth: faq
-generated_at: 2026-05-20T03:30:50.400672+00:00
+generated_at: 2026-06-10T06:07:13.453328+00:00
 source_hash: 96db3d6bf557349fb1cbc8ae947bdd3fa30475c1926eb4172b0875e533ece578
 status: generated
 ---
 
 # CLI FAQ
 
-## What is the CLI feature?
+## What does the CLI do?
 
-The CLI is the command-line entry point for debugging retrieval. It lets you run RAG queries and inspect your corpus without writing any Python code.
+`attune-rag` is the command-line entry point for debugging retrieval. It exposes three subcommands:
 
-## What commands does it provide?
+- **`attune-rag query`** — runs a RAG query and prints the grounded answer with citations.
+- **`attune-rag corpus-info`** — shows corpus statistics.
+- **`attune-rag providers`** — lists LLM providers whose extras are installed.
 
-- `attune-rag query` — runs a RAG query and prints the grounded answer with citations.
-- `attune-rag corpus-info` — shows statistics about your corpus.
+Setup errors (missing extras, bad paths, conflicting flags) print a one-line actionable message and exit with code `2` instead of a traceback.
 
-## When should I use it?
+## How do I point the CLI at my own content?
 
-Use the CLI when you want to run a quick query or inspect corpus statistics from the terminal. If you need to integrate retrieval into your own code programmatically, use the underlying Python API directly instead.
+Pass `--corpus-path` to either `attune-rag query` or `attune-rag corpus-info` with the path to your markdown directory.
 
-## What are the main entry points?
+## How do I choose a retrieval strategy?
 
-Both public functions live in `src/attune_rag/cli.py`:
+Use `--retriever {keyword,hybrid,transformer}` with `attune-rag query` to select a retrieval method. The three values correspond to an opt-in retrieval ladder: `keyword` is the baseline, `hybrid` combines keyword and semantic signals, and `transformer` uses a transformer-based retriever.
 
-- `build_parser()` — constructs and returns the `argparse.ArgumentParser` for all CLI commands.
-- `main(argv)` — the top-level entry point; parses arguments and dispatches to the appropriate command. Pass a list of strings to `argv` to invoke it programmatically, or leave it as `None` to read from `sys.argv`.
+## What does `--min-score` do?
 
-## How do I debug a CLI problem?
+It sets the keyword abstention threshold for `attune-rag query`. Queries whose best match falls below this score are suppressed rather than returned as low-confidence answers.
 
-Run the CLI-specific tests first:
+## How do I change the prompt template?
 
-```
-pytest -k "cli" -v
-```
+Pass `--prompt-variant` to `attune-rag query` to select the prompt template used when generating the answer.
 
-If the tests pass but your command still fails, re-run with logging enabled and add a `logger.debug` statement at the suspected failure point to inspect the state at runtime.
+## What are the main entry points in code?
 
-## Where is the source code?
+The public API in `attune_rag.cli` has two functions:
 
-- `src/attune_rag/cli.py`
+- `build_parser() -> argparse.ArgumentParser` — constructs the argument parser for all subcommands.
+- `main(argv: list[str] | None = None) -> int` — parses arguments and runs the selected subcommand. Pass a list of strings to call it programmatically, or pass `None` to read from `sys.argv`.
 
-**Tags:** `cli`, `query`, `corpus-info`
+## Can I call the CLI programmatically?
+
+Yes. Import `main` from `attune_rag.cli` and pass a list of argument strings: `main(["query", "--corpus-path", "docs/", "your question"])`. It returns an integer exit code.
+
+## What exit code does the CLI return on error?
+
+It exits with code `2` when it encounters a setup error such as a missing extras package, a bad corpus path, or conflicting flags. Valid runs return `0`.
+
+## Where is the source?
+
+`src/attune_rag/cli.py`
+
+---
+
+**Tags:** `cli`, `query`, `corpus-info`, `corpus-path`, `retriever-tiers`, `abstention`

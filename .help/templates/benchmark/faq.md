@@ -3,7 +3,7 @@ type: faq
 name: benchmark-faq
 feature: benchmark
 depth: faq
-generated_at: 2026-05-20T03:30:01.592791+00:00
+generated_at: 2026-06-10T06:07:59.722303+00:00
 source_hash: 82975cf88c844b87657deb87845f45f4f5fbc32319ccba10e0eb8a798867630f
 status: generated
 ---
@@ -12,32 +12,39 @@ status: generated
 
 ## What does the benchmark feature do?
 
-It runs retrieval and optional faithfulness benchmarks against your pipeline, gates CI on configurable thresholds, and reports precision and recall metrics. You can supply custom query files and enable faithfulness scoring with the `--with-faithfulness` flag.
+It runs precision, recall, and optional faithfulness benchmarks against your RAG pipeline and exits with a non-zero code when results fall below your configured thresholds, so you can gate CI on retrieval quality.
 
-## When should I use it?
+## How do I run it?
 
-Use benchmark when you want to measure or enforce retrieval quality — for example, before merging a change that touches your retrieval logic, or when tuning threshold values for a CI quality gate.
+Run the `attune-rag-benchmark` console script from your terminal. It calls `attune_rag.benchmark.main()` and returns `0` on success.
 
-## What is the entry point?
+## Which retrieval tiers can I benchmark?
 
-Call `main()` from `src/attune_rag/benchmark.py`. It accepts an optional `argv` list (defaults to `sys.argv` when `None`) and returns `0` on success.
+Pass `--retriever keyword`, `--retriever hybrid`, or `--retriever transformer`. If the required extra for a tier isn't installed, the command exits with code `2` and prints an install hint.
 
-## How do I enable faithfulness scoring?
+## How do I add faithfulness scoring?
 
-Pass `--with-faithfulness` in your argument list. Without it, the runner evaluates only retrieval precision and recall.
+Pass `--with-faithfulness`. Faithfulness scoring is off by default because it requires an additional model call.
 
-## Can I use my own query file?
+## What is abstention-threshold calibration and when do I need it?
 
-Yes. The benchmark runner supports custom query files. Check the CLI help (`main(["--help"])`) for the exact flag name and expected format.
+Use `--calibrate-abstention` when you want the benchmark to determine the confidence threshold below which your retriever should decline to answer rather than return a low-quality result.
 
-## How do I debug a failing benchmark run?
+## Can I benchmark against my own queries?
 
-1. Run `pytest -k "benchmark" -v` to confirm the tests themselves pass.
-2. If the tests pass but your run still fails, re-run with logging enabled and add a `logger.debug` call at the suspected failure point.
-3. Check that your threshold configuration and query file format match what the runner expects.
+Yes. Pass a custom query file to supply your own query set instead of the built-in one. See the CLI help (`attune-rag-benchmark --help`) for the exact flag syntax.
 
-## Where is the source code?
+## What exit codes does the benchmark command return?
 
-- `src/attune_rag/benchmark.py`
+| Code | Meaning |
+|------|---------|
+| `0` | All thresholds passed |
+| `2` | A required extra for the requested retriever tier is not installed |
 
-**Tags:** `benchmark`, `ci`, `precision`, `recall`, `quality`
+Any other non-zero exit indicates a threshold failure or runtime error.
+
+## Where is the source?
+
+`src/attune_rag/benchmark.py` — the public entry point is `attune_rag.benchmark.main(argv: list[str] | None = None) -> int`.
+
+**Tags:** `benchmark`, `ci`, `precision`, `recall`, `quality`, `retriever-tiers`

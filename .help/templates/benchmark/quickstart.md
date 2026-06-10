@@ -3,66 +3,57 @@ type: quickstart
 name: benchmark-quickstart
 feature: benchmark
 depth: quickstart
-generated_at: 2026-05-20T03:30:01.595586+00:00
+generated_at: 2026-06-10T06:07:59.724934+00:00
 source_hash: 82975cf88c844b87657deb87845f45f4f5fbc32319ccba10e0eb8a798867630f
 status: generated
 ---
 
-# Benchmark runner quickstart
+# Quickstart: Run Your First Retrieval Benchmark
 
-Run a retrieval benchmark — with optional faithfulness scoring — that gates CI on configurable thresholds.
+Run `attune-rag-benchmark` from your terminal to benchmark retrieval quality and get a pass/fail result you can wire into CI.
 
-```python
-from attune_rag.benchmark import main
-
-exit_code = main()
-print(exit_code)  # 0
+```sh
+attune-rag-benchmark
 ```
 
-## Prerequisites
+Expected output: the benchmark completes and exits `0` when all configured thresholds pass.
 
-- The project is cloned and installed locally.
-- You have a query file ready if you want to test against custom queries.
+## Steps
 
-## Run your first benchmark
+**1. Install the package**
 
-1. **Import and call `main`.** With no arguments, the runner uses its defaults:
+Make sure `attune-rag` is installed in your local environment. The benchmark entry point is registered automatically — no separate install step needed.
 
-   ```python
-   from attune_rag.benchmark import main
+**2. Choose a retriever tier**
 
-   exit_code = main()
-   ```
+Pass `--retriever` to target a specific tier:
 
-   A return value of `0` means all metrics passed their thresholds.
-
-2. **Pass a custom query file.** Supply your own queries via `argv`:
-
-   ```python
-   exit_code = main(["--queries", "my_queries.jsonl"])
-   ```
-
-3. **Enable faithfulness scoring.** Add `--with-faithfulness` to score generated answers against their source passages:
-
-   ```python
-   exit_code = main(["--queries", "my_queries.jsonl", "--with-faithfulness"])
-   ```
-
-   A non-zero return value means at least one metric fell below its configured threshold — check the logged output to see which one.
-
-## Expected output
-
-```
-Retrieval precision: 0.91  ✓
-Retrieval recall:    0.87  ✓
-Faithfulness:        0.93  ✓
-Benchmark passed (exit 0)
+```sh
+attune-rag-benchmark --retriever hybrid
 ```
 
-**Next:** Wire `main()` into your CI pipeline and set threshold values in your benchmark configuration to enforce quality gates on every pull request.
+Valid values are `keyword`, `hybrid`, and `transformer`. If the selected tier's optional dependency is missing, the command exits `2` and prints an install hint.
 
-## Source files
+**3. Add faithfulness scoring (optional)**
 
-- `src/attune_rag/benchmark.py`
+To score faithfulness in addition to precision and recall, add `--with-faithfulness`:
 
-**Tags:** `benchmark`, `ci`, `precision`, `recall`, `quality`
+```sh
+attune-rag-benchmark --retriever hybrid --with-faithfulness
+```
+
+**4. Calibrate the abstention threshold (optional)**
+
+Run with `--calibrate-abstention` to tune the threshold before committing results to CI:
+
+```sh
+attune-rag-benchmark --calibrate-abstention
+```
+
+## What you just did
+
+You ran `attune-rag-benchmark`, selected a retriever tier, and confirmed the benchmark exits `0` on a passing run. The same command — with an exit-code check — is all you need to gate a CI pipeline on retrieval quality.
+
+## Next:
+
+Supply a custom query file to benchmark against your own data — check `attune-rag-benchmark --help` for the flag that points to your query file path.

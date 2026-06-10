@@ -3,67 +3,76 @@ type: quickstart
 name: dashboard-quickstart
 feature: dashboard
 depth: quickstart
-generated_at: 2026-05-20T03:33:38.810936+00:00
+generated_at: 2026-06-10T06:08:44.510628+00:00
 source_hash: 48be0a4fd811c784bc44e073b2ac5906c205487b317ef813d32ca7c5e3b936cc
 status: generated
 ---
 
-# dashboard
+# Quickstart: Dashboard
 
-Run the attune-rag dashboard against the default corpus with one command:
-
-```bash
-attune-rag dashboard
-```
-
-This runs the full three-stage pipeline — snapshot → render → display — and exits with code `0` on success.
-
-## How it works
-
-The dashboard pipeline has three stages:
-
-1. **Refresh** — `build_snapshot()` benchmarks your corpus and returns a snapshot dict. If `queries.yaml` is missing, it returns a partial snapshot with an error field instead of raising.
-2. **Render** — `render(out, snapshot)` writes a self-contained HTML file to `out` with the snapshot embedded as JSON.
-3. **Display** — `display(snapshot)` pretty-prints the snapshot to the terminal using Rich.
-
-## Run the pipeline in Python
+See your corpus health in the terminal with three Python calls: build a snapshot, render an HTML report, and display the results.
 
 ```python
-from pathlib import Path
 from attune_rag.dashboard.refresh import build_snapshot
 from attune_rag.dashboard.render import render
 from attune_rag.dashboard.show import display
+from pathlib import Path
 
-snapshot = build_snapshot(corpus_package="attune_help")
-render(out=Path("dashboard.html"), snapshot=snapshot)
+snapshot = build_snapshot()
+render(Path("dashboard.html"), snapshot)
 display(snapshot)
 ```
 
-You should see Rich-formatted output in your terminal and a `dashboard.html` file written to the current directory.
+Running this prints a Rich-formatted summary to your terminal and writes `dashboard.html` to the current directory.
 
-## Use a custom corpus or queries file
+## Prerequisites
+
+- The project is cloned and installed locally.
+- Your corpus is registered under the default `attune_help` package, or you know the package name to pass as `corpus_package`.
+
+## Step 1: Build a snapshot
 
 ```python
-from pathlib import Path
 from attune_rag.dashboard.refresh import build_snapshot
 
-snapshot = build_snapshot(
-    corpus_package="my_corpus",
-    queries_path=Path("path/to/queries.yaml"),
-)
+snapshot = build_snapshot()
+print(snapshot)
 ```
 
-If `queries_path` does not exist, `build_snapshot()` returns a partial snapshot — check for an `"error"` key in the result before passing it downstream.
+`build_snapshot()` runs the benchmark against your corpus and returns a dict. If `queries.yaml` is missing, the dict still returns but includes an `error` key describing the partial result.
 
-## Expected output
+## Step 2: Render the HTML report
 
-A successful `display()` call prints a Rich table to the terminal. A successful `render()` call produces an HTML file whose source contains the embedded snapshot where the placeholder `__ATTUNE_SNAPSHOT__` was replaced with the snapshot JSON.
+```python
+from attune_rag.dashboard.render import render
+from pathlib import Path
+
+out_path = render(Path("dashboard.html"), snapshot)
+print(out_path)  # PosixPath('dashboard.html')
+```
+
+`render()` writes an HTML file to the path you supply and returns that same path. Open `dashboard.html` in a browser to see the full report.
+
+## Step 3: Display the snapshot in the terminal
+
+```python
+from attune_rag.dashboard.show import display
+
+display(snapshot)
+```
+
+`display()` pretty-prints the snapshot using Rich. Pass your own `Console` instance as the second argument if you need to redirect output.
+
+**Expected output** (abbreviated):
 
 ```
-dashboard.html  ← self-contained HTML report
-<Rich table>    ← terminal summary
+┌─────────────────────────────┐
+│   attune-rag dashboard      │
+│   corpus: attune_help       │
+│   queries: 42   hits: 38    │
+└─────────────────────────────┘
 ```
 
----
+## Next:
 
-**Next:** Open `dashboard.html` in a browser to review the full rendered report.
+Open `dashboard.html` in a browser and compare the rendered report against the terminal summary to confirm both reflect the same snapshot data.

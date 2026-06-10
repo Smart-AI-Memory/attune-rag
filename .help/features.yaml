@@ -54,16 +54,16 @@ features:
     tags: [eval, faithfulness, judge, hallucination, scoring]
 
   benchmark:
-    description: Precision/recall/faithfulness benchmark runner — gates CI on configurable thresholds; supports custom query files and optional faithfulness scoring via --with-faithfulness
+    description: Precision/recall/faithfulness benchmark runner, installed as the attune-rag-benchmark console script — gates CI on configurable thresholds; --retriever {keyword,hybrid,transformer} benchmarks each retrieval tier (exits 2 with an install hint when the tier's extra is missing); supports custom query files, abstention-threshold calibration via --calibrate-abstention, and optional faithfulness scoring via --with-faithfulness
     files:
       - src/attune_rag/benchmark.py
-    tags: [benchmark, ci, precision, recall, quality]
+    tags: [benchmark, ci, precision, recall, quality, retriever-tiers]
 
   cli:
-    description: Command-line interface — attune-rag query runs a RAG query and prints the grounded answer with citations; attune-rag corpus-info shows corpus statistics
+    description: Command-line interface — attune-rag query runs a RAG query and prints the grounded answer with citations; --corpus-path points it at your own markdown directory, --retriever {keyword,hybrid,transformer} selects the opt-in retrieval ladder, --min-score sets the keyword abstention threshold, --prompt-variant picks the prompt template; attune-rag corpus-info shows corpus statistics (also accepts --corpus-path); attune-rag providers lists LLM providers whose extras are installed; setup errors (missing extras, bad paths, conflicting flags) print a one-line actionable message and exit 2 instead of a traceback
     files:
       - src/attune_rag/cli.py
-    tags: [cli, query, corpus-info]
+    tags: [cli, query, corpus-info, corpus-path, retriever-tiers, abstention]
 
   editor:
     description: Headless template-editor primitives — load_schema parses the v1 frontmatter contract; parse_frontmatter and validate_frontmatter split and check templates; lint_template returns 1-indexed Diagnostics; autocomplete_tags/aliases prefix-match against the corpus; find_references locates alias/tag/path occurrences; plan_rename builds a RenamePlan with per-file FileEdit hunks; apply_rename runs the plan atomically with rollback. Pure functions over CorpusProtocol — used live by the attune-gui editor and attune-author edit CLI.
@@ -96,3 +96,9 @@ features:
     files:
       - src/attune_rag/reranker.py
     tags: [reranker, hybrid-retrieval, precision, claude, haiku]
+
+  measure:
+    description: Retrieval-quality measurement on your own corpus — the attune-rag-measure console script (attune_rag.measure_corpus) scores P@1 / R@3 against a golden-query YAML for --corpus-path or the bundled corpus; --retriever {keyword,hybrid,transformer} compares the retrieval tiers so you can measure the paraphrase-recall lift before installing a heavyweight extra (exits 2 with an install hint when the tier's extra is missing); emits markdown or JSON reports with configurable --watermark-r3 / --watermark-p1 gates
+    files:
+      - src/attune_rag/measure_corpus.py
+    tags: [measure, corpus, quality, watermark, retriever-tiers, p-at-1, r-at-3]

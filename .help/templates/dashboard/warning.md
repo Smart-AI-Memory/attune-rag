@@ -3,54 +3,46 @@ type: warning
 name: dashboard-warning
 feature: dashboard
 depth: warning
-generated_at: 2026-05-20T03:33:38.804318+00:00
+generated_at: 2026-06-10T06:08:44.502587+00:00
 source_hash: 48be0a4fd811c784bc44e073b2ac5906c205487b317ef813d32ca7c5e3b936cc
 status: generated
 ---
 
-# Dashboard cautions
+# Dashboard Cautions
 
-## What to watch for
-
-The dashboard pipeline runs in three stages: **refresh** → **render** → **show**. `refresh` benchmarks the corpus and writes a snapshot JSON; `render` packages that snapshot into a self-contained HTML report; `show` pretty-prints the snapshot in the terminal via Rich. Each stage has its own CLI entry point under `attune-rag dashboard`.
-
-The risks below are specific to how these stages interact and where each function's defaults or edge-case returns can quietly produce incomplete or misleading output.
+The dashboard feature is a three-stage pipeline: `build_snapshot` collects corpus data into a dict, `render` writes an HTML file with that dict embedded as JSON, and `display` pretty-prints the snapshot to the terminal. Each stage is independent, which means a stale or partial snapshot can flow silently into the later stages without raising an error.
 
 ## Risk areas
 
-### `build_snapshot()` returns a partial result on missing `queries.yaml`
+### `build_snapshot` returns a partial result on missing `queries.yaml`
 
-`build_snapshot()` does **not** raise an exception when `queries_path` resolves to a missing `queries.yaml`. Instead, it returns a partial snapshot dict that contains an error field. If you pass that partial snapshot to `render()` or `display()` without checking for the error field first, your HTML report or terminal output will silently reflect incomplete benchmark data.
+When `queries_path` is `None` and the default `queries.yaml` cannot be found, `build_snapshot` does **not** raise an exception — it returns a partial snapshot dict that contains an error key. If you pass that partial result directly to `render` or `display`, you get a dashboard that appears complete but is missing benchmark data. Always inspect the returned dict for an error entry before proceeding to the next stage.
 
-**Mitigation:** After calling `build_snapshot()`, check the returned dict for an error key before proceeding to the render or show stages.
+```python
+snapshot = build_snapshot(corpus_package='attune_help')
+if 'error' in snapshot:
+    # handle missing queries.yaml before calling render or display
+    ...
+```
 
-### `render()` embeds the snapshot using sentinel substitution
+### `render` embeds the snapshot by replacing a sentinel string
 
-`render()` writes the snapshot into the HTML template by replacing the string literal `__ATTUNE_SNAPSHOT__` and the title placeholder `__ATTUNE_TITLE__`. If the template file is modified or regenerated and those sentinel strings are altered or removed, the rendered HTML will contain an empty or broken embedded JSON payload — with no exception raised.
+`render(out, snapshot, title)` writes the snapshot into the HTML template by substituting the literal string `__ATTUNE_SNAPSHOT__` and the title sentinel `__ATTUNE_TITLE__`. If you supply a `snapshot` dict that serializes to JSON containing either of those strings, the substitution will corrupt the output silently. Avoid snapshot values that reproduce those sentinel strings.
 
-**Mitigation:** If you customize the dashboard HTML template, preserve `__ATTUNE_SNAPSHOT__` and `__ATTUNE_TITLE__` exactly as they appear. Treat them as load-bearing strings, not comments.
+### Passing `None` as `console` to `display` is safe, but skips your custom output target
 
-### `display()` accepts a `None` console and silences output
+`display(snapshot, console=None)` creates its own `Console` instance when `console` is `None`. If you are capturing terminal output in tests or redirecting to a file, pass your own `Console` explicitly — the default instance writes directly to `stdout` and ignores any redirection you have set up outside of Rich.
 
-`display()` accepts an optional `Console` instance. Passing `None` causes it to construct a default Rich `Console`, which writes to stdout. In test environments that capture stdout differently from Rich's output stream, this can make terminal assertions unreliable or produce no visible output at all.
+### `corpus_package` defaults propagate across all three stages
 
-**Mitigation:** In tests, pass an explicit `Console` instance (for example, one constructed with `StringIO`) so you control where output goes.
-
-### Writing output paths inside system directories
-
-`render()` accepts an arbitrary `out: Path` for the HTML output file. The module defines `_SYSTEM_DIRS` (`/etc`, `/sys`, `/proc`, `/dev`, `/boot`, `/sbin`, `/bin`, `/usr/bin`) as protected paths, but nothing prevents you from constructing an `out` path inside one of them and passing it directly. On systems where the process has write access, this can overwrite unintended files.
-
-**Mitigation:** Validate `out` against `_SYSTEM_DIRS` before calling `render()`, or restrict output to a known working directory in automation contexts.
+Both `build_snapshot` and the `main` entry points default `corpus_package` to `'attune_help'`. If you are working with a different corpus, you must pass the correct package name at every stage. Forgetting to update it in one call causes the snapshot to reflect the wrong corpus while the rest of your pipeline continues normally.
 
 ## How to avoid problems
 
-1. **Check snapshot integrity before rendering.** Inspect the dict returned by `build_snapshot()` for an error field before passing it to `render()` or `display()`. A partial snapshot produces a valid-looking but incomplete report.
-
-2. **Pin your template sentinels.** If you maintain a custom HTML template, add a test that asserts `__ATTUNE_SNAPSHOT__` and `__ATTUNE_TITLE__` are present in the template file. This catches accidental removal during template edits.
-
-3. **Use explicit `Console` instances in tests.** Don't rely on `display()`'s default stdout behavior in automated tests. Pass a Rich `Console` backed by a controlled stream so output capture is deterministic.
-
-4. **Avoid private helpers.** `_SENTINEL_SNAPSHOT`, `_SENTINEL_TITLE`, and `_SYSTEM_DIRS` are underscore-prefixed and can change without notice. Reference the public functions (`build_snapshot`, `render`, `display`) instead of building logic around internal constants.
+- **Check for a partial snapshot before rendering.** Treat the presence of an error key in the `build_snapshot` return value as a hard stop, not a warning to log and continue.
+- **Validate `queries_path` early.** If your corpus lives outside the default location, pass an explicit `Path` to `build_snapshot` rather than relying on the default discovery logic.
+- **Pass a `Console` instance in tests.** When writing tests against `display`, construct a `Console` with `record=True` so that Rich output is captured rather than written to `stdout`.
+- **Keep the sentinel strings out of snapshot data.** If your corpus metadata could contain arbitrary strings, sanitize values before they reach `render`.
 
 ## Source files
 
