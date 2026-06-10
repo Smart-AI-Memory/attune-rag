@@ -6,6 +6,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **`attune-rag-benchmark` console script now actually installs.** The
+  README, CHANGELOG, and docs have documented it since 0.1.x, but it was
+  never declared in `[project.scripts]` — every documented invocation
+  failed with "command not found" and only `python -m attune_rag.benchmark`
+  worked. Packaging defect fix; no new functionality. Note: the default
+  golden query sets still ship in the repo checkout, not the wheel — on a
+  pip install, pass `--queries` explicitly.
+- **Type hints are no longer invisible downstream.** attune-rag has been
+  fully annotated all along, but without a `py.typed` marker (PEP 561)
+  mypy/pyright treated the package as untyped. The marker now ships in
+  the wheel.
+- **README editor example no longer calls a nonexistent
+  `DirectoryCorpus.load()`** — the corpus API is lazy; constructing the
+  corpus is enough.
+- **README staleness swept**: Status section updated 0.2.0 → 0.5.1 (the
+  classifier has been `4 - Beta` since 0.5.1, not `3 - Alpha`); "an
+  `EmbeddingRetriever` is on the post-freeze roadmap" corrected — it
+  shipped in 0.5.0; the Public API list now includes
+  `EmbeddingRetriever`, `HybridRetriever`, and `TransformerRetriever`,
+  which were exported and snapshot-tested but undocumented in that
+  section.
+
 ## [0.5.1] — 2026-06-07
 
 Packaging + docs corrections on top of 0.5.0. **No library code changes** —
