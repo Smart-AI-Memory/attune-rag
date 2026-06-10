@@ -354,7 +354,7 @@ def test_main_runtime_error_in_collect_exits_2(
 ) -> None:
     """A RuntimeError from collect_raw_timings (e.g. missing API key
     under --include-llm) surfaces as exit 2 — same validation-error
-    convention as check_freeze.py / check_thresholds.py."""
+    convention as check_thresholds.py."""
 
     def boom(*_args, **_kwargs):
         raise RuntimeError("ANTHROPIC_API_KEY required for --include-llm benchmarks")

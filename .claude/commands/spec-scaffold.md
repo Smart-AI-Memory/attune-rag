@@ -35,9 +35,7 @@ fired.
    `docs/specs/<spec-slug>/` exists, stop and tell the user — they
    may already be looking at the scaffold they want.
 3. **Create the four files** with the convention below.
-4. **Run `scripts/check_freeze.py`** to confirm it's freeze-clean.
-   This should always pass — the scaffold is pure docs addition.
-5. **Open a PR** titled
+4. **Open a PR** titled
    `docs(<spec-slug>): scaffold [phase|successor] spec` with the
    activation gate quoted in the body.
 
@@ -129,7 +127,6 @@ scoping pass" framing). Then `## Phase 3: Tasks`. Sections:
   requirements.md.** Duplication is intentional — the requirements
   file is the artifact the scoping pass works from.
 - **No source / test / `CHANGELOG.md` changes.** Pure docs addition.
-  `scripts/check_freeze.py` should pass trivially.
 - **Cross-link related specs liberally.** Future readers (and
   parallel sessions) navigate by the link graph.
 - **Use absolute dates, not relative.** `2026-05-21`, not
@@ -147,7 +144,6 @@ section ordering and tone.
 
 ## Verification (before opening the PR)
 
-- `scripts/check_freeze.py --base origin/main --head HEAD` exits 0.
 - `git diff --stat origin/main..HEAD` shows only files under
   `docs/specs/<spec-slug>/`.
 - No `CHANGELOG.md` change. No version bump. No classifier change.
@@ -168,7 +164,6 @@ Scaffolds `docs/specs/<spec-slug>/` — <one-sentence purpose>.
 
 ## Verification
 
-- ✅ `scripts/check_freeze.py` exits 0.
 - ✅ Diff: 4 files / N insertions / 0 deletions, all under
   `docs/specs/<spec-slug>/`.
 - ✅ No source, tests, scripts, or CHANGELOG changes.
