@@ -6,6 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-06-10
+
+The usability-audit release. A 2026-06-10 critical audit of the library
+found the core sound but several documented features unreachable; all
+five remediation steps landed same-day (#175–#179). The headline: the
+README's reproducibility claim ("every figure is reproducible with
+`attune-rag-benchmark`") is now true for the first time — the console
+script ships, the CLI reaches every retrieval tier and your own corpus,
+and the measurement tools let you reproduce the published numbers on
+your own corpus before adopting a tier.
+
 ### Added
 - **The CLI now reaches the whole retrieval surface** (usability audit
   step 2 — previously these were library-only):
