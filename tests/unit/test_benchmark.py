@@ -524,3 +524,29 @@ def test_main_retriever_transformer_missing_extra_clean_error(
     err = capsys.readouterr().err
     assert "error:" in err
     assert "[transformers] extra" in err
+
+
+def test_main_default_queries_missing_explains_pip_install(monkeypatch, tmp_path, capsys) -> None:
+    """When the REPO-DEFAULT queries path is absent (pip install), the
+    error explains where the golden sets live; an explicit --queries
+    miss keeps the short message."""
+    from attune_rag import benchmark as bench_mod
+
+    missing = tmp_path / "golden" / "queries.yaml"
+    monkeypatch.setattr(bench_mod, "_default_queries_path", lambda: missing)
+    rc = bench_mod.main([])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "Queries file not found" in err
+    assert "repo checkout" in err
+    assert "attune-rag-measure" in err
+
+
+def test_main_explicit_queries_missing_keeps_short_error(tmp_path, capsys) -> None:
+    from attune_rag import benchmark as bench_mod
+
+    rc = bench_mod.main(["--queries", str(tmp_path / "nope.yaml")])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "Queries file not found" in err
+    assert "repo checkout" not in err

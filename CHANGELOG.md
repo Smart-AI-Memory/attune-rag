@@ -36,6 +36,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a bare `pip install attune-rag` + `attune-rag query`.
 
 ### Fixed
+- **Benchmark + dashboard now explain themselves on a pip install.**
+  Their default query-set paths resolve to `tests/golden/` in the repo
+  checkout, which doesn't ship in the wheel — previously
+  `attune-rag-benchmark` failed with a bare "Queries file not found"
+  and `attune-rag dashboard show` rendered an unexplained partial
+  snapshot. Both now state where the golden sets live and what to pass
+  instead (`--queries` / `queries_path`), and the benchmark points
+  corpus authors at `attune-rag-measure`. Explicit-path misses keep the
+  short error.
 - **`attune-rag-benchmark` console script now actually installs.** The
   README, CHANGELOG, and docs have documented it since 0.1.x, but it was
   never declared in `[project.scripts]` — every documented invocation

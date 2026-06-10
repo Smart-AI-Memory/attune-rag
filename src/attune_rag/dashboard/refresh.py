@@ -5,6 +5,7 @@ callers should parse from the first '{' in the combined output.
 
 Exit codes: 0 complete snapshot, 1 partial (retrieval.error set), 2 unrecoverable.
 """
+
 from __future__ import annotations
 
 import datetime as _dt
@@ -62,7 +63,14 @@ def build_snapshot(
     if not queries_path.is_file():
         return {
             "timestamp": _dt.datetime.now(_dt.timezone.utc).isoformat(),
-            "retrieval": {"error": f"queries.yaml not found: {queries_path}"},
+            "retrieval": {
+                "error": (
+                    f"queries.yaml not found: {queries_path}. The golden "
+                    "query sets live in the attune-rag repo checkout "
+                    "(tests/golden/), not the installed wheel — run from "
+                    "a clone, or pass queries_path explicitly."
+                )
+            },
             "freshness": {},
         }
 
@@ -70,7 +78,9 @@ def build_snapshot(
     bench = _run_benchmark(queries, 3)
     q_meta = {q["id"]: q for q in queries}
 
-    per_difficulty: dict[str, dict] = defaultdict(lambda: {"total": 0, "top1_hit": 0, "topk_hit": 0})
+    per_difficulty: dict[str, dict] = defaultdict(
+        lambda: {"total": 0, "top1_hit": 0, "topk_hit": 0}
+    )
     per_feature: dict[str, dict] = defaultdict(lambda: {"total": 0, "top1_hit": 0, "topk_hit": 0})
     enriched = []
     for e in bench["per_query"]:

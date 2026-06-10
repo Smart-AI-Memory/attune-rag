@@ -810,7 +810,21 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 2
     if not args.queries.is_file():
-        print(f"Queries file not found: {args.queries}", file=sys.stderr)
+        msg = f"Queries file not found: {args.queries}"
+        if args.queries == _default_queries_path():
+            # The user didn't pass --queries and the repo default is
+            # absent — almost always a pip install, where the golden
+            # sets don't ship in the wheel.
+            msg += (
+                "\nThe default golden query sets live in the attune-rag "
+                "repo checkout (tests/golden/), not the installed wheel. "
+                "Either run from a clone "
+                "(git clone https://github.com/Smart-AI-Memory/attune-rag) "
+                "or pass --queries (and optionally --negatives) pointing "
+                "at your own set. To score your own corpus, "
+                "attune-rag-measure is the purpose-built tool."
+            )
+        print(msg, file=sys.stderr)
         return 2
 
     retriever_obj: Any = None
