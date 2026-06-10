@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- **The Phase-4 feature-freeze gate is retired** (`freeze.yml`,
+  `scripts/check_freeze.py`, and the freeze-window `cadence-report.yml`).
+  The freeze was a pre-0.2.0 mechanism; by the 0.6.0 cut every feature
+  PR needed an override label, and blocking fix releases is the
+  opposite of its purpose. Public-surface discipline remains enforced
+  by the api-surface snapshot test and POLICY §2 — this removes the
+  process gate, not the contract. Internal CI only; no library change.
+
 ## [0.6.0] — 2026-06-10
 
 The usability-audit release. A 2026-06-10 critical audit of the library
