@@ -6,6 +6,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **The CLI now reaches the whole retrieval surface** (usability audit
+  step 2 — previously these were library-only):
+  - `attune-rag query --corpus-path DIR` and
+    `attune-rag corpus-info --corpus-path DIR` — query/inspect your own
+    markdown corpus (`DirectoryCorpus`) instead of the bundled default.
+  - `attune-rag query --retriever {keyword,hybrid,transformer}` — the
+    opt-in retrieval ladder from the terminal.
+  - `attune-rag query --min-score SCORE` — abstention (keyword retriever
+    only; combining with other retrievers is rejected with an
+    explanation, pending the safe-abstention-defaults work).
+  - `attune-rag query --prompt-variant {anti_prior,baseline,citation,strict}`.
+- **Predictable setup errors now exit cleanly.** Missing extras
+  (`[attune-help]`, `[transformers]`), a bad `--corpus-path`, and
+  conflicting flags print a one-line actionable `error: ...` and exit 2
+  instead of dumping a traceback — the previous first-run experience of
+  a bare `pip install attune-rag` + `attune-rag query`.
+
 ### Fixed
 - **`attune-rag-benchmark` console script now actually installs.** The
   README, CHANGELOG, and docs have documented it since 0.1.x, but it was
