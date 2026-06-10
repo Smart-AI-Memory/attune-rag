@@ -18,6 +18,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     only; combining with other retrievers is rejected with an
     explanation, pending the safe-abstention-defaults work).
   - `attune-rag query --prompt-variant {anti_prior,baseline,citation,strict}`.
+- **Measure the retrieval tiers on your own corpus** (usability audit
+  step 3 — users previously had no shipped way to reproduce the
+  transformer-tier numbers before paying the ~GB torch install):
+  - `attune-rag-measure --retriever {keyword,hybrid,transformer}` (and
+    `measure(retriever=...)` in the Python API; `MeasureResult` and the
+    JSON payload record which retriever scored the run). Keyword-path
+    report bytes are unchanged — the golden snapshot still pins them.
+  - `attune-rag-benchmark --retriever` gains the `transformer` choice
+    (previously `keyword`/`hybrid` only).
+  - Both CLIs exit 2 with the install hint — not a traceback — when the
+    requested tier's extra is missing.
 - **Predictable setup errors now exit cleanly.** Missing extras
   (`[attune-help]`, `[transformers]`), a bad `--corpus-path`, and
   conflicting flags print a one-line actionable `error: ...` and exit 2

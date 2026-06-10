@@ -688,13 +688,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--retriever",
-        choices=["keyword", "hybrid"],
+        choices=["keyword", "hybrid", "transformer"],
         default="keyword",
         help=(
             "Retriever to benchmark (default: keyword). 'hybrid' fuses "
             "keyword + static embeddings via RRF — requires the "
             "[embeddings] extra; use it to measure the generalization lift "
-            "on unseen corpora."
+            "on unseen corpora. 'transformer' ranks with a "
+            "sentence-transformers model — requires the heavyweight "
+            "[transformers] extra; use it to measure the paraphrase-recall "
+            "ceiling on your own corpus before paying the torch install."
         ),
     )
     parser.add_argument("-k", type=int, default=3, help="Top-k for recall (default 3)")
@@ -815,6 +818,10 @@ def main(argv: list[str] | None = None) -> int:
         from .hybrid import HybridRetriever
 
         retriever_obj = HybridRetriever()
+    elif args.retriever == "transformer":
+        from .transformer import TransformerRetriever
+
+        retriever_obj = TransformerRetriever()
 
     queries = _load_queries(args.queries)
 
@@ -832,7 +839,14 @@ def main(argv: list[str] | None = None) -> int:
         _print_calibration(cal)
         return 0
 
-    report = _run_benchmark(queries, k=args.k, retriever=retriever_obj)
+    try:
+        report = _run_benchmark(queries, k=args.k, retriever=retriever_obj)
+    except RuntimeError as exc:
+        # Predictable setup failure — most commonly a retriever tier whose
+        # extra ([embeddings] / [transformers]) is not installed. Surface
+        # the actionable message, not a traceback.
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     _print_summary(report, verbose=args.verbose)
 
     # Out-of-corpus abstention measurement (advisory; never gates).

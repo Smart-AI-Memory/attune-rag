@@ -178,3 +178,153 @@ def test_extra_aliases_file_passes_through(
         extra_aliases_file=aliases,
     )
     assert result.p1 == 1.0
+
+
+# ---------------------------------------------------------------------------
+# retriever= tiers (usability audit 2026-06-10, step 3)
+# ---------------------------------------------------------------------------
+
+
+def test_measure_default_retriever_is_keyword(
+    synthetic_corpus: Path, synthetic_queries: Path
+) -> None:
+    result = measure(corpus_path=synthetic_corpus, queries_path=synthetic_queries)
+    assert result.retriever == "keyword"
+    assert "- Mode: `keyword-only`" in result.report_markdown(
+        frozen_timestamp="2026-06-10T00:00:00Z"
+    )
+
+
+def test_measure_unknown_retriever_raises(synthetic_corpus: Path, synthetic_queries: Path) -> None:
+    with pytest.raises(ValueError, match="Unknown retriever"):
+        measure(
+            corpus_path=synthetic_corpus,
+            queries_path=synthetic_queries,
+            retriever="bm25",
+        )
+
+
+def test_measure_hybrid_degrades_without_extra(
+    monkeypatch: pytest.MonkeyPatch, synthetic_corpus: Path, synthetic_queries: Path
+) -> None:
+    # With the embedding leg disabled, hybrid degrades to keyword-only
+    # order — same hits, and the report records the requested tier.
+    from attune_rag.hybrid import HybridRetriever
+
+    monkeypatch.setattr(HybridRetriever, "_get_embedding", lambda self: None)
+    result = measure(
+        corpus_path=synthetic_corpus,
+        queries_path=synthetic_queries,
+        retriever="hybrid",
+    )
+    assert result.retriever == "hybrid"
+    assert result.p1 == 1.0
+    report = result.report_markdown(frozen_timestamp="2026-06-10T00:00:00Z")
+    assert "- Mode: `hybrid`" in report
+
+
+def test_measure_transformer_with_fake_encoder(
+    monkeypatch: pytest.MonkeyPatch, synthetic_corpus: Path, synthetic_queries: Path
+) -> None:
+    np = pytest.importorskip("numpy")
+    # Patch the SUBCLASS override — TransformerRetriever defines its own
+    # _get_encoder; patching the base class would silently fall through
+    # to the real sentence-transformers load where it's installed.
+    from attune_rag.transformer import TransformerRetriever
+
+    class FakeEncoder:
+        def encode(self, texts):
+            return np.ones((len(texts), 2))
+
+    monkeypatch.setattr(TransformerRetriever, "_get_encoder", lambda self: FakeEncoder())
+    result = measure(
+        corpus_path=synthetic_corpus,
+        queries_path=synthetic_queries,
+        retriever="transformer",
+    )
+    assert result.retriever == "transformer"
+    assert result.n == 3
+
+
+def test_measure_transformer_missing_extra_raises_runtime_error(
+    monkeypatch: pytest.MonkeyPatch, synthetic_corpus: Path, synthetic_queries: Path
+) -> None:
+    from attune_rag.embedding import EmbeddingRetriever
+
+    def _raise(self, corpus):
+        raise RuntimeError(
+            "TransformerRetriever requires the [transformers] extra. "
+            "Install with: pip install 'attune-rag[transformers]'"
+        )
+
+    monkeypatch.setattr(EmbeddingRetriever, "_corpus_matrix", _raise)
+    with pytest.raises(RuntimeError, match=r"\[transformers\] extra"):
+        measure(
+            corpus_path=synthetic_corpus,
+            queries_path=synthetic_queries,
+            retriever="transformer",
+        )
+
+
+def test_to_json_records_retriever(synthetic_corpus: Path, synthetic_queries: Path) -> None:
+    import json as _json
+
+    result = measure(corpus_path=synthetic_corpus, queries_path=synthetic_queries)
+    payload = _json.loads(result.to_json())
+    assert payload["retriever"] == "keyword"
+
+
+def test_cli_retriever_flag_passthrough(
+    monkeypatch: pytest.MonkeyPatch,
+    synthetic_corpus: Path,
+    synthetic_queries: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from attune_rag.hybrid import HybridRetriever
+    from attune_rag.measure_corpus import main
+
+    monkeypatch.setattr(HybridRetriever, "_get_embedding", lambda self: None)
+    rc = main(
+        [
+            "--corpus-path",
+            str(synthetic_corpus),
+            "--queries",
+            str(synthetic_queries),
+            "--retriever",
+            "hybrid",
+        ]
+    )
+    assert rc == 0
+    assert "- Mode: `hybrid`" in capsys.readouterr().out
+
+
+def test_cli_missing_extra_is_clean_error(
+    monkeypatch: pytest.MonkeyPatch,
+    synthetic_corpus: Path,
+    synthetic_queries: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    from attune_rag.embedding import EmbeddingRetriever
+    from attune_rag.measure_corpus import main
+
+    def _raise(self, corpus):
+        raise RuntimeError(
+            "TransformerRetriever requires the [transformers] extra. "
+            "Install with: pip install 'attune-rag[transformers]'"
+        )
+
+    monkeypatch.setattr(EmbeddingRetriever, "_corpus_matrix", _raise)
+    rc = main(
+        [
+            "--corpus-path",
+            str(synthetic_corpus),
+            "--queries",
+            str(synthetic_queries),
+            "--retriever",
+            "transformer",
+        ]
+    )
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert err.startswith("error:")
+    assert "[transformers] extra" in err

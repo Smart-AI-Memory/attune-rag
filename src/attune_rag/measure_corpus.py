@@ -109,6 +109,9 @@ class MeasureResult:
         paraphrased_path: Path string for paraphrased set, if any.
         paraphrased_sha: SHA-256 of the paraphrased queries file.
         rerank: Whether Run B (rerank-on) was included.
+        retriever: Which retriever scored the queries (``"keyword"``,
+            ``"hybrid"``, or ``"transformer"``). Keyword is the default
+            and the only fully deterministic path.
         harness_version: ``_HARNESS_VERSION`` constant at measurement
             time (carried so re-running an old report tells you which
             report shape produced the bytes).
@@ -129,6 +132,7 @@ class MeasureResult:
     paraphrased_path: str | None = None
     paraphrased_sha: str | None = None
     rerank: bool = False
+    retriever: str = "keyword"
     harness_version: str = _HARNESS_VERSION
 
     def watermark_failures(
@@ -196,10 +200,13 @@ class MeasureResult:
                 f"- Query set `paraphrased`: `{self.paraphrased_path}` "
                 f"(sha256: `{self.paraphrased_sha}`)"
             )
-        if self.rerank:
-            lines.append("- Mode: `keyword + LLM rerank (opt-in)`")
+        # Keyword-mode strings predate the retriever field and are pinned
+        # byte-identical by the bundled golden snapshot — don't reword.
+        if self.retriever == "keyword":
+            mode = "keyword + LLM rerank (opt-in)" if self.rerank else "keyword-only"
         else:
-            lines.append("- Mode: `keyword-only`")
+            mode = f"{self.retriever} + LLM rerank (opt-in)" if self.rerank else self.retriever
+        lines.append(f"- Mode: `{mode}`")
         lines.append("")
 
         # Aggregate
@@ -271,6 +278,7 @@ class MeasureResult:
             "queries_path": self.queries_path,
             "queries_sha": self.queries_sha,
             "rerank": self.rerank,
+            "retriever": self.retriever,
             "aggregate": {"p1": self.p1, "r3": self.r3, "n": self.n},
             "per_query": [_q(q) for q in self.per_query_table],
             "per_difficulty": self.per_difficulty_breakdown,
@@ -314,6 +322,26 @@ def _load_queries(path: Path) -> tuple[list[dict[str, Any]], str]:
     return queries, sha
 
 
+def _build_retriever(name: str):
+    """Map a retriever name to an instance; ``None`` keeps the pipeline default.
+
+    ``"hybrid"`` / ``"transformer"`` need the ``[embeddings]`` /
+    ``[transformers]`` extras at score time; the lazily-raised
+    ``RuntimeError`` carries the install hint.
+    """
+    if name == "keyword":
+        return None
+    if name == "hybrid":
+        from .hybrid import HybridRetriever
+
+        return HybridRetriever()
+    if name == "transformer":
+        from .transformer import TransformerRetriever
+
+        return TransformerRetriever()
+    raise ValueError(f"Unknown retriever {name!r}. Choose 'keyword', 'hybrid', or 'transformer'.")
+
+
 def _build_pipeline(
     *,
     corpus_path: Path | str | None,
@@ -321,6 +349,7 @@ def _build_pipeline(
     with_rerank: bool,
     candidate_multiplier: int,
     extra_aliases_file: Path | str | None,
+    retriever: str = "keyword",
 ) -> RagPipeline:
     """Build a RagPipeline from either a user corpus path or the bundled corpus."""
     corpus = None
@@ -334,9 +363,10 @@ def _build_pipeline(
         from .reranker import LLMReranker
 
         reranker = LLMReranker(candidate_multiplier=candidate_multiplier)
+    retriever_obj = _build_retriever(retriever)
     if corpus is None:
-        return RagPipeline(reranker=reranker)
-    return RagPipeline(corpus=corpus, reranker=reranker)
+        return RagPipeline(retriever=retriever_obj, reranker=reranker)
+    return RagPipeline(corpus=corpus, retriever=retriever_obj, reranker=reranker)
 
 
 def _per_difficulty_breakdown(
@@ -379,6 +409,7 @@ def measure(
     rerank: bool = False,
     candidate_multiplier: int = 3,
     extra_aliases_file: Path | str | None = None,
+    retriever: str = "keyword",
 ) -> MeasureResult:
     """Score a corpus + query set; return a :class:`MeasureResult`.
 
@@ -404,6 +435,13 @@ def measure(
         extra_aliases_file: Optional JSON file of path-keyed alias
             overrides for the corpus (the same kwarg as
             ``DirectoryCorpus(extra_aliases_file=...)``).
+        retriever: Retrieval strategy — ``"keyword"`` (default,
+            deterministic), ``"hybrid"`` (keyword + static embeddings
+            via RRF; ``[embeddings]`` extra), or ``"transformer"``
+            (sentence-transformers ranking; heavyweight
+            ``[transformers]`` extra). Use the non-keyword tiers to
+            measure whether the paraphrase-recall lift earns its keep
+            on *your* corpus before adopting them.
 
     Returns:
         A :class:`MeasureResult` with aggregate + per-query data.
@@ -423,6 +461,7 @@ def measure(
         with_rerank=rerank,
         candidate_multiplier=candidate_multiplier,
         extra_aliases_file=extra_aliases_file,
+        retriever=retriever,
     )
 
     qp = Path(queries_path)
@@ -459,6 +498,7 @@ def measure(
         paraphrased_path=p_path_str,
         paraphrased_sha=psha,
         rerank=rerank,
+        retriever=retriever,
     )
 
 
@@ -531,6 +571,17 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--retriever",
+        choices=("keyword", "hybrid", "transformer"),
+        default="keyword",
+        help=(
+            "Retrieval strategy to measure (default: keyword). 'hybrid' "
+            "needs the [embeddings] extra; 'transformer' needs the "
+            "heavyweight [transformers] extra. Use these to measure the "
+            "paraphrase-recall lift on YOUR corpus before adopting a tier."
+        ),
+    )
+    parser.add_argument(
         "--extra-aliases-file",
         type=Path,
         default=None,
@@ -568,8 +619,12 @@ def main(argv: list[str] | None = None) -> int:
             rerank=args.with_rerank,
             candidate_multiplier=args.candidate_multiplier,
             extra_aliases_file=args.extra_aliases_file,
+            retriever=args.retriever,
         )
-    except (ValueError, FileNotFoundError) as exc:
+    except (ValueError, FileNotFoundError, RuntimeError) as exc:
+        # RuntimeError: a retriever tier whose extra ([embeddings] /
+        # [transformers]) is not installed — the message carries the
+        # install hint.
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
