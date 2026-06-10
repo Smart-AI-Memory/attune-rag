@@ -1,4 +1,5 @@
 """Tests for attune_rag.dashboard.refresh."""
+
 from __future__ import annotations
 
 import json
@@ -7,6 +8,7 @@ from unittest.mock import patch
 from attune_rag.dashboard.refresh import build_snapshot, main
 
 # ── helpers ──────────────────────────────────────────────────────────────────
+
 
 def _fake_freshness(corpus_package: str = "attune_help") -> dict:
     return {
@@ -75,6 +77,7 @@ def _fake_bench() -> dict:
 
 
 # ── tests ─────────────────────────────────────────────────────────────────────
+
 
 def test_missing_queries_yaml_returns_partial(tmp_path):
     snap = build_snapshot(queries_path=tmp_path / "nonexistent.yaml")
@@ -152,3 +155,14 @@ def test_stdout_contract_starts_with_brace(tmp_path, capsys):
     brace_pos = out.find("{")
     assert brace_pos >= 0
     json.loads(out[brace_pos:])  # must be valid JSON from first {
+
+
+def test_build_snapshot_missing_queries_explains_pip_install(tmp_path) -> None:
+    """The partial-snapshot error tells a pip-install user where the
+    golden sets live instead of a bare 'not found'."""
+    from attune_rag.dashboard.refresh import build_snapshot
+
+    snap = build_snapshot(queries_path=tmp_path / "queries.yaml")
+    err = snap["retrieval"]["error"]
+    assert "queries.yaml not found" in err
+    assert "repo checkout" in err
