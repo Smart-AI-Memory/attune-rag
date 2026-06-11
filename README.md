@@ -140,6 +140,18 @@ Extras compose, e.g. `pip install 'attune-rag[embeddings,claude]'`. The base
 install stays dependency-light on purpose; only `[transformers]` (and
 therefore `[all]`) pulls torch.
 
+## Authentication
+
+The faithfulness judge is subscription-first: inside a Claude Code
+session (`CLAUDECODE=1`) with the `[claude]` extra installed, judge
+calls route through your Claude subscription via the Agent SDK — no
+`ANTHROPIC_API_KEY` needed. From a plain terminal (or in CI) it uses
+`ANTHROPIC_API_KEY` as before. Override with
+`FaithfulnessJudge(auth_mode="api"|"sub")`, `ATTUNE_RAG_AUTH_MODE`,
+or `attune-rag-benchmark --auth-mode`. Note: RAG answer *generation*
+(`ClaudeProvider`) is API-key-only — the subscription route covers
+the judge.
+
 ## Quick start — Claude
 
 ```bash

@@ -6,6 +6,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Subscription-first auth for the faithfulness judge**
+  (sibling-subscription-auth Phase 2): when running under Claude
+  Code (`CLAUDECODE=1`) with `claude-agent-sdk` installed,
+  `FaithfulnessJudge` routes its LLM call through the Claude
+  subscription via the Agent SDK's structured output
+  (`output_format` json_schema) — same guaranteed-schema contract
+  as the API path's forced `tool_choice`, no `ANTHROPIC_API_KEY`
+  required. Falls back to the API key otherwise; a forced `sub`
+  never falls back. New `auth_mode=` parameter on
+  `FaithfulnessJudge`, `ATTUNE_RAG_AUTH_MODE` env var, and an
+  `--auth-mode {auto,api,sub}` flag on `attune-rag-benchmark`
+  (judge route only — answer generation remains API-key-only).
+  `claude-agent-sdk>=0.1.63` added to the `[claude]` extra.
+  New module: `attune_rag.auth` (mirrors `attune_author.auth`,
+  async-native).
+
 ### Removed
 - **The Phase-4 feature-freeze gate is retired** (`freeze.yml`,
   `scripts/check_freeze.py`, and the freeze-window `cadence-report.yml`).

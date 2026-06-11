@@ -154,7 +154,7 @@ async def test_score_faithfulness_passes_thinking_kwargs_to_judge(monkeypatch: A
             return "an answer", _RagResult()
 
     class _StubJudge:
-        def __init__(self) -> None:
+        def __init__(self, auth_mode: str | None = None) -> None:
             pass
 
         async def score(self, **kwargs: Any) -> Any:

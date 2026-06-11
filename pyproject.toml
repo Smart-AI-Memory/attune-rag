@@ -44,7 +44,13 @@ dependencies = [
 
 [project.optional-dependencies]
 attune-help = ["attune-help>=0.10.1,<0.11"]
-claude = ["anthropic>=0.95,<1.0"]
+claude = [
+    "anthropic>=0.95,<1.0",
+    # Subscription-routed judge calls under Claude Code
+    # (attune_rag.auth). 0.1.63 floor = output_format /
+    # ResultMessage.structured_output support.
+    "claude-agent-sdk>=0.1.63",
+]
 gemini = ["google-genai>=1.0,<2.0"]
 # Maintainer tooling — the docs/help authoring CLI used to regenerate
 # .help/templates/<feature>/{concept,reference,task}.md with the polish

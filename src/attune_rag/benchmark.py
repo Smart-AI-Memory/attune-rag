@@ -404,6 +404,7 @@ async def _score_faithfulness(
     *,
     use_thinking: bool = False,
     thinking_budget_tokens: int | None = None,
+    auth_mode: str | None = None,
 ) -> dict[str, Any]:
     """Run the default variant through run_and_generate + judge for each query.
 
@@ -424,7 +425,7 @@ async def _score_faithfulness(
     from .eval import FaithfulnessJudge
 
     pipeline = RagPipeline()
-    judge = FaithfulnessJudge()
+    judge = FaithfulnessJudge(auth_mode=auth_mode)
 
     score_kwargs: dict[str, Any] = {"use_thinking": use_thinking}
     if thinking_budget_tokens is not None:
@@ -717,6 +718,17 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--auth-mode",
+        choices=("auto", "api", "sub"),
+        default=None,
+        help=(
+            "Auth route for the faithfulness JUDGE: auto (default; "
+            "subscription when running under Claude Code with "
+            "claude-agent-sdk, else API), api, or sub. The answer "
+            "GENERATION call always uses the API key regardless."
+        ),
+    )
+    parser.add_argument(
         "--min-faithfulness",
         type=float,
         default=0.85,
@@ -925,7 +937,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.with_faithfulness:
         if not os.environ.get("ANTHROPIC_API_KEY"):
             print(
-                "error: --with-faithfulness requires ANTHROPIC_API_KEY.",
+                "error: --with-faithfulness requires ANTHROPIC_API_KEY "
+                "(answer generation is API-only; --auth-mode only "
+                "routes the judge).",
                 file=sys.stderr,
             )
             return 2
@@ -946,6 +960,7 @@ def main(argv: list[str] | None = None) -> int:
                     k=args.k,
                     use_native_citations=False,
                     use_thinking=False,
+                    auth_mode=args.auth_mode,
                 )
             )
             _print_faithfulness(pass_a, label="thinking off")
@@ -960,6 +975,7 @@ def main(argv: list[str] | None = None) -> int:
                     use_native_citations=False,
                     use_thinking=True,
                     thinking_budget_tokens=args.thinking_budget,
+                    auth_mode=args.auth_mode,
                 )
             )
             _print_faithfulness(pass_b, label="thinking on")
@@ -991,6 +1007,7 @@ def main(argv: list[str] | None = None) -> int:
                     use_native_citations=False,
                     use_thinking=args.thinking,
                     thinking_budget_tokens=args.thinking_budget,
+                    auth_mode=args.auth_mode,
                 )
             )
             _print_faithfulness(legacy, label="legacy")
@@ -1008,6 +1025,7 @@ def main(argv: list[str] | None = None) -> int:
                         use_native_citations=True,
                         use_thinking=args.thinking,
                         thinking_budget_tokens=args.thinking_budget,
+                        auth_mode=args.auth_mode,
                     )
                 )
                 _print_faithfulness(native, label="native")
