@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-06-11
+
+Subscription-first judge: the faithfulness judge routes through the
+Claude subscription under Claude Code — no `ANTHROPIC_API_KEY`
+required — with the same guaranteed-schema contract.
+
 ### Added
 
 - **Subscription-first auth for the faithfulness judge**
