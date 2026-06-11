@@ -19,6 +19,13 @@ Implemented via Anthropic tool-use with ``tool_choice``
 forced to the ``report_faithfulness`` tool, so the judge's
 output is always valid JSON matching a declared schema.
 
+Auth routing (``attune_rag.auth``): under a Claude Code session
+(``CLAUDECODE=1``) with ``claude-agent-sdk`` installed, the judge
+call routes through the Claude subscription via the Agent SDK's
+structured output — same schema guarantee, no ``ANTHROPIC_API_KEY``
+required. Otherwise it uses the direct ``AsyncAnthropic`` path.
+Override with ``auth_mode=`` / ``ATTUNE_RAG_AUTH_MODE``.
+
 Extended thinking is available via ``use_thinking=True`` on
 ``score``. Thinking-mode forces ``tool_choice="auto"`` (an
 Anthropic constraint on Claude 4 models), so the response
@@ -29,11 +36,14 @@ the tool and emits a text block of JSON instead.
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from anthropic import AsyncAnthropic
+
+logger = logging.getLogger(__name__)
 
 
 DEFAULT_JUDGE_MODEL = "claude-sonnet-4-6"
@@ -161,13 +171,16 @@ class FaithfulnessJudge:
         api_key: str | None = None,
         model: str = DEFAULT_JUDGE_MODEL,
         timeout: float = DEFAULT_JUDGE_TIMEOUT_SECONDS,
+        auth_mode: str | None = None,
     ) -> None:
         """Construct a judge.
 
         Args:
             client: Injected ``AsyncAnthropic`` instance. When
                 passed, ``api_key`` and ``timeout`` are ignored —
-                the caller has full control of the client.
+                the caller has full control of the client, and the
+                judge always uses the API route (explicit injection
+                wins over subscription detection).
             api_key: API key for the default client. Falls back to
                 ``ANTHROPIC_API_KEY`` in the environment when None.
             model: Judge model name.
@@ -176,27 +189,50 @@ class FaithfulnessJudge:
                 injected. A stalled network must not burn the
                 benchmark loop's budget indefinitely, so the
                 default is finite.
+            auth_mode: ``auto``/``api``/``sub`` route override; see
+                :func:`attune_rag.auth.resolve_auth_mode`. Default
+                ``auto``: subscription when running under Claude
+                Code with claude-agent-sdk installed, else API.
 
         Raises:
             ValueError: If both ``client`` and ``api_key`` are
-                provided (ambiguous).
-            RuntimeError: If ``client`` is None and the ``[claude]``
-                extra is not installed.
+                provided (ambiguous), the mode string is invalid,
+                or ``sub`` is forced while undetectable.
+            RuntimeError: If the API route is selected and the
+                ``[claude]`` extra is not installed.
         """
+        from attune_rag import auth as _auth
+
         if client is not None and api_key is not None:
             raise ValueError("Pass either client or api_key, not both — they conflict.")
+        self._api_key = api_key
+        self._timeout = timeout
         if client is not None:
             self._client = client
+            self._route = "api"
+            self._forced_sub = False
         else:
-            try:
-                from anthropic import AsyncAnthropic
-            except ImportError as exc:
-                raise RuntimeError(
-                    "FaithfulnessJudge requires the [claude] extra. "
-                    "Install with: pip install 'attune-rag[claude]'"
-                ) from exc
-            self._client = AsyncAnthropic(api_key=api_key, timeout=timeout)
+            self._route = _auth.resolve_auth_mode(auth_mode)
+            self._forced_sub = _auth._requested_mode(auth_mode) == "sub"
+            self._client = None
+            if self._route == "api":
+                self._client = self._build_api_client()
         self._model = model
+
+    def _build_api_client(self) -> AsyncAnthropic:
+        """Construct the default ``AsyncAnthropic`` client.
+
+        Raises:
+            RuntimeError: If the ``[claude]`` extra is missing.
+        """
+        try:
+            from anthropic import AsyncAnthropic
+        except ImportError as exc:
+            raise RuntimeError(
+                "FaithfulnessJudge requires the [claude] extra. "
+                "Install with: pip install 'attune-rag[claude]'"
+            ) from exc
+        return AsyncAnthropic(api_key=self._api_key, timeout=self._timeout)
 
     @property
     def model(self) -> str:
@@ -269,31 +305,66 @@ class FaithfulnessJudge:
         else:
             effective_max_tokens = max_tokens
 
-        request_kwargs: dict[str, Any] = {
-            "model": self._model,
-            "max_tokens": effective_max_tokens,
-            "system": _JUDGE_SYSTEM_PROMPT,
-            "tools": [_JUDGE_TOOL],
-            "messages": [{"role": "user", "content": user_message}],
-        }
-        if use_thinking:
-            # Anthropic constraint on Claude 4: thinking + tools
-            # requires tool_choice in {"auto", "none"}. Forced
-            # tool_choice is incompatible.
-            request_kwargs["thinking"] = {
-                "type": "enabled",
-                "budget_tokens": thinking_budget_tokens,
-            }
-            request_kwargs["tool_choice"] = {"type": "auto"}
-        else:
-            request_kwargs["tool_choice"] = {
-                "type": "tool",
-                "name": "report_faithfulness",
-            }
+        from attune_rag import auth as _auth
 
-        response = await self._client.messages.create(**request_kwargs)
+        payload: dict[str, Any] | None = None
+        if self._route == "sub":
+            if use_thinking:
+                logger.warning(
+                    "use_thinking is not supported on the subscription "
+                    "route; scoring without extended thinking."
+                )
+            try:
+                payload = await _auth.query_subscription_structured(
+                    system=_JUDGE_SYSTEM_PROMPT,
+                    user_message=user_message,
+                    model=self._model,
+                    schema=_JUDGE_TOOL["input_schema"],
+                )
+            except Exception as exc:  # noqa: BLE001
+                # INTENTIONAL: every subscription-path failure funnels
+                # through one redaction + fallback decision point,
+                # mirroring attune_author.auth.call_llm. `from None`
+                # keeps unredacted text out of __cause__.
+                if self._forced_sub or not _auth.api_key_available():
+                    raise RuntimeError(_auth._redact(str(exc))) from None
+                logger.warning(
+                    "Subscription judge call failed; falling back to " "the API key path: %s",
+                    _auth._redact(str(exc)),
+                )
+            else:
+                _auth.auth_telemetry()["sub_calls"] += 1
 
-        payload = _extract_judge_payload(response)
+        via_api = payload is None
+        if via_api:
+            if self._client is None:
+                self._client = self._build_api_client()
+            request_kwargs: dict[str, Any] = {
+                "model": self._model,
+                "max_tokens": effective_max_tokens,
+                "system": _JUDGE_SYSTEM_PROMPT,
+                "tools": [_JUDGE_TOOL],
+                "messages": [{"role": "user", "content": user_message}],
+            }
+            if use_thinking:
+                # Anthropic constraint on Claude 4: thinking + tools
+                # requires tool_choice in {"auto", "none"}. Forced
+                # tool_choice is incompatible.
+                request_kwargs["thinking"] = {
+                    "type": "enabled",
+                    "budget_tokens": thinking_budget_tokens,
+                }
+                request_kwargs["tool_choice"] = {"type": "auto"}
+            else:
+                request_kwargs["tool_choice"] = {
+                    "type": "tool",
+                    "name": "report_faithfulness",
+                }
+
+            response = await self._client.messages.create(**request_kwargs)
+
+            payload = _extract_judge_payload(response)
+            _auth.auth_telemetry()["api_calls"] += 1
         supported, unsupported, reasoning = _parse_judge_payload(payload)
 
         total = len(supported) + len(unsupported)
@@ -306,7 +377,7 @@ class FaithfulnessJudge:
             unsupported_claims=unsupported,
             reasoning=reasoning,
             model=self._model,
-            thinking_used=use_thinking,
+            thinking_used=use_thinking and via_api,
         )
 
 
