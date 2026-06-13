@@ -3,7 +3,7 @@ type: note
 name: benchmark-note
 feature: benchmark
 depth: note
-generated_at: 2026-05-20T03:30:01.600493+00:00
+generated_at: 2026-06-10T06:07:59.729746+00:00
 source_hash: 82975cf88c844b87657deb87845f45f4f5fbc32319ccba10e0eb8a798867630f
 status: generated
 ---
@@ -12,20 +12,16 @@ status: generated
 
 ## Context
 
-The `benchmark` module (`src/attune_rag/benchmark.py`) is a retrieval and optional faithfulness benchmark runner. It is designed to gate CI pipelines on configurable quality thresholds, measuring precision and recall against a query file you supply.
+`attune_rag.benchmark` is a precision/recall/faithfulness benchmark runner installed as the `attune-rag-benchmark` console script. Its public surface is a single entry point, `main()`, which returns `0` on success.
 
-Faithfulness scoring is opt-in and enabled with the `--with-faithfulness` flag. Without it, the runner evaluates retrieval quality only.
+The module is designed to gate CI pipelines on configurable quality thresholds rather than serve as a library. You invoke it directly from the command line or call `main()` programmatically; no class instantiation is required.
 
-## How it works
+## Design decisions
 
-The module is function-first: there are no classes to instantiate. The entry point is `main()`, which accepts an argument list and returns `0` on success. You invoke it directly — either from the command line or by passing a list of arguments programmatically.
+**Retrieval tiers are opt-in.** The `--retriever` flag accepts `keyword`, `hybrid`, or `transformer`. If the selected tier's optional dependency is not installed, the runner exits with code `2` and prints an install hint rather than raising an unhandled exception. This keeps the base install lightweight.
 
-```python
-from attune_rag.benchmark import main
+**Faithfulness scoring is off by default.** Pass `--with-faithfulness` to enable it. Faithfulness scoring typically requires an additional model call, so omitting it speeds up routine retrieval benchmarks in CI.
 
-exit_code = main(["--with-faithfulness"])
-```
+**Abstention threshold calibration is built in.** The `--calibrate-abstention` flag lets you tune the threshold at which the retriever declines to answer, without writing a separate calibration script.
 
-Configurable thresholds and the query file path are passed as arguments to `main()`; the runner exits non-zero if any threshold is not met, making it suitable as a CI gate.
-
-**Tags:** `benchmark`, `ci`, `precision`, `recall`, `quality`
+**Custom query files are supported.** You can supply your own query set instead of the built-in defaults, which makes it straightforward to benchmark against domain-specific corpora.

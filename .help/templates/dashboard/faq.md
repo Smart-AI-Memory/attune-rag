@@ -3,7 +3,7 @@ type: faq
 name: dashboard-faq
 feature: dashboard
 depth: faq
-generated_at: 2026-05-20T03:33:38.808684+00:00
+generated_at: 2026-06-10T06:08:44.507915+00:00
 source_hash: 48be0a4fd811c784bc44e073b2ac5906c205487b317ef813d32ca7c5e3b936cc
 status: generated
 ---
@@ -12,43 +12,47 @@ status: generated
 
 ## What is the dashboard?
 
-The dashboard is a living-docs tool for a registered corpus. It runs a three-stage pipeline: **refresh** benchmarks the corpus and emits a JSON snapshot, **render** packages that snapshot into a self-contained HTML report, and **show** pretty-prints the snapshot in your terminal using Rich. Each stage has its own entry point under `attune-rag dashboard`.
+The dashboard is a three-stage pipeline for inspecting the health of a registered corpus: **refresh** runs the benchmark and emits a snapshot dict; **render** produces a packaged HTML report from that snapshot; **show** pretty-prints the snapshot to the terminal via Rich. Each stage has its own entry point.
 
-## When should I use it?
+## What does each stage do?
 
-Use the dashboard when you want to check the health or freshness of a registered corpus — for example, to see how well your RAG pipeline is answering benchmark queries, or to share a snapshot report with teammates as HTML. If you only need to query or update the corpus itself, look at the other features listed in `.help/features.yaml`.
+- **refresh** — `build_snapshot()` queries the corpus and returns a `dict[str, Any]`. If `queries.yaml` is missing, it returns a partial snapshot with an embedded error rather than raising.
+- **render** — `render()` writes an HTML file to the path you pass as `out`, with the snapshot embedded as JSON.
+- **show** — `display()` prints the snapshot to the terminal. Pass a `Console` instance if you want to redirect output; omit it to use the default Rich console.
 
 ## Which function should I call first?
 
-That depends on what you want to produce:
+Start with `build_snapshot()` in `dashboard.refresh`. It produces the snapshot dict that both `render()` and `display()` consume. Everything else in the pipeline depends on its output.
 
-- **`build_snapshot(corpus_package, queries_path)`** — call this first to run the benchmark and get a snapshot `dict`. If `queries.yaml` is missing, it returns a partial snapshot with an error key rather than raising.
-- **`render(out, snapshot, title)`** — call this after `build_snapshot()` to write a standalone HTML file to `out` with the snapshot embedded as JSON.
-- **`display(snapshot, console)`** — call this instead of `render()` if you want a Rich terminal view rather than an HTML file.
+## Can I use a custom queries file?
 
-Each function's signature and return type are documented in the source files listed below.
+Yes. `build_snapshot()` accepts an optional `queries_path: Path | None` argument. Pass a `Path` to your own `queries.yaml` to override the default. If you omit it (or pass `None`), the function looks for the default queries bundled with the corpus package.
 
-## What happens if `queries.yaml` is missing?
+## What happens if queries.yaml is missing?
 
-`build_snapshot()` returns a partial snapshot `dict` that includes an error description rather than raising an exception. Check for an error key in the returned dict before passing the snapshot to `render()` or `display()`.
+`build_snapshot()` returns a partial snapshot dict that includes an error description rather than raising an exception. Check the returned dict for an error key before passing it downstream to `render()` or `display()`.
 
-## How do I debug the dashboard?
+## How do I generate an HTML report?
 
-Start by running the relevant tests:
+1. Call `build_snapshot()` to get the snapshot dict.
+2. Pass the snapshot to `render(out, snapshot)`, where `out` is the destination `Path`.
+3. `render()` returns the `Path` it wrote, so you can open or serve the file immediately.
 
-```
-pytest -k "dashboard" -v
-```
+You can also customize the page heading with the `title` argument (default: `'attune-rag dashboard'`).
 
-If the tests pass but your code still fails, add a `logger.debug` statement at the point where the snapshot is built or rendered, then re-run with logging enabled. For known failure modes, see the troubleshooting page for this feature.
+## How do I view the dashboard in the terminal?
+
+Call `display(snapshot)` from `dashboard.show`, or run the CLI entry point for the show stage. If you want output routed to a specific destination, pass a Rich `Console` instance as the second argument.
 
 ## Where are the source files?
 
-| File | Responsibility |
-|---|---|
-| `src/attune_rag/dashboard/__init__.py` | Package init |
-| `src/attune_rag/dashboard/refresh.py` | `build_snapshot()`, `main()` |
-| `src/attune_rag/dashboard/render.py` | `render()` |
-| `src/attune_rag/dashboard/show.py` | `display()` |
+- `src/attune_rag/dashboard/__init__.py`
+- `src/attune_rag/dashboard/refresh.py`
+- `src/attune_rag/dashboard/render.py`
+- `src/attune_rag/dashboard/show.py`
+
+## How do I debug a failure?
+
+Run `pytest -k "dashboard" -v` first. If the tests pass but your code still fails, add a `logger.debug` call at the suspected failure point and re-run with logging enabled. For symptom-based diagnosis, see the troubleshooting page for this feature.
 
 **Tags:** `dashboard`, `living-docs`, `html`, `terminal`, `snapshot`, `freshness`

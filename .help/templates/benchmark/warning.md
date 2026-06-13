@@ -3,37 +3,47 @@ type: warning
 name: benchmark-warning
 feature: benchmark
 depth: warning
-generated_at: 2026-05-20T03:30:01.588414+00:00
+generated_at: 2026-06-10T06:07:59.717643+00:00
 source_hash: 82975cf88c844b87657deb87845f45f4f5fbc32319ccba10e0eb8a798867630f
 status: generated
 ---
 
 # Benchmark cautions
 
-## What to watch for
+## CI gates can block your pipeline on threshold mismatches
 
-The benchmark module runs retrieval and optional faithfulness scoring, then gates CI on configurable thresholds. Misconfigured thresholds or missing query files cause `main()` to return a non-zero exit code, which fails your CI pipeline silently if the calling script does not check the return value.
+`main()` exits with a non-zero code when results fall below configured thresholds, which means a misconfigured threshold or an untested retriever tier can fail your entire CI pipeline. Before you wire `attune-rag-benchmark` into CI, verify that your threshold values reflect realistic baseline scores for your corpus — overly aggressive thresholds will cause spurious failures on every run.
 
 ## Risk areas
 
-**CI threshold misconfiguration blocks or silently skips gating.** `main()` in `src/attune_rag/benchmark.py` returns `0` on success and a non-zero value on failure. If your CI script does not explicitly check the return value, a threshold violation may go undetected. Conversely, thresholds set too aggressively will cause every run to fail, even when retrieval quality is acceptable.
+### Missing extras cause a silent tier skip with exit code 2
 
-**Faithfulness scoring is opt-in and easy to omit.** Faithfulness evaluation only runs when you pass `--with-faithfulness`. Omitting the flag produces a benchmark result that measures retrieval precision and recall only. If your quality bar requires faithfulness scoring, the absence of the flag means CI can pass on a model that produces unfaithful answers.
+When you pass `--retriever transformer` (or another tier whose package extra is not installed), `main()` exits with code 2 and prints an install hint rather than raising an exception. If your CI script treats only exit code 1 as a failure, a missing-extra condition passes silently. Check your pipeline's exit-code handling to ensure exit code 2 is also treated as a failure.
 
-**Custom query files silently determine benchmark coverage.** The benchmark uses whatever query file you supply. A query file that is too small, not representative, or accidentally stale will produce misleadingly high scores. Validate your query file before treating benchmark results as a quality signal.
+### Abstention threshold calibration changes recall metrics
+
+`--calibrate-abstention` adjusts the threshold at which the system abstains from answering. Calibrating on a small or unrepresentative query set can move the abstention cutoff in a direction that artificially inflates precision while suppressing recall. Run calibration against a query file that reflects your actual workload, and re-run the full benchmark after calibration to confirm the effect on all reported metrics.
+
+### Faithfulness scoring is opt-in and its absence changes what the benchmark measures
+
+`--with-faithfulness` is not enabled by default. A benchmark run without it reports retrieval quality only — precision and recall — and gives no signal about whether retrieved content actually supports the generated answer. If your use case depends on faithful generation, omit `--with-faithfulness` and you may ship a retrieval configuration that scores well on recall but produces unfaithful responses.
+
+### Custom query files silently determine the meaning of every reported metric
+
+The queries you supply define what "good retrieval" means for that run. A query file that does not cover edge cases in your data — short queries, ambiguous terms, or out-of-domain topics — produces benchmark scores that do not generalise. Treat the query file as a first-class input and version-control it alongside your threshold configuration.
 
 ## How to avoid problems
 
-1. **Check `main()`'s return value in CI.** Treat any non-zero return as a hard failure. In shell scripts, use `set -e` or explicitly check `$?` after invoking the benchmark so threshold violations are never swallowed.
+1. **Treat exit code 2 as a failure in CI.** Add an explicit check for exit code 2 alongside exit code 1 so that a missing retriever extra does not silently pass your pipeline.
 
-2. **Explicitly pass `--with-faithfulness` when faithfulness matters.** Do not rely on a default. Add `--with-faithfulness` to your standard CI invocation and document any intentional omission so reviewers know the benchmark is retrieval-only.
+2. **Pin your query file in version control.** Because every metric is relative to the queries you provide, changing the query file between runs makes scores incomparable. Commit the file and reference it by path in your CI configuration.
 
-3. **Version-control your query files.** Store query files alongside the benchmark configuration and review changes to them with the same scrutiny as threshold changes. A query file change that improves scores without improving the model is a coverage regression.
+3. **Run with `--with-faithfulness` before promoting a retriever to production.** Retrieval metrics alone do not capture whether the system produces faithful answers. Use faithfulness scoring at least once per retriever configuration change, even if you omit it from routine CI runs for speed.
 
-4. **Set thresholds deliberately, not optimistically.** Start thresholds at your current baseline and tighten them incrementally. A threshold set above the current model's capability will fail every run; one set too low provides no protection.
+4. **Calibrate abstention on a representative sample, then re-benchmark.** After running `--calibrate-abstention`, immediately re-run the full benchmark to observe the effect on precision and recall together, not just the abstention rate in isolation.
 
 ## Source files
 
 - `src/attune_rag/benchmark.py`
 
-**Tags:** `benchmark`, `ci`, `precision`, `recall`, `quality`
+**Tags:** `benchmark`, `ci`, `precision`, `recall`, `quality`, `retriever-tiers`

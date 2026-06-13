@@ -3,25 +3,17 @@ type: tip
 name: cli-tip
 feature: cli
 depth: tip
-generated_at: 2026-05-20T03:30:50.405218+00:00
+generated_at: 2026-06-10T06:07:13.457881+00:00
 source_hash: 96db3d6bf557349fb1cbc8ae947bdd3fa30475c1926eb4172b0875e533ece578
 status: generated
 ---
 
 # Tip: working effectively with cli
 
-## Recommendation
+Pass `argv` explicitly when calling `main()` from your own scripts or tests — don't rely on `sys.argv` being set correctly in your environment.
 
-Pass a pre-built argument list to `main(argv)` instead of relying on `sys.argv` when you call the CLI programmatically.
+**Why:** `main(argv: list[str] | None = None)` accepts an explicit argument list, so passing `["query", "--corpus-path", "/your/docs"]` directly gives you predictable, reproducible behavior without environment side effects.
 
-`main()` accepts an explicit `argv: list[str] | None` parameter. When `argv` is `None`, it falls back to `sys.argv`, which makes behavior depend on the process environment. Passing a concrete list — for example, `main(["query", "--question", "What is RAG?"])` — makes the call self-contained and predictable.
+**Tradeoff:** You take on the responsibility of constructing a valid argv list. Malformed flags still cause `main()` to exit with code 2, so test your argv construction against `build_parser()` first — call `build_parser().parse_args(your_argv)` to validate the shape before passing it to `main()`.
 
-**Why it matters:** Scripts and tests that mutate `sys.argv` are fragile and interfere with each other; an explicit `argv` eliminates that coupling entirely.
-
-**Tradeoff:** You need to reproduce the argument structure that `build_parser()` expects. Call `build_parser().parse_args(your_list)` first to validate your argument list before wiring it into `main()`.
-
-## Source files
-
-- `src/attune_rag/cli.py`
-
-**Tags:** `cli`, `query`, `corpus-info`
+**Tags:** `cli`, `query`, `corpus-info`, `corpus-path`, `retriever-tiers`, `abstention`

@@ -3,14 +3,14 @@ type: reference
 name: cli-reference
 feature: cli
 depth: reference
-generated_at: 2026-06-07T07:13:42.573591+00:00
+generated_at: 2026-06-10T06:04:14.437291+00:00
 source_hash: 96db3d6bf557349fb1cbc8ae947bdd3fa30475c1926eb4172b0875e533ece578
 status: generated
 ---
 
 # CLI reference
 
-Command-line entry point for debugging retrieval. Use `attune-rag query` to run a RAG query and print the grounded answer with citations, or `attune-rag corpus-info` to show corpus statistics.
+Command-line entry point for debugging retrieval. Use `attune-rag query` to run a RAG query and print a grounded answer with citations. Pass `--corpus-path` to point at your own markdown directory, `--retriever {keyword,hybrid,transformer}` to select a retrieval strategy, `--min-score` to set the keyword abstention threshold, and `--prompt-variant` to choose a prompt template. Use `attune-rag corpus-info` to display corpus statistics (also accepts `--corpus-path`), and `attune-rag providers` to list LLM providers whose extras are installed. Setup errors — missing extras, bad paths, conflicting flags — print a one-line actionable message and exit with code `2` instead of a traceback.
 
 ## Functions
 
@@ -25,4 +25,4 @@ Command-line entry point for debugging retrieval. Use `attune-rag query` to run 
 
 ## Tags
 
-`cli`, `query`, `corpus-info`
+`cli`, `query`, `corpus-info`, `corpus-path`, `retriever-tiers`, `abstention`

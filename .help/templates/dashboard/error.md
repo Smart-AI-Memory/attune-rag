@@ -3,7 +3,7 @@ type: error
 name: dashboard-error
 feature: dashboard
 depth: error
-generated_at: 2026-05-20T03:33:38.798843+00:00
+generated_at: 2026-06-10T06:08:44.496038+00:00
 source_hash: 48be0a4fd811c784bc44e073b2ac5906c205487b317ef813d32ca7c5e3b936cc
 status: generated
 ---
@@ -12,31 +12,35 @@ status: generated
 
 ## Common error signatures
 
-Dashboard errors fall into three categories, one per pipeline stage:
+Dashboard failures fall into three categories, one per stage of the refresh → render → show pipeline:
 
-- **Refresh errors** — `build_snapshot()` fails to locate or parse `queries.yaml`. When the file is missing, `build_snapshot()` returns a partial snapshot dict that contains an `"error"` key rather than raising an exception. Downstream code that treats the snapshot as complete will encounter unexpected `None` values or missing keys.
-- **Render errors** — `render()` cannot write the output file, or the HTML template is missing the sentinel strings `__ATTUNE_SNAPSHOT__` or `__ATTUNE_TITLE__`. A missing sentinel means the JSON snapshot is never embedded and the output HTML is silently incomplete.
-- **Display errors** — `display()` receives a malformed or partial snapshot (for example, one produced by a failed refresh) and raises a `KeyError` or `TypeError` when Rich tries to format a missing field.
+- **Snapshot errors** — `build_snapshot()` returns a partial result (not an exception) when `queries.yaml` is missing. The returned `dict` still contains an error field. If you pass that partial snapshot downstream without checking it, `render()` or `display()` may produce incomplete or malformed output.
+
+- **Render errors** — `render()` writes an HTML file to the path you supply as `out`. Failures here are typically `OSError` or `FileNotFoundError` when the destination directory does not exist, or a `KeyError` when the snapshot is missing a field that the HTML template expects (for example, if the sentinel values `__ATTUNE_SNAPSHOT__` or `__ATTUNE_TITLE__` were not substituted correctly).
+
+- **Display errors** — `display()` uses Rich to pretty-print the snapshot to the terminal. Errors here usually mean the snapshot `dict` is malformed or empty, which traces back to a failed `build_snapshot()` call.
 
 ## Where errors originate
 
-| Stage | Function | File |
+| Function | Module | What can go wrong |
 |---|---|---|
-| Refresh | `build_snapshot(corpus_package, queries_path)` | `src/attune_rag/dashboard/refresh.py` |
-| Refresh | `main(corpus_package)` | `src/attune_rag/dashboard/refresh.py` |
-| Render | `render(out, snapshot, title)` | `src/attune_rag/dashboard/render.py` |
-| Display | `display(snapshot, console)` | `src/attune_rag/dashboard/show.py` |
-| Display | `main(corpus_package)` | `src/attune_rag/dashboard/show.py` |
+| `build_snapshot(corpus_package, queries_path)` | `dashboard.refresh` | Returns a partial snapshot with an error field when `queries.yaml` is missing; does not raise. |
+| `render(out, snapshot, title)` | `dashboard.render` | Raises on filesystem errors writing `out`, or if sentinel substitution fails. |
+| `display(snapshot, console)` | `dashboard.show` | Raises if the snapshot is malformed or missing expected keys. |
+| `main(corpus_package)` in `dashboard.refresh` | `dashboard.refresh` | Calls `build_snapshot()` and returns `0` on success; failures propagate from the stages above. |
+| `main(corpus_package)` in `dashboard.show` | `dashboard.show` | Calls `display()` on a freshly built snapshot; failures propagate from `build_snapshot()` or `display()`. |
 
 ## How to diagnose
 
-1. **Check whether the snapshot contains an error key.** A partial snapshot from `build_snapshot()` includes an `"error"` field when `queries.yaml` is missing or unreadable. Print or log the snapshot dict immediately after calling `build_snapshot()` and look for that key before passing the snapshot to `render()` or `display()`.
+1. **Check whether `build_snapshot()` returned a partial snapshot.** The function does not raise when `queries.yaml` is missing — it returns a `dict` that contains an error field. Inspect the snapshot before passing it to `render()` or `display()`. A partial snapshot passed silently downstream is the most common source of confusing output.
 
-2. **Verify the output path is writable.** `render()` writes an HTML file to the `out` path you supply. If the parent directory does not exist or is in a protected location (the module explicitly guards against `/etc`, `/sys`, `/proc`, `/dev`, `/boot`, `/sbin`, `/bin`, and `/usr/bin`), you will get an `OSError`. Confirm that `out.parent` exists and that your process has write permission.
+2. **Confirm `queries_path` resolves to an existing file.** If you pass a custom `queries_path` to `build_snapshot()`, verify that the path exists and is readable before calling the function. A `None` value tells the function to locate `queries.yaml` inside the `corpus_package` package.
 
-3. **Confirm the HTML template contains both sentinel strings.** `render()` replaces `__ATTUNE_SNAPSHOT__` with the JSON snapshot and `__ATTUNE_TITLE__` with the dashboard title. If a custom template is missing either string, the substitution silently produces broken HTML. Search the template file for both literals before running `render()`.
+3. **Check that the `out` directory exists before calling `render()`.** `render()` does not create intermediate directories. An `OSError` or `FileNotFoundError` from `render()` almost always means the parent of `out` does not exist.
 
-4. **Trace `KeyError` or `TypeError` in `display()` back to the snapshot.** If Rich raises during terminal rendering, the snapshot passed to `display()` is almost always the culprit — either it is partial (refresh failed) or a key was renamed. Compare the snapshot dict's keys against the fields `display()` accesses and fix the upstream source of the snapshot.
+4. **Verify the snapshot is complete before calling `display()`.** If `display()` raises or produces garbled output, print the snapshot `dict` directly first. An empty or partial snapshot points back to step 1.
+
+5. **Look for unsubstituted sentinels in the HTML output.** If the rendered HTML file contains the literal strings `__ATTUNE_SNAPSHOT__` or `__ATTUNE_TITLE__`, the template substitution step inside `render()` did not run correctly. Check that you are passing a non-empty snapshot and a non-empty `title`.
 
 ## Source files
 

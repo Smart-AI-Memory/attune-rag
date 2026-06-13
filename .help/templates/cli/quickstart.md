@@ -3,62 +3,61 @@ type: quickstart
 name: cli-quickstart
 feature: cli
 depth: quickstart
-generated_at: 2026-05-20T03:30:50.403001+00:00
-source_hash: 96db3d6bf557349fb1cbc8ae947bdd3fa30475c1926eb4172b0875e523ece578
+generated_at: 2026-06-10T06:07:13.455629+00:00
+source_hash: 96db3d6bf557349fb1cbc8ae947bdd3fa30475c1926eb4172b0875e533ece578
 status: generated
 ---
 
-# Quickstart: cli
+# Quickstart: attune-rag CLI
 
-Run a RAG query from the command line and see a grounded answer with citations in seconds.
+Run your first retrieval-augmented query against a local markdown corpus:
 
 ```bash
-attune-rag query "What is the return policy?"
+attune-rag query "What is the refund policy?" --corpus-path ./docs
 ```
 
-## Prerequisites
+You should see a grounded answer followed by citations drawn from your markdown files. If extras are missing or the path is wrong, the CLI prints a one-line actionable message and exits with code 2 instead of a traceback.
 
-- The project is cloned and installed locally (`pip install -e .` from the repo root)
+## Step 1: Point the CLI at your corpus
 
-## Steps
+Pass `--corpus-path` to tell the CLI where your markdown files live:
 
-1. **Run a query.** Pass your question as a positional argument:
+```bash
+attune-rag query "Your question here" --corpus-path ./docs
+```
 
-   ```bash
-   attune-rag query "What is the return policy?"
-   ```
+## Step 2: Choose a retriever
 
-   You should see output similar to:
+Use `--retriever` to select how documents are retrieved. The accepted values are `keyword`, `hybrid`, and `transformer`:
 
-   ```
-   Answer: Returns are accepted within 30 days of purchase. [1]
+```bash
+attune-rag query "Your question here" \
+  --corpus-path ./docs \
+  --retriever hybrid
+```
 
-   Citations:
-     [1] docs/policies.md, line 12
-   ```
+Use `--min-score` to set the keyword abstention threshold if you want to suppress low-confidence results.
 
-2. **Check corpus statistics.** Confirm your corpus loaded correctly:
+## Step 3: Inspect your corpus
 
-   ```bash
-   attune-rag corpus-info
-   ```
+Verify the CLI can see your content before running queries:
 
-   Expected output:
+```bash
+attune-rag corpus-info --corpus-path ./docs
+```
 
-   ```
-   Documents indexed: 42
-   Chunks:            317
-   Embedding model:   text-embedding-ada-002
-   ```
+Expected output: a summary of document count, token statistics, and any indexing warnings.
 
-3. **Explore available options.** Print the full help text to see every flag:
+## Step 4: Check available providers
 
-   ```bash
-   attune-rag --help
-   ```
+Confirm which LLM providers are ready to use:
 
-## Next
+```bash
+attune-rag providers
+```
 
-Read the `build_parser()` reference in `src/attune_rag/cli.py` to learn how to extend the CLI with custom subcommands.
+Expected output: a list of providers whose optional extras are installed. If a provider is missing, install the corresponding extras package and re-run.
 
-**Tags:** `cli`, `query`, `corpus-info`
+---
+
+**Next:** Swap in `--retriever transformer` and compare answer quality against `--retriever keyword` to find the retrieval setting that works best for your corpus.

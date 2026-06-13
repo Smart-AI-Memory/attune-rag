@@ -3,51 +3,45 @@ type: concept
 name: dashboard-concept
 feature: dashboard
 depth: concept
-generated_at: 2026-05-20T03:33:38.785145+00:00
+generated_at: 2026-06-10T06:08:44.480749+00:00
 source_hash: 48be0a4fd811c784bc44e073b2ac5906c205487b317ef813d32ca7c5e3b936cc
 status: generated
 ---
 
 # Dashboard
 
-## Overview
-
-The attune-rag dashboard is a living-docs view of a registered corpus that moves data through three stages — snapshot, render, and display — to give you both a shareable HTML report and an at-a-glance terminal summary.
+The attune-rag dashboard is a living-docs view of a registered corpus that shows how fresh and accurate the corpus is at any point in time.
 
 ## Three-stage pipeline
 
-Each stage is independent and has its own entry point, so you can run them individually or chain them together.
-
-**1. Snapshot (`refresh`)**
-`build_snapshot(corpus_package)` benchmarks the corpus against your `queries.yaml` file and returns a plain Python dict. If `queries.yaml` is missing, the function still returns a partial snapshot that includes an error field rather than raising an exception. This dict is the single source of truth that the other two stages consume.
-
-**2. Render (`render`)**
-`render(out, snapshot, title)` takes the snapshot dict, serializes it as JSON, and injects it into an HTML template by replacing the sentinel strings `__ATTUNE_SNAPSHOT__` and `__ATTUNE_TITLE__`. The result is a self-contained HTML file written to `out` — no external data files required to open it in a browser.
-
-**3. Display (`show`)**
-`display(snapshot, console)` pretty-prints the same snapshot dict to the terminal using [Rich](https://github.com/Textualize/rich). Pass your own `Console` instance to control output destination, or omit it to use the default.
-
-## How the pieces fit together
+The dashboard works as a linear pipeline: **refresh → render → show**. Each stage is independent, so you can stop after any step or substitute your own output path.
 
 ```
-queries.yaml
-     │
-     ▼
-build_snapshot()  ──►  snapshot dict  ──►  render()   ──►  report.html
-                                      │
-                                      └──►  display()  ──►  terminal
+build_snapshot()  →  render()  →  display()
+     ↓                  ↓             ↓
+ snapshot dict      HTML file     terminal
 ```
 
-The snapshot dict is the interface between stages. Because `render()` and `display()` both accept an arbitrary dict, you can supply a snapshot from any source — not only from `build_snapshot()`.
+1. **Refresh** — `build_snapshot(corpus_package, queries_path)` runs the benchmark against the corpus and returns a snapshot dictionary. If `queries.yaml` is missing, it returns a partial snapshot with an error field rather than raising, so downstream stages still have something to work with.
 
-## Entry points
+2. **Render** — `render(out, snapshot, title)` embeds the snapshot dictionary as JSON into an HTML template and writes the result to `out`. The title defaults to `'attune-rag dashboard'`. The HTML file is self-contained and portable.
 
-| Function | Stage | Key behaviour |
-|---|---|---|
-| `build_snapshot(corpus_package)` | Snapshot | Returns a dict; degrades gracefully on missing `queries.yaml` |
-| `render(out, snapshot, title)` | Render | Writes a self-contained HTML file to `out` |
-| `display(snapshot, console)` | Display | Pretty-prints to the terminal via Rich |
+3. **Show** — `display(snapshot, console)` pretty-prints the same snapshot to the terminal using Rich. You can pass your own `Console` instance, or omit it to use the default.
+
+Each stage also exposes a `main(corpus_package)` entry point that runs that stage end-to-end from the command line.
+
+## Snapshot as shared currency
+
+The snapshot dictionary returned by `build_snapshot()` is the data structure that connects all three stages. `render()` and `display()` both accept it directly, which means you can build the snapshot once and send it to the HTML report, the terminal, or both — without hitting the corpus twice.
 
 ## When the dashboard matters
 
-Use the dashboard when you need to verify that a corpus is answering its benchmark queries correctly, share a point-in-time report with teammates (use the rendered HTML), or spot freshness regressions quickly without leaving the terminal (use `display`).
+Use the dashboard when you want to answer "is this corpus still accurate?" without reading every template by hand. Common situations include:
+
+- After updating source files, to see whether indexed answers have drifted from the current code.
+- In CI, by calling `build_snapshot()` and inspecting the returned dict for error fields before publishing a release.
+- During local authoring, by running the `show` entry point to get a quick terminal summary without generating an HTML file.
+
+## Corpus scope
+
+All three functions default to `corpus_package='attune_help'`. Pass a different package name to point the dashboard at a different registered corpus.

@@ -3,42 +3,51 @@ type: warning
 name: cli-warning
 feature: cli
 depth: warning
-generated_at: 2026-05-20T03:30:50.396111+00:00
+generated_at: 2026-06-10T06:07:13.448525+00:00
 source_hash: 96db3d6bf557349fb1cbc8ae947bdd3fa30475c1926eb4172b0875e533ece578
 status: generated
 ---
 
-# CLI cautions
+# CLI Cautions
 
 ## What to watch for
 
-The `cli` module is the command-line entry point for debugging retrieval. It exposes two commands: `attune-rag query`, which runs a RAG query and prints a grounded answer with citations, and `attune-rag corpus-info`, which displays corpus statistics.
+The `attune_rag.cli` module exposes two public entry points: `build_parser()` and `main()`. `main()` accepts an optional `argv` list, which means the same function runs both from the shell and from test code — behavior that diverges across those contexts is the highest-risk surface in this module.
 
-Because this module bridges user input and the retrieval pipeline, mistakes here can silently produce incorrect output or swallow errors without a non-zero exit code.
+Setup errors (missing extras, bad paths, conflicting flags) intentionally exit with code 2 and a one-line message rather than raising an exception. If you call `main()` programmatically and check only for exceptions, you will miss these failure modes.
 
 ## Risk areas
 
-**`main()` exit code masking**
-`main(argv)` returns an `int` exit code, but callers that ignore the return value — including shell wrappers or test harnesses that don't assert on it — will miss failure signals. A failed retrieval or misconfigured corpus may print partial output and still return `0` if error handling is incomplete. Always assert on the return value in tests and propagate it to the shell via `sys.exit(main())`.
+### `main()` swallows setup failures as exit codes, not exceptions
 
-**`build_parser()` default argument behavior**
-`build_parser()` constructs the argument parser with its own defaults. If you call `main(argv=None)`, it reads from `sys.argv[1:]`. Passing an empty list (`[]`) is not the same as passing `None` — an empty list bypasses `sys.argv` entirely and will likely trigger a parser error or use unexpected defaults. Be explicit about which argv you intend in tests.
+When invoked from a shell, exit code 2 is the standard signal for a usage error. When invoked programmatically — for example, in a test that calls `main(argv=[...])` — an exit code of 2 is returned as an integer, not raised. Asserting on return value rather than absence of exception is the correct pattern here.
 
-**Unvalidated corpus path at parse time**
-Argument parsing succeeds before any corpus files are opened. If a user supplies an invalid path or a missing corpus, the error surfaces later in the retrieval pipeline, not at the CLI boundary. This can produce confusing error messages that point into library internals rather than the bad argument.
+**Mitigation:** Always assert on the integer return value of `main()` in tests. A return value of `0` signals success; anything else signals failure. Do not wrap `main()` calls in a bare `try/except` and treat no exception as a pass.
+
+### `build_parser()` output depends on installed extras
+
+`build_parser()` constructs the argument parser, but the available subcommands and choices (such as retriever options) reflect whichever optional extras are installed in the current environment. A parser built in a minimal environment may silently omit choices that exist in a full installation.
+
+**Mitigation:** When testing or scripting against `build_parser()`, verify your environment has the same extras installed as your target deployment. Mismatches between development and CI environments are a common source of "works locally, fails in CI" failures here.
+
+### Passing `argv=None` inherits the real `sys.argv`
+
+`main(argv=None)` falls back to reading `sys.argv` directly. In test environments where `sys.argv` is not explicitly controlled, this can cause tests to pick up arguments intended for the test runner itself.
+
+**Mitigation:** Always pass an explicit list when calling `main()` from test code: `main(argv=["query", "--corpus-path", "..."])`. Never rely on `argv=None` outside of a true shell invocation.
 
 ## How to avoid problems
 
-1. **Assert on the return value of `main()`.** In tests, write `assert main(["query", ...]) == 0` rather than calling `main()` as a void function. In scripts, use `sys.exit(main())` so the shell sees failures.
+1. **Control `argv` explicitly in tests.** Pass a full argument list to `main()` rather than letting it read `sys.argv`. This isolates your test from the runner's own arguments.
 
-2. **Pass explicit argv in tests.** Always pass a fully constructed `argv` list to `main()` in tests rather than relying on `None`. This keeps tests hermetic and prevents `sys.argv` from leaking between test cases.
+2. **Check the return value, not just exceptions.** `main()` signals errors through its integer return value. A successful run returns `0`; setup and usage errors return `2`. Structure your assertions accordingly.
 
-3. **Validate corpus inputs before invoking the CLI in automation.** If you are driving `attune-rag` programmatically, confirm that corpus paths exist and are readable before calling `main()`. This surfaces configuration errors with a clear message rather than a traceback from deep in the retrieval stack.
+3. **Match your extras across environments.** `build_parser()` reflects installed packages. Pin the same extras in your CI environment as in your development environment to prevent parser shape mismatches.
 
-4. **Treat `build_parser()` as an internal detail.** The parser structure can change as commands are added or renamed. If you depend on the parser object directly — for example, to extract subcommand names — expect that to break during refactors. Prefer driving the CLI through `main(argv)`.
+4. **Treat `_`-prefixed helpers as unstable.** Only `build_parser()` and `main()` are part of the public API in `attune_rag.cli`. Internal helpers can change without notice.
 
 ## Source files
 
 - `src/attune_rag/cli.py`
 
-**Tags:** `cli`, `query`, `corpus-info`
+**Tags:** `cli`, `query`, `corpus-info`, `corpus-path`, `retriever-tiers`, `abstention`

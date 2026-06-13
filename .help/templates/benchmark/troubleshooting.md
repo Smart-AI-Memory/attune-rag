@@ -3,8 +3,8 @@ type: troubleshooting
 name: benchmark-troubleshooting
 feature: benchmark
 depth: troubleshooting
-generated_at: 2026-05-20T03:30:01.590545+00:00
-source_hash: 82975cf88c844b87657deb87845f45f4f5fbc32319ccba10e0eb8a798847630f
+generated_at: 2026-06-10T06:07:59.719871+00:00
+source_hash: 82975cf88c844b87657deb87845f45f4f5fbc32319ccba10e0eb8a798867630f
 status: generated
 ---
 
@@ -12,80 +12,65 @@ status: generated
 
 ## Before you start
 
-The benchmark module runs retrieval and optional faithfulness scoring, then gates CI on configurable thresholds. Confirm the following before digging deeper:
+`attune-rag-benchmark` is a precision/recall/faithfulness benchmark runner that gates CI on configurable thresholds. It supports three retrieval tiers (`keyword`, `hybrid`, `transformer`), custom query files, abstention-threshold calibration, and optional faithfulness scoring. All functionality is exposed through `main()` in `attune_rag.benchmark`.
 
-- You can run `python -m attune_rag.benchmark --help` without error.
-- Your query file path is correct and the file is non-empty.
-- If you passed `--with-faithfulness`, the faithfulness scorer dependency is installed and reachable.
+Key exit codes to know:
+- `0` — all thresholds passed
+- `2` — a retrieval tier's required extra is not installed (the error message includes an install hint)
 
 ## Symptom table
 
 | If you observe | Check |
-|----------------|-------|
-| `main()` raises an exception | Read the full traceback — the file and line number identify the exact raise site in `src/attune_rag/benchmark.py` |
-| `main()` returns a non-zero exit code | Check whether a precision, recall, or faithfulness threshold was not met; thresholds are configurable |
-| Benchmark passes locally but fails in CI | Compare threshold flags and query file paths between your local invocation and the CI command |
-| Faithfulness scoring step is skipped silently | Confirm you passed `--with-faithfulness`; without it, faithfulness scoring does not run |
-| Benchmark runs but produces unexpected scores | Verify the query file content — malformed or empty queries produce misleadingly low precision/recall |
-| Slow benchmark run | Check whether `--with-faithfulness` is enabled; faithfulness scoring adds a call to an external scorer and is the most expensive step |
+|---|---|
+| Exit code `2` with an install hint | Run `pip show attune-rag` and confirm the extra for your `--retriever` tier is installed (e.g., `pip install "attune-rag[transformers]"`) |
+| `Queries file not found` on a pip install | The default golden query sets live in the repo checkout (`tests/golden/`), not the installed wheel — run from a clone or pass `--queries` (and optionally `--negatives`) pointing at your own set |
+| Scores unexpectedly low or missing | Confirm your query file format matches what the runner expects and that `--with-faithfulness` is set if you need faithfulness scores |
+| Abstention threshold mismatch in CI | Check whether `--calibrate-abstention` was run on the same dataset used in CI; a threshold calibrated on a different corpus will produce unreliable results |
+| Runner exits `0` but CI still fails | Verify the threshold flags passed to `main()` match the values your CI configuration expects |
+| Intermittent failures across runs | Check for environment drift — model weights, index state, or cached embeddings that differ between runs |
+| Slow benchmark execution | Identify whether the bottleneck is the retriever tier (`keyword` is fastest; `transformer` is slowest) and confirm no unnecessary re-indexing is happening on each run |
 
-## Step-by-step diagnosis
+## Diagnosis steps
 
-1. **Reproduce the failure with a minimal query file.**
-   Create a single-entry query file and run:
-   ```bash
-   python -m attune_rag.benchmark --query-file minimal.jsonl
-   ```
-   If the failure reproduces, the problem is not specific to your full dataset.
+1. **Reproduce with the minimal invocation.**
+   Run `attune-rag-benchmark` with only the required arguments and your exact `--retriever` value. Confirm the failure occurs before adding optional flags like `--with-faithfulness` or `--calibrate-abstention`.
 
-2. **Enable DEBUG logging.**
-   Re-run with verbose output to expose intermediate retrieval results and threshold comparisons:
-   ```bash
-   python -m attune_rag.benchmark --query-file minimal.jsonl --log-level DEBUG
-   ```
+2. **Check the exit code and stderr output.**
+   Exit code `2` means a missing extra — read the install hint printed to stderr. Any other non-zero exit points to a threshold failure or an unhandled exception; the traceback names the file and line.
 
-3. **Check the exit code explicitly.**
-   `main()` returns `0` on success. Any other value means a threshold was not met or an error occurred:
-   ```bash
-   python -m attune_rag.benchmark --query-file your_queries.jsonl; echo "Exit: $?"
-   ```
+3. **Enable verbose output.**
+   Re-run with `--verbose` to surface per-query results at the point of failure. The per-query table often identifies whether the issue is in retrieval, scoring, or threshold comparison.
 
-4. **Run the benchmark test suite.**
-   Confirm which paths are currently passing:
-   ```bash
-   pytest -k "benchmark" -v
-   ```
-   A failing test that exercises your scenario gives you a reproducible fixture to work from.
+4. **Run the benchmark tests.**
+   Execute `pytest -k "benchmark" -v` to confirm which paths are covered. If a test exercises the failing case, use its fixtures to narrow down the input that triggers the bug.
 
-5. **Isolate faithfulness scoring.**
-   If the failure only occurs with `--with-faithfulness`, run once without it to confirm the retrieval path is healthy:
-   ```bash
-   python -m attune_rag.benchmark --query-file your_queries.jsonl
-   ```
+5. **Isolate the retriever tier.**
+   If the failure is tier-specific, run each `--retriever` value (`keyword`, `hybrid`, `transformer`) in sequence to determine whether the problem is tier-dependent or present across all three.
 
 ## Common fixes
 
-- **Threshold too strict for your dataset.** If CI is failing because scores fall below threshold, adjust the threshold flags to match your dataset's expected performance. Check the CLI help for the exact flag names:
-  ```bash
-  python -m attune_rag.benchmark --help
+- **Missing retriever extra.** Exit code `2` means the selected tier's package extra is not installed. Install the correct extra for your tier:
+  ```
+  pip install "attune-rag[embeddings]"    # for --retriever hybrid
+  pip install "attune-rag[transformers]"  # for --retriever transformer
+  ```
+  `keyword` requires no extra.
+
+- **`Queries file not found` after `pip install attune-rag`.** The default golden query sets are part of the repo checkout (`tests/golden/`), not the published wheel. Either run from a clone (`git clone https://github.com/Smart-AI-Memory/attune-rag`) or pass `--queries` with your own set. To score your own corpus, `attune-rag-measure` is the purpose-built tool.
+
+- **Faithfulness scoring not appearing.** Faithfulness scoring is opt-in. Pass `--with-faithfulness` explicitly; omitting it produces no faithfulness output and is not a bug.
+
+- **Calibrated abstention threshold is stale.** If abstention behavior changed after a data or model update, re-run calibration against the current dataset:
+  ```
+  attune-rag-benchmark --calibrate-abstention --retriever <tier>
   ```
 
-- **Malformed query file.** A query file with missing fields causes silent scoring errors. Validate its structure against the expected schema before re-running.
+- **CI threshold mismatch.** If `main()` returns `0` locally but CI reports a failure, compare the threshold flags used in both environments. A threshold set in a CI config file that differs from your local invocation will produce different pass/fail results.
 
-- **Faithfulness scorer unavailable.** If `--with-faithfulness` causes an import error or connection failure, confirm the scorer dependency is installed:
-  ```bash
-  pip show <faithfulness-scorer-package>
-  ```
-  This fix requires a change outside the benchmark module itself — install or configure the dependency in your environment.
-
-- **Environment drift between local and CI.** If benchmark passes locally but fails in CI, compare dependency versions:
-  ```bash
-  pip freeze | grep -E "attune|<relevant-deps>"
-  ```
-  Pin versions in your requirements file to keep environments consistent.
+- **Dependency version drift.** A retriever or model dependency upgrade can shift scores between runs. Run `pip show <package>` to confirm installed versions match across environments, then pin the relevant packages in your CI requirements file.
 
 ## Source files
 
 - `src/attune_rag/benchmark.py`
 
-**Tags:** `benchmark`, `ci`, `precision`, `recall`, `quality`
+**Tags:** `benchmark`, `ci`, `precision`, `recall`, `quality`, `retriever-tiers`
