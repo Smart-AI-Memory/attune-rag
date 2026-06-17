@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING, Any
 
 from ..provenance import ClaimCitation
@@ -20,6 +21,24 @@ if TYPE_CHECKING:
 # surfaces a clean ValueError instead of an opaque 400 if a caller
 # tries to send hundreds.
 MAX_CITATION_DOCUMENTS = 200
+
+
+def _cache_control() -> dict[str, str]:
+    """Resolve the ephemeral ``cache_control`` marker from the environment.
+
+    ``ATTUNE_RAG_CACHE_TTL=1h`` extends the prompt-cache window from the
+    5-minute default to 1 hour at the same per-token rate — useful for
+    dashboards and benchmark sweeps that issue clusters of related queries
+    within an hour. Any other value (including unset or ``5m``) yields the
+    default 5-minute ephemeral marker, byte-identical to the prior behavior.
+
+    Read per-call (not cached in a module global) so tests can flip it via
+    ``monkeypatch.setenv``; the cost is one ``os.getenv`` on an
+    already-networked path.
+    """
+    if os.getenv("ATTUNE_RAG_CACHE_TTL", "5m").strip().lower() == "1h":
+        return {"type": "ephemeral", "ttl": "1h"}
+    return {"type": "ephemeral"}
 
 
 class ClaudeProvider:
@@ -66,7 +85,7 @@ class ClaudeProvider:
                 {
                     "type": "text",
                     "text": cached_prefix,
-                    "cache_control": {"type": "ephemeral"},
+                    "cache_control": _cache_control(),
                 },
                 {"type": "text", "text": tail},
             ]
@@ -161,7 +180,7 @@ class ClaudeProvider:
                 "citations": {"enabled": True},
             }
             if i == 0:
-                block["cache_control"] = {"type": "ephemeral"}
+                block["cache_control"] = _cache_control()
             payload.append(block)
         return payload
 

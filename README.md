@@ -152,6 +152,21 @@ or `attune-rag-benchmark --auth-mode`. Note: RAG answer *generation*
 (`ClaudeProvider`) is API-key-only — the subscription route covers
 the judge.
 
+## Prompt-cache TTL
+
+`ClaudeProvider` marks the stable prompt prefix (and the first citation
+document block) with Anthropic prompt caching. By default the cache window
+is the 5-minute `ephemeral` tier. Set `ATTUNE_RAG_CACHE_TTL=1h` to extend it
+to one hour — at the **same per-token price** — for workloads that issue
+clusters of related queries within the hour (dashboards, benchmark sweeps):
+
+```bash
+export ATTUNE_RAG_CACHE_TTL=1h   # default: 5m
+```
+
+Leave it unset for one-off queries: the cache rarely survives long enough to
+pay off, and the default wire shape is byte-identical to prior behavior.
+
 ## Quick start — Claude
 
 ```bash
