@@ -59,14 +59,42 @@ _ORIENTATION_MAX_SPECS = 3
 
 
 def _format_phase(spec: SpecInfo) -> str:
-    """Short ``(phase status)`` blurb for the orientation list."""
+    """Short ``(phase status)`` blurb for the orientation list.
+
+    Renders the reconciled ``effective_status`` (not the raw header
+    ``status``) so a stale "draft" header above a closed checklist
+    doesn't show up as in-flight draft.
+
+    When ``status_conflict`` is True (header drifted from the
+    completion state), append a one-line hint so the source drift
+    surfaces and can be fixed.
+
+    When ``staleness`` is ``"suspected-stale"`` (every declared
+    deliverable resolves on disk but the status is still non-terminal),
+    append a parallel hint so a session doesn't rebuild shipped work.
+    The two hints don't collide: an in-body terminal signal would have
+    set ``status_conflict`` and excluded the spec from the in-flight
+    list, so a still-listed spec that is ``suspected-stale`` has no
+    terminal signal — but ``status_conflict`` is checked first anyway.
+    """
     phase_label = {
         "requirements": "requirements",
         "design": "design",
         "tasks": "tasks",
     }.get(spec.phase, spec.phase)
-    status = spec.status or "no status"
-    return f"{phase_label} {status}"
+    effective = spec.effective_status or spec.status or "no status"
+    base = f"{phase_label} {effective}"
+    if spec.status_conflict:
+        source_label = {
+            "checklist": "tasks closed per checklist",
+            "terminal-line": "marked terminal in body",
+        }.get(spec.status_source, spec.status_source)
+        raw = spec.status or "no header"
+        return f'{base} — {source_label}; header says "{raw}", worth fixing'
+    if spec.staleness == "suspected-stale":
+        raw = spec.status or "no status"
+        return f'{base} — ⚠ deliverables present, status still "{raw}"; ' "verify before building"
+    return base
 
 
 def format_orientation(specs: list[SpecInfo]) -> str:
@@ -151,4 +179,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    from _sdk_gate import exit_if_sdk_subprocess
+
+    exit_if_sdk_subprocess()
     raise SystemExit(main())
