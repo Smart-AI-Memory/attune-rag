@@ -94,7 +94,7 @@ help-regen-status:  ## Show one-shot status of the pending batch (no polling).
 # See specs/sibling-claude-hooks/ in the attune umbrella workspace.
 
 ATTUNE_AI_ROOT ?= ../attune-ai
-HOOK_FILES = security_guard.py format_on_save.py compact_warning.py spec_orient.py _state.py _resume_prompt.py _transcript_size.py
+HOOK_FILES = security_guard.py format_on_save.py compact_warning.py spec_orient.py _state.py _resume_prompt.py _transcript_size.py _sdk_gate.py spec_audit.py
 
 .PHONY: sync-hooks
 sync-hooks:  ## Re-copy session hooks from attune-ai canonical + refresh checksums.
