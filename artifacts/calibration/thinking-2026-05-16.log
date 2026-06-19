@@ -269,47 +269,47 @@ Mean latency (ms)                   8275            8252         -23
 p95 latency (ms)                   11822           11718        -103
 
 Per-query verdict comparison (off vs on):
-  id                   score Δ      claims A→B  verdict shift           
-  gq-001                +0.000     18 → 13      count,partition         
-  gq-002                +0.000     13 → 18      count,partition         
-  gq-003                +0.000     20 → 19      count,partition         
-  gq-004                +0.000     21 → 19      count,partition         
-  gq-005                +0.009     10 → 11      score,count,partition   
-  gq-006                +0.000     31 → 19      count,partition         
-  gq-007                +0.000     14 → 17      count,partition         
-  gq-008                +0.000     24 → 24      —                       
-  gq-009                -0.081     19 → 15      score,count,partition   
-  gq-010                -0.091     13 → 11      score,count,partition   
-  gq-011                +0.000     17 → 17      —                       
-  gq-012                +0.000     24 → 31      count,partition         
-  gq-013                -0.046     17 → 19      score,count,partition   
-  gq-014                +0.005     13 → 14      score,count,partition   
-  gq-015                -0.077     22 → 26      score,count,partition   
-  gq-016                -0.039     15 → 19      score,count,partition   
-  gq-017                -0.098     12 → 11      score,count,partition   
-  gq-018                +0.000     16 → 17      count,partition         
-  gq-019                +0.000     18 → 27      count,partition         
-  gq-020                +0.000     12 → 16      count,partition         
-  gq-021                +0.000     17 → 16      count,partition         
-  gq-022                +0.000     26 → 25      count,partition         
-  gq-023                +0.000     16 → 17      count,partition         
-  gq-024                +0.000     20 → 21      count,partition         
-  gq-025                +0.000      8 → 10      count,partition         
-  gq-026                +0.000     16 → 18      count,partition         
-  gq-027                +0.000     18 → 20      count,partition         
-  gq-028                -0.082     19 → 16      score,count,partition   
-  gq-029                +0.000     14 → 25      count,partition         
-  gq-030                -0.043     16 → 19      score,count,partition   
-  gq-031                -0.056     17 → 18      score,count,partition   
-  gq-032                -0.062     15 → 16      score,count,partition   
-  gq-033                -0.006     20 → 18      score,count,partition   
-  gq-034                -0.121     15 → 16      score,count,partition   
-  gq-035                +0.000     25 → 42      count,partition         
-  gq-036                +0.000     18 → 17      count,partition         
-  gq-037                +0.051     17 → 15      score,count,partition   
-  gq-038                -0.083     16 → 12      score,count,partition   
-  gq-039                -0.056     16 → 18      score,count,partition   
-  gq-040                +0.000     21 → 23      count,partition         
+  id                   score Δ      claims A→B  verdict shift
+  gq-001                +0.000     18 → 13      count,partition
+  gq-002                +0.000     13 → 18      count,partition
+  gq-003                +0.000     20 → 19      count,partition
+  gq-004                +0.000     21 → 19      count,partition
+  gq-005                +0.009     10 → 11      score,count,partition
+  gq-006                +0.000     31 → 19      count,partition
+  gq-007                +0.000     14 → 17      count,partition
+  gq-008                +0.000     24 → 24      —
+  gq-009                -0.081     19 → 15      score,count,partition
+  gq-010                -0.091     13 → 11      score,count,partition
+  gq-011                +0.000     17 → 17      —
+  gq-012                +0.000     24 → 31      count,partition
+  gq-013                -0.046     17 → 19      score,count,partition
+  gq-014                +0.005     13 → 14      score,count,partition
+  gq-015                -0.077     22 → 26      score,count,partition
+  gq-016                -0.039     15 → 19      score,count,partition
+  gq-017                -0.098     12 → 11      score,count,partition
+  gq-018                +0.000     16 → 17      count,partition
+  gq-019                +0.000     18 → 27      count,partition
+  gq-020                +0.000     12 → 16      count,partition
+  gq-021                +0.000     17 → 16      count,partition
+  gq-022                +0.000     26 → 25      count,partition
+  gq-023                +0.000     16 → 17      count,partition
+  gq-024                +0.000     20 → 21      count,partition
+  gq-025                +0.000      8 → 10      count,partition
+  gq-026                +0.000     16 → 18      count,partition
+  gq-027                +0.000     18 → 20      count,partition
+  gq-028                -0.082     19 → 16      score,count,partition
+  gq-029                +0.000     14 → 25      count,partition
+  gq-030                -0.043     16 → 19      score,count,partition
+  gq-031                -0.056     17 → 18      score,count,partition
+  gq-032                -0.062     15 → 16      score,count,partition
+  gq-033                -0.006     20 → 18      score,count,partition
+  gq-034                -0.121     15 → 16      score,count,partition
+  gq-035                +0.000     25 → 42      count,partition
+  gq-036                +0.000     18 → 17      count,partition
+  gq-037                +0.051     17 → 15      score,count,partition
+  gq-038                -0.083     16 → 12      score,count,partition
+  gq-039                -0.056     16 → 18      score,count,partition
+  gq-040                +0.000     21 → 23      count,partition
 
 Verdict-shift rate: 38/40 = 95.0%
 

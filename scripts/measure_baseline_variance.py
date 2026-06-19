@@ -147,7 +147,7 @@ def _resolve_default_queries_path() -> Path | None:
         from attune_rag.benchmark import _default_queries_path
 
         return _default_queries_path()
-    except Exception:
+    except ImportError:
         return None
 
 

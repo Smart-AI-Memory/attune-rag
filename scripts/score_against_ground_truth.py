@@ -59,7 +59,7 @@ def _extract_labels(markdown: str) -> list[dict[str, Any]]:
 def _is_labeled(label: dict[str, Any]) -> bool:
     """True iff the label has a usable faithfulness_score (not the stub)."""
     raw = label.get("faithfulness_score")
-    if isinstance(raw, (int, float)) and 0.0 <= float(raw) <= 1.0:
+    if isinstance(raw, int | float) and 0.0 <= float(raw) <= 1.0:
         return True
     return False
 

@@ -45,7 +45,7 @@ from typing import Any
 import yaml
 
 from attune_rag import RagPipeline
-from attune_rag._scoring import score_queries
+from attune_rag._scoring import QueryScore, score_queries
 
 # Reproducibility constants. Locked here so the report's metadata
 # block is one place to inspect.
