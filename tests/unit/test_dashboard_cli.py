@@ -1,4 +1,5 @@
 """Tests for the `attune-rag dashboard` CLI subcommands."""
+
 from __future__ import annotations
 
 from unittest.mock import patch
@@ -52,6 +53,7 @@ def test_dashboard_render_open_flag(tmp_path):
 def test_dashboard_render_no_refresh_cmd_required():
     # --refresh-cmd should no longer exist; ensure render works without it
     from attune_rag.cli import build_parser
+
     parser = build_parser()
     # parse_known_args so unknown flags don't raise
     ns, _ = parser.parse_known_args(["dashboard", "render", "--out", "/tmp/x.html"])

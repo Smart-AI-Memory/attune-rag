@@ -84,6 +84,7 @@ dev = [
     "pytest-cov>=4.0",
     "ruff>=0.4.0",
     "black>=24.0",
+    "pre-commit>=3.5",
     "build>=1.0",
     "twine>=5.0",
     "attune-help>=0.10.1,<0.11",
@@ -147,6 +148,12 @@ select = ["E", "F", "W", "I", "B", "BLE", "UP"]
 # Rich markup strings in dashboard and CLI help text can't be shortened cleanly
 "src/attune_rag/dashboard/*.py" = ["E501", "BLE001"]
 "src/attune_rag/cli.py" = ["E501"]
+# Embedded CSS/HTML template strings in the help-site builder can't be
+# cleanly wrapped without hurting readability (same rationale as above).
+"site/build_help.py" = ["E501"]
+# Diagnostic runners insert the repo `src/` onto sys.path before importing
+# attune_rag — imports must follow the path manipulation, so E402 is expected.
+"docs/specs/embedding-retriever/run_diagnostic_*.py" = ["E402"]
 
 [tool.black]
 line-length = 100

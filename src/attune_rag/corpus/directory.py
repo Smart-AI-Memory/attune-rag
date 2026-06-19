@@ -279,9 +279,7 @@ class DirectoryCorpus(CorpusProtocol):
         self._warn_if_alias_degraded(entries)
         return entries, alias_index
 
-    def _warn_if_alias_degraded(
-        self, entries: dict[str, RetrievalEntry]
-    ) -> None:
+    def _warn_if_alias_degraded(self, entries: dict[str, RetrievalEntry]) -> None:
         """Warn once if aliased entries can't satisfy the overlap floor.
 
         Observability only — does not touch retrieval scoring. Detects the

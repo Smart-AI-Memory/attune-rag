@@ -11,4 +11,3 @@
 | `Security` | 3 |
 
 **Status:** RESET (freeze active, week 1/4)
-

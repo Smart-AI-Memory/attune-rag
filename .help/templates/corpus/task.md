@@ -169,4 +169,3 @@ print(f"Loaded corpus '{corpus.name}' at version {corpus.version}")
 | Location | Severity | Issue |
 |---|---|---|
 | Line 138 (code fence) | error | `from corpus import …` — module not importable |
-

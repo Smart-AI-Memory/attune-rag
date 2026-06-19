@@ -65,7 +65,10 @@ def main():
     emb = EmbeddingRetriever(model_name=MODEL)
 
     print(f"hard n={len(hard)}  full-cbh n={len(cbh)}  attune-help n={len(help_q)}\n")
-    hdr = f"{'config':28s} {'hardP@1':>8s}{'hardR@3':>8s} {'cbhP@1':>8s}{'cbhR@3':>8s} {'helpP@1':>8s}{'helpR@3':>8s}"
+    hdr = (
+        f"{'config':28s} {'hardP@1':>8s}{'hardR@3':>8s} "
+        f"{'cbhP@1':>8s}{'cbhR@3':>8s} {'helpP@1':>8s}{'helpR@3':>8s}"
+    )
     print(hdr)
     print("-" * len(hdr))
 
