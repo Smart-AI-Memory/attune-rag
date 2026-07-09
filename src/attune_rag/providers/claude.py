@@ -5,11 +5,18 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING, Any
 
+from ..model_tiers import ModelRefusalError, fable_extras, resolve_model
 from ..provenance import ClaimCitation
 from .base import CitationDocument, CitedResponse
 
 if TYPE_CHECKING:
     from anthropic import AsyncAnthropic
+
+
+_RETENTION_HINT = (
+    "claude-fable-5 requires >=30-day org data retention - check the org's "
+    "retention configuration before debugging the payload."
+)
 
 
 # Per-request document ceiling enforced by attune-rag.
@@ -41,6 +48,13 @@ def _cache_control() -> dict[str, str]:
     return {"type": "ephemeral"}
 
 
+def _stop_detail(details: Any, key: str) -> str | None:
+    """Read a ``stop_details`` field from either an object or a raw dict."""
+    if isinstance(details, dict):
+        return details.get(key)
+    return getattr(details, key, None)
+
+
 class ClaudeProvider:
     """Thin async wrapper over Anthropic's Messages API.
 
@@ -51,7 +65,11 @@ class ClaudeProvider:
     """
 
     name = "claude"
-    DEFAULT_MODEL = "claude-sonnet-4-6"
+    # Deprecated alias: an import-time snapshot of the capable tier, kept
+    # because external tests reference it. Runtime paths call
+    # resolve_model("capable") per call instead, so env pins (e.g. in CI
+    # or via monkeypatch) take effect without re-import.
+    DEFAULT_MODEL = resolve_model("capable")
     supports_native_citations = True
 
     def __init__(
@@ -92,10 +110,12 @@ class ClaudeProvider:
         else:
             content = prompt
 
-        response = await self._client.messages.create(
-            model=model or self.DEFAULT_MODEL,
-            max_tokens=max_tokens,
-            messages=[{"role": "user", "content": content}],
+        response = await self._create_message(
+            {
+                "model": model or resolve_model("capable"),
+                "max_tokens": max_tokens,
+                "messages": [{"role": "user", "content": content}],
+            }
         )
         chunks: list[str] = []
         for block in response.content:
@@ -138,15 +158,49 @@ class ClaudeProvider:
         content.append({"type": "text", "text": query})
 
         kwargs: dict[str, Any] = {
-            "model": model or self.DEFAULT_MODEL,
+            "model": model or resolve_model("capable"),
             "max_tokens": max_tokens,
             "messages": [{"role": "user", "content": content}],
         }
         if system is not None:
             kwargs["system"] = system
 
-        response = await self._client.messages.create(**kwargs)
+        response = await self._create_message(kwargs)
         return self._parse_cited_response(response)
+
+    async def _create_message(self, kwargs: dict[str, Any]) -> Any:
+        """Dispatch a Messages API call, routing fable models to the beta namespace.
+
+        Non-fable models go straight to ``client.messages.create`` with the
+        exact pre-tier wire payload. Fable models (``fable_extras`` non-empty)
+        switch to ``client.beta.messages.create`` — the ``fallbacks`` param is
+        beta-namespace only — and gain two failure-mode translations:
+
+        - ``stop_reason == "refusal"`` raises :class:`ModelRefusalError`
+          (reaching it means the whole fable→opus server-side fallback chain
+          refused); callers must surface it, never silently skip.
+        - a 400 ``invalid_request_error`` is re-raised with a hint that
+          fable requires >=30-day org data retention, the usual culprit.
+        """
+        extras = fable_extras(kwargs["model"])
+        if not extras:
+            return await self._client.messages.create(**kwargs)
+
+        try:
+            response = await self._client.beta.messages.create(**kwargs, **extras)
+        except Exception as exc:  # noqa: BLE001 — annotated and re-raised
+            if getattr(exc, "status_code", None) == 400:
+                exc.args = (f"{exc}\n{_RETENTION_HINT}",)
+            raise
+        if getattr(response, "stop_reason", None) == "refusal":
+            details = getattr(response, "stop_details", None)
+            raise ModelRefusalError(
+                f"model {kwargs['model']} refused the request "
+                "(the entire server-side fallback chain refused)",
+                category=_stop_detail(details, "category"),
+                explanation=_stop_detail(details, "explanation"),
+            )
+        return response
 
     @staticmethod
     def _build_documents_payload(
