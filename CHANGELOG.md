@@ -6,6 +6,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-07-09
+
+Model tiers: three named tiers (premium/capable/cheap) replace
+hardcoded model IDs across the library, with `claude-fable-5` as the
+premium default and env-var pins for CI and rollback
+(specs/fable-model-tiers in the attune workspace repo; PR #188).
+
+### Added
+
+- **`attune_rag.model_tiers`** (canonical copy — mirrored in
+  attune-author with a drift test): `resolve_model(tier)` resolves
+  premium/capable/cheap → `claude-fable-5` / `claude-sonnet-5` /
+  `claude-haiku-4-5`, overridable per call via `ATTUNE_MODEL_PREMIUM`
+  / `_CAPABLE` / `_CHEAP`; `fable_extras(model)` returns the
+  server-side-fallback opt-in for `claude-fable*` models
+  (`betas: ["server-side-fallback-2026-06-01"]` + opus-4-8
+  `fallbacks` via `extra_body` — no shipped SDK types the param);
+  `ModelRefusalError` carries `stop_details` category/explanation.
+  Stdlib-only module (no anthropic import).
+- **Fable request handling** in `ClaudeProvider` and the faithfulness
+  judge via a shared `create_message` dispatch: fable models route
+  through `client.beta.messages.create`, `stop_reason == "refusal"`
+  raises `ModelRefusalError` (bench runs record the item as errored,
+  never silently skipped), and a 400 on a fable call carries a
+  30-day-org-data-retention hint.
+
+### Changed
+
+- **`ClaudeProvider` default model**: `claude-sonnet-4-6` → the
+  capable tier (`claude-sonnet-5`), resolved per call. `DEFAULT_MODEL`
+  remains as a deprecated import-time alias.
+- **`QueryExpander` / `LLMReranker`**: `model` defaults to `None` →
+  cheap tier per call (`claude-haiku-4-5`; `ATTUNE_MODEL_CHEAP` pin
+  respected). Explicit `model=` arguments unchanged everywhere.
+- **Faithfulness judge / bench_prompts**: judge default
+  `claude-sonnet-4-6` → the premium tier (`claude-fable-5`;
+  rag-gate CI pins `ATTUNE_MODEL_PREMIUM=claude-sonnet-5`).
+  `use_thinking=True` on a fable model downgrades to no-thinking with
+  a warning (fable rejects explicit thinking params). Judge reply
+  `max_tokens` default 2048 → 3072 for the ~30% heavier
+  sonnet-5/fable-5 tokenizer.
+
 ## [0.7.0] — 2026-06-11
 
 Subscription-first judge: the faithfulness judge routes through the
