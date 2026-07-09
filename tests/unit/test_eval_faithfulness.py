@@ -569,7 +569,7 @@ async def test_fable_judge_routes_to_beta_with_extras() -> None:
     sent = client.beta.messages.last_call
     assert sent is not None
     assert sent["betas"] == ["server-side-fallback-2026-06-01"]
-    assert sent["fallbacks"] == [{"model": "claude-opus-4-8"}]
+    assert sent["extra_body"] == {"fallbacks": [{"model": "claude-opus-4-8"}]}
     assert sent["tool_choice"] == {"type": "tool", "name": "report_faithfulness"}
 
 
@@ -611,4 +611,4 @@ async def test_non_fable_judge_stays_on_plain_namespace() -> None:
     sent = client.messages.last_call
     assert sent is not None
     assert "betas" not in sent
-    assert "fallbacks" not in sent
+    assert "extra_body" not in sent

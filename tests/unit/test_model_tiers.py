@@ -83,7 +83,9 @@ class TestFableExtras:
         extras = fable_extras("claude-fable-5")
         assert extras == {
             "betas": ["server-side-fallback-2026-06-01"],
-            "fallbacks": [{"model": "claude-opus-4-8"}],
+            # fallbacks rides in extra_body: no shipped SDK types it as a
+            # named param yet (verified through 0.96).
+            "extra_body": {"fallbacks": [{"model": "claude-opus-4-8"}]},
         }
 
     def test_prefix_gating_covers_future_fable_ids(self):
@@ -99,10 +101,10 @@ class TestFableExtras:
     def test_returns_fresh_objects_each_call(self):
         first = fable_extras("claude-fable-5")
         first["betas"].append("mutated")
-        first["fallbacks"][0]["model"] = "mutated"
+        first["extra_body"]["fallbacks"][0]["model"] = "mutated"
         assert fable_extras("claude-fable-5") == {
             "betas": ["server-side-fallback-2026-06-01"],
-            "fallbacks": [{"model": "claude-opus-4-8"}],
+            "extra_body": {"fallbacks": [{"model": "claude-opus-4-8"}]},
         }
 
 

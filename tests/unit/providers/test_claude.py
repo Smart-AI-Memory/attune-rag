@@ -219,7 +219,7 @@ def test_fable_model_routes_to_beta_namespace_with_extras() -> None:
     kwargs = client.beta.messages.create.await_args.kwargs
     assert kwargs["model"] == "claude-fable-5"
     assert kwargs["betas"] == ["server-side-fallback-2026-06-01"]
-    assert kwargs["fallbacks"] == [{"model": "claude-opus-4-8"}]
+    assert kwargs["extra_body"] == {"fallbacks": [{"model": "claude-opus-4-8"}]}
 
 
 def test_capable_env_pinned_to_fable_routes_to_beta(monkeypatch) -> None:
@@ -245,7 +245,7 @@ def test_non_fable_call_never_touches_beta_namespace() -> None:
     client.beta.messages.create.assert_not_awaited()
     kwargs = client.messages.create.await_args.kwargs
     assert "betas" not in kwargs
-    assert "fallbacks" not in kwargs
+    assert "extra_body" not in kwargs
 
 
 def test_fable_refusal_raises_model_refusal_error() -> None:

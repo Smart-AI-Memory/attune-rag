@@ -101,12 +101,15 @@ def fable_extras(model: str) -> dict[str, Any]:
 
     Non-empty means the caller must switch from ``client.messages.create``
     to ``client.beta.messages.create`` — the ``fallbacks`` param is
-    beta-namespace only. Fresh lists are returned each call so callers can
-    mutate the kwargs safely.
+    beta-namespace only. ``fallbacks`` rides in ``extra_body`` because no
+    shipped anthropic SDK types it as a named param yet (verified through
+    0.96); ``extra_body`` merges into the request JSON on every SDK
+    version. Fresh objects are returned each call so callers can mutate
+    the kwargs safely.
     """
     if not model.startswith("claude-fable"):
         return {}
     return {
         "betas": list(_FABLE_BETAS),
-        "fallbacks": [dict(f) for f in _FABLE_FALLBACKS],
+        "extra_body": {"fallbacks": [dict(f) for f in _FABLE_FALLBACKS]},
     }
