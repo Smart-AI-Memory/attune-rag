@@ -55,6 +55,43 @@ def _stop_detail(details: Any, key: str) -> str | None:
     return getattr(details, key, None)
 
 
+async def create_message(client: Any, kwargs: dict[str, Any]) -> Any:
+    """Dispatch a Messages API call, routing fable models to the beta namespace.
+
+    Shared by :class:`ClaudeProvider` and the eval judge (which owns its own
+    ``AsyncAnthropic`` client) so the fable rules live in one place per
+    package. Non-fable models go straight to ``client.messages.create`` with
+    the exact pre-tier wire payload. Fable models (``fable_extras`` non-empty)
+    switch to ``client.beta.messages.create`` — the ``fallbacks`` param is
+    beta-namespace only — and gain two failure-mode translations:
+
+    - ``stop_reason == "refusal"`` raises :class:`ModelRefusalError`
+      (reaching it means the whole fable→opus server-side fallback chain
+      refused); callers must surface it, never silently skip.
+    - a 400 ``invalid_request_error`` is re-raised with a hint that
+      fable requires >=30-day org data retention, the usual culprit.
+    """
+    extras = fable_extras(kwargs["model"])
+    if not extras:
+        return await client.messages.create(**kwargs)
+
+    try:
+        response = await client.beta.messages.create(**kwargs, **extras)
+    except Exception as exc:  # noqa: BLE001 — annotated and re-raised
+        if getattr(exc, "status_code", None) == 400:
+            exc.args = (f"{exc}\n{_RETENTION_HINT}",)
+        raise
+    if getattr(response, "stop_reason", None) == "refusal":
+        details = getattr(response, "stop_details", None)
+        raise ModelRefusalError(
+            f"model {kwargs['model']} refused the request "
+            "(the entire server-side fallback chain refused)",
+            category=_stop_detail(details, "category"),
+            explanation=_stop_detail(details, "explanation"),
+        )
+    return response
+
+
 class ClaudeProvider:
     """Thin async wrapper over Anthropic's Messages API.
 
@@ -169,38 +206,7 @@ class ClaudeProvider:
         return self._parse_cited_response(response)
 
     async def _create_message(self, kwargs: dict[str, Any]) -> Any:
-        """Dispatch a Messages API call, routing fable models to the beta namespace.
-
-        Non-fable models go straight to ``client.messages.create`` with the
-        exact pre-tier wire payload. Fable models (``fable_extras`` non-empty)
-        switch to ``client.beta.messages.create`` — the ``fallbacks`` param is
-        beta-namespace only — and gain two failure-mode translations:
-
-        - ``stop_reason == "refusal"`` raises :class:`ModelRefusalError`
-          (reaching it means the whole fable→opus server-side fallback chain
-          refused); callers must surface it, never silently skip.
-        - a 400 ``invalid_request_error`` is re-raised with a hint that
-          fable requires >=30-day org data retention, the usual culprit.
-        """
-        extras = fable_extras(kwargs["model"])
-        if not extras:
-            return await self._client.messages.create(**kwargs)
-
-        try:
-            response = await self._client.beta.messages.create(**kwargs, **extras)
-        except Exception as exc:  # noqa: BLE001 — annotated and re-raised
-            if getattr(exc, "status_code", None) == 400:
-                exc.args = (f"{exc}\n{_RETENTION_HINT}",)
-            raise
-        if getattr(response, "stop_reason", None) == "refusal":
-            details = getattr(response, "stop_details", None)
-            raise ModelRefusalError(
-                f"model {kwargs['model']} refused the request "
-                "(the entire server-side fallback chain refused)",
-                category=_stop_detail(details, "category"),
-                explanation=_stop_detail(details, "explanation"),
-            )
-        return response
+        return await create_message(self._client, kwargs)
 
     @staticmethod
     def _build_documents_payload(
