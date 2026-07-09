@@ -6,6 +6,8 @@ import asyncio
 import json
 import logging
 
+from .model_tiers import resolve_model
+
 logger = logging.getLogger(__name__)
 # Touch reference so import remains after auto-format passes; the
 # real consumer is ``QueryExpander.expand_async`` below.
@@ -34,10 +36,12 @@ class QueryExpander:
 
     def __init__(
         self,
-        model: str = "claude-haiku-4-5",
+        model: str | None = None,
         api_key: str | None = None,
         cache: bool = True,
     ) -> None:
+        # None → cheap tier, resolved per expand() call so env pins
+        # (ATTUNE_MODEL_CHEAP) apply without reconstructing the expander.
         self._model = model
         self._api_key = api_key
         self._cache: dict[str, list[str]] | None = {} if cache else None
@@ -67,7 +71,7 @@ class QueryExpander:
 
         try:
             response = self._anthropic.messages.create(
-                model=self._model,
+                model=self._model or resolve_model("cheap"),
                 max_tokens=200,
                 system=[
                     {

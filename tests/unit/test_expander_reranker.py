@@ -130,6 +130,32 @@ class TestQueryExpander:
             with pytest.raises(RuntimeError, match=r"\[claude\]"):
                 expander._anthropic  # noqa: B018
 
+    # -- cheap tier resolution (specs/fable-model-tiers, task 3) --
+
+    def test_default_model_resolves_cheap_tier(self, monkeypatch):
+        monkeypatch.delenv("ATTUNE_MODEL_CHEAP", raising=False)
+        expander, mock_client = self._expander_with_mock("[]")
+        expander.expand("q")
+        assert mock_client.messages.create.call_args.kwargs["model"] == "claude-haiku-4-5"
+
+    def test_cheap_env_pin_respected_per_call(self, monkeypatch):
+        expander, mock_client = self._expander_with_mock("[]")
+        expander.expand("q1")
+        assert mock_client.messages.create.call_args.kwargs["model"] == "claude-haiku-4-5"
+        # Pin flips the model on the *same* instance — resolution is per call.
+        monkeypatch.setenv("ATTUNE_MODEL_CHEAP", "claude-haiku-4-5-20251001")
+        expander.expand("q2")
+        assert mock_client.messages.create.call_args.kwargs["model"] == "claude-haiku-4-5-20251001"
+
+    def test_explicit_model_wins_over_tier(self, monkeypatch):
+        monkeypatch.setenv("ATTUNE_MODEL_CHEAP", "claude-haiku-4-5-20251001")
+        expander = QueryExpander(model="claude-sonnet-5", cache=False)
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = _fake_response("[]")
+        expander._client = mock_client
+        expander.expand("q")
+        assert mock_client.messages.create.call_args.kwargs["model"] == "claude-sonnet-5"
+
 
 # ---------------------------------------------------------------------------
 # LLMReranker tests
@@ -236,6 +262,35 @@ class TestLLMReranker:
             reranker._client = None
             with pytest.raises(RuntimeError, match=r"\[claude\]"):
                 reranker._anthropic  # noqa: B018
+
+    # -- cheap tier resolution (specs/fable-model-tiers, task 3) --
+
+    def test_default_model_resolves_cheap_tier(self, monkeypatch):
+        monkeypatch.delenv("ATTUNE_MODEL_CHEAP", raising=False)
+        hits = [_make_hit("a.md"), _make_hit("b.md")]
+        reranker, mock_client = self._reranker_with_mock("[0, 1]")
+        reranker.rerank("q", hits)
+        assert mock_client.messages.create.call_args.kwargs["model"] == "claude-haiku-4-5"
+
+    def test_cheap_env_pin_respected_per_call(self, monkeypatch):
+        hits = [_make_hit("a.md"), _make_hit("b.md")]
+        reranker, mock_client = self._reranker_with_mock("[0, 1]")
+        reranker.rerank("q", hits)
+        assert mock_client.messages.create.call_args.kwargs["model"] == "claude-haiku-4-5"
+        # Pin flips the model on the *same* instance — resolution is per call.
+        monkeypatch.setenv("ATTUNE_MODEL_CHEAP", "claude-haiku-4-5-20251001")
+        reranker.rerank("q", hits)
+        assert mock_client.messages.create.call_args.kwargs["model"] == "claude-haiku-4-5-20251001"
+
+    def test_explicit_model_wins_over_tier(self, monkeypatch):
+        monkeypatch.setenv("ATTUNE_MODEL_CHEAP", "claude-haiku-4-5-20251001")
+        hits = [_make_hit("a.md"), _make_hit("b.md")]
+        reranker = LLMReranker(model="claude-sonnet-5")
+        mock_client = MagicMock()
+        mock_client.messages.create.return_value = _fake_response("[0, 1]")
+        reranker._client = mock_client
+        reranker.rerank("q", hits)
+        assert mock_client.messages.create.call_args.kwargs["model"] == "claude-sonnet-5"
 
 
 # ---------------------------------------------------------------------------

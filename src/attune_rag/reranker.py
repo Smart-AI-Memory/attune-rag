@@ -6,6 +6,8 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
+from .model_tiers import resolve_model
+
 if TYPE_CHECKING:
     from .retrieval import RetrievalHit
 
@@ -40,7 +42,7 @@ class LLMReranker:
 
     def __init__(
         self,
-        model: str = "claude-haiku-4-5",
+        model: str | None = None,
         api_key: str | None = None,
         candidate_multiplier: int = 3,
         timeout: float = 60.0,
@@ -49,9 +51,11 @@ class LLMReranker:
 
         Args:
             model: Anthropic model id used for the rerank call.
-                Defaults to Haiku 4.5 — cheapest model that
-                gives stable index lists. Override for
-                experimentation, not for production.
+                ``None`` (default) resolves the cheap tier per
+                rerank() call (``ATTUNE_MODEL_CHEAP`` env pin
+                respected) — cheapest model that gives stable
+                index lists. Override for experimentation, not
+                for production.
             api_key: Optional explicit ``ANTHROPIC_API_KEY``.
                 When ``None``, the Anthropic SDK pulls from the
                 environment. Useful for tests that need to scope
@@ -108,7 +112,7 @@ class LLMReranker:
 
         try:
             response = self._anthropic.messages.create(
-                model=self._model,
+                model=self._model or resolve_model("cheap"),
                 max_tokens=100,
                 system=[
                     {
