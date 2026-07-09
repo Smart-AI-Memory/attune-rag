@@ -163,7 +163,7 @@ async def test_missing_tool_use_block_raises() -> None:
     class _BadClient:
         messages = _BadMessages()
 
-    judge = FaithfulnessJudge(client=_BadClient())
+    judge = FaithfulnessJudge(client=_BadClient(), model="claude-sonnet-4-6")
     with pytest.raises(RuntimeError, match="no tool_use or text block"):
         await judge.score("q", "nonempty answer", "p")
 
@@ -315,7 +315,7 @@ async def test_parser_falls_back_to_text_block_when_no_tool_use() -> None:
     import json as _json
 
     client = _ScriptedClient([_FakeTextBlock(type="text", text=_json.dumps(payload))])
-    judge = FaithfulnessJudge(client=client)
+    judge = FaithfulnessJudge(client=client, model="claude-sonnet-4-6")
     result = await judge.score("q", "answer", "p")
     assert result.score == pytest.approx(2 / 3)
     assert "two of three" in result.reasoning
@@ -330,7 +330,7 @@ async def test_parser_strips_json_code_fences() -> None:
         + "\n```"
     )
     client = _ScriptedClient([_FakeTextBlock(type="text", text=fenced)])
-    judge = FaithfulnessJudge(client=client)
+    judge = FaithfulnessJudge(client=client, model="claude-sonnet-4-6")
     result = await judge.score("q", "a", "p")
     assert result.score == 1.0
 
@@ -338,7 +338,7 @@ async def test_parser_strips_json_code_fences() -> None:
 @pytest.mark.asyncio
 async def test_parser_raises_on_unparseable_text_block() -> None:
     client = _ScriptedClient([_FakeTextBlock(type="text", text="not json at all, just prose")])
-    judge = FaithfulnessJudge(client=client)
+    judge = FaithfulnessJudge(client=client, model="claude-sonnet-4-6")
     with pytest.raises(RuntimeError, match="unparseable text"):
         await judge.score("q", "a", "p")
 
@@ -347,7 +347,7 @@ async def test_parser_raises_on_unparseable_text_block() -> None:
 async def test_parser_raises_when_text_json_not_object() -> None:
     """Text block parses to a JSON array, not an object."""
     client = _ScriptedClient([_FakeTextBlock(type="text", text='["a", "b"]')])
-    judge = FaithfulnessJudge(client=client)
+    judge = FaithfulnessJudge(client=client, model="claude-sonnet-4-6")
     with pytest.raises(RuntimeError, match="not an object"):
         await judge.score("q", "a", "p")
 
@@ -366,7 +366,7 @@ async def test_parser_skips_thinking_blocks() -> None:
             _FakeToolUseBlock(type="tool_use", input=payload),
         ]
     )
-    judge = FaithfulnessJudge(client=client)
+    judge = FaithfulnessJudge(client=client, model="claude-sonnet-4-6")
     result = await judge.score("q", "a", "p")
     assert result.score == 1.0
     assert result.supported_claims == ["claim"]
@@ -389,7 +389,7 @@ async def test_parser_prefers_tool_use_over_text_block() -> None:
             _FakeToolUseBlock(type="tool_use", input=tool_payload),
         ]
     )
-    judge = FaithfulnessJudge(client=client)
+    judge = FaithfulnessJudge(client=client, model="claude-sonnet-4-6")
     result = await judge.score("q", "a", "p")
     assert result.supported_claims == ["from_tool"]
 
@@ -513,3 +513,102 @@ def test_to_dict_thinking_used_defaults_false() -> None:
     )
     d = r.to_dict()
     assert d["thinking_used"] is False
+
+
+# --- premium tier + fable handling (specs/fable-model-tiers, task 4) ---
+
+
+class _FakeBetaClient:
+    """Fake client exposing both namespaces, recording which was hit."""
+
+    def __init__(self, payload: dict[str, Any], stop_reason: str = "tool_use") -> None:
+        self.messages = _FakeMessages(payload)
+        self.beta = type("_Beta", (), {})()
+        self.beta.messages = _FakeMessages(payload)
+        self._stop_reason = stop_reason
+        # Wrap beta create to stamp stop_reason on the response.
+        original = self.beta.messages.create
+
+        async def create(**kwargs: Any) -> Any:
+            response = await original(**kwargs)
+            response.stop_reason = self._stop_reason
+            return response
+
+        self.beta.messages.create = create
+
+
+def _payload() -> dict[str, Any]:
+    return {"supported_claims": ["a"], "unsupported_claims": [], "reasoning": "ok"}
+
+
+def test_default_judge_model_is_premium_tier(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("ATTUNE_MODEL_PREMIUM", raising=False)
+    judge = FaithfulnessJudge(client=_FakeClient(_payload()))
+    assert judge.model == "claude-fable-5"
+
+
+def test_premium_env_pin_changes_judge_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ATTUNE_MODEL_PREMIUM", "claude-sonnet-5")
+    judge = FaithfulnessJudge(client=_FakeClient(_payload()))
+    assert judge.model == "claude-sonnet-5"
+
+
+def test_explicit_judge_model_wins_over_tier(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ATTUNE_MODEL_PREMIUM", "claude-sonnet-5")
+    judge = FaithfulnessJudge(client=_FakeClient(_payload()), model="claude-sonnet-4-6")
+    assert judge.model == "claude-sonnet-4-6"
+
+
+@pytest.mark.asyncio
+async def test_fable_judge_routes_to_beta_with_extras() -> None:
+    client = _FakeBetaClient(_payload())
+    judge = FaithfulnessJudge(client=client, model="claude-fable-5")  # type: ignore[arg-type]
+    result = await judge.score("q", "a", "p")
+    assert result.score == 1.0
+    assert client.messages.last_call is None  # non-beta namespace untouched
+    sent = client.beta.messages.last_call
+    assert sent is not None
+    assert sent["betas"] == ["server-side-fallback-2026-06-01"]
+    assert sent["extra_body"] == {"fallbacks": [{"model": "claude-opus-4-8"}]}
+    assert sent["tool_choice"] == {"type": "tool", "name": "report_faithfulness"}
+
+
+@pytest.mark.asyncio
+async def test_fable_judge_refusal_raises_model_refusal_error() -> None:
+    from attune_rag.model_tiers import ModelRefusalError
+
+    client = _FakeBetaClient(_payload(), stop_reason="refusal")
+    judge = FaithfulnessJudge(client=client, model="claude-fable-5")  # type: ignore[arg-type]
+    with pytest.raises(ModelRefusalError):
+        await judge.score("q", "a", "p")
+
+
+@pytest.mark.asyncio
+async def test_fable_judge_with_thinking_downgrades_to_no_thinking(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Fable models reject explicit thinking params; the judge must score
+    without thinking (and say so) instead of sending a doomed request."""
+    import logging
+
+    client = _FakeBetaClient(_payload())
+    judge = FaithfulnessJudge(client=client, model="claude-fable-5")  # type: ignore[arg-type]
+    with caplog.at_level(logging.WARNING, logger="attune_rag.eval.faithfulness"):
+        result = await judge.score("q", "a", "p", use_thinking=True)
+    sent = client.beta.messages.last_call
+    assert sent is not None
+    assert "thinking" not in sent
+    assert sent["max_tokens"] == 3072  # thinking budget NOT added on top
+    assert sent["tool_choice"] == {"type": "tool", "name": "report_faithfulness"}
+    assert result.thinking_used is False
+    assert any("not supported on fable" in r.message for r in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_non_fable_judge_stays_on_plain_namespace() -> None:
+    judge, client = _make_judge(_payload())
+    await judge.score("q", "a", "p")
+    sent = client.messages.last_call
+    assert sent is not None
+    assert "betas" not in sent
+    assert "extra_body" not in sent

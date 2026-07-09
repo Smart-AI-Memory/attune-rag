@@ -249,3 +249,50 @@ def test_load_queries_empty_list_raises(tmp_path: Path) -> None:
     f.write_text("queries: []\n")
     with pytest.raises(ValueError, match="No queries found"):
         bench_prompts._load_queries(f)
+
+
+# ---------- premium tier (specs/fable-model-tiers, task 4) ----------
+
+
+def test_judge_model_flag_defaults_to_none_resolving_premium() -> None:
+    """--judge-model default is None: the FaithfulnessJudge resolves the
+    premium tier itself, so env pins (CI's ATTUNE_MODEL_PREMIUM) apply."""
+    parser = bench_prompts._build_parser()
+    args = parser.parse_args([])
+    assert args.judge_model is None
+    assert "premium tier" in parser.format_help()
+
+
+@pytest.mark.asyncio
+async def test_run_records_judge_refusal_as_errored_item(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A ModelRefusalError from the judge must surface as an errored run
+    (counted in error_count), never a silent skip."""
+    from attune_rag.model_tiers import ModelRefusalError
+
+    class _StubJudge:
+        def __init__(self, **kwargs: object) -> None:
+            pass
+
+    class _StubPipeline:
+        pass
+
+    monkeypatch.setattr("attune_rag.eval.faithfulness.FaithfulnessJudge", _StubJudge)
+    monkeypatch.setattr("attune_rag.RagPipeline", _StubPipeline)
+
+    async def _refuse(*args: object, **kwargs: object) -> object:
+        raise ModelRefusalError("judge refused", category="harmful_content")
+
+    monkeypatch.setattr(bench_prompts, "_score_one", _refuse)
+
+    reports = await bench_prompts._run(
+        queries=[{"id": "q1", "query": "how?", "difficulty": "easy"}],
+        variants=["baseline"],
+        k=3,
+        model=None,
+        judge_model=None,
+    )
+    assert len(reports) == 1
+    assert reports[0].error_count == 1
+    assert "ModelRefusalError" in (reports[0].runs[0].error or "")

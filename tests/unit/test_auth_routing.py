@@ -97,7 +97,7 @@ def test_redact_strips_key_shapes() -> None:
 
 def test_judge_sub_route_builds_no_api_client(monkeypatch: pytest.MonkeyPatch) -> None:
     _enable_subscription(monkeypatch)
-    judge = FaithfulnessJudge()
+    judge = FaithfulnessJudge(model="claude-sonnet-4-6")
     assert judge._route == "sub"
     assert judge._client is None
 
@@ -148,7 +148,7 @@ async def test_score_sub_ignores_thinking(monkeypatch: pytest.MonkeyPatch) -> No
         return dict(_PAYLOAD)
 
     monkeypatch.setattr(auth, "query_subscription_structured", fake_query)
-    judge = FaithfulnessJudge()
+    judge = FaithfulnessJudge(model="claude-sonnet-4-6")
     result = await judge.score(query="q?", answer="A.", passages="A.", use_thinking=True)
     assert result.thinking_used is False
 
@@ -176,7 +176,7 @@ async def test_score_auto_falls_back_to_api(monkeypatch: pytest.MonkeyPatch) -> 
             return _FakeResponse(content=[_FakeBlock(type="tool_use", input=dict(_PAYLOAD))])
 
     fake_client = types.SimpleNamespace(messages=_FakeMessages())
-    judge = FaithfulnessJudge()
+    judge = FaithfulnessJudge(model="claude-sonnet-4-6")
     monkeypatch.setattr(judge, "_build_api_client", lambda: fake_client)
 
     result = await judge.score(query="q?", answer="A and B.", passages="A.")
@@ -209,7 +209,7 @@ async def test_score_sub_failure_without_key_raises(monkeypatch: pytest.MonkeyPa
         raise RuntimeError("nope")
 
     monkeypatch.setattr(auth, "query_subscription_structured", boom)
-    judge = FaithfulnessJudge()
+    judge = FaithfulnessJudge(model="claude-sonnet-4-6")
     with pytest.raises(RuntimeError, match="nope"):
         await judge.score(query="q?", answer="A.", passages="A.")
 
@@ -223,7 +223,7 @@ async def test_empty_answer_short_circuits_before_any_call(
         raise AssertionError("should not be called")
 
     monkeypatch.setattr(auth, "query_subscription_structured", boom)
-    judge = FaithfulnessJudge()
+    judge = FaithfulnessJudge(model="claude-sonnet-4-6")
     result = await judge.score(query="q?", answer="   ", passages="A.")
     assert result.score == 1.0
     assert auth.auth_telemetry() == {"sub_calls": 0.0, "api_calls": 0.0}

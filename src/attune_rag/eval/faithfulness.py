@@ -46,7 +46,17 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-DEFAULT_JUDGE_MODEL = "claude-sonnet-4-6"
+def default_judge_model() -> str:
+    """Resolve the judge default: the premium tier (``ATTUNE_MODEL_PREMIUM``
+    env pin wins, e.g. the CI sonnet-5 pin in rag-gate.yml)."""
+    from ..model_tiers import resolve_model
+
+    return resolve_model("premium")
+
+
+# Deprecated import-time snapshot, kept for external references; new code
+# should call default_judge_model() (or pass model=None) so env pins apply.
+DEFAULT_JUDGE_MODEL = default_judge_model()
 DEFAULT_JUDGE_TIMEOUT_SECONDS = 60.0
 DEFAULT_THINKING_BUDGET_TOKENS = 32768
 
@@ -169,7 +179,7 @@ class FaithfulnessJudge:
         self,
         client: AsyncAnthropic | None = None,
         api_key: str | None = None,
-        model: str = DEFAULT_JUDGE_MODEL,
+        model: str | None = None,
         timeout: float = DEFAULT_JUDGE_TIMEOUT_SECONDS,
         auth_mode: str | None = None,
     ) -> None:
@@ -183,7 +193,9 @@ class FaithfulnessJudge:
                 wins over subscription detection).
             api_key: API key for the default client. Falls back to
                 ``ANTHROPIC_API_KEY`` in the environment when None.
-            model: Judge model name.
+            model: Judge model name. ``None`` (default) resolves the
+                premium tier at construction time
+                (``ATTUNE_MODEL_PREMIUM`` env pin respected).
             timeout: Per-request timeout in seconds for the
                 default client. Ignored when ``client`` is
                 injected. A stalled network must not burn the
@@ -217,7 +229,7 @@ class FaithfulnessJudge:
             self._client = None
             if self._route == "api":
                 self._client = self._build_api_client()
-        self._model = model
+        self._model = model or default_judge_model()
 
     def _build_api_client(self) -> AsyncAnthropic:
         """Construct the default ``AsyncAnthropic`` client.
@@ -243,7 +255,10 @@ class FaithfulnessJudge:
         query: str,
         answer: str,
         passages: str | list[str],
-        max_tokens: int = 2048,
+        # 3072, not the pre-tier 2048: sonnet-5/fable-5 tokenize ~30%
+        # heavier than sonnet-4-6, and a truncated verdict silently
+        # drops claims (specs/fable-model-tiers design, data-model notes).
+        max_tokens: int = 3072,
         *,
         use_thinking: bool = False,
         thinking_budget_tokens: int = DEFAULT_THINKING_BUDGET_TOKENS,
@@ -337,8 +352,22 @@ class FaithfulnessJudge:
 
         via_api = payload is None
         if via_api:
+            from ..model_tiers import fable_extras
+            from ..providers.claude import create_message
+
             if self._client is None:
                 self._client = self._build_api_client()
+            if use_thinking and fable_extras(self._model):
+                # Fable models reject explicit thinking params (control
+                # depth via output_config.effort instead); score without
+                # extended thinking rather than 400 the whole call.
+                logger.warning(
+                    "use_thinking is not supported on fable models (%s); "
+                    "scoring without extended thinking.",
+                    self._model,
+                )
+                use_thinking = False
+                effective_max_tokens = max_tokens
             request_kwargs: dict[str, Any] = {
                 "model": self._model,
                 "max_tokens": effective_max_tokens,
@@ -361,7 +390,11 @@ class FaithfulnessJudge:
                     "name": "report_faithfulness",
                 }
 
-            response = await self._client.messages.create(**request_kwargs)
+            # create_message routes fable models to the beta namespace
+            # (betas + fallbacks) and raises ModelRefusalError on
+            # stop_reason == "refusal" — bench loops record that as an
+            # errored item rather than silently skipping it.
+            response = await create_message(self._client, request_kwargs)
 
             payload = _extract_judge_payload(response)
             _auth.auth_telemetry()["api_calls"] += 1

@@ -273,12 +273,13 @@ async def _run(
     variants: list[str],
     k: int,
     model: str | None,
-    judge_model: str,
+    judge_model: str | None,
 ) -> list[_VariantReport]:
     from .. import RagPipeline
     from .faithfulness import FaithfulnessJudge
 
     pipeline = RagPipeline()
+    # judge_model=None → the judge resolves the premium tier itself.
     judge = FaithfulnessJudge(model=judge_model)
 
     reports: list[_VariantReport] = []
@@ -374,12 +375,18 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--model",
         default=None,
-        help="Generator model (default: ClaudeProvider.DEFAULT_MODEL)",
+        help=(
+            "Generator model (default: the capable tier, claude-sonnet-5; "
+            "ATTUNE_MODEL_CAPABLE overrides)"
+        ),
     )
     parser.add_argument(
         "--judge-model",
-        default="claude-sonnet-4-6",
-        help="Judge model (default: claude-sonnet-4-6)",
+        default=None,
+        help=(
+            "Judge model (default: the premium tier, claude-fable-5; "
+            "ATTUNE_MODEL_PREMIUM overrides)"
+        ),
     )
     parser.add_argument(
         "--output",

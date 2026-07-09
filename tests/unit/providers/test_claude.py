@@ -163,3 +163,207 @@ def test_no_cached_prefix_sends_plain_string_content() -> None:
     assert client.messages.create.await_args.kwargs["messages"] == [
         {"role": "user", "content": "plain prompt"}
     ]
+
+
+# --- model tiers + fable handling (specs/fable-model-tiers, task 2) ---
+
+
+def _client_returning(response: MagicMock) -> MagicMock:
+    """Mock client with both namespaces wired to the same response."""
+    client = MagicMock()
+    client.messages.create = AsyncMock(return_value=response)
+    client.beta.messages.create = AsyncMock(return_value=response)
+    return client
+
+
+def _text_response(text: str = "ok") -> MagicMock:
+    block = MagicMock()
+    block.text = text
+    response = MagicMock()
+    response.content = [block]
+    response.stop_reason = "end_turn"
+    return response
+
+
+def test_default_model_is_capable_tier(monkeypatch) -> None:
+    from attune_rag.providers.claude import ClaudeProvider
+
+    monkeypatch.delenv("ATTUNE_MODEL_CAPABLE", raising=False)
+    client = _client_returning(_text_response())
+    import asyncio
+
+    asyncio.run(ClaudeProvider(client=client).generate("q"))
+    assert client.messages.create.await_args.kwargs["model"] == "claude-sonnet-5"
+
+
+def test_capable_env_pin_changes_default_without_reimport(monkeypatch) -> None:
+    from attune_rag.providers.claude import ClaudeProvider
+
+    monkeypatch.setenv("ATTUNE_MODEL_CAPABLE", "claude-sonnet-4-6")
+    client = _client_returning(_text_response())
+    import asyncio
+
+    asyncio.run(ClaudeProvider(client=client).generate("q"))
+    assert client.messages.create.await_args.kwargs["model"] == "claude-sonnet-4-6"
+
+
+def test_fable_model_routes_to_beta_namespace_with_extras() -> None:
+    from attune_rag.providers.claude import ClaudeProvider
+
+    client = _client_returning(_text_response("fable says"))
+    import asyncio
+
+    result = asyncio.run(ClaudeProvider(client=client).generate("q", model="claude-fable-5"))
+    assert result == "fable says"
+    client.messages.create.assert_not_awaited()
+    kwargs = client.beta.messages.create.await_args.kwargs
+    assert kwargs["model"] == "claude-fable-5"
+    assert kwargs["betas"] == ["server-side-fallback-2026-06-01"]
+    assert kwargs["extra_body"] == {"fallbacks": [{"model": "claude-opus-4-8"}]}
+
+
+def test_capable_env_pinned_to_fable_routes_to_beta(monkeypatch) -> None:
+    """The beta switch keys off the *effective* model, not the tier name."""
+    from attune_rag.providers.claude import ClaudeProvider
+
+    monkeypatch.setenv("ATTUNE_MODEL_CAPABLE", "claude-fable-5")
+    client = _client_returning(_text_response())
+    import asyncio
+
+    asyncio.run(ClaudeProvider(client=client).generate("q"))
+    client.messages.create.assert_not_awaited()
+    assert client.beta.messages.create.await_args.kwargs["model"] == "claude-fable-5"
+
+
+def test_non_fable_call_never_touches_beta_namespace() -> None:
+    from attune_rag.providers.claude import ClaudeProvider
+
+    client = _client_returning(_text_response())
+    import asyncio
+
+    asyncio.run(ClaudeProvider(client=client).generate("q", model="claude-sonnet-5"))
+    client.beta.messages.create.assert_not_awaited()
+    kwargs = client.messages.create.await_args.kwargs
+    assert "betas" not in kwargs
+    assert "extra_body" not in kwargs
+
+
+def test_fable_refusal_raises_model_refusal_error() -> None:
+    from attune_rag.model_tiers import ModelRefusalError
+    from attune_rag.providers.claude import ClaudeProvider
+
+    response = _text_response()
+    response.stop_reason = "refusal"
+    response.stop_details = MagicMock()
+    response.stop_details.category = "harmful_content"
+    response.stop_details.explanation = "declined"
+    client = _client_returning(response)
+    import asyncio
+
+    with pytest.raises(ModelRefusalError) as excinfo:
+        asyncio.run(ClaudeProvider(client=client).generate("q", model="claude-fable-5"))
+    assert excinfo.value.category == "harmful_content"
+    assert excinfo.value.explanation == "declined"
+
+
+def test_fable_refusal_with_dict_stop_details() -> None:
+    from attune_rag.model_tiers import ModelRefusalError
+    from attune_rag.providers.claude import ClaudeProvider
+
+    response = _text_response()
+    response.stop_reason = "refusal"
+    response.stop_details = {"category": "other", "explanation": "no"}
+    client = _client_returning(response)
+    import asyncio
+
+    with pytest.raises(ModelRefusalError) as excinfo:
+        asyncio.run(ClaudeProvider(client=client).generate("q", model="claude-fable-5"))
+    assert excinfo.value.category == "other"
+
+
+def test_non_fable_refusal_stop_reason_is_not_checked() -> None:
+    """Pre-tier behavior preserved: sonnet/haiku responses are read as-is."""
+    from attune_rag.providers.claude import ClaudeProvider
+
+    response = _text_response("text anyway")
+    response.stop_reason = "refusal"
+    client = _client_returning(response)
+    import asyncio
+
+    result = asyncio.run(ClaudeProvider(client=client).generate("q", model="claude-sonnet-5"))
+    assert result == "text anyway"
+
+
+def test_fable_400_carries_retention_hint() -> None:
+    from attune_rag.providers.claude import ClaudeProvider
+
+    class Fake400(Exception):
+        status_code = 400
+
+    client = MagicMock()
+    client.beta.messages.create = AsyncMock(
+        side_effect=Fake400("invalid_request_error: bad payload")
+    )
+    import asyncio
+
+    with pytest.raises(Fake400) as excinfo:
+        asyncio.run(ClaudeProvider(client=client).generate("q", model="claude-fable-5"))
+    assert "30-day org data retention" in str(excinfo.value)
+    assert "invalid_request_error: bad payload" in str(excinfo.value)
+
+
+def test_fable_non_400_error_passes_through_unhinted() -> None:
+    from attune_rag.providers.claude import ClaudeProvider
+
+    class Fake500(Exception):
+        status_code = 500
+
+    client = MagicMock()
+    client.beta.messages.create = AsyncMock(side_effect=Fake500("overloaded"))
+    import asyncio
+
+    with pytest.raises(Fake500) as excinfo:
+        asyncio.run(ClaudeProvider(client=client).generate("q", model="claude-fable-5"))
+    assert "retention" not in str(excinfo.value)
+
+
+def test_explicit_model_literal_passed_through_untouched(monkeypatch) -> None:
+    from attune_rag.providers.claude import ClaudeProvider
+
+    monkeypatch.setenv("ATTUNE_MODEL_CAPABLE", "claude-fable-5")
+    client = _client_returning(_text_response())
+    import asyncio
+
+    asyncio.run(ClaudeProvider(client=client).generate("q", model="claude-haiku-4-5"))
+    client.beta.messages.create.assert_not_awaited()
+    assert client.messages.create.await_args.kwargs["model"] == "claude-haiku-4-5"
+
+
+def test_citations_with_fable_model_routes_to_beta() -> None:
+    from attune_rag.providers.base import CitationDocument
+    from attune_rag.providers.claude import ClaudeProvider
+
+    response = MagicMock()
+    response.content = []
+    response.stop_reason = "end_turn"
+    client = _client_returning(response)
+    import asyncio
+
+    asyncio.run(
+        ClaudeProvider(client=client).generate_with_citations(
+            [CitationDocument(title="t", text="body")],
+            "q",
+            model="claude-fable-5",
+        )
+    )
+    client.messages.create.assert_not_awaited()
+    kwargs = client.beta.messages.create.await_args.kwargs
+    assert kwargs["betas"] == ["server-side-fallback-2026-06-01"]
+
+
+def test_default_model_alias_still_exists() -> None:
+    """Deprecated alias kept for external references; equals the capable tier
+    default under a clean env (import-time snapshot)."""
+    from attune_rag.providers.claude import ClaudeProvider
+
+    assert ClaudeProvider.DEFAULT_MODEL == "claude-sonnet-5"
