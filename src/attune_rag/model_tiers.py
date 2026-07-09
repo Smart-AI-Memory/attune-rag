@@ -11,17 +11,18 @@ import-time, so tests can flip tiers with ``monkeypatch.setenv`` and CI
 pins take effect without re-import ordering concerns — same pattern as
 ``_cache_control()`` in ``providers/claude.py``.
 
-Stdlib + structlog only: no anthropic import, no network I/O.
+Stdlib only (logging, not structlog): the attune-author mirror must
+import cleanly there too, and structlog is not in attune-author's
+dependency set. No anthropic import, no network I/O.
 """
 
 from __future__ import annotations
 
+import logging
 import os
 from typing import Any
 
-import structlog
-
-logger = structlog.get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 _DEFAULTS = {
     "premium": "claude-fable-5",
@@ -91,7 +92,12 @@ def resolve_model(tier: str) -> str:
     override = os.getenv(_ENV[tier], "").strip()
     if override:
         if override not in _KNOWN_MODELS:
-            logger.warning("unknown model override", tier=tier, env_var=_ENV[tier], model=override)
+            logger.warning(
+                "unknown model override: tier=%s env_var=%s model=%s",
+                tier,
+                _ENV[tier],
+                override,
+            )
         return override
     return _DEFAULTS[tier]
 
