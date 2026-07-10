@@ -3,60 +3,43 @@ type: concept
 name: expander-concept
 feature: expander
 depth: concept
-generated_at: 2026-06-07T07:13:53.291643+00:00
-source_hash: fee9ea3e96d976b16a96673b646ba25f945f41ad6136204efbd13aaa334ccf76
+generated_at: 2026-07-10T13:05:48.719025+00:00
+source_hash: 8645de9f31cc8aa82ed6ad99d147639060d87eaed712a4c12d8f2c14f1355d03
 status: generated
 ---
 
 # Expander
 
-`QueryExpander` is a retrieval utility that rewrites a single user query into 3–5 alternative phrasings using Claude Haiku, so that keyword search can match documents even when the user's wording doesn't overlap with the indexed text.
+`QueryExpander` is a retrieval preprocessing step that uses Claude Haiku to rewrite a single user query into 3–5 alternative phrasings, so that keyword search can match documents even when the user's wording doesn't overlap with the words in those documents.
 
-## The retrieval recall problem
+## The problem it solves
 
-Keyword-based retrieval fails when the user's phrasing doesn't share surface-level tokens with the target document. A developer asking "how do I silence a linter warning?" will miss documents indexed under "suppressing diagnostic rules" or "disabling checks." Query expansion closes this gap by generating synonymous phrasings before the retrieval step runs.
+Keyword and hybrid retrieval systems match on surface-level terms. If a user asks "how do I roll back a deployment?" but the relevant document talks about "reverting a release," a lexical search misses it entirely. Query expansion bridges that gap by generating synonyms, related feature names, tool categories, and developer jargon before the search runs — without requiring the user to know the right terminology in advance.
 
-## How `QueryExpander` works
+## How query expansion works
 
-When you call `expand(query)` or `expand_async(query)`, `QueryExpander` sends the query to Claude Haiku with a system prompt that instructs the model to expose the user's underlying intent — feature names, tool categories, workflow synonyms, and developer jargon — and return the results as a JSON array of strings. Your retrieval layer then fans out across all returned phrasings instead of the original query alone.
+When you call `expand()` or `expand_async()`, `QueryExpander` sends your query to Claude Haiku with a fixed system prompt that instructs the model to return a JSON array of 3–5 alternative phrasings. The model is told to surface the user's actual intent through feature names, tool categories, workflow synonyms, and developer jargon. The expanded terms are then passed downstream to the retrieval layer alongside — or instead of — the original query.
 
-If the API call fails for any reason, `QueryExpander` falls back to the original query, so a network hiccup or quota error never blocks retrieval entirely.
+A concrete example: a query like `"template caching"` might expand to phrasings like `"memoizing rendered templates"`, `"avoiding redundant doc generation"`, and `"template output reuse"`, each of which has a better chance of matching a different document.
 
-Caching is on by default (`cache=True`). Repeated calls with the same query string reuse the previously generated expansions rather than making a second API call.
+If the Claude API call fails for any reason, `QueryExpander` falls back to the original query, so retrieval continues rather than halting.
 
-## Construction and defaults
+## Key design decisions
 
-```python
-from attune_rag.expander import QueryExpander
-
-expander = QueryExpander(
-    model="claude-haiku-4-5",  # default
-    api_key=None,              # falls back to environment credential
-    cache=True,                # deduplicates identical queries
-)
-```
-
-| Parameter | Default | Effect |
-|-----------|---------|--------|
-| `model` | `'claude-haiku-4-5'` | Which Claude model generates the expansions |
-| `api_key` | `None` | Explicit API key; omit to use the environment credential |
-| `cache` | `True` | Caches results per unique query string |
-
-## Sync and async interfaces
-
-`QueryExpander` exposes two methods with identical semantics:
-
-- **`expand(query: str) -> list[str]`** — blocking call; use this in synchronous retrieval pipelines.
-- **`expand_async(query: str) -> list[str]`** — non-blocking call; use this when your retrieval layer is already async.
-
-Both return a list of alternative query strings. Pass each string to your retrieval backend and merge the results before ranking.
+| Decision | Detail |
+|---|---|
+| **Model** | Claude Haiku by default; overridable via the `model` parameter at construction time |
+| **API key** | Passed at construction via `api_key`; if omitted, falls back to the environment |
+| **Response format** | The system prompt instructs the model to return only a raw JSON array — no markdown fences, no explanation — making parsing deterministic |
+| **Caching** | Enabled by default (`cache=True`); identical queries return cached expansions without an additional API round-trip |
+| **Async support** | `expand_async()` mirrors `expand()` for use in async retrieval pipelines |
 
 ## When query expansion matters
 
 Query expansion has the most impact when:
 
-- Your document corpus uses technical jargon or product-specific terminology that users are unlikely to reproduce verbatim.
-- You're running BM25 or another token-overlap retrieval strategy with no semantic embedding fallback.
-- Query volume is low enough that the added latency and API cost per call is acceptable.
+- Queries use informal or abbreviated language that doesn't match documentation vocabulary
+- The corpus uses domain-specific jargon that users wouldn't naturally reach for
+- Hybrid retrieval is already in place and you want to lift recall without reindexing
 
-If your retrieval pipeline already uses dense vector search with broad semantic coverage, the incremental recall gain from expansion is smaller and may not justify the extra API call.
+It has less impact when queries are already precise and match document terms directly, since the expanded phrasings add latency (one LLM call per query) without changing which documents rank highest.

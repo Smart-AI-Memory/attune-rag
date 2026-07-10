@@ -3,27 +3,14 @@ type: reference
 name: providers-reference
 feature: providers
 depth: reference
-generated_at: 2026-06-07T07:13:23.414944+00:00
-source_hash: ab8cfd02877bb1491251eca997f80585ed29819de7e9c31ef4d86c7835dc2891
+generated_at: 2026-07-10T13:05:07.856468+00:00
+source_hash: 756ec8cdf5db7cbd88c6a1a079b164855514d934f8d3cafa3743d4318f0339ac
 status: generated
 ---
 
 # Providers reference
 
-Use the `providers` package to send prompts to LLM backends and retrieve cited responses. `LLMProvider` defines the async protocol; `ClaudeProvider` and `GeminiProvider` are concrete implementations that lazy-import their SDKs, so the core package installs without requiring any provider SDK.
-
-## Module functions
-
-| Function | Parameters | Returns | Description |
-|----------|------------|---------|-------------|
-| `list_available` | — | `list[str]` | Returns the names of providers whose SDKs are importable. |
-| `get_provider` | `name: str, **kwargs: Any` | `LLMProvider` | Returns an instance of the named provider. |
-
-### Raises
-
-| Function | Exception | Message |
-|----------|-----------|---------|
-| `get_provider` | `ValueError` | `'Unknown provider {...}. Known providers: {...}.'` |
+Optional async LLM provider adapters. Use these classes to send prompts to Claude or Gemini and receive text or cited responses. Each provider lazy-imports its SDK, so the core package installs without requiring any provider-specific dependency. Install `attune-rag[claude]` or `attune-rag[gemini]` to enable the corresponding provider.
 
 ## Classes
 
@@ -32,74 +19,85 @@ Use the `providers` package to send prompts to LLM backends and retrieve cited r
 | `CitationDocument` | One source document passed to a citations-capable provider. |
 | `CitedResponse` | Response from a citations-capable provider. |
 | `LLMProvider` | An async LLM provider that consumes a prompt and returns text. |
-| `ClaudeProvider` | Thin async wrapper over Anthropic's Messages API. Requires the `attune-rag[claude]` extra. |
-| `GeminiProvider` | Thin async wrapper over Google's genai models API. Requires the `attune-rag[gemini]` extra. |
+| `ClaudeProvider` | Thin async wrapper over Anthropic's Messages API. |
+| `GeminiProvider` | Thin async wrapper over Google's genai models API. |
 
-### `CitationDocument`
+### CitationDocument
 
-`[dataclass]` — One source document passed to a citations-capable provider.
+[dataclass]
 
 | Field | Type | Default |
 |-------|------|---------|
 | `title` | `str` | — |
 | `text` | `str` | — |
 
-### `CitedResponse`
+### CitedResponse
 
-`[dataclass]` — Response from a citations-capable provider.
+[dataclass]
 
 | Field | Type | Default |
 |-------|------|---------|
 | `text` | `str` | — |
 | `claim_citations` | `tuple[ClaimCitation, ...]` | — |
 
-### `LLMProvider`
+### LLMProvider
 
-Async protocol that both concrete providers implement.
-
-| Method | Parameters | Returns | Description |
-|--------|------------|---------|-------------|
-| `generate` | `prompt: str, model: str \| None = None, max_tokens: int = 2048, cached_prefix: str \| None = None` | `str` | Sends a prompt and returns the model's text response. |
-| `generate_with_citations` | `documents: list[CitationDocument], query: str, system: str \| None = None, model: str \| None = None, max_tokens: int = 2048` | `CitedResponse` | Queries the model against a document list and returns a response with claim-level citations. |
-
-### `ClaudeProvider`
-
-Thin async wrapper over Anthropic's Messages API. Requires the `attune-rag[claude]` extra.
-
-**Constructor**
-
-| Parameter | Type | Default |
-|-----------|------|---------|
-| `api_key` | `str \| None` | `None` |
-| `client` | `AsyncAnthropic \| None` | `None` |
+Protocol defining the async LLM provider interface.
 
 | Method | Parameters | Returns | Description |
 |--------|------------|---------|-------------|
-| `generate` | `prompt: str, model: str \| None = None, max_tokens: int = 2048, cached_prefix: str \| None = None` | `str` | Sends a prompt and returns the model's text response. |
-| `generate_with_citations` | `documents: list[CitationDocument], query: str, system: str \| None = None, model: str \| None = None, max_tokens: int = 2048` | `CitedResponse` | Queries the model against a document list and returns a response with claim-level citations. |
+| `generate` | `self, prompt: str, model: str \| None = None, max_tokens: int = 2048, cached_prefix: str \| None = None` | `str` | Consume a prompt and return generated text. |
+| `generate_with_citations` | `self, documents: list[CitationDocument], query: str, system: str \| None = None, model: str \| None = None, max_tokens: int = 2048` | `CitedResponse` | Answer a query against a list of source documents and return a cited response. |
 
-### `GeminiProvider`
+### ClaudeProvider
 
-Thin async wrapper over Google's genai models API. Requires the `attune-rag[gemini]` extra.
-
-**Constructor**
-
-| Parameter | Type | Default |
-|-----------|------|---------|
-| `api_key` | `str \| None` | `None` |
-| `client` | `GenAIClient \| None` | `None` |
+Thin async wrapper over Anthropic's Messages API. Requires `attune-rag[claude]`.
 
 | Method | Parameters | Returns | Description |
 |--------|------------|---------|-------------|
-| `generate` | `prompt: str, model: str \| None = None, max_tokens: int = 2048, cached_prefix: str \| None = None` | `str` | Sends a prompt and returns the model's text response. |
+| `__init__` | `self, api_key: str \| None = None, client: AsyncAnthropic \| None = None` | `None` | Initialize the provider with an API key or a pre-built `AsyncAnthropic` client. |
+| `generate` | `self, prompt: str, model: str \| None = None, max_tokens: int = 2048, cached_prefix: str \| None = None` | `str` | Consume a prompt and return generated text. |
+| `generate_with_citations` | `self, documents: list[CitationDocument], query: str, system: str \| None = None, model: str \| None = None, max_tokens: int = 2048` | `CitedResponse` | Answer a query against a list of source documents and return a cited response. |
+
+### GeminiProvider
+
+Thin async wrapper over Google's genai models API. Requires `attune-rag[gemini]`.
+
+| Method | Parameters | Returns | Description |
+|--------|------------|---------|-------------|
+| `__init__` | `self, api_key: str \| None = None, client: GenAIClient \| None = None` | `None` | Initialize the provider with an API key or a pre-built `GenAIClient` client. |
+| `generate` | `self, prompt: str, model: str \| None = None, max_tokens: int = 2048, cached_prefix: str \| None = None` | `str` | Consume a prompt and return generated text. |
+
+## Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `list_available` | — | `list[str]` | Return the names of providers whose SDKs are importable. |
+| `get_provider` | `name: str, **kwargs: Any` | `LLMProvider` | Return an instance of the named provider. |
+| `create_message` | `client: Any, kwargs: dict[str, Any]` | `Any` | Dispatch a Messages API call, routing fable models to the beta namespace. |
+
+### Raises
+
+| Function | Raises | Message |
+|----------|--------|---------|
+| `get_provider` | `ValueError` | `'Unknown provider {...}. Known providers: {...}.'` |
+| `create_message` | `ModelRefusalError` | `'model {...} refused the request (the entire server-side fallback chain refused)'` |
+
+## Constants
+
+| Constant | Type | Value |
+|----------|------|-------|
+| `__all__` | `list` | `{'LLMProvider', 'list_available', 'get_provider'}` |
+| `_RETENTION_HINT` | `str` | `"claude-fable-5 requires >=30-day org data retention - check the org's retention configuration before debugging the payload."` |
 
 ## Source files
 
 - `src/attune_rag/providers/__init__.py`
 - `src/attune_rag/providers/base.py`
 - `src/attune_rag/providers/claude.py`
+- `src/attune_rag/providers/openai.py`
 - `src/attune_rag/providers/gemini.py`
 
 ## Tags
 
-`providers`, `llm`, `claude`, `gemini`
+`providers`, `llm`, `claude`, `openai`, `gemini`

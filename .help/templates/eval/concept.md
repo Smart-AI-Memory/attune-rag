@@ -3,52 +3,55 @@ type: concept
 name: eval-concept
 feature: eval
 depth: concept
-generated_at: 2026-05-20T03:28:38.716478+00:00
-source_hash: 9d4d7626c287ef8da26b5caa6cd8470542d6e7b12acbf7d3e678d0c442cc9f43
+generated_at: 2026-07-10T13:05:28.714688+00:00
+source_hash: 15853b482b28c9a8b23b9156fb0655f28895187b4de4d1e26cdb96202d404731
 status: generated
 ---
 
 # Eval
 
-## Overview
+The eval subsystem measures whether a RAG pipeline's answers are grounded in the passages it retrieved — catching hallucinations before they reach users.
 
-The `eval` feature is an evaluation harness that measures whether a RAG system's answers are grounded in the passages it retrieved — and lets you benchmark competing prompt variants against a golden set.
+## The faithfulness problem
 
-At its core, the workflow is: you pass a query, an answer, and the retrieved passages to `FaithfulnessJudge`; the judge calls Claude (`claude-sonnet-4-6` by default) using tool-use to decompose the answer into atomic factual claims; each claim is marked **supported** or **unsupported** based solely on what the passages explicitly state; and the results come back as a `FaithfulnessResult` you can inspect or serialize.
+A RAG system can retrieve relevant passages and still produce an answer that invents details not found in those passages. Faithfulness evaluation catches this by decomposing each answer into atomic factual claims and checking every claim against the retrieved context. A claim is **supported** only if a passage explicitly states it — inference beyond what the passages say, or invented workflow names, CLI flags, or API shapes, all count as **unsupported**.
 
-## Faithfulness judging
+## Core components
 
-`FaithfulnessJudge` scores a RAG answer by asking Claude to act as a strict faithfulness judge. The system prompt instructs the model to:
+**`FaithfulnessJudge`** is the entry point for scoring. You pass it a query, the answer under review, and one or more retrieved passages. Internally it calls Claude with a strict system prompt and uses tool-use to collect a structured verdict. It exposes a single async method, `score()`, and resolves its model from the `ATTUNE_MODEL_PREMIUM` tier by default.
 
-- Break the answer into one claim per verifiable assertion, ignoring stylistic framing and pleasantries.
-- Mark a claim **supported** only when a retrieved passage explicitly states it — inference beyond the text and outside knowledge both count as unsupported.
-- Treat a refusal answer (for example, "the context does not cover this") as zero claims rather than a supported or unsupported verdict.
-
-You can optionally enable extended thinking via `use_thinking=True` on `score()`, which sets a token budget for the model's reasoning before it calls the tool.
-
-## The faithfulness verdict
-
-`FaithfulnessResult` is the dataclass returned by every `score()` call. Its fields give you a complete picture of one answer:
+**`FaithfulnessResult`** is the structured verdict that `score()` returns. It carries:
 
 | Field | Type | What it tells you |
 |---|---|---|
-| `score` | `float` | Fraction of claims that are supported (supported ÷ total) |
-| `supported_claims` | `list[str]` | Claims the passages directly back up |
-| `unsupported_claims` | `list[str]` | Claims that rely on outside knowledge or inference |
-| `reasoning` | `str` | The judge's explanation of its verdicts |
-| `model` | `str` | Which Claude model produced the verdict |
-| `thinking_used` | `bool` | Whether extended thinking was active |
+| `score` | `float` | Fraction of claims that are supported (0.0–1.0) |
+| `supported_claims` | `list[str]` | Claims the passages explicitly back |
+| `unsupported_claims` | `list[str]` | Claims that go beyond the retrieved context |
+| `reasoning` | `str` | The judge's explanation for each decision |
+| `model` | `str` | Which model produced the verdict |
+| `thinking_used` | `bool` | Whether extended thinking was enabled |
 
-The `total_claims` property returns `len(supported_claims) + len(unsupported_claims)`, giving you a quick way to gauge answer complexity alongside the score.
+The `total_claims` property gives you `len(supported_claims) + len(unsupported_claims)` in one call.
 
-## Prompt A/B benchmarking
+## How the pieces fit together
 
-In addition to per-answer judging, `eval` includes a prompt-variant benchmark that runs two or more prompt formulations against the same golden set and compares their faithfulness scores. This lets you make data-driven decisions about prompt changes rather than relying on manual spot-checks.
+When you call `FaithfulnessJudge.score()`, the judge:
 
-## When this matters
+1. Formats the query, passages, and answer into a structured prompt using `_JUDGE_USER_TEMPLATE`.
+2. Sends that prompt to Claude under the strict `_JUDGE_SYSTEM_PROMPT`, which instructs the model to decompose the answer into atomic claims and mark each as supported or unsupported.
+3. Receives the verdict via the `report_faithfulness` tool call and packages it into a `FaithfulnessResult`.
 
-Use `eval` when you need to:
+Setting `use_thinking=True` in `score()` enables Claude's extended thinking for harder judgments, at the cost of additional tokens (controlled by `thinking_budget_tokens`).
 
-- **Detect hallucinations** — a low `score` or a non-empty `unsupported_claims` list signals that your retriever or generator is introducing facts not present in the retrieved context.
-- **Regression-test prompt changes** — run the A/B benchmark before and after a prompt edit to confirm faithfulness does not degrade.
-- **Audit a deployed RAG pipeline** — serialize results with `FaithfulnessResult.to_dict()` and store them alongside your answer logs for offline analysis.
+## When eval matters
+
+Use the eval subsystem when you need to:
+
+- **Detect hallucinations in a running pipeline.** Score answers at inference time and surface low-`score` results for review.
+- **Run A/B benchmarks on prompt variants.** The harness supports golden-set testing so you can compare how different retrieval or prompting strategies affect faithfulness before deploying a change.
+- **Set a quality gate in CI.** The `main()` entry point returns exit code `0` on success, making it straightforward to fail a build when faithfulness drops below a threshold.
+
+## Related topics
+
+- **FAQ**: `eval` in tests — common questions about using `FaithfulnessJudge` in test suites
+- **Reference**: `FaithfulnessJudge` and `FaithfulnessResult` — complete field list, default values, and method signatures
