@@ -3,79 +3,92 @@ type: task
 name: eval-task
 feature: eval
 depth: task
-generated_at: 2026-05-20T03:28:38.722384+00:00
-source_hash: 9d4d7626c287ef8da26b5caa6cd8470542d6e7b12acbf7d3e678d0c442cc9f43
+generated_at: 2026-07-10T13:05:28.720004+00:00
+source_hash: 15853b482b28c9a8b23b9156fb0655f28895187b4de4d1e26cdb96202d404731
 status: generated
 ---
 
-# Score RAG answer faithfulness with eval
+# Work with eval
 
-Use the eval harness when you want to measure how well your RAG pipeline grounds its answers in retrieved passages, or to benchmark prompt variants against a golden set.
+Use the eval module when you need to score RAG answers for faithfulness, run prompt A/B benchmarks against a golden set, or change how the LLM judge model is resolved.
 
 ## Prerequisites
 
-- An Anthropic API key, or an `AsyncAnthropic` client instance
-- Python dependencies installed (the `eval` module must be importable)
-- Retrieved passages and the answers you want to judge
+- Access to the project source code
+- An `AsyncAnthropic` client or a valid `ATTUNE_MODEL_PREMIUM` API key for the judge
+- Familiarity with `src/attune_rag/eval/__init__.py` and its sibling modules
 
-## Score an answer for faithfulness
+## Steps
 
-1. **Import `FaithfulnessJudge` and instantiate it.**
+1. **Identify which eval capability you need.**
+   The module has two distinct entry points:
+   - **Faithfulness scoring** — `FaithfulnessJudge.score()` in `src/attune_rag/eval/faithfulness.py` calls Claude with tool-use to decompose an answer into atomic claims and label each one as supported or unsupported by the retrieved passages.
+   - **Prompt benchmarking** — `main()` in `src/attune_rag/eval/bench_prompts.py` runs prompt variants against a golden set and returns exit code `0` on success.
+
+2. **Read the function signature and return type before editing.**
+   For `FaithfulnessJudge.score()`, confirm the expected arguments:
 
    ```python
-   from attune_rag.eval import FaithfulnessJudge
-
-   judge = FaithfulnessJudge(api_key="YOUR_API_KEY")
+   score(
+       self,
+       query: str,
+       answer: str,
+       passages: str | list[str],
+       max_tokens: int = 3072,
+       *,
+       use_thinking: bool = False,
+       thinking_budget_tokens: int = DEFAULT_THINKING_BUDGET_TOKENS,
+   ) -> FaithfulnessResult
    ```
 
-   By default the judge uses the `claude-sonnet-4-6` model. Pass `model=` to override it.
+   `FaithfulnessResult` exposes `score`, `supported_claims`, `unsupported_claims`, `reasoning`, `model`, `thinking_used`, and the computed property `total_claims`.
 
-2. **Call `score()` with your query, answer, and passages.**
+3. **Instantiate `FaithfulnessJudge` with your credentials.**
+   Pass an existing `AsyncAnthropic` client, or let the constructor resolve credentials from the environment:
+
+   ```python
+   from attune_rag.eval.faithfulness import FaithfulnessJudge
+
+   judge = FaithfulnessJudge()          # uses ATTUNE_MODEL_PREMIUM by default
+   # or
+   judge = FaithfulnessJudge(api_key="sk-...", model="claude-3-5-sonnet-20241022")
+   ```
+
+4. **Call `score()` and inspect the result.**
 
    ```python
    result = await judge.score(
-       query="What is the retention policy for audit logs?",
-       answer="Audit logs are retained for 90 days.",
-       passages=["Audit logs are kept for a period of 90 days before deletion."],
+       query="What is the retention policy?",
+       answer="Data is kept for 30 days.",
+       passages=["Our system retains data for 30 days after ingestion."],
    )
-   ```
 
-   Pass `passages` as a single string or a list of strings. Set `use_thinking=True` to enable extended reasoning if you need higher-confidence verdicts on ambiguous claims.
-
-3. **Inspect the `FaithfulnessResult`.**
-
-   ```python
    print(result.score)               # float between 0.0 and 1.0
-   print(result.supported_claims)    # list of claims the passages back up
-   print(result.unsupported_claims)  # list of claims not grounded in passages
-   print(result.reasoning)           # judge's chain-of-thought explanation
-   print(result.total_claims)        # total_claims = len(supported) + len(unsupported)
+   print(result.supported_claims)    # list of claim strings
+   print(result.unsupported_claims)  # list of claim strings
+   print(result.total_claims)        # int, computed property
    ```
 
-   Convert the result to a plain dictionary with `result.to_dict()` for logging or serialization.
+5. **To change the default judge model, update `default_judge_model()`.**
+   Open `src/attune_rag/eval/faithfulness.py` and edit `default_judge_model()`. This function resolves the `ATTUNE_MODEL_PREMIUM` environment variable. Update the fallback value or resolution logic there — do not hardcode a model name elsewhere.
 
-4. **Run the prompt-variant benchmark** (optional).
+6. **To modify the benchmark entry point, edit `main()` in `bench_prompts.py`.**
+   Open `src/attune_rag/eval/bench_prompts.py`. `main()` accepts an optional `argv: list[str] | None` and returns an integer exit code. Preserve that signature so the CLI integration continues to work.
 
-   Execute the benchmark entry point to compare prompt variants against your golden set:
+7. **Run the eval tests.**
 
    ```bash
    pytest -k "eval"
    ```
-
-   Alternatively, call `main()` from `bench_prompts.py` directly in your test harness. A return value of `0` indicates a successful run.
-
-## Verify success
-
-The task succeeded when:
-
-- `result.score` is a float and `result.total_claims` equals `len(result.supported_claims) + len(result.unsupported_claims)`.
-- `result.unsupported_claims` is empty (or within your acceptable threshold) for answers you expect to be fully grounded.
-- `main()` returns `0` when you run the benchmark.
 
 ## Key files
 
 | File | Purpose |
 |---|---|
 | `src/attune_rag/eval/__init__.py` | Public exports: `FaithfulnessJudge`, `FaithfulnessResult` |
-| `src/attune_rag/eval/faithfulness.py` | Judge logic, system prompt, and `FaithfulnessResult` dataclass |
-| `src/attune_rag/eval/bench_prompts.py` | Prompt A/B benchmark harness and `main()` entry point |
+| `src/attune_rag/eval/faithfulness.py` | Judge logic, `default_judge_model()`, `FaithfulnessResult` dataclass |
+| `src/attune_rag/eval/bench_prompts.py` | Prompt A/B benchmark runner, `main()` entry point |
+
+## Verify success
+
+After running `pytest -k "eval"`, all tests pass with no failures or errors. When you call `judge.score()` directly, `result.score` is a float between `0.0` and `1.0` and `result.total_claims` equals `len(result.supported_claims) + len(result.unsupported_claims)`.

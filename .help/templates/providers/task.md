@@ -3,94 +3,90 @@ type: task
 name: providers-task
 feature: providers
 depth: task
-generated_at: 2026-06-07T07:13:23.409771+00:00
-source_hash: ab8cfd02877bb1491251eca997f80585ed29819de7e9c31ef4d86c7835dc2891
+generated_at: 2026-07-10T13:05:07.853010+00:00
+source_hash: 756ec8cdf5db7cbd88c6a1a079b164855514d934f8d3cafa3743d4318f0339ac
 status: generated
 ---
 
 # Work with providers
 
-Use providers when you need to generate text or citation-backed responses from an LLM, and you want to swap between Claude and Gemini without changing your application code.
+Use the `providers` module when you need to connect attune-rag to a Claude or Gemini backend, check which provider SDKs are installed, or add support for a new LLM provider.
 
 ## Prerequisites
 
-- An API key for the provider you want to use (Anthropic for Claude, Google for Gemini)
-- The matching optional SDK installed:
-  - Claude: `pip install attune-rag[claude]`
-  - Gemini: `pip install attune-rag[gemini]`
+- An API key for the provider you want to use (Claude requires `attune-rag[claude]`; Gemini requires `attune-rag[gemini]`)
+- Python `pytest` installed to verify your changes
 
 ## Steps
 
-### Check which providers are available
-
-1. Import `list_available` from `providers`:
+1. **Check which providers are available.**
+   Call `list_available()` to see which provider SDKs are importable in the current environment:
 
    ```python
-   from providers import list_available
-
-   print(list_available())
+   from attune_rag.providers import list_available
+   print(list_available())  # e.g. ['claude', 'gemini']
    ```
 
-   `list_available()` returns the names of providers whose SDKs are currently importable. If a provider's SDK is not installed, it does not appear in the list.
-
-### Get a provider instance
-
-2. Call `get_provider(name, **kwargs)` with the provider name and any constructor arguments:
+2. **Instantiate the provider you need.**
+   Call `get_provider(name, **kwargs)` with the provider name returned by `list_available()`. Pass your API key if you are not relying on an environment variable:
 
    ```python
-   from providers import get_provider
-
+   from attune_rag.providers import get_provider
    provider = get_provider("claude", api_key="sk-...")
    ```
 
-   Pass `api_key` to authenticate. If you omit it, the provider reads the key from its default environment variable. `get_provider` raises `ValueError` if the name is not recognized, with a message listing the known providers.
+   If you pass an unrecognised name, `get_provider` raises `ValueError: 'Unknown provider {…}. Known providers: {…}.'`
 
-### Generate text
-
-3. Call `generate` on the provider instance:
+3. **Generate a response.**
+   Call `provider.generate()` with your prompt. Override `model` or `max_tokens` when the defaults do not suit your use case:
 
    ```python
-   response = await provider.generate(
-       prompt="Summarize the history of functional programming.",
-       model=None,        # uses the provider's default model
-       max_tokens=2048,
+   text = await provider.generate(
+       prompt="Summarise the following text…",
+       model="claude-opus-4-5",
+       max_tokens=512,
    )
-   print(response)
    ```
 
-   Pass `cached_prefix` if you want to reuse a long shared context across multiple calls.
-
-### Generate a response with citations
-
-4. Build a list of `CitationDocument` objects, one per source document:
+4. **Generate a response with citations (Claude only).**
+   Build a list of `CitationDocument` objects and call `generate_with_citations()`. The returned `CitedResponse` contains the answer text and a tuple of `ClaimCitation` objects that map each claim back to a source document:
 
    ```python
-   from providers.base import CitationDocument
+   from attune_rag.providers import CitationDocument
 
-   documents = [
-       CitationDocument(title="SICP", text="...chapter text..."),
-       CitationDocument(title="TAPL", text="...chapter text..."),
+   docs = [
+       CitationDocument(title="RAG overview", text="…"),
+       CitationDocument(title="Provider guide", text="…"),
    ]
-   ```
-
-5. Call `generate_with_citations` on a provider that supports it (for example, `ClaudeProvider`):
-
-   ```python
-   result = await provider.generate_with_citations(
-       documents=documents,
-       query="What is a lambda calculus?",
-       system="You are a computer science tutor.",
-       max_tokens=2048,
+   response = await provider.generate_with_citations(
+       documents=docs,
+       query="What is attune-rag?",
    )
+   print(response.text)
+   print(response.claim_citations)
    ```
 
-   The method returns a `CitedResponse` with two fields:
-   - `text` — the generated answer
-   - `claim_citations` — a tuple of `ClaimCitation` objects linking claims in the answer to source documents
+5. **Add or modify a provider (optional).**
+   Open the relevant file from the list below and implement the `LLMProvider` protocol — `generate()` is required; `generate_with_citations()` is optional. Mirror the error-handling and logging style used in `claude.py` or `gemini.py`, and register the new name inside `get_provider()` in `__init__.py`.
 
-## Verify the task worked
+   > **Note:** If you use a `claude-fable-5` model, the org account must have ≥ 30-day data retention configured. Check this before debugging an unexpected refusal — `create_message()` will raise `ModelRefusalError` if the entire server-side fallback chain refuses the request.
 
-- `list_available()` returns a non-empty list that includes your target provider name.
-- `get_provider(name)` returns an object without raising `ValueError`.
-- `generate(...)` returns a non-empty string.
-- For citation calls, `result.text` is non-empty and `result.claim_citations` contains at least one entry when the answer draws on the supplied documents.
+6. **Run the tests.**
+   Confirm that nothing regressed:
+
+   ```bash
+   pytest -k "providers"
+   ```
+
+## Key files
+
+| File | Purpose |
+|---|---|
+| `src/attune_rag/providers/__init__.py` | Public API: `list_available()`, `get_provider()` |
+| `src/attune_rag/providers/base.py` | `LLMProvider` protocol definition |
+| `src/attune_rag/providers/claude.py` | `ClaudeProvider` + `create_message()` dispatcher |
+| `src/attune_rag/providers/gemini.py` | `GeminiProvider` wrapper |
+
+## Verify success
+
+`pytest -k "providers"` passes with no failures or errors. If you added a new provider, `list_available()` returns its name when the corresponding SDK is installed, and `get_provider("<name>")` returns an instance without raising `ValueError`.

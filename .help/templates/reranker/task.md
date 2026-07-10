@@ -3,62 +3,56 @@ type: task
 name: reranker-task
 feature: reranker
 depth: task
-generated_at: 2026-06-07T07:14:09.698838+00:00
-source_hash: d9cc73a55820ef60156edf63a24310f219daaa440a814d281fee2195484a90ae
+generated_at: 2026-07-10T13:06:04.026407+00:00
+source_hash: c828b6c3ccd4f66d997d42c41fc386540dc0978c13f780db0e2320cdbb911f6d
 status: generated
 ---
 
-# Rerank retrieval results with LLMReranker
+# Work with the reranker
 
-Use `LLMReranker` when keyword retrieval returns too many loosely relevant hits and you need Claude to score and reorder them by relevance before presenting results to the user.
+Use the reranker when you want Claude Haiku to re-rank keyword retrieval candidates by relevance, improving retrieval precision beyond what keyword search alone provides.
 
 ## Prerequisites
 
-- An Anthropic API key with access to `claude-haiku-4-5`
-- A list of `RetrievalHit` objects from your keyword retrieval step
-- `attune_rag.reranker` available in your Python environment
+- Access to `src/attune_rag/reranker.py`
+- A valid Anthropic API key (or the `ANTHROPIC_API_KEY` environment variable set)
 
 ## Steps
 
-1. **Import `LLMReranker` from `attune_rag.reranker`.**
+1. **Locate `LLMReranker` in `src/attune_rag/reranker.py`.**
+   This is the only class in the module. It accepts four constructor parameters:
+   - `model` — Claude model string; defaults to Claude Haiku when `None`
+   - `api_key` — Anthropic API key; falls back to the environment variable when `None`
+   - `candidate_multiplier` — multiplies the number of keyword candidates passed to Claude before re-ranking (default: `3`)
+   - `timeout` — seconds before the API call times out (default: `60.0`)
+
+2. **Instantiate `LLMReranker` with your chosen settings.**
+   Pass only the parameters you need to override:
 
    ```python
    from attune_rag.reranker import LLMReranker
+
+   reranker = LLMReranker(candidate_multiplier=5, timeout=30.0)
    ```
 
-2. **Instantiate `LLMReranker` with your configuration.**
-
-   Pass your API key and, optionally, adjust `candidate_multiplier` to control how many candidates Claude evaluates relative to the number of results you want returned. The default `candidate_multiplier` is `3` and the default `timeout` is `60.0` seconds.
+3. **Call `rerank(query, hits)` with your query string and retrieved hits.**
+   `hits` is a list of `RetrievalHit` objects returned by your keyword retrieval step:
 
    ```python
-   reranker = LLMReranker(
-       model="claude-haiku-4-5",
-       api_key="YOUR_API_KEY",
-       candidate_multiplier=3,
-       timeout=60.0,
-   )
+   reranked = reranker.rerank(query="how do I publish to PyPI?", hits=keyword_hits)
    ```
 
-3. **Call `rerank` with your query and retrieved hits.**
+   The method returns the same `RetrievalHit` list ordered from most to least relevant. If the Claude API call fails for any reason, `rerank` returns the original `hits` list unchanged (keyword-order fallback).
 
-   Pass the user query string and the list of `RetrievalHit` objects from your retrieval step. `rerank` returns a new list of `RetrievalHit` objects sorted from most to least relevant.
+4. **Extend `LLMReranker` if you need custom ranking logic.**
+   Subclass `LLMReranker` and override `rerank` rather than modifying the base class directly. Match the existing naming, error-handling, and logging style used in `reranker.py`.
 
-   ```python
-   reranked_hits = reranker.rerank(query=user_query, hits=keyword_hits)
-   ```
+5. **Run the reranker tests to verify your changes.**
 
-   If the API call fails for any reason, `rerank` falls back to the original keyword-retrieval order, so your application continues to return results.
-
-4. **Use the reranked list in your response pipeline.**
-
-   Replace your existing hit list with `reranked_hits`. The first item in the list is the hit Claude judged most relevant to the query.
-
-5. **Run the reranker tests to confirm nothing is broken.**
-
-   ```shell
+   ```bash
    pytest -k "reranker"
    ```
 
-## Verify the task worked
+## Verify success
 
-After calling `rerank`, inspect the first element of the returned list and confirm it corresponds to the document you would expect to be most relevant for your test query. If Claude's judgment differs from keyword rank order, the reranker is working. If the API is unreachable, the returned list should match your original `hits` order exactly, confirming the fallback behavior is active.
+All `reranker` tests pass and `rerank` returns a reordered list. To confirm Claude is driving the order (rather than the fallback), check that the most semantically relevant hit appears first even when it ranked lower in the raw keyword results.
