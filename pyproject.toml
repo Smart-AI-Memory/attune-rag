@@ -54,10 +54,12 @@ claude = [
 gemini = ["google-genai>=1.0,<2.0"]
 # Maintainer tooling — the docs/help authoring CLI used to regenerate
 # .help/templates/<feature>/{concept,reference,task}.md with the polish
-# pass. 0.13.0 is the floor because earlier versions skipped polish (the
-# unpolished output shipped as #20 was reverted in `revert(help): restore
-# polished benchmark templates`).
-author = ["attune-author>=0.13.0"]
+# pass. 0.25.0 is the floor because earlier versions predate model tiers:
+# they polished with the old default model (claude-sonnet-4-6) instead of
+# the tiered premium path, and lack newer features like polish-summaries.
+# (Earlier floor was 0.13.0 — versions before that skipped polish
+# entirely; see `revert(help): restore polished benchmark templates`.)
+author = ["attune-author>=0.25.0"]
 # Hybrid/dense retrieval. model2vec ships static (distilled) embeddings:
 # no torch, no GPU, offline, millisecond encode — keeps attune-rag
 # dependency-light while adding semantic recall for unstructured/unseen
@@ -88,7 +90,7 @@ dev = [
     "build>=1.0",
     "twine>=5.0",
     "attune-help>=0.10.1,<0.11",
-    "attune-author>=0.13.0",
+    "attune-author>=0.25.0",
     "anthropic>=0.95,<1.0",
     "google-genai>=1.0,<2.0",
 ]
