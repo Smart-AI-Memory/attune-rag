@@ -67,7 +67,7 @@ def test_check_r1_pass(mr) -> None:
 
     result = {
         "baseline_agg": _Agg(1.0, 1.0),
-        "paraphrased_agg": _Agg(0.875, 0.9875),
+        "paraphrased_agg": _Agg(0.925, 1.0),
     }
     ok, msg = mr.check_r1(result)
     assert ok, msg
@@ -244,7 +244,7 @@ def test_render_report_includes_metadata_block(mr) -> None:
 
     run_a = {
         "baseline_agg": _Agg(1.0, 1.0),
-        "paraphrased_agg": _Agg(0.875, 0.9875),
+        "paraphrased_agg": _Agg(0.925, 1.0),
     }
     metadata = {
         "harness_version": "0.1.0",

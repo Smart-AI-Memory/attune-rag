@@ -12,7 +12,7 @@
 | Set | n | P@1 | R@3 |
 |-----|---|-----|-----|
 | baseline | 40 | 1.0000 | 1.0000 |
-| paraphrased | 80 | 0.8750 | 0.9875 |
+| paraphrased | 80 | 0.9250 | 1.0000 |
 
 ## Per-query — baseline
 
@@ -71,7 +71,7 @@
 | gqp-003b | easy | ✗ | ✓ |
 | gqp-004a | easy | ✓ | ✓ |
 | gqp-004b | easy | ✓ | ✓ |
-| gqp-005a | easy | ✗ | ✓ |
+| gqp-005a | easy | ✓ | ✓ |
 | gqp-005b | easy | ✓ | ✓ |
 | gqp-006a | medium | ✓ | ✓ |
 | gqp-006b | medium | ✓ | ✓ |
@@ -84,7 +84,7 @@
 | gqp-010a | medium | ✓ | ✓ |
 | gqp-010b | medium | ✓ | ✓ |
 | gqp-011a | medium | ✓ | ✓ |
-| gqp-011b | medium | ✗ | ✓ |
+| gqp-011b | medium | ✓ | ✓ |
 | gqp-012a | medium | ✓ | ✓ |
 | gqp-012b | medium | ✓ | ✓ |
 | gqp-013a | hard | ✓ | ✓ |
@@ -94,7 +94,7 @@
 | gqp-015a | medium | ✓ | ✓ |
 | gqp-015b | medium | ✗ | ✓ |
 | gqp-016a | easy | ✓ | ✓ |
-| gqp-016b | easy | ✗ | ✓ |
+| gqp-016b | easy | ✓ | ✓ |
 | gqp-017a | easy | ✓ | ✓ |
 | gqp-017b | easy | ✗ | ✓ |
 | gqp-018a | easy | ✓ | ✓ |
@@ -104,10 +104,10 @@
 | gqp-020a | easy | ✓ | ✓ |
 | gqp-020b | easy | ✓ | ✓ |
 | gqp-021a | hard | ✓ | ✓ |
-| gqp-021b | hard | ✗ | ✓ |
+| gqp-021b | hard | ✓ | ✓ |
 | gqp-022a | medium | ✓ | ✓ |
 | gqp-022b | medium | ✓ | ✓ |
-| gqp-023a | medium | ✗ | ✗ |
+| gqp-023a | medium | ✗ | ✓ |
 | gqp-023b | medium | ✓ | ✓ |
 | gqp-024a | medium | ✓ | ✓ |
 | gqp-024b | medium | ✓ | ✓ |

@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Alias-expansion-sweep aliases retired from `aliases_override.json`**
+  (closes [attune-help#9](https://github.com/Smart-AI-Memory/attune-help/issues/9)):
+  the 12 template alias sets the sweep proved out
+  (docs/specs/archive/alias-expansion-sweep/) now ship in attune-help
+  template frontmatter (attune-help 0.13.0, attune-help PR #24), their
+  long-term home. The override file stays as an empty stub — the
+  mechanism remains for future temporary additions. attune-help pin
+  bumped to `>=0.13.0,<0.14`. Bundled-corpus golden regenerated:
+  baseline P@1/R@3 unchanged at 1.0000/1.0000, paraphrased P@1
+  0.8750 → 0.9250 and R@3 0.9875 → 1.0000 (frontmatter aliases also
+  reach the retriever's content-preview signal, which the override
+  path never did).
+
 ## [0.8.0] — 2026-07-09
 
 Model tiers: three named tiers (premium/capable/cheap) replace

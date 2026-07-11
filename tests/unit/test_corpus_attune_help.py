@@ -56,23 +56,24 @@ def test_get_unknown_returns_none() -> None:
     assert corpus.get("does/not/exist.md") is None
 
 
-# --- aliases_override.json integration ---
+# --- alias-expansion-sweep aliases (promoted to attune-help frontmatter) ---
 
 
-def test_bug_predict_carries_override_aliases() -> None:
-    """The aliases_override.json mechanism merges into concepts/tool-bug-predict.md.
+def test_bug_predict_carries_sweep_aliases() -> None:
+    """concepts/tool-bug-predict.md carries the alias-expansion-sweep aliases.
 
     Regression guard for the alias-expansion-sweep entry condition: D3
     proved alias expansion closes the bug-predict paraphrase gap with
-    zero baseline regression. This test pins the mechanism so a future
-    change to AttuneHelpCorpus or the override file shape can't silently
-    revert it.
+    zero baseline regression. The aliases were promoted from
+    aliases_override.json to attune-help frontmatter (attune-help#9);
+    this test pins the merged corpus so a future attune-help or
+    AttuneHelpCorpus change can't silently revert the sweep.
     """
     corpus = AttuneHelpCorpus.from_attune_help()
     entry = corpus.get("concepts/tool-bug-predict.md")
     assert entry is not None
-    # Frontmatter aliases come first; overrides are appended. Pin a few
-    # override aliases the diagnostic-3.md sweep identified.
+    # Pin a few sweep aliases the diagnostic-3.md sweep identified
+    # (promoted to attune-help frontmatter via attune-help#9).
     assert "dangerous code" in entry.aliases
     assert "weak points" in entry.aliases
     assert "fails silently" in entry.aliases  # gqp-015a fix
@@ -87,7 +88,7 @@ def test_bug_predict_paraphrased_queries_surface_concepts_entry() -> None:
     Inline subset of tests/golden/queries_paraphrased.yaml so this test
     doesn't depend on that file existing in the working tree. The full
     diagnostic-1 re-run lives elsewhere; this test is a lightweight
-    smoke check that the override file did the job.
+    smoke check that the sweep aliases (now attune-help frontmatter) did the job.
     """
     from attune_rag.retrieval import KeywordRetriever
 
@@ -114,7 +115,7 @@ def test_bug_predict_paraphrased_queries_surface_concepts_entry() -> None:
 
 def test_bug_predict_baseline_queries_still_pass() -> None:
     """Baseline keyword-friendly bug-predict queries still find the target
-    after aliases are added — a sanity check that the override doesn't
+    after aliases are added — a sanity check that the sweep aliases don't
     pull the entry away from queries it already handled."""
     from attune_rag.retrieval import KeywordRetriever
 
@@ -130,16 +131,16 @@ def test_bug_predict_baseline_queries_still_pass() -> None:
         hits = retriever.retrieve(query, corpus, k=3)
         paths = [h.entry.path for h in hits]
         assert target in paths, (
-            f"Baseline bug-predict query regressed after alias override: " f"{query!r} → {paths}"
+            f"Baseline bug-predict query regressed with sweep aliases: " f"{query!r} → {paths}"
         )
 
 
-def test_security_audit_carries_override_aliases() -> None:
-    """The aliases_override.json mechanism merges into concepts/tool-security-audit.md.
+def test_security_audit_carries_sweep_aliases() -> None:
+    """concepts/tool-security-audit.md carries the alias-expansion-sweep aliases.
 
     Regression guard for the alias-expansion-sweep M3 (security-audit
-    cluster) — pins a few override aliases the sweep identified so a
-    future change to the override file or the merge mechanism can't
+    cluster) — pins a few sweep aliases so a
+    future change to attune-help frontmatter or the merge mechanism can't
     silently revert the cluster's R@3 lift.
     """
     corpus = AttuneHelpCorpus.from_attune_help()
@@ -191,7 +192,7 @@ def test_security_audit_paraphrased_queries_surface_concepts_entry() -> None:
 
 def test_security_audit_baseline_queries_still_pass() -> None:
     """Baseline keyword-friendly security-audit queries still surface *some*
-    security-audit entry in top-3 after the alias override is in place.
+    security-audit entry in top-3 with the sweep aliases in place.
 
     Matches the R@3 semantic used by tests/golden/test_golden.py — the
     golden set accepts either concepts/ or quickstarts/run-security-audit.md
@@ -218,13 +219,13 @@ def test_security_audit_baseline_queries_still_pass() -> None:
         hits = retriever.retrieve(query, corpus, k=3)
         paths = {h.entry.path for h in hits}
         assert paths & security_audit_paths, (
-            f"Baseline security-audit query regressed after alias override: "
+            f"Baseline security-audit query regressed with sweep aliases: "
             f"{query!r} → {sorted(paths)}"
         )
 
 
-def test_release_prep_carries_override_aliases() -> None:
-    """The aliases_override.json mechanism merges into concepts/tool-release-prep.md.
+def test_release_prep_carries_sweep_aliases() -> None:
+    """concepts/tool-release-prep.md carries the alias-expansion-sweep aliases.
 
     Regression guard for the alias-expansion-sweep M4 (release-prep cluster).
     """
@@ -280,7 +281,7 @@ def test_release_prep_paraphrased_queries_surface_release_prep_entry() -> None:
 
 def test_release_prep_baseline_queries_still_pass() -> None:
     """Baseline keyword-friendly release-prep queries still surface *some*
-    release-prep entry in top-3 after the alias override is in place."""
+    release-prep entry in top-3 with the sweep aliases in place."""
     from attune_rag.retrieval import KeywordRetriever
 
     corpus = AttuneHelpCorpus.from_attune_help()
@@ -302,13 +303,13 @@ def test_release_prep_baseline_queries_still_pass() -> None:
         hits = retriever.retrieve(query, corpus, k=3)
         paths = {h.entry.path for h in hits}
         assert paths & release_prep_paths, (
-            f"Baseline release-prep query regressed after alias override: "
+            f"Baseline release-prep query regressed with sweep aliases: "
             f"{query!r} → {sorted(paths)}"
         )
 
 
-def test_smart_test_carries_override_aliases() -> None:
-    """The aliases_override.json mechanism merges into concepts/tool-smart-test.md.
+def test_smart_test_carries_sweep_aliases() -> None:
+    """concepts/tool-smart-test.md carries the alias-expansion-sweep aliases.
 
     Regression guard for the alias-expansion-sweep M5 (smart-test cluster).
     """
@@ -358,7 +359,7 @@ def test_smart_test_paraphrased_queries_surface_smart_test_entry() -> None:
 
 def test_smart_test_baseline_queries_still_pass() -> None:
     """Baseline keyword-friendly smart-test queries still surface *some*
-    smart-test entry in top-3 after the alias override is in place."""
+    smart-test entry in top-3 with the sweep aliases in place."""
     from attune_rag.retrieval import KeywordRetriever
 
     corpus = AttuneHelpCorpus.from_attune_help()
@@ -379,13 +380,13 @@ def test_smart_test_baseline_queries_still_pass() -> None:
         hits = retriever.retrieve(query, corpus, k=3)
         paths = {h.entry.path for h in hits}
         assert paths & smart_test_paths, (
-            f"Baseline smart-test query regressed after alias override: "
+            f"Baseline smart-test query regressed with sweep aliases: "
             f"{query!r} → {sorted(paths)}"
         )
 
 
-def test_fix_test_carries_override_aliases() -> None:
-    """The aliases_override.json mechanism merges into concepts/tool-fix-test.md.
+def test_fix_test_carries_sweep_aliases() -> None:
+    """concepts/tool-fix-test.md carries the alias-expansion-sweep aliases.
 
     Regression guard for the alias-expansion-sweep M6 (fix-test cluster).
     """
@@ -430,7 +431,7 @@ def test_fix_test_paraphrased_queries_surface_fix_test_entry() -> None:
 
 def test_fix_test_baseline_queries_still_pass() -> None:
     """Baseline keyword-friendly fix-test queries still surface *some*
-    fix-test entry in top-3 after the alias override is in place."""
+    fix-test entry in top-3 with the sweep aliases in place."""
     from attune_rag.retrieval import KeywordRetriever
 
     corpus = AttuneHelpCorpus.from_attune_help()
@@ -450,13 +451,12 @@ def test_fix_test_baseline_queries_still_pass() -> None:
         hits = retriever.retrieve(query, corpus, k=3)
         paths = {h.entry.path for h in hits}
         assert paths & fix_test_paths, (
-            f"Baseline fix-test query regressed after alias override: "
-            f"{query!r} → {sorted(paths)}"
+            f"Baseline fix-test query regressed with sweep aliases: " f"{query!r} → {sorted(paths)}"
         )
 
 
-def test_code_quality_carries_override_aliases() -> None:
-    """The aliases_override.json mechanism merges into concepts/tool-code-quality.md.
+def test_code_quality_carries_sweep_aliases() -> None:
+    """concepts/tool-code-quality.md carries the alias-expansion-sweep aliases.
 
     Regression guard for the alias-expansion-sweep M7 (code-quality cluster).
     """
@@ -502,7 +502,7 @@ def test_code_quality_paraphrased_queries_surface_code_quality_entry() -> None:
 
 def test_code_quality_baseline_queries_still_pass() -> None:
     """Baseline keyword-friendly code-quality queries still surface *some*
-    code-quality entry in top-3 after the alias override is in place."""
+    code-quality entry in top-3 with the sweep aliases in place."""
     from attune_rag.retrieval import KeywordRetriever
 
     corpus = AttuneHelpCorpus.from_attune_help()
@@ -522,13 +522,13 @@ def test_code_quality_baseline_queries_still_pass() -> None:
         hits = retriever.retrieve(query, corpus, k=3)
         paths = {h.entry.path for h in hits}
         assert paths & code_quality_paths, (
-            f"Baseline code-quality query regressed after alias override: "
+            f"Baseline code-quality query regressed with sweep aliases: "
             f"{query!r} → {sorted(paths)}"
         )
 
 
-def test_refactor_plan_carries_override_aliases() -> None:
-    """The aliases_override.json mechanism merges into concepts/tool-refactor-plan.md.
+def test_refactor_plan_carries_sweep_aliases() -> None:
+    """concepts/tool-refactor-plan.md carries the alias-expansion-sweep aliases.
 
     Regression guard for the alias-expansion-sweep M8 (refactor-plan cluster).
     """
@@ -581,7 +581,7 @@ def test_refactor_plan_paraphrased_queries_surface_refactor_plan_entry() -> None
 
 def test_refactor_plan_baseline_queries_still_pass() -> None:
     """Baseline keyword-friendly refactor-plan queries still surface *some*
-    refactor-plan entry in top-3 after the alias override is in place."""
+    refactor-plan entry in top-3 with the sweep aliases in place."""
     from attune_rag.retrieval import KeywordRetriever
 
     corpus = AttuneHelpCorpus.from_attune_help()
@@ -601,13 +601,13 @@ def test_refactor_plan_baseline_queries_still_pass() -> None:
         hits = retriever.retrieve(query, corpus, k=3)
         paths = {h.entry.path for h in hits}
         assert paths & refactor_paths, (
-            f"Baseline refactor-plan query regressed after alias override: "
+            f"Baseline refactor-plan query regressed with sweep aliases: "
             f"{query!r} → {sorted(paths)}"
         )
 
 
-def test_planning_carries_override_aliases() -> None:
-    """The aliases_override.json mechanism merges into concepts/tool-planning.md.
+def test_planning_carries_sweep_aliases() -> None:
+    """concepts/tool-planning.md carries the alias-expansion-sweep aliases.
 
     Regression guard for the alias-expansion-sweep M9 (planning cluster).
     """
@@ -653,7 +653,7 @@ def test_planning_paraphrased_queries_surface_planning_entry() -> None:
 
 def test_planning_baseline_queries_still_pass() -> None:
     """Baseline keyword-friendly planning queries still surface *some*
-    planning entry in top-3 after the alias override is in place."""
+    planning entry in top-3 with the sweep aliases in place."""
     from attune_rag.retrieval import KeywordRetriever
 
     corpus = AttuneHelpCorpus.from_attune_help()
@@ -673,13 +673,12 @@ def test_planning_baseline_queries_still_pass() -> None:
         hits = retriever.retrieve(query, corpus, k=3)
         paths = {h.entry.path for h in hits}
         assert paths & planning_paths, (
-            f"Baseline planning query regressed after alias override: "
-            f"{query!r} → {sorted(paths)}"
+            f"Baseline planning query regressed with sweep aliases: " f"{query!r} → {sorted(paths)}"
         )
 
 
-def test_doc_gen_carries_override_aliases() -> None:
-    """The aliases_override.json mechanism merges into concepts/tool-doc-gen.md.
+def test_doc_gen_carries_sweep_aliases() -> None:
+    """concepts/tool-doc-gen.md carries the alias-expansion-sweep aliases.
 
     Regression guard for the alias-expansion-sweep M10 (doc-gen cluster).
     """
@@ -723,7 +722,7 @@ def test_doc_gen_paraphrased_queries_surface_doc_gen_entry() -> None:
 
 def test_doc_gen_baseline_queries_still_pass() -> None:
     """Baseline keyword-friendly doc-gen queries still surface *some*
-    doc-gen entry in top-3 after the alias override is in place."""
+    doc-gen entry in top-3 with the sweep aliases in place."""
     from attune_rag.retrieval import KeywordRetriever
 
     corpus = AttuneHelpCorpus.from_attune_help()
@@ -744,14 +743,12 @@ def test_doc_gen_baseline_queries_still_pass() -> None:
         hits = retriever.retrieve(query, corpus, k=3)
         paths = {h.entry.path for h in hits}
         assert paths & doc_gen_paths, (
-            f"Baseline doc-gen query regressed after alias override: "
-            f"{query!r} → {sorted(paths)}"
+            f"Baseline doc-gen query regressed with sweep aliases: " f"{query!r} → {sorted(paths)}"
         )
 
 
-def test_doc_orchestrator_carries_override_aliases() -> None:
-    """The aliases_override.json mechanism merges into
-    references/tool-doc-orchestrator.md.
+def test_doc_orchestrator_carries_sweep_aliases() -> None:
+    """references/tool-doc-orchestrator.md carries the alias-expansion-sweep aliases.
 
     Regression guard for the alias-expansion-sweep M11 (doc-orchestrator
     cluster). Note: doc-orchestrator only has the references/ entry —
@@ -798,8 +795,8 @@ def test_doc_orchestrator_paraphrased_queries_surface_doc_orchestrator_entry() -
 
 def test_doc_orchestrator_baseline_queries_still_pass() -> None:
     """Baseline keyword-friendly doc-orchestrator queries still surface
-    references/tool-doc-orchestrator.md in top-3 after the alias override
-    is in place."""
+    references/tool-doc-orchestrator.md in top-3 with the sweep aliases
+    in place."""
     from attune_rag.retrieval import KeywordRetriever
 
     corpus = AttuneHelpCorpus.from_attune_help()
@@ -814,14 +811,12 @@ def test_doc_orchestrator_baseline_queries_still_pass() -> None:
         hits = retriever.retrieve(query, corpus, k=3)
         paths = [h.entry.path for h in hits]
         assert target in paths, (
-            f"Baseline doc-orchestrator query regressed after alias override: "
-            f"{query!r} → {paths}"
+            f"Baseline doc-orchestrator query regressed with sweep aliases: " f"{query!r} → {paths}"
         )
 
 
-def test_deep_review_carries_override_aliases() -> None:
-    """The aliases_override.json mechanism merges into
-    references/tool-deep-review.md (M12 cluster)."""
+def test_deep_review_carries_sweep_aliases() -> None:
+    """references/tool-deep-review carries the alias-expansion-sweep aliases.md (M12 cluster)."""
     corpus = AttuneHelpCorpus.from_attune_help()
     entry = corpus.get("references/tool-deep-review.md")
     assert entry is not None
@@ -870,13 +865,12 @@ def test_deep_review_baseline_queries_still_pass() -> None:
         hits = retriever.retrieve(query, corpus, k=3)
         paths = [h.entry.path for h in hits]
         assert target in paths, (
-            f"Baseline deep-review query regressed after alias override: " f"{query!r} → {paths}"
+            f"Baseline deep-review query regressed with sweep aliases: " f"{query!r} → {paths}"
         )
 
 
-def test_doc_audit_carries_override_aliases() -> None:
-    """The aliases_override.json mechanism merges into
-    references/tool-doc-audit.md (M12 cluster)."""
+def test_doc_audit_carries_sweep_aliases() -> None:
+    """references/tool-doc-audit carries the alias-expansion-sweep aliases.md (M12 cluster)."""
     corpus = AttuneHelpCorpus.from_attune_help()
     entry = corpus.get("references/tool-doc-audit.md")
     assert entry is not None
@@ -925,7 +919,7 @@ def test_doc_audit_baseline_queries_still_pass() -> None:
         hits = retriever.retrieve(query, corpus, k=3)
         paths = [h.entry.path for h in hits]
         assert target in paths, (
-            f"Baseline doc-audit query regressed after alias override: " f"{query!r} → {paths}"
+            f"Baseline doc-audit query regressed with sweep aliases: " f"{query!r} → {paths}"
         )
 
 

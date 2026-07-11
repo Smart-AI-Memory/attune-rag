@@ -82,14 +82,14 @@ wheels = [
 
 [[package]]
 name = "attune-help"
-version = "0.10.2"
+version = "0.13.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "python-frontmatter" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e8/37/6d0e0625d1ae19f39119d2a8ec6a84dd07467b1c7d4da64bc17eca8d3923/attune_help-0.10.2.tar.gz", hash = "sha256:08ad0ef92979cd194ec3570872c60e2c70c2aea244fbcb9e63aedfe11ef015df", size = 433558, upload-time = "2026-05-01T11:07:20.108Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/96/51/50951fac0519c24d4641a5d2c78e678e21a1294bcd2cde710f64002aeb75/attune_help-0.13.0.tar.gz", hash = "sha256:b380aafddae0dfc7dd6546e1114aafb0ea3008254ef02aa70ead817f241a69ef", size = 433592, upload-time = "2026-07-11T13:14:51.101Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8e/99/641452d2ca4d7d518015e4324c4f9d44eddc41e557918b54ac1b4bd87ece/attune_help-0.10.2-py3-none-any.whl", hash = "sha256:fc201a6cce74dbaac339fd11c65f1bd7607becbbdc2724607e9281a1b92c9281", size = 717718, upload-time = "2026-05-01T11:07:18.156Z" },
+    { url = "https://files.pythonhosted.org/packages/cf/0f/8bb49d301a6a0d55ae8f1f601e48bbb83bcbbf40e76cc836437c940c121d/attune_help-0.13.0-py3-none-any.whl", hash = "sha256:a2a015bac29bd9422256bf1523f4b3da9c7bf320e1457d95fe8e3eaaf74c9da9", size = 712002, upload-time = "2026-07-11T13:14:49.254Z" },
 ]
 
 [[package]]
@@ -153,9 +153,9 @@ requires-dist = [
     { name = "anthropic", marker = "extra == 'dev'", specifier = ">=0.95,<1.0" },
     { name = "attune-author", marker = "extra == 'author'", specifier = ">=0.25.0" },
     { name = "attune-author", marker = "extra == 'dev'", specifier = ">=0.25.0" },
-    { name = "attune-help", marker = "extra == 'all'", specifier = ">=0.10.1,<0.11" },
-    { name = "attune-help", marker = "extra == 'attune-help'", specifier = ">=0.10.1,<0.11" },
-    { name = "attune-help", marker = "extra == 'dev'", specifier = ">=0.10.1,<0.11" },
+    { name = "attune-help", marker = "extra == 'all'", specifier = ">=0.13.0,<0.14" },
+    { name = "attune-help", marker = "extra == 'attune-help'", specifier = ">=0.13.0,<0.14" },
+    { name = "attune-help", marker = "extra == 'dev'", specifier = ">=0.13.0,<0.14" },
     { name = "black", marker = "extra == 'dev'", specifier = ">=24.0" },
     { name = "build", marker = "extra == 'dev'", specifier = ">=1.0" },
     { name = "claude-agent-sdk", marker = "extra == 'claude'", specifier = ">=0.1.63" },
