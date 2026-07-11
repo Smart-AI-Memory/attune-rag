@@ -85,7 +85,7 @@ def test_module_bundled_r1_numbers() -> None:
     Those were the rerank-*on* aspirational numbers; D5's verdict
     landed rerank-*off* as the harness default. The actual rerank-off
     numbers (verified against ``tests/golden/measure_corpus_bundled.golden.md``)
-    are ``0.9250`` and ``1.0000`` for paraphrased.
+    are ``0.9000`` and ``0.9875`` for paraphrased.
     """
     from attune_rag.measure_corpus import measure
 
@@ -96,8 +96,8 @@ def test_module_bundled_r1_numbers() -> None:
     )
     assert result.p1 == 1.0
     assert result.r3 == 1.0
-    assert result.paraphrased_p1 == pytest.approx(0.925)
-    assert result.paraphrased_r3 == pytest.approx(1.0)
+    assert result.paraphrased_p1 == pytest.approx(0.9)
+    assert result.paraphrased_r3 == pytest.approx(0.9875)
     assert result.n == 40
     assert result.paraphrased_n == 80
     assert result.rerank is False

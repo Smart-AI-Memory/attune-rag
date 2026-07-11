@@ -44,6 +44,20 @@ if TYPE_CHECKING:
 
 _PUNCT_RE = re.compile(f"[{re.escape(string.punctuation)}]")
 
+# Entry content is the raw template file, frontmatter included (see
+# DirectoryCorpus), and the preview window is small
+# (CONTENT_PREVIEW_CHARS). Frontmatter name/tags are useful preview
+# signal, but the ``aliases:`` block is already scored by its own
+# dedicated field — and a long aliases list (post alias-expansion-sweep
+# promotion) both double-counts alias tokens at content weight and
+# displaces the actual body from the preview. Drop exactly that block
+# (inline flow style or block style with "- item" continuation lines)
+# before slicing.
+_ALIASES_BLOCK_RE = re.compile(
+    r"^aliases:.*(?:\r?\n[ \t]+-[ \t].*)*\r?\n?",
+    re.MULTILINE,
+)
+
 _STOPWORDS: frozenset[str] = frozenset(
     {
         "a",
@@ -200,7 +214,12 @@ class KeywordRetriever:
 
     PATH_WEIGHT: float = 2.0
     SUMMARY_WEIGHT: float = 1.5
-    ALIASES_WEIGHT: float = 1.5
+    # 2.0 compensates for alias tokens no longer riding in the content
+    # preview (see _ALIASES_BLOCK_RE): matched aliases used to collect
+    # content-weight credit on top of this field. Swept 1.5/2.0/2.5 —
+    # 2.0 restores golden baseline P@1 to 1.0 while keeping the
+    # 650-query fixture set at its pre-promotion level (75.1%).
+    ALIASES_WEIGHT: float = 2.0
     CONTENT_WEIGHT: float = 1.0
     RELATED_WEIGHT: float = 0.5
     MIN_SCORE: float = 2.0
@@ -253,7 +272,9 @@ class KeywordRetriever:
         tokens = {
             "path": _tokenize(entry.path),
             "summary": _tokenize(entry.summary or ""),
-            "content_preview": _tokenize(entry.content[: self.CONTENT_PREVIEW_CHARS]),
+            "content_preview": _tokenize(
+                _ALIASES_BLOCK_RE.sub("", entry.content, count=1)[: self.CONTENT_PREVIEW_CHARS]
+            ),
             "aliases": _tokenize(" ".join(entry.aliases)),
         }
         entry._tokens_cache[cache_key] = tokens

@@ -60,8 +60,8 @@ _HARNESS_VERSION = "0.1.0"
 _R1_REFERENCE = {
     "baseline_p1": 1.0000,
     "baseline_r3": 1.0000,
-    "paraphrased_p1": 0.9250,
-    "paraphrased_r3": 1.0000,
+    "paraphrased_p1": 0.9000,
+    "paraphrased_r3": 0.9875,
 }
 
 

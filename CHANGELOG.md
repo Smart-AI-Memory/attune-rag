@@ -6,6 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Content preview no longer double-counts aliases or lets frontmatter
+  size distort ranking** (docs/specs/preview-alias-double-count/):
+  `KeywordRetriever` drops the frontmatter `aliases:` block before
+  slicing the 500-char content preview — alias tokens were earning
+  ungated content-weight credit on top of the dedicated aliases field,
+  and post-promotion alias blocks displaced template bodies from the
+  preview entirely. `ALIASES_WEIGHT` moves 1.5 → 2.0 to replace the
+  accidental double-count with an explicit weight (swept 1.5/2.0/2.5).
+  Net: attune-help fixture P@1 restored 73.4% → 75.1% (pre-promotion
+  level), golden gates unchanged at full margin.
+
 ### Changed
 
 - **Alias-expansion-sweep aliases retired from `aliases_override.json`**

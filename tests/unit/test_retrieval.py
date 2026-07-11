@@ -543,3 +543,53 @@ def test_score_entry_does_not_re_tokenize_on_repeat_calls() -> None:
         rmod._tokenize = real_tokenize
 
     assert calls == first_pass, "field tokens must not be recomputed across queries"
+
+
+def test_content_preview_skips_aliases_block() -> None:
+    """The content-preview window drops the ``aliases:`` block, keeps the rest.
+
+    Regression guard for the alias-promotion headroom loss
+    (attune-help#9): entry content is the raw template file, so an
+    ``aliases:`` list larger than ``CONTENT_PREVIEW_CHARS`` used to
+    fill the whole preview — double-counting alias tokens at content
+    weight and pushing the actual body out of the content signal.
+    Other frontmatter (name/tags) is deliberate preview signal and
+    must survive.
+    """
+    from attune_rag.retrieval import KeywordRetriever
+
+    filler = ", ".join(f"aliasfiller {i}" for i in range(60))  # > preview window
+    entry = _entry(
+        path="concepts/example.md",
+        category="concepts",
+        content=(
+            "---\nname: example\ntags: [tagsignal]\n"
+            f"aliases: [{filler}]\n"
+            "source: src/example.py\n---\nbodyword opens the document.\n"
+        ),
+    )
+
+    tokens = KeywordRetriever()._entry_field_tokens(entry)["content_preview"]
+
+    assert "bodyword" in tokens
+    assert "tagsignal" in tokens
+    assert "aliasfiller" not in tokens
+
+
+def test_content_preview_skips_block_style_aliases() -> None:
+    """Block-style ``aliases:`` lists (dash continuation lines) are
+    dropped from the preview too — user corpora aren't limited to the
+    inline flow style the bundled templates use."""
+    from attune_rag.retrieval import KeywordRetriever
+
+    items = "\n".join(f"  - aliasfiller {i}" for i in range(40))
+    entry = _entry(
+        path="concepts/example.md",
+        category="concepts",
+        content=f"---\nname: example\naliases:\n{items}\n---\nbodyword here.\n",
+    )
+
+    tokens = KeywordRetriever()._entry_field_tokens(entry)["content_preview"]
+
+    assert "bodyword" in tokens
+    assert "aliasfiller" not in tokens
