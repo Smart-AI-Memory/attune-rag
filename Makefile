@@ -41,19 +41,15 @@ test-cov:  ## Run unit tests with coverage report.
 # attune-author's polish + fact-check, which spends Anthropic API
 # tokens. Use the targets below for that proper path.
 #
-# Gotcha: the 0.13.0 wheel on PyPI ships with a stale __version__
-# string ("0.11.1"). `attune-author --version` therefore lies. The
-# `_check-author-polish` target probes for the `--fact-check` flag
-# instead, which only exists from 0.13.0 onward, so the version-string
-# bug doesn't trip the check.
+# The `_check-author-polish` target probes for the `--fact-check`
+# flag rather than parsing `attune-author --version` (older wheels
+# shipped stale version strings, so the flag probe is authoritative).
 
 .PHONY: _check-author-polish
 _check-author-polish:
 	@$(ATTUNE_AUTHOR) regenerate --help 2>/dev/null | grep -q -- '--fact-check' || { \
 	  echo "ERROR: attune-author in the venv lacks the polish step (--fact-check flag missing)."; \
-	  echo "       Fix: $(UV) pip install --upgrade 'attune-author>=0.13.0'"; \
-	  echo "       (Note: 'attune-author --version' may report 0.11.1 even when 0.13.0 is installed —"; \
-	  echo "        the PyPI wheel has a stale version string. The --fact-check probe is authoritative.)"; \
+	  echo "       Fix: $(UV) sync --extra dev  (pyproject pins attune-author>=0.25.0)"; \
 	  exit 1; \
 	}
 
