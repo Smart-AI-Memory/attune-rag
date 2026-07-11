@@ -1,0 +1,16 @@
+# Thin caller — canonical logic lives in attune-ai (reusable workflow).
+# spec-status-integrity task 7; see attune workspace
+# specs/spec-status-integrity/.
+name: spec-status-reminder
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  remind:
+    uses: Smart-AI-Memory/attune-ai/.github/workflows/spec-status-reminder.yml@main
