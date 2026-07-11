@@ -43,7 +43,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-attune-help = ["attune-help>=0.10.1,<0.11"]
+attune-help = ["attune-help>=0.13.0,<0.14"]
 claude = [
     "anthropic>=0.95,<1.0",
     # Subscription-routed judge calls under Claude Code
@@ -74,7 +74,7 @@ transformers = ["sentence-transformers>=3.0,<6.0"]
 # (pulls torch, ~GB). For a dependency-light install, choose extras
 # explicitly rather than `[all]`.
 all = [
-    "attune-help>=0.10.1,<0.11",
+    "attune-help>=0.13.0,<0.14",
     "anthropic>=0.95,<1.0",
     "google-genai>=1.0,<2.0",
     "model2vec>=0.3,<1.0",
@@ -89,7 +89,7 @@ dev = [
     "pre-commit>=3.5",
     "build>=1.0",
     "twine>=5.0",
-    "attune-help>=0.10.1,<0.11",
+    "attune-help>=0.13.0,<0.14",
     "attune-author>=0.25.0",
     "anthropic>=0.95,<1.0",
     "google-genai>=1.0,<2.0",
