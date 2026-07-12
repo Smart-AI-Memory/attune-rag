@@ -64,6 +64,25 @@ class EmbeddingRetriever:
         self._query_prefix = query_prefix
         self._cache: dict[int, tuple[list[Any], Any]] = {}
 
+    def _missing_extra_error(self) -> RuntimeError:
+        """The install-hint error raised when this retriever's extra is
+        absent. Subclasses override to name their own extra."""
+        return RuntimeError(
+            "EmbeddingRetriever requires the embeddings extra. "
+            "Install with: pip install 'attune-rag[embeddings]'"
+        )
+
+    def _require_numpy(self) -> Any:
+        """Import numpy, mapping an absent install to the same friendly
+        RuntimeError as a missing encoder dep — numpy ships with the
+        extra, so a bare install must get the install hint, not a raw
+        ModuleNotFoundError."""
+        try:
+            import numpy as np
+        except ImportError as exc:
+            raise self._missing_extra_error() from exc
+        return np
+
     def _get_encoder(self) -> Any:
         if (
             self._encoder is None
@@ -71,10 +90,7 @@ class EmbeddingRetriever:
             try:
                 from model2vec import StaticModel
             except ImportError as exc:
-                raise RuntimeError(
-                    "EmbeddingRetriever requires the embeddings extra. "
-                    "Install with: pip install 'attune-rag[embeddings]'"
-                ) from exc
+                raise self._missing_extra_error() from exc
             self._encoder = StaticModel.from_pretrained(self._model_name)
         return self._encoder
 
@@ -95,7 +111,7 @@ class EmbeddingRetriever:
         cached = self._cache.get(id(corpus))
         if cached is not None:
             return cached
-        import numpy as np
+        np = self._require_numpy()
 
         entries = list(corpus.entries())
         if not entries:
@@ -111,11 +127,12 @@ class EmbeddingRetriever:
         return entries, mat
 
     def retrieve(self, query: str, corpus: CorpusProtocol, k: int = 3):
-        import numpy as np
-
+        # _corpus_matrix first: it owns the friendly missing-extra error,
+        # so its guard must fire before any bare numpy usage here.
         entries, mat = self._corpus_matrix(corpus)
         if not entries:
             return []
+        np = self._require_numpy()
         q_text = self._query_prefix + query if self._query_prefix else query
         q = np.asarray(self._get_encoder().encode([q_text]), dtype="float32")
         q = q / _norms(q)
