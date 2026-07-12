@@ -80,6 +80,15 @@ class TransformerRetriever(EmbeddingRetriever):
             query_prefix=query_prefix,
         )
 
+    def _missing_extra_error(self) -> RuntimeError:
+        """Install hint for this retriever — raised whenever any
+        [transformers]-extra dependency (sentence-transformers, numpy)
+        is absent."""
+        return RuntimeError(
+            "TransformerRetriever requires the [transformers] extra. "
+            "Install with: pip install 'attune-rag[transformers]'"
+        )
+
     def _get_encoder(self) -> Any:
         if (
             self._encoder is None
@@ -87,9 +96,6 @@ class TransformerRetriever(EmbeddingRetriever):
             try:
                 from sentence_transformers import SentenceTransformer
             except ImportError as exc:
-                raise RuntimeError(
-                    "TransformerRetriever requires the [transformers] extra. "
-                    "Install with: pip install 'attune-rag[transformers]'"
-                ) from exc
+                raise self._missing_extra_error() from exc
             self._encoder = SentenceTransformer(self._model_name)
         return self._encoder
