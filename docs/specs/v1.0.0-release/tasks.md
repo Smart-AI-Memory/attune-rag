@@ -2,9 +2,12 @@
 
 ## Phase 3: Tasks
 
-> **Status: scaffolding — not executable; promotes via `/spec`
-> scoping pass after the 0.2.0 cut closes cleanly. Until then this
-> table is a placeholder skeleton, *not* a work-tracker.**
+**Status:** parked (2026-07-13) — scaffolding + narrative prep only
+(PRs #87 #89 #92 #111 #145 #146, 2026-05-20→22); v1.0.0 NOT cut
+(latest tag v0.8.0); no spec-dir activity since 2026-05-22; freeze
+through 2026-07-27; remaining: `/spec` scoping pass, then M1 audit →
+M2 docs → M3 cut → M4 watch. Until then the table below is a
+placeholder skeleton, *not* a work-tracker.
 
 - **Shape parent:** [api-v0.2-public-surface/tasks.md](../api-v0.2-public-surface/tasks.md)
 

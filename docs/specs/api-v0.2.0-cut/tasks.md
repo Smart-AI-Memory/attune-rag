@@ -1,11 +1,8 @@
 # Spec: attune-rag 0.2.0 cut — Tasks
 
-> **Status:** **scoped 2026-05-22** — executable when Phase 4 W4
-> closes and the entry gates in
-> [`requirements.md`](requirements.md#entry-gates-inherited-from-phase-4)
-> are green. The spec was authored decision-complete in
-> [`design.md`](design.md); this pass adds the M0 entry-gate
-> verification milestone and confirms the decisions.
+**Status:** complete (2026-05-25) — v0.2.0 cut shipped in PR #148
+(tag v0.2.0), executed early via W4.2 override (receipts #130/#136).
+Authored decision-complete in [`design.md`](design.md).
 
 ## Scoping decisions confirmed (2026-05-22)
 
