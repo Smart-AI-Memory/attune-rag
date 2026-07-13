@@ -2,7 +2,7 @@
 
 ## Phase 3: Tasks
 
-**Status**: W0 complete 2026-05-20 (4 days ahead of the 2026-05-23 calendar end-date); W1 freeze clock starts 2026-05-20 against `attune-rag==0.1.21`.
+**Status**: complete (2026-05-25) — closed via W4.2 override per [exit-summary.md](./exit-summary.md); v0.2.0 cut (PR #148), W3.2 downstream gate shipped in PR #81; W0 done 2026-05-20, W1 freeze ran from 2026-05-20 against `attune-rag==0.1.21`.
 
 ### Freeze semantics — what counts as "Added"
 

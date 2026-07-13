@@ -1,5 +1,7 @@
 # Spec: Multi-run perf-baseline methodology — tasks
 
+**Status:** parked (2026-07-13) — M1–M4 shipped 2026-05-22/23 (PRs #131, #137, #139, #142, #143); remaining: M5 post-implementation validation (time-gate passed ~2026-06-20, never run)
+
 > **Status:** **scoped 2026-05-22** — executable when Phase 5 opens
 > (after Phase 4 W4 close + 0.2.0 cut). The spec was authored
 > decision-complete; this pass confirms the decisions and adds an
