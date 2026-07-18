@@ -1,8 +1,10 @@
 # Spec: safe-abstention-defaults — design
 
-> **Status:** scoping (2026-06-07). Options below are candidates;
-> the chosen mechanism is locked at the `/spec` pass and recorded at
-> the top of [`tasks.md`](tasks.md).
+> **Status:** executing — scoping locked 2026-07-17. The chosen
+> mechanisms are recorded at the top of [`tasks.md`](tasks.md):
+> C1 ships (with the T=5-vs-R1 alias wrinkle), C2 ships as the only
+> honest BYO path, **C3 measured and rejected** (see
+> [`measurements.md`](measurements.md)).
 
 ## 1. The problem in one paragraph
 
