@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-07-17
+
+Retrieval-ranking correction and alias-home migration: the content
+preview no longer double-counts frontmatter aliases, and the
+alias-expansion-sweep alias sets move to their long-term home in
+attune-help template frontmatter (floor raised to 0.13.0). Minor bump:
+ranking behavior changes deliberately and the attune-help dependency
+floor rises.
+
 ### Fixed
 
 - **Content preview no longer double-counts aliases or lets frontmatter
@@ -18,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   accidental double-count with an explicit weight (swept 1.5/2.0/2.5).
   Net: attune-help fixture P@1 restored 73.4% → 75.1% (pre-promotion
   level), golden gates unchanged at full margin.
+- **Missing-numpy now raises the friendly install hint** (#197):
+  `EmbeddingRetriever` previously assumed the `model2vec` import was
+  the only failure mode of the `[embeddings]` extra; when numpy itself
+  was absent the raw `ModuleNotFoundError` escaped instead of the
+  `pip install attune-rag[embeddings]` guidance.
 
 ### Changed
 
