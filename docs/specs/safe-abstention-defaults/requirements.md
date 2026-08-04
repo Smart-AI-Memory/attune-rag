@@ -1,8 +1,8 @@
 # Spec: safe-abstention-defaults — requirements
 
-> **Status:** scoping (2026-06-07). The scaffold (these files) is
-> docs-only and freeze-compliant — it lands now. The requirements
-> below bind the **default-change PR** at the v1.0.0 cut.
+> **Status:** executing — scoping locked 2026-07-17 (see
+> [`tasks.md`](tasks.md)). The requirements below bind the
+> **default-change PR** (M3).
 
 ## Entry gates
 

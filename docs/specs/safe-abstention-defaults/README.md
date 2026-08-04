@@ -1,9 +1,10 @@
 # Spec: safe-abstention-defaults (attune-rag)
 
-> **Status:** **scoping** (2026-06-07). Scaffold is docs-only and
-> freeze-compliant — it lands now. The default-behavior change it
-> proposes is **not** shipped here; it activates at the v1.0.0 cut
-> with its own `/spec` pass and PR.
+> **Status:** **executing — scoping locked 2026-07-17** (M0–M2 done,
+> decisions recorded in [`tasks.md`](tasks.md); measurements committed
+> in [`measurements.md`](measurements.md)). Next: M3, the
+> bundled-default behavior PR. The default-behavior change is **not**
+> shipped by the measurement PR.
 >
 > Provenance: the [`rag-strengthening`](../rag-strengthening/) program
 > (Phases 1/2/3/5 merged; Phase 4 closed data-gated-out,
