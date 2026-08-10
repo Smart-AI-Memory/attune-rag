@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-08-10
+
+The "one threshold, one decision" release: the bundled corpus becomes
+safe-by-default (calibrated abstention), and the same keyword-confidence
+signal gains a rescue arm — opt-in confidence-gated fusion for unseen
+corpora. Torch-free throughout; base-install behavior unchanged except
+the bundled default documented below.
+
 ### Changed
 
 - **The bundled corpus abstains by default**
