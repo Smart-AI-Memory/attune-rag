@@ -2,21 +2,29 @@
 
 ## Phase 2: Design
 
-> **Status: scaffolding — not yet scoped; activates after the 0.2.0
-> cut closes cleanly + the 7-day post-1.0.0 no-hotfix gate is
-> achievable (per [ROADMAP-v1.md](../ROADMAP-v1.md) Phase 5 gate).**
+> **Status: approved 2026-08-09** — scoped and ratified by Patrick in
+> the same session. D7 was ratified Option A, then **voided 2026-08-10**
+> (the override was already shipped — see decisions.md D7). Decisions
+> locked in [decisions.md](decisions.md). Sections below are corrected
+> where the scoping audit found them stale; corrections are marked
+> inline rather than silently applied.
 
-- **Shape parent:** [api-v0.2-public-surface/design.md](../api-v0.2-public-surface/design.md)
+- **Shape parent:** [api-v0.2-public-surface/design.md](../archive/api-v0.2-public-surface/design.md)
 
-### What 1.0.0 means vs. 0.2.0
+### What 1.0.0 means vs. 0.9.x
 
-| Dimension | 0.2.0 | 1.0.0 |
+> **Corrected 2026-08-09.** This table compared against 0.2.0. The cut's
+> parent is **0.9.x** ([decisions.md](decisions.md) D1), and the
+> classifier row was factually wrong (D2).
+
+| Dimension | 0.9.x | 1.0.0 |
 |---|---|---|
-| Public surface | Documented, snapshot-tested, frozen. | **Same surface.** No additions. |
+| Public surface | Documented, snapshot-tested, frozen. | **Same surface.** No additions — the D7 override turned out to be already shipped (PR #130; D7 voided 2026-08-10). |
 | SemVer commitment | 0.x semantics: no removals within a minor; removals OK at next minor with a prior deprecation warning ([POLICY.md §2](../../POLICY.md#2-semver-commitment)). | 1.x semantics: removals only at major bumps, after at least one full minor with a `DeprecationWarning` at the symbol's call site. |
-| Classifier | `Development Status :: 3 - Alpha` | `Development Status :: 5 - Production/Stable` |
-| Support window | Not documented. | Documented in `POLICY.md` (length pinned at scoping; see [requirements.md](requirements.md)). |
-| Burn-in evidence | Pre-Phase-4. | Phase 4 complete + N-day post-0.2.0 soak. |
+| Classifier | `Development Status :: 4 - Beta` | `Development Status :: 5 - Production/Stable` |
+| Support window | Not documented. | Documented in `POLICY.md` — **6 months** (D5). |
+| Burn-in evidence | Pre-Phase-4. | Phase 4 complete + 14-day post-0.9.x soak (D4, satisfied). |
+| Consumer pins | gui `<1.0`, ai `<0.10`, author `<0.9`. | **All `<2.0`** — M0 lands this *before* the cut (D3). |
 
 The cut is a **claim**, not new code. The work that earns the
 claim happened in Phases 1–4. Phase 5 codifies it.
@@ -45,6 +53,16 @@ A planning conversation on 2026-05-21 narrowed the in-scope work
 for Phase 5 versus the deferred-to-v1.1.0 work. Recorded here so
 the formal `/spec` scoping pass (which runs after the 0.2.0 cut)
 inherits the decision rather than re-litigating it.
+
+> **Status at scoping (2026-08-09).** Much of the list below has since
+> shipped: `perf-baseline-multi-run`'s methodology is in the tree at
+> σ=2.0 (D8 — only the numbers need re-measuring, M1.0), and
+> `user-corpus-onboarding`'s guide + quality harness are shipped. The
+> last item, the `DirectoryCorpus` override, turned out to be ALREADY
+> SHIPPED too (`extra_aliases_file`, PR #130 — found 2026-08-10 on
+> starting M0.5; D7 voided). All three deliverables are live. The
+> telemetry config-surface reservation and the standard cut work
+> remain as written.
 
 **In v1.0.0:**
 
@@ -106,15 +124,25 @@ One-line change in [pyproject.toml](../../../pyproject.toml):
 
 ```diff
  classifiers = [
--    "Development Status :: 3 - Alpha",
+-    "Development Status :: 4 - Beta",
 +    "Development Status :: 5 - Production/Stable",
      "Intended Audience :: Developers",
 ```
 
-`Development Status :: 4 - Beta` is intentionally skipped. The
-Phase 4 burn-in is the substance of the Beta step; once it
-passes, jumping straight to Stable matches what the package
-*means* and avoids a second metadata churn one cycle later.
+> **Corrected 2026-08-09 ([decisions.md](decisions.md) D2).** This
+> section previously showed the diff as `3 - Alpha` → `5` and argued
+> that "`4 - Beta` is intentionally skipped … avoids a second metadata
+> churn one cycle later." That rationale has been deleted rather than
+> reworded: the package has sat at `4 - Beta` since its initial scaffold
+> commit and was never classified Alpha, so no step was ever skipped and
+> there is no decision left to justify.
+>
+> **The consequence is in the copy, not the diff.** `README.md` (M2.3),
+> the `[1.0.0]` CHANGELOG entry (M2.4), and the GitHub release notes
+> (M3.4) must describe a **Beta → Stable** promotion. Any "out of alpha"
+> framing would be a false claim in the permanent record. If the README
+> headline never claimed alpha, M2.3 closes as a no-op — do not invent
+> an edit to satisfy the task text.
 
 ### Support window
 
@@ -134,19 +162,27 @@ section that lands per M2.1 in [tasks.md](tasks.md) should reproduce
 this scope-honesty paragraph verbatim so the policy reader sees the
 constraints behind the numbers, not just the numbers.
 
-Sketch (numbers pinned at scoping):
+**N pinned at 6 months, 2026-08-09** ([decisions.md](decisions.md) D5).
+The text below is final — M2.1 lands it, plus the scope-honesty
+paragraph above it, verbatim:
 
 > ### 7. Support window
 >
-> Each minor release of 1.x receives security fixes for **N
-> months** after the *next* minor release ships, or **N months**
+> Each minor release of 1.x receives security fixes for **6
+> months** after the *next* minor release ships, or **6 months**
 > from its own release date, whichever is longer. Bug fixes are
 > only guaranteed for the latest minor.
 >
-> Example (illustrative, with N=6): 1.0.x receives security
-> fixes through `release_date(1.1.0) + 6 months`. When 1.1.0
-> ships, 1.0.x users have 6 months to upgrade before security
-> support ends.
+> Example: 1.0.x receives security fixes through
+> `release_date(1.1.0) + 6 months`. When 1.1.0 ships, 1.0.x users
+> have 6 months to upgrade before security support ends.
+
+**Why 6 and not 12.** This is a labor budget, not an SLA. At the
+observed cadence (0.8.0 → 0.9.0 in nine days) a 6-month window can span
+many minors — that is the backport exposure, and it is the argument
+against reaching for the top of the 3–12 range. **Revisit trigger,
+written into POLICY.md:** if any consumer outside Smart-AI-Memory pins
+attune-rag, re-open this before the next major.
 
 Rationale for *what kind* of policy this is:
 
@@ -195,6 +231,11 @@ longer clock.
 
 ### Backlog disposition
 
+> **✅ Discharged 2026-08-09** — full triage table in
+> [decisions.md](decisions.md) D9: Q3+Q4 fold in, Q1+T2 and T1+T3
+> promote, P1–P4 and Q2 to 1.0.x. The guidance below is retained as the
+> rationale the triage applied.
+
 Triage [phase-5-backlog/items.md](../phase-5-backlog/items.md)
 during scoping.
 
@@ -229,6 +270,36 @@ buckets:
 The triage itself is a scoping-time activity, not a 1.0.0-cut
 deliverable. The cut waits for nothing in the backlog.
 
+### Consumer pin widening (M0) — added 2026-08-09
+
+The scaffolding assumed consumers needed no change. They do: every one
+caps attune-rag below 1.0.0, so the cut as designed would publish a
+release nothing could install. Full audit in
+[decisions.md](decisions.md) D3.
+
+**The ordering problem.** Consumers cannot validate against 1.0.0 before
+it exists, and 1.0.0 should not ship into pins that exclude it. A release
+candidate would solve it at the cost of a whole RC flow — which this
+design explicitly rejects ("Phase 4 *is* the RC").
+
+**The cheaper solution: lean on the surface-lock test.** 1.0.0 adds no
+public symbols and removes none, so *1.0.0's surface is identical to
+0.9.x's*. A consumer green against 0.9.x is therefore green against
+1.0.0 by construction, and
+[`tests/unit/test_api_surface.py`](../../../tests/unit/test_api_surface.py)
+is the machine-checkable evidence. So M0 widens each pin to `<2.0` and
+validates against **0.9.x**, before the cut, with no RC and no TestPyPI
+staging.
+
+This is the surface freeze finally paying for something beyond
+discipline: it converts "we think the upgrade is safe" into "the
+snapshot test says the surface did not move."
+
+**D7 voided 2026-08-10, so the identity holds cleanly.** The override
+was already shipped (PR #130), M0.5 is void, and 1.0.0 adds no surface
+at all. Consumer validation (M0.1–M0.3) runs against 0.9.x exactly as
+published — no re-validation caveat, no special ordering.
+
 ### Release mechanics
 
 Reuses the existing `attune-release-check` skill (`/release-prep`
@@ -249,14 +320,19 @@ release flow is what 0.2.x already uses.
 Seven-day no-hotfix gate. The mechanism:
 
 - After tag + publish, the seven-day clock starts.
-- If any hotfix release (`1.0.1+`) fires inside that window,
-  the seven-day clock restarts at the hotfix's publish date.
 - The gate "closes" when no hotfix has fired for seven
   consecutive days post-publish.
 
 This is the gate that ratifies the 1.0.0 claim. Until it
-closes, the classifier change is provisional — a high-rate of
+closes, the classifier change is provisional — a high rate of
 hotfix firings would be evidence the cut was premature.
+
+> **Corrected 2026-08-09.** The bullet "any hotfix restarts the clock"
+> is removed — [tasks.md](tasks.md) M4.2 governs. A restart rule
+> silently incentivizes delaying real fixes to protect a clean window,
+> which is backwards. Ship hotfixes on their actual urgency; each one is
+> *evidence about the cut*, logged in the retrospective, not a penalty
+> against the calendar.
 
 ### What this design intentionally does *not* cover
 

@@ -1,16 +1,22 @@
 # attune-rag → 1.0 roadmap
 
-Rolling tracker for the path from v0.1.17 (Alpha) to v1.0.0
+Rolling tracker for the path from v0.1.17 to v1.0.0
 (Production/Stable). One spec per phase. Update the
 **Status** and **Next action** rows at the end of every
 working session so state is recoverable cold from disk.
 
+> **Note on "Alpha" in the line above.** The package's PyPI classifier
+> has been `Development Status :: 4 - Beta` since its initial scaffold
+> commit — it was never `3 - Alpha`. See
+> [v1.0.0-release/decisions.md](v1.0.0-release/decisions.md) D2; the
+> 1.0.0 release copy must describe a **Beta → Stable** promotion.
+
 | Field | Value |
 |---|---|
-| Current version | 0.1.22 (0.1.19 shipped Phase 2; 0.1.20–0.1.22 shipped intra-freeze `### Changed` / `### Fixed` work — see PRs [#75](https://github.com/Smart-AI-Memory/attune-rag/pull/75), [#77](https://github.com/Smart-AI-Memory/attune-rag/pull/77), and the selection-criteria-robustness spec) |
+| Current version | **0.9.0** (published 2026-07-18, PR [#199](https://github.com/Smart-AI-Memory/attune-rag/pull/199)) — 0.2.0 cut executed 2026-05-25; 0.3.0–0.9.0 shipped since |
 | Target version | 1.0.0 |
-| Current phase | Phase 4 — **W0 complete 2026-05-20** (3 days ahead of 2026-05-23 target); **W1 freeze clock live** against `attune-rag==0.1.21`; **W2 closed 2026-05-20** (W2.1 deep-review at [`w2-deep-review.md`](downstream-validation/w2-deep-review.md), W2.2 perf audit at [`w2-perf-audit.md`](downstream-validation/w2-perf-audit.md)); **W3.2 downstream gate already promoted to blocking** (PR [#81](https://github.com/Smart-AI-Memory/attune-rag/pull/81)); **Phase 3 M5.3 closed 2026-05-20** ([attune-gui#38](https://github.com/Smart-AI-Memory/attune-gui/pull/38) — pin bumped to 0.1.22 with 82/82 rag+editor contract tests green). Next mechanical tick is the first weekly cadence-report cron Monday 2026-05-25. Phase 3 M5 fully closed. Successor spec `docs/specs/api-v0.2.0-cut/` scaffolded ([PR #83](https://github.com/Smart-AI-Memory/attune-rag/pull/83)); activates after W4.2. |
-| Last updated | 2026-05-20 |
+| Current phase | **Phase 5 — approved 2026-08-09** ([v1.0.0-release/decisions.md](v1.0.0-release/decisions.md), D1–D10 all locked; Patrick ratified same-session, including **D7 = Option A**). Phase 4 closed; its exit-summary recommends the cut. Six of seven inherited entry gates verified closed; the 14-day soak (D4) is satisfied at 22 days with zero hotfixes. **One new blocking gate: consumer pins.** attune-gui `<1.0`, attune-ai `<0.10`, attune-author `<0.9` — nothing resolves 1.0.0 today, so milestone **M0** widens all three to `<2.0` before the cut. **Next action:** M0.1–M0.3 pin widening (M0.5 voided 2026-08-10 — the D7 override was already shipped in PR #130; see decisions.md). |
+| Last updated | **2026-08-10** |
 
 ---
 
@@ -31,7 +37,7 @@ working session so state is recoverable cold from disk.
 ## Phase 1 — Baseline lock-in
 
 **Spec:** [docs/specs/release-quality-baseline/](release-quality-baseline/)
-**Status:** complete (2026-05-16). Baseline locked at [baseline-1.md](release-quality-baseline/baseline-1.md). Thresholds: faithfulness ≥ 0.9686 (mean 0.979, σ 0.0052), P@1 ≥ 0.95, R@3 ≥ 1.00. CI gate wired at [`.github/workflows/benchmark.yml`](../../.github/workflows/benchmark.yml). M3.5 verified 2026-05-16 via throwaway [#34](https://github.com/Smart-AI-Memory/attune-rag/pull/34): gate fires, comment posts under marker, edit-in-place on subsequent failures.
+**Status:** complete (2026-05-16). Baseline locked at [baseline-1.md](archive/release-quality-baseline/baseline-1.md). Thresholds: faithfulness ≥ 0.9686 (mean 0.979, σ 0.0052), P@1 ≥ 0.95, R@3 ≥ 1.00. CI gate wired at [`.github/workflows/benchmark.yml`](../../.github/workflows/benchmark.yml). M3.5 verified 2026-05-16 via throwaway [#34](https://github.com/Smart-AI-Memory/attune-rag/pull/34): gate fires, comment posts under marker, edit-in-place on subsequent failures.
 **Estimate:** ~1 week of attention
 
 **Outcome:** every release reports P@1, R@3, and
@@ -64,8 +70,8 @@ results doc.
 
 ## Phase 2 — Eval story landed
 
-**Spec:** [docs/specs/faithfulness-thinking-decision/](faithfulness-thinking-decision/)
-**Status:** **complete 2026-05-16**. Final v3 results (design.md tie rule, controls excluded): wins_off = 10, wins_on = 4, ties = 16. Bootstrap 95 % CI on `(wins_off − wins_on)` = `[−1, +13]` includes 0; point estimate +6. Judge variance `margin_stdev = 0.0189` (well below 0.10 escalation threshold). Phantom-claim rate 7.4 % (heuristic). **Verdict: `off-forever` — keep `--thinking` opt-in.** Locked at [`faithfulness-thinking-decision/decision.md`](faithfulness-thinking-decision/decision.md). Ships at 0.1.19. No baseline re-measurement required.
+**Spec:** [docs/specs/faithfulness-thinking-decision/](archive/faithfulness-thinking-decision/)
+**Status:** **complete 2026-05-16**. Final v3 results (design.md tie rule, controls excluded): wins_off = 10, wins_on = 4, ties = 16. Bootstrap 95 % CI on `(wins_off − wins_on)` = `[−1, +13]` includes 0; point estimate +6. Judge variance `margin_stdev = 0.0189` (well below 0.10 escalation threshold). Phantom-claim rate 7.4 % (heuristic). **Verdict: `off-forever` — keep `--thinking` opt-in.** Locked at [`faithfulness-thinking-decision/decision.md`](archive/faithfulness-thinking-decision/decision.md). Ships at 0.1.19. No baseline re-measurement required.
 **Estimate:** ~3 weeks of attention
 **Depends on:** Phase 1 complete ✓ (PR #33 merged 2026-05-16)
 
@@ -88,7 +94,7 @@ under `Changed`.
 
 ## Phase 3 — Public API freeze, ship 0.2.0
 
-**Spec:** [docs/specs/api-v0.2-public-surface/](api-v0.2-public-surface/)
+**Spec:** [docs/specs/api-v0.2-public-surface/](archive/api-v0.2-public-surface/)
 **Status:** **all in-scope work complete 2026-05-20.** Groundwork shipped in attune-rag 0.1.18 (PR #36) — M1–M3 + M4 done; surface lock test, deprecation shims, POLICY.md, README "Public API" section, `AttuneHelpCorpus` re-export all in. **M5 (attune-gui downstream cleanup) closed 2026-05-20:** M5.1 + M5.2 landed on branch `feature/attune-rag-0.2-editor-rename` (commits `5bf35ec`, `b5f4d3b`); M5.3 — pin bump to 0.1.22 + branch merge — landed as [attune-gui#38](https://github.com/Smart-AI-Memory/attune-gui/pull/38) with W1.2 evidence (82/82 rag+editor contract tests green against the 0.1.22 wheel). **The formal 0.2.0 SemVer freeze + classifier flip remain queued** — the freeze ships via the [`api-v0.2.0-cut`](api-v0.2.0-cut/) successor spec after Phase 4 W4.2; the classifier flip stays Phase 5's (0.2.0 stays at `Development Status :: 3 - Alpha`).
 **Estimate:** ~3 weeks of attention (realized; M5 closed)
 **Depends on:** Phase 2 ships before 0.2.0 ships. ✓ Phase 2 shipped as 0.1.19 (2026-05-16).
@@ -149,29 +155,42 @@ security audit clean.
 
 ## Phase 5 — 1.0.0 release
 
-**Spec:** [`docs/specs/v1.0.0-release/`](v1.0.0-release/) (scaffolded; promotes to scoped after 0.2.0 cut)
-**Status:** not started
-**Estimate:** **6–8 weeks of attention** (revised 2026-05-21 — see
-[v1.0.0-release/design.md](v1.0.0-release/design.md#phase-5-scope-decided-2026-05-21)
-for the scope decision that expanded the estimate)
-**Depends on:** Phase 4 complete
+**Spec:** [`docs/specs/v1.0.0-release/`](v1.0.0-release/) — **scoped 2026-08-09**, decisions at [`decisions.md`](v1.0.0-release/decisions.md)
+**Status:** approved 2026-08-09 (D1–D10 locked); D7 voided 2026-08-10 (already shipped) — next action M0.1
+**Estimate:** **6–8 weeks of attention** (revised 2026-05-21; unchanged
+by the scoping pass — M0 adds ~4 small PRs, D8's methodology work turned
+out to be already done, which roughly cancels)
+**Depends on:** Phase 4 complete ✓
 
-**Outcome:** `Development Status :: 3 - Alpha` →
-`5 - Production/Stable` in `pyproject.toml`.
-[`docs/POLICY.md`](../POLICY.md) documents support window and
-deprecation policy.
-[`perf-baseline-multi-run`](perf-baseline-multi-run/) M1–M5
-restores σ=2.0 with a defensible inter-run noise model.
-`user-corpus-onboarding` (scaffolded Phase 4 W2) ships a
-quality harness + "your own corpus" guide + first-class
-`aliases_override.json` for `DirectoryCorpus` so the
-"Production/Stable" claim covers arbitrary markdown corpora,
-not just bundled attune-help. Telemetry config-surface
-reserved (emission deferred to v1.1.0 per
+**Outcome:** `Development Status :: 4 - Beta` →
+`5 - Production/Stable` in `pyproject.toml` (**corrected** — never
+Alpha; see the note at the top of this file).
+[`docs/POLICY.md`](../POLICY.md) documents a **6-month** support window
+and the 1.x deprecation policy. Consumer pins across attune-gui,
+attune-ai, and attune-author widened to `<2.0` so the release is
+installable. Telemetry config-surface reserved (emission deferred to
+v1.1.0 per
 [`docs/specs/telemetry/open-questions.md`](telemetry/open-questions.md) §8).
 
+**Already satisfied at scoping time:**
+- [`perf-baseline-multi-run`](perf-baseline-multi-run/) — methodology v2
+  at σ=2.0 with an inter-run noise model is **in the tree**
+  (`downstream-validation/perf-baseline.md`). The *numbers* are from
+  2026-05-22 on 0.1.x code and are re-measured at M1.0.
+- `user-corpus-onboarding` — the quality harness
+  (`scripts/measure_corpus.py`) and the "your own corpus" guide
+  (`docs/USER_CORPUS_GUIDE.md`, 939 lines) **shipped**. The
+  `aliases_override.json` support for `DirectoryCorpus` did **not** —
+  ~~it exists only on `AttuneHelpCorpus`~~ — **correction 2026-08-10:
+  it shipped on `DirectoryCorpus` too** (`extra_aliases_file`, PR #130,
+  user-corpus-onboarding M2). D7 voided; nothing left to land.
+
 **Gate:** 1.0.0 on PyPI; support policy published; seven
-days post-release with no hotfix.
+days post-release with no hotfix — read per
+[`v1.0.0-release/tasks.md`](v1.0.0-release/tasks.md) **M4.2**, which
+supersedes the older "any hotfix restarts the clock" wording. That
+framing incentivized delaying real fixes to protect a clean window;
+ship hotfixes on their actual urgency and read the retrospective.
 
 **attune-ai workflows:**
 - `/release-prep` (`attune-release-check` skill enforces
