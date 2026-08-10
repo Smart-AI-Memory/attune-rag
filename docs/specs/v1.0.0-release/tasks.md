@@ -6,7 +6,9 @@
 (including D7 = Option A) in the same session. Work-tracker is live;
 execution is unblocked. Scoping decisions in
 [decisions.md](decisions.md). **2026-08-10: M0.5 voided** (deliverable
-found already shipped, PR #130) — execution starts at M0.1.
+found already shipped, PR #130) **and M0.1 + M0.3 voided** (attune-author
+retired 2026-07-27, attune-gui retired 2026-07-31 — see those rows) —
+**M0 reduces to M0.2 alone** (attune-ai, PR attune-ai#2032).
 
 Six of seven inherited entry gates are closed (see
 [requirements.md](requirements.md) "Entry gates"). The soak gate (D4) is
@@ -34,9 +36,9 @@ watch.
 | # | Task | Layer | Notes |
 |---|------|-------|-------|
 | **M0** | **Consumer pin widening** — gates M3.3. Four repos, four PRs. | | |
-| M0.1 | attune-author: `attune-rag>=0.8.0,<0.9` → `>=0.9.0,<2.0` (`pyproject.toml:54`, `[rag]` extra). Re-validate against 0.9.0. | attune-author | **Repairs existing drift** — the `<0.9` cap has excluded the published 0.9.0 since 2026-07-18. Worth doing even if the cut slips. |
+| M0.1 | ~~attune-author: widen `attune-rag<0.9`~~ | attune-author | **VOID — repo retired.** Executing this hit a push 403: attune-author was ARCHIVED 2026-07-27 (attune-ai `attune-author-consolidation` spec, complete; T4 archive-without-yank) — before this spec was even scoped. The pin is frozen forever in a package with no future releases; the drift is moot, not repairable. Validation evidence from the attempt (0.9.0 wheel: 5-symbol import sweep OK, 1261 tests passed) recorded here for the archives. Pin-drift checker updated to skip archived repos (attune #53). |
 | M0.2 | attune-ai: `attune-rag>=0.1.5,<0.10` → `<2.0` at all three sites (`pyproject.toml` lines 78, 222, 406). | attune-ai | The line-78 comment requires explicit re-validation before lifting the cap — honor it; don't just move the bound. Golden-query suite + consumer suites, per the precedent recorded there for 0.9.0. |
-| M0.3 | attune-gui: `attune-rag>=0.1.22,<1.0` → `>=0.9.0,<2.0` (`pyproject.toml:32`). Full rag + editor contract suite green. | attune-gui | The gating downstream per ROADMAP Decision 2. |
+| M0.3 | ~~attune-gui: widen `attune-rag<1.0`~~ | attune-gui | **VOID — repo retired.** Push 403'd: attune-gui was ARCHIVED 2026-07-31 (four days after attune-author; no dedicated retirement spec located — decision record flagged for Patrick). The 'gating downstream' of ROADMAP Decision 2 no longer exists. Validation evidence from the attempt (0.9.0 wheel: full sidecar suite 609 passed) recorded for the archives. Pin-drift checker now detects archived repos dynamically (attune #54). |
 | M0.4 | attune-help: confirm no attune-rag dependency. Record and close. | attune-help | Verified 2026-08-09 — expected no-op. |
 | M0.5 | ~~Land first-class `aliases_override.json` support on `DirectoryCorpus`~~ | attune-rag | **VOID — already shipped** (2026-08-10 implementation read): `extra_aliases_file` kwarg + public `load_aliases_from_file` landed in PR [#130](https://github.com/Smart-AI-Memory/attune-rag/pull/130) per user-corpus-onboarding M2, with tests + surface snapshot + guide §3. The D7 gap was a scoping premise error (grepped one spelling of the concept) — see decisions.md D7 void note. M0 starts at M0.1. |
 | **M1** | **Pre-release audit** — must complete before M2 starts. | | |
