@@ -6,8 +6,13 @@
 > [`safe-abstention-defaults`](../safe-abstention-defaults/) completed
 > 2026-08-10 with the shared calibration machinery (its Q6 explicitly
 > defers cross-tier confidence to this spec). M2 locked Q1/Q2 by
-> measurement (`scripts/measure_gated_mechanism.py`). **M3 build is
-> gated on the chair ratifying the escalated scope decision + Q3.**
+> measurement (`scripts/measure_gated_mechanism.py`). **Chair
+> ratifications 2026-08-10 (Patrick, in-session: "1 go 2 proceed with
+> your recommendation"): the escalated scope decision (safe-everywhere
+> default-candidate, opt-in first, default flip a separate decision)
+> and Q3 (a `gate_threshold=` option on `HybridRetriever`, no new
+> class). M3 shipped same session — remaining: M4 (shared
+> calibration) + M5 (docs).**
 
 ## Scoping decisions (locked at `/spec` — TBD)
 
@@ -27,7 +32,7 @@ From [`design.md` §8](design.md#8-open-questions-for-scoping) /
    **recommended: a `gate_threshold=` option on `HybridRetriever`**
    (the blend below the gate IS hybrid's existing 1:1 RRF; above the
    gate is a short-circuit return of the keyword leg — simpler-is-
-   better, no new public class). **Ratification owed (API surface).**
+   better, no new public class). **RATIFIED (chair, 2026-08-10).**
 4. Shared calibration tool with `safe-abstention-defaults` vs linked —
    **shared (per R4)**: extend the `RagPipeline.calibrated()` /
    `_calibrate_abstention` sweep to emit the gate threshold from the
@@ -197,15 +202,32 @@ profile the M1 reframe asked for. Recommendation to the chair: build
 M3 as the opt-in `[embeddings]` rung with explicit default-candidate
 framing; any default flip stays a separate decision (R5 intact).
 
-### M3 — Implement (the build PR)
-- [ ] `GatedRetriever` (or `HybridRetriever(gate=…)`, per Q3), opt-in
-      under `[embeddings]`, default model per Q5.
-- [ ] Prove R2 (help 100/100), R3 (hard lift), R5 (base install
-      unchanged) in CI. Disclose footprint delta (risk §2).
-- [ ] `### Added`/`### Changed` per freeze decision (Q3 / R-NFR).
-- [ ] State the `RagResult.confidence` contract (requirements.md 2026-06-10
-      audit input): either the gated retriever normalizes it or the field
-      is documented retriever-relative — decided in the M3 design.
+### M3 — Implement (the build PR) — complete 2026-08-10
+- [x] `HybridRetriever(gate_threshold=…)` per ratified Q3 — opt-in
+      (`None` default = ungated RRF, today's behavior); above the gate
+      the keyword ranking returns untouched and the embedding leg is
+      never consulted (no encode above the gate). The measured recipe
+      (1:1 weights, `KeywordRetriever(min_score=0.0)` leg, ret-32M) is
+      documented in the docstring, not hardcoded — T stays
+      corpus-relative (R6; M4 wires the shared calibration).
+- [x] Prove R2 (help 100/100), R3 (hard lift), R5 (base install
+      unchanged): 5 new gate unit tests (short-circuit proven by a
+      counting stub; `gate_threshold=None` regression guard) + full
+      suite 1106 passed + golden suite untouched. The measurement
+      script gained a **`SHIPPED gate_threshold=5` row that reproduces
+      blend/score T=5 EXACTLY** (0.50/0.65 · 0.67/0.83 · 0.70/0.85 ·
+      0.50/0.50 · help 1.00/1.00) — the shipped code path IS the
+      measured mechanism. Footprint disclosed (risk §2): ret-32M is
+      ~248MB cached vs ~59MB for potion-base-8M (~4.2×); the model is
+      a documented recipe choice, not a shipped default — 8M stays the
+      `EmbeddingRetriever` default.
+- [x] `### Added` under `[Unreleased]` (freeze retired; ships next
+      minor with the abstention default, target 1.1.0).
+- [x] `RagResult.confidence` contract stated (requirements.md
+      2026-06-10 audit input): **documented retriever-relative** in
+      the `RagResult` docstring — comparable only within one retriever
+      class+config; a normalized cross-retriever signal is explicitly
+      out of scope as a separate breaking design.
 
 ### M4 — Shared calibration + threshold
 - [ ] Per-corpus T via the **shared** abstention/gate calibration (R4,

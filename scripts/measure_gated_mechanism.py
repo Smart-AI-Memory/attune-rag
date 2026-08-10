@@ -112,6 +112,18 @@ def main():
         ("keyword (default)", lambda: KeywordRetriever()),
         ("hybrid 2:1 (8M, shipped)", lambda: HybridRetriever()),
         ("embedding-only (ret-32M)", lambda: GatedRetriever(1e9, emb)),
+        # The SHIPPED M3 code path (HybridRetriever gate_threshold=) in the
+        # measured recipe — must reproduce blend/score T=5 exactly.
+        (
+            "SHIPPED gate_threshold=5",
+            lambda: HybridRetriever(
+                keyword=KeywordRetriever(min_score=0.0),
+                embedding=emb,
+                keyword_weight=1.0,
+                embedding_weight=1.0,
+                gate_threshold=5.0,
+            ),
+        ),
     ]
     for t in (2.0, 3.0, 4.0, 5.0, 6.0):
         configs.append((f"switch/score T={t:g}", lambda t=t: GatedRetriever(t, emb)))

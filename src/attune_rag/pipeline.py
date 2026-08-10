@@ -81,6 +81,16 @@ class RagResult:
     tuple. ``used_native_citations`` records which path actually
     ran so callers can render output appropriately even when the
     requested path was unavailable (e.g. provider fallback).
+
+    ``confidence`` is **retriever-relative, not comparable across
+    retrievers**: it is derived from the top hit's raw score, whose
+    scale differs by retriever (keyword token scores, RRF-fused
+    rank sums, cosine similarity). Compare values only between runs
+    that use the same retriever class and configuration; do not gate
+    cross-retriever logic on it. (Contract stated per the
+    confidence-gated-retrieval spec's 2026-06-10 audit input; a
+    normalized cross-retriever signal would be a separate, breaking
+    design.)
     """
 
     augmented_prompt: str

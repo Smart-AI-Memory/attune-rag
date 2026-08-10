@@ -8,8 +8,11 @@
 > score** — and found the zero-regression plateau T=4–6 contains the
 > abstention-calibrated T=5. On corpus_c, blend-gated beats the shipped
 > hybrid by +20pts hard P@1 at zero attune-help regression
-> ([`tasks.md` M2 results](tasks.md)). **M3 build awaits the chair's
-> scope + Q3 ratification.**
+> ([`tasks.md` M2 results](tasks.md)). **Chair ratified scope + Q3
+> 2026-08-10; M3 shipped same session** — `HybridRetriever(
+> gate_threshold=…)`, opt-in, with the shipped code path reproducing
+> the M2 winner exactly. Remaining: M4 (shared calibration) + M5
+> (docs).**
 >
 > **Reopens** the [`embedding-retriever`](../embedding-retriever/)
 > permanent defer — with a *torch-free* design that the earlier defer

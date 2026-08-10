@@ -198,3 +198,76 @@ def test_embedding_retriever_caches_corpus_matrix() -> None:
     r.retrieve("y", corpus, k=1)
     # 1 encode for the corpus matrix (cached) + 1 per query = 3, not 4.
     assert calls["n"] == 3
+
+
+# ---------------------------------------------------------------------------
+# Confidence gate (gate_threshold — docs/specs/confidence-gated-retrieval M3)
+# ---------------------------------------------------------------------------
+
+
+class _CountingRetriever(_StubRetriever):
+    """Stub that counts retrieve() calls, to prove the gate short-circuits."""
+
+    def __init__(self, ranked: list[tuple[str, float]]) -> None:
+        super().__init__(ranked)
+        self.calls = 0
+
+    def retrieve(self, query: str, corpus, k: int = 3):
+        self.calls += 1
+        return super().retrieve(query, corpus, k=k)
+
+
+def test_gate_above_threshold_returns_keyword_untouched() -> None:
+    kw = _StubRetriever([("A", 9.0), ("B", 8.0), ("C", 7.0)])
+    emb = _CountingRetriever([("Z", 0.9)])
+    h = HybridRetriever(keyword=kw, embedding=emb, gate_threshold=5.0)
+    hits = list(h.retrieve("q", corpus=None, k=3))
+    assert [x.entry.path for x in hits] == ["A", "B", "C"]
+    assert all(x.match_reason == "stub" for x in hits)  # not RRF-rewritten
+    assert emb.calls == 0  # embedding leg never consulted above the gate
+
+
+def test_gate_fires_at_exact_threshold() -> None:
+    kw = _StubRetriever([("A", 5.0)])
+    emb = _CountingRetriever([("Z", 0.9)])
+    h = HybridRetriever(keyword=kw, embedding=emb, gate_threshold=5.0)
+    assert [x.entry.path for x in h.retrieve("q", corpus=None, k=1)] == ["A"]
+    assert emb.calls == 0
+
+
+def test_gate_below_threshold_falls_through_to_rrf() -> None:
+    kw = _StubRetriever([("A", 3.0), ("B", 2.0)])
+    emb = _CountingRetriever([("Z", 0.9), ("A", 0.8)])
+    h = HybridRetriever(
+        keyword=kw,
+        embedding=emb,
+        keyword_weight=1.0,
+        embedding_weight=1.0,
+        gate_threshold=5.0,
+    )
+    hits = list(h.retrieve("q", corpus=None, k=3))
+    assert emb.calls == 1
+    paths = [x.entry.path for x in hits]
+    assert "Z" in paths  # embedding-side doc surfaced by the fusion
+    assert hits[0].match_reason.startswith("rrf:")
+
+
+def test_gate_with_empty_keyword_hits_falls_through() -> None:
+    kw = _StubRetriever([])
+    emb = _CountingRetriever([("Z", 0.9)])
+    h = HybridRetriever(keyword=kw, embedding=emb, gate_threshold=5.0)
+    hits = list(h.retrieve("q", corpus=None, k=1))
+    assert emb.calls == 1
+    assert [x.entry.path for x in hits] == ["Z"]
+
+
+def test_gate_default_none_preserves_ungated_fusion() -> None:
+    # R5 regression guard: without gate_threshold, a confident keyword
+    # top-1 still goes through RRF fusion exactly as before.
+    kw = _StubRetriever([("A", 9.0)])
+    emb = _CountingRetriever([("A", 0.9)])
+    h = HybridRetriever(keyword=kw, embedding=emb)
+    assert h.gate_threshold is None
+    hits = list(h.retrieve("q", corpus=None, k=1))
+    assert emb.calls == 1
+    assert hits[0].match_reason == "rrf:embedding+keyword"
