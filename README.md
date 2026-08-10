@@ -351,9 +351,10 @@ pipeline = RagPipeline(retriever=TransformerRetriever())
 heavy** and the torch-free static embeddings fall short. It is
 embedding-primary and **tanks a keyword-tuned corpus's top-1 precision**,
 so it is never a default. Measured on two unseen corpora
-(`docs/specs/transformer-retriever/`): hard-tier paraphrase **precision@1
-≈0.50 (the torch-free ceiling) → 0.85–0.90, recall@3 → 1.00** — the one
-goal no torch-free retriever reaches. For a keyword-tuned corpus use
+(`docs/specs/transformer-retriever/`): hard-tier paraphrase **P@1
+0.50 → 0.69 (corpus_b) and 0.70 → 0.90 (corpus_c), recall@3 → 1.00** —
+~+20pts per corpus over the best torch-free config (the confidence-gated
+blend above), a margin no torch-free retriever reaches. For a keyword-tuned corpus use
 `KeywordRetriever`; for a lexically-aligned arbitrary corpus the lighter
 `[embeddings]` `HybridRetriever` is usually enough.
 

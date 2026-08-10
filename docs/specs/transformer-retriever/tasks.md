@@ -1,9 +1,10 @@
 # Spec: transformer-retriever — tasks
 
-> **Status:** scoping (2026-06-07). M1+ not executable until the entry
-> gate ([`requirements.md`](requirements.md#entry-gates)) opens. Likely
-> v1.1.0+ (heavyweight opt-in; no default change). Scoping decisions
-> filled at the `/spec` pass.
+> **Status:** **complete (2026-08-10).** M0–M3 shipped 2026-06-07
+> (freeze-override, Patrick per-PR); tree-verified 2026-08-10
+> (`transformer.py`, `test_transformer.py`, `[transformers]` extra,
+> README tier docs all present). M4 (non-gating real-model CI) shipped
+> 2026-08-10 as a manual-dispatch workflow — see [`tasks.md`](tasks.md).
 
 ## Scoping decisions (locked at `/spec` — TBD)
 
@@ -59,9 +60,27 @@ From [`design.md` §8](design.md#8-open-questions-for-scoping):
       download/offline note, and the operating-point guide (keyword vs
       static hybrid vs transformer).
 
-### M4 — Optional real-model CI — deferred (non-gating; not required for the tier)
-- [ ] Non-gating optional job exercising the real model (kept off the
-      core suite). Follow-up.
+### M4 — Optional real-model CI — **DONE 2026-08-10**
+- [x] Non-gating optional job exercising the real model (kept off the
+      core suite): `.github/workflows/real-model-validation.yml`,
+      **workflow_dispatch only** (never on push/PR, never required —
+      non-gating by construction; no API key, retrieval-only). Runs
+      `scripts/validate_transformer_retriever.py` (downloads bge-small)
+      AND `scripts/measure_gated_mechanism.py` (ret-32M) so one dispatch
+      re-validates BOTH heavyweight-adjacent tiers against drift
+      (sentence-transformers/torch/model2vec version movement — risk §4).
+      Receipt: both scripts run locally against the current tree
+      (torch 2.12.0) before the workflow landed.
+
+### Post-close correction note (2026-08-10)
+
+The "torch-free ceiling ~0.50" framing that anchored this spec moved:
+[`confidence-gated-retrieval` M2](../confidence-gated-retrieval/tasks.md)
+measured the below-gate 1:1 RRF blend at **corpus_c hard P@1 0.70**
+(corpus_b stays 0.50). The transformer's margin is intact and still
+uniquely torch (corpus_b 0.50→0.69, corpus_c 0.70→0.90 — both ~+20pts
+over the best torch-free config), but "≈0.50 ceiling" claims are now
+corpus_b-only. README's transformer section refreshed accordingly.
 
 ## Done when
 

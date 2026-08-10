@@ -1,0 +1,59 @@
+name: Real-model validation
+
+# transformer-retriever M4: NON-GATING manual-dispatch job exercising
+# the REAL models (bge-small via sentence-transformers/torch; ret-32M
+# via model2vec) that the core suite deliberately fakes. Catches
+# dependency/model drift (spec risk section 4) without ever touching
+# push/PR CI. Retrieval-only — no API key, no secrets.
+#
+# Dispatch:  gh workflow run real-model-validation.yml
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Real-model retrieval validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install with [embeddings,transformers] extras
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[embeddings,transformers]"
+
+      - name: Transformer tier (bge-small, real model)
+        run: |
+          set -o pipefail
+          PYTHONPATH=src python scripts/validate_transformer_retriever.py \
+            | tee /tmp/transformer.out
+          {
+            echo "### Transformer tier (real bge-small)"
+            echo '```'
+            cat /tmp/transformer.out
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Gated tier (ret-32M, real model)
+        run: |
+          set -o pipefail
+          PYTHONPATH=src python scripts/measure_gated_mechanism.py \
+            | tee /tmp/gated.out
+          {
+            echo "### Gated tier (real potion-retrieval-32M)"
+            echo '```'
+            cat /tmp/gated.out
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

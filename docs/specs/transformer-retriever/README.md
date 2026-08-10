@@ -1,9 +1,10 @@
 # Spec: transformer-retriever (attune-rag)
 
-> **Status:** **scoping** (2026-06-07). Scaffold is docs-only and
-> freeze-compliant — it lands now. The retriever is **not** built here;
-> it's a **heavyweight opt-in `[transformers]` tier**, likely v1.1.0+,
-> with its own `/spec` pass.
+> **Status:** **complete (2026-08-10).** M0–M3 shipped 2026-06-07
+> (freeze-override, Patrick per-PR); tree-verified 2026-08-10
+> (`transformer.py`, `test_transformer.py`, `[transformers]` extra,
+> README tier docs all present). M4 (non-gating real-model CI) shipped
+> 2026-08-10 as a manual-dispatch workflow — see [`tasks.md`](tasks.md).
 >
 > **Narrowly reopens** the [`embedding-retriever`](../embedding-retriever/)
 > permanent defer — which was specifically a *torch* defer. This spec
@@ -42,6 +43,12 @@ result.
   gated behind keyword. That tanks a *tuned* corpus (help 0.42–0.53),
   which is why it is for **arbitrary corpora only**, where there is no
   keyword-tuned precision to protect.
+
+> **Ceiling update (2026-08-10):** the torch-free ceiling moved —
+> [`confidence-gated-retrieval` M2](../confidence-gated-retrieval/tasks.md)
+> measured gated 1:1 blend at corpus_c hard P@1 **0.70** (corpus_b
+> unchanged at 0.50). The transformer margin holds at ~+20pts per
+> corpus (0.50→0.69, 0.70→0.90) and remains uniquely torch.
 
 ## Why this is opt-in, never a default
 
