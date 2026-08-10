@@ -42,6 +42,21 @@ class HybridRetriever:
             the weighting. Raise ``keyword_weight`` further to fully
             protect a tuned corpus; lower it toward 1:1 to maximize the
             embedding contribution on unstructured/arbitrary corpora.
+        gate_threshold: Opt-in confidence gate (``None`` = plain RRF,
+            today's behavior). When set, if the keyword leg's top-1
+            score is at or above this threshold, the keyword ranking is
+            returned untouched and the embedding leg is never consulted
+            (no encode above the gate); below it, hits are RRF-fused as
+            usual. The threshold is an absolute keyword score and
+            therefore corpus-relative — calibrate it per corpus, same
+            lesson as the abstention ``min_score`` (the bundled-corpus
+            calibration derives 5.0). Measured recipe
+            (docs/specs/confidence-gated-retrieval M2): 1:1 leg
+            weights, a ``KeywordRetriever(min_score=0.0)`` keyword leg,
+            and the retrieval-tuned static model
+            ``minishlab/potion-retrieval-32M`` — holds a keyword-tuned
+            corpus at 1.00/1.00 P@1/R@3 while lifting unseen-corpus
+            hard-tier P@1 up to +20pts over ungated RRF.
     """
 
     def __init__(
@@ -52,6 +67,7 @@ class HybridRetriever:
         candidate_pool: int = 20,
         keyword_weight: float = 2.0,
         embedding_weight: float = 1.0,
+        gate_threshold: float | None = None,
     ) -> None:
         self.keyword = keyword or KeywordRetriever()
         self.embedding = embedding
@@ -59,6 +75,7 @@ class HybridRetriever:
         self.candidate_pool = candidate_pool
         self.keyword_weight = keyword_weight
         self.embedding_weight = embedding_weight
+        self.gate_threshold = gate_threshold
         self._embedding_disabled = False
 
     def _get_embedding(self) -> Any:
@@ -71,6 +88,12 @@ class HybridRetriever:
     def retrieve(self, query: str, corpus: CorpusProtocol, k: int = 3):
         pool = max(self.candidate_pool, k * 4)
         kw_hits = list(self.keyword.retrieve(query, corpus, k=pool))
+
+        gate = self.gate_threshold
+        if gate is not None and kw_hits and kw_hits[0].score >= gate:
+            # Keyword is confident: its ranking is authoritative — return
+            # it untouched and skip the embedding leg entirely.
+            return kw_hits[:k]
 
         emb = self._get_embedding()
         emb_hits: list[RetrievalHit] = []

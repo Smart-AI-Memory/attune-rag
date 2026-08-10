@@ -1,9 +1,20 @@
 # Spec: confidence-gated-retrieval (attune-rag)
 
-> **Status:** **scoping** (2026-06-07). Scaffold is docs-only and
-> freeze-compliant — it lands now. The retriever it proposes is **not**
-> built here; it activates after a ≥30-query hard-set validation
-> ([`requirements.md` R1](requirements.md)) with its own `/spec` pass.
+> **Status:** **active — M0+M2 complete (2026-08-10).** All three entry
+> gates opened: R1's ≥30-query validation passed at M1, v1.0.0 shipped
+> (freeze lifted), and [`safe-abstention-defaults`](../safe-abstention-defaults/)
+> completed with the shared calibration machinery (R4). M2 locked the
+> mechanism — **below-gate 1:1 RRF blend, gated on keyword top-1
+> score** — and found the zero-regression plateau T=4–6 contains the
+> abstention-calibrated T=5. On corpus_c, blend-gated beats the shipped
+> hybrid by +20pts hard P@1 at zero attune-help regression
+> ([`tasks.md` M2 results](tasks.md)). **Chair ratified scope + Q3
+> 2026-08-10; M3+M4+M5 shipped same session — spec COMPLETE.**
+> Shipped: `HybridRetriever(gate_threshold=…)` (opt-in; the shipped
+> code path reproduces the M2 winner exactly) and
+> `RagPipeline.calibrated(..., gated=True)` (one sweep, one number —
+> R4). Explicit deferral: embedding-side confidence floor (abstention
+> on the gated tier) — unmeasured; reopen on a real BYO need.
 >
 > **Reopens** the [`embedding-retriever`](../embedding-retriever/)
 > permanent defer — with a *torch-free* design that the earlier defer

@@ -81,6 +81,16 @@ class RagResult:
     tuple. ``used_native_citations`` records which path actually
     ran so callers can render output appropriately even when the
     requested path was unavailable (e.g. provider fallback).
+
+    ``confidence`` is **retriever-relative, not comparable across
+    retrievers**: it is derived from the top hit's raw score, whose
+    scale differs by retriever (keyword token scores, RRF-fused
+    rank sums, cosine similarity). Compare values only between runs
+    that use the same retriever class and configuration; do not gate
+    cross-retriever logic on it. (Contract stated per the
+    confidence-gated-retrieval spec's 2026-06-10 audit input; a
+    normalized cross-retriever signal would be a separate, breaking
+    design.)
     """
 
     augmented_prompt: str
@@ -186,6 +196,8 @@ class RagPipeline:
         negatives: list[str],
         k: int = 3,
         target_legit_kept: float = 0.95,
+        gated: bool = False,
+        embedding: object = None,
         **pipeline_kwargs,
     ) -> RagPipeline:
         """Build a pipeline whose abstention threshold is calibrated to ``corpus``.
@@ -206,6 +218,24 @@ class RagPipeline:
             k: Top-k used during calibration probes (matches retrieval k).
             target_legit_kept: Minimum fraction of ``queries`` that must
                 stay above the chosen threshold (default 0.95).
+            gated: When True, wire the SAME swept threshold into a
+                confidence-gated :class:`~attune_rag.hybrid.HybridRetriever`
+                instead of an abstaining ``KeywordRetriever`` — the
+                measured recipe (docs/specs/confidence-gated-retrieval
+                M2/M4): unfiltered keyword leg, 1:1 RRF weights,
+                ``gate_threshold=<recommended>``, retrieval-tuned static
+                model. One calibration, one number (spec R4): below the
+                threshold the keyword tier ABSTAINS while the gated tier
+                RESCUES via embedding fusion — same judgment about
+                keyword trust, tier-appropriate response. The gated tier
+                does not abstain (an embedding-side confidence floor is
+                explicitly deferred — unmeasured).
+            embedding: Optional embedding retriever for the gated leg
+                (injectable for tests). Defaults to an
+                ``EmbeddingRetriever`` on the retrieval-tuned model
+                (``minishlab/potion-retrieval-32M``, ~250 MB cached —
+                construction is lazy; nothing downloads until the first
+                below-gate encode).
             **pipeline_kwargs: Forwarded to ``RagPipeline.__init__``
                 (``expander=``, ``reranker=``).
 
@@ -233,14 +263,24 @@ class RagPipeline:
             "rag.calibrated_pipeline",
             corpus=corpus.name,
             min_score=threshold,
+            gated=gated,
             legit_kept=report["recommended_legit_kept"],
             negatives_abstained=report["recommended_negatives_abstained"],
         )
-        return cls(
-            corpus=corpus,
-            retriever=KeywordRetriever(min_score=threshold),
-            **pipeline_kwargs,
-        )
+        if gated:
+            from .embedding import RETRIEVAL_TUNED_MODEL, EmbeddingRetriever
+            from .hybrid import HybridRetriever
+
+            retriever: RetrieverProtocol = HybridRetriever(
+                keyword=KeywordRetriever(min_score=0.0),
+                embedding=embedding or EmbeddingRetriever(model_name=RETRIEVAL_TUNED_MODEL),
+                keyword_weight=1.0,
+                embedding_weight=1.0,
+                gate_threshold=threshold,
+            )
+        else:
+            retriever = KeywordRetriever(min_score=threshold)
+        return cls(corpus=corpus, retriever=retriever, **pipeline_kwargs)
 
     def _retrieve(self, query: str, k: int) -> list:
         """Run retrieval (with optional expansion + reranking).

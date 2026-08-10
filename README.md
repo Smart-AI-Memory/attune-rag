@@ -286,6 +286,52 @@ raise it to fully protect a tuned corpus, lower toward `1.0` to maximize the
 embedding contribution. Falls back to keyword-only if the extra isn't
 installed.
 
+### Confidence-gated retrieval (`[embeddings]` extra)
+
+The hybrid's RRF fusion always dilutes a confident keyword ranking — on
+a keyword-**tuned** corpus that costs top-1 precision (measured: 5pts).
+The **confidence gate** removes the trade: when the keyword top-1 score
+clears a calibrated threshold, the keyword ranking returns untouched
+(the embedding leg is never even encoded); below it, hits RRF-fuse for
+paraphrase rescue.
+
+```python
+from attune_rag import DirectoryCorpus, RagPipeline
+
+# One calibration derives the threshold AND wires the measured recipe:
+pipeline = RagPipeline.calibrated(
+    DirectoryCorpus("./my-docs"),
+    queries=["question my docs answer", ...],   # in-corpus
+    negatives=["question they don't", ...],     # out-of-corpus
+    gated=True,
+)
+```
+
+Measured (`scripts/measure_gated_mechanism.py`, torch-free,
+deterministic, `docs/specs/confidence-gated-retrieval/`): a
+keyword-tuned corpus holds **1.00/1.00** P@1/R@3 (ungated hybrid: 0.95)
+while an unseen corpus's hard-paraphrase P@1 lifts to **0.70** vs 0.50
+ungated. The recipe uses the retrieval-tuned
+`minishlab/potion-retrieval-32M` model (~250 MB cached vs ~60 MB for the
+base default — the upgrade is load-bearing) with an unfiltered keyword
+leg and 1:1 fusion weights; pass `embedding=` to choose a different
+model.
+
+**One threshold, one decision.** The gate threshold and the abstention
+`min_score` come from the **same calibration sweep** — one per-corpus
+number answering "do I trust this keyword retrieval?", with the response
+chosen by tier:
+
+```text
+keyword top-1 >= T  ->  trust it: keyword ranking returns untouched
+keyword top-1 <  T  ->  keyword tier:  ABSTAIN (calibrated min_score)
+                        gated tier:    RESCUE  (RRF-fuse with embeddings)
+```
+
+The gated tier does not abstain — an embedding-side confidence floor is
+deliberately unshipped (unmeasured). If out-of-corpus protection matters
+more than paraphrase rescue, stay on the calibrated keyword tier.
+
 ### Transformer retrieval (`[transformers]` extra) — heavyweight
 
 `TransformerRetriever` ranks by a real **sentence-transformers** model

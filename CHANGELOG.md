@@ -25,6 +25,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `HybridRetriever(gate_threshold=...)` — opt-in confidence-gated
+  fusion (docs/specs/confidence-gated-retrieval M3): when the keyword
+  leg's top-1 score clears the threshold, the keyword ranking is
+  returned untouched (the embedding leg is never consulted — no encode
+  above the gate); below it, hits RRF-fuse as before. Default `None`
+  preserves today's behavior exactly. The threshold is corpus-relative
+  (calibrate per corpus; the bundled-corpus calibration derives 5.0).
+  Measured (`scripts/measure_gated_mechanism.py`, torch-free): the
+  gated recipe (1:1 weights, unfiltered keyword leg,
+  `potion-retrieval-32M`) holds a keyword-tuned corpus at 1.00/1.00
+  P@1/R@3 where ungated hybrid costs 5pts, and lifts unseen-corpus
+  hard-tier P@1 to 0.70 vs 0.50 ungated. `RagResult.confidence` is now
+  documented as retriever-relative (not comparable across retrievers).
+  `RagPipeline.calibrated(..., gated=True)` wires the SAME swept
+  threshold into `gate_threshold` (one calibration, one number: below
+  it the keyword tier abstains, the gated tier rescues); the gated
+  tier does not abstain — an embedding-side confidence floor is
+  explicitly deferred as unmeasured.
 - `RagPipeline.calibrated(corpus, queries, negatives)` — the honest
   BYO abstention path: derives a corpus-specific threshold from the
   corpus's own in/out-of-corpus query sets (same sweep as

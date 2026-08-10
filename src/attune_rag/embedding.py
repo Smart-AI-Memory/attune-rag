@@ -26,6 +26,12 @@ if TYPE_CHECKING:
 #: HuggingFace and is cached locally by model2vec.
 DEFAULT_MODEL = "minishlab/potion-base-8M"
 
+#: Retrieval-tuned static model used by the confidence-gated recipe
+#: (docs/specs/confidence-gated-retrieval). ~250 MB cached vs ~60 MB for
+#: the base default — the upgrade is load-bearing: the base model never
+#: reached the torch-free hard-tier ceiling, this one did.
+RETRIEVAL_TUNED_MODEL = "minishlab/potion-retrieval-32M"
+
 
 class EmbeddingRetriever:
     """Rank corpus entries by cosine similarity of static embeddings.
