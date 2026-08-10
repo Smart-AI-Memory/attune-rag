@@ -124,7 +124,11 @@ resolve the current attune-rag since 2026-07-18 and nothing surfaced it.
 > line and ROADMAP Decision 2's gating-downstream premise; both
 > corrected in this commit. attune-rag's downstream-attune-gui.yml
 > weekly workflow now exercises an archived repo — flagged for
-> retirement with the workspace-docs sweep.
+> retirement with the workspace-docs sweep. **Retired 2026-08-10**
+> (ruled at the post-release retro): the workflow still ran — archived
+> repos remain readable — but green-against-a-frozen-consumer is a
+> vacuous signal, and Decision 2's gating role passed to attune-ai
+> (whose own suites validated the published 1.0.0 wheel same-day).
 > Workspace-level docs (CLAUDE.md layer table, tech.md, deploy order)
 > still describe attune-author as an active layer — flagged to Patrick
 > for a separate workspace-docs sweep, not changed unilaterally here.
