@@ -6,6 +6,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **The bundled corpus abstains by default**
+  (docs/specs/safe-abstention-defaults/): `RagPipeline()` now wires the
+  bundled attune-help corpus with its calibrated abstention threshold
+  (`min_score=5`), cutting the out-of-corpus false-answer rate
+  91.7% → 8.3% with ZERO gate-set recall regression (P@1/R@3 hold at
+  100%; the one blocking gate query was fixed by alias remediation —
+  `SAST repository scan` on `quickstarts/run-security-audit.md`,
+  3.75 → 12.75). BYO corpora keep the conservative class default
+  (`min_score=2.0`) — the calibrated value is corpus-specific and
+  over-abstains lean corpora. Explicit `retriever=` / `min_score=`
+  construction is unchanged (escape hatch). The measurement harnesses
+  (`measure_corpus`, `measure_reranker`) pin an explicit conservative
+  retriever so ranking-quality measurement stays decoupled from
+  abstention policy.
+
+### Added
+
+- `RagPipeline.calibrated(corpus, queries, negatives)` — the honest
+  BYO abstention path: derives a corpus-specific threshold from the
+  corpus's own in/out-of-corpus query sets (same sweep as
+  `attune-rag-benchmark --calibrate-abstention`; single source of
+  truth). Ships because no calibration-free heuristic cleared the
+  cross-corpus legit-recall bar (measurements.md M2: all three C3
+  variants FAIL).
+
 ## [1.0.0] — 2026-08-10
 
 The release of the burn-in. 1.0.0 is a **stability claim, not new

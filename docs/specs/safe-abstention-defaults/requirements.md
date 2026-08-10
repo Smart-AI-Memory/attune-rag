@@ -1,8 +1,10 @@
 # Spec: safe-abstention-defaults — requirements
 
-> **Status:** executing — scoping locked 2026-07-17 (see
-> [`tasks.md`](tasks.md)). The requirements below bind the
-> **default-change PR** (M3).
+> **Status:** **complete (2026-08-10)** — all six requirements
+> satisfied by the M3–M5 PR (see [`tasks.md`](tasks.md) for the
+> per-requirement evidence). R1 exceeded: the alias remediation moved
+> the R1-strict ceiling to T=5, so the calibrated default shipped with
+> ZERO gate-set compromise.
 
 ## Entry gates
 

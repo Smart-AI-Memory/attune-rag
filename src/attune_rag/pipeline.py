@@ -25,6 +25,19 @@ if TYPE_CHECKING:
 
 logger = structlog.get_logger(__name__)
 
+#: Calibrated abstention threshold for the BUNDLED attune-help corpus
+#: only. Derived (not hand-tuned) by
+#: ``scripts/measure_abstention_distributions.py`` against the
+#: SHA-locked gate set + negatives — see
+#: docs/specs/safe-abstention-defaults/measurements.md: keeps 100% of
+#: the gate set, abstains on 91.7% of out-of-corpus queries
+#: (false-answer rate 91.7% -> 8%). NOT a safe universal constant: the
+#: same measurement shows 5 over-abstains on lean corpora (corpus_b
+#: legit median top-1 = 6.0), which is why BYO corpora keep the
+#: conservative ``KeywordRetriever`` class default and calibrate via
+#: :meth:`RagPipeline.calibrated`.
+_BUNDLED_MIN_SCORE = 5.0
+
 
 #: Splitter inserted before the per-call user request block in
 #: augmented prompts. Everything before this marker is stable
@@ -119,7 +132,17 @@ class RagPipeline:
                 trimming to ``k``.
         """
         self._corpus = corpus
-        self.retriever = retriever or KeywordRetriever()
+        if retriever is None:
+            # Safe-by-default abstention (docs/specs/safe-abstention-defaults):
+            # when BOTH corpus and retriever are defaulted, the lazy corpus
+            # is deterministically the bundled attune-help corpus, so the
+            # retriever gets its calibrated threshold. A caller-supplied
+            # corpus (BYO) keeps the conservative class default — the
+            # calibrated 5.0 is only safe for the corpus it was measured
+            # on. Explicit ``retriever=`` always wins (escape hatch).
+            min_score = _BUNDLED_MIN_SCORE if corpus is None else None
+            retriever = KeywordRetriever(min_score=min_score)
+        self.retriever = retriever
         self.expander = expander
         self.reranker = reranker
 
@@ -154,6 +177,70 @@ class RagPipeline:
                 "'attune-rag[attune-help]'."
             ) from exc
         return AttuneHelpCorpus.from_attune_help()
+
+    @classmethod
+    def calibrated(
+        cls,
+        corpus: CorpusProtocol,
+        queries: list[str],
+        negatives: list[str],
+        k: int = 3,
+        target_legit_kept: float = 0.95,
+        **pipeline_kwargs,
+    ) -> RagPipeline:
+        """Build a pipeline whose abstention threshold is calibrated to ``corpus``.
+
+        The honest BYO path (docs/specs/safe-abstention-defaults Q3/Q4):
+        no calibration-free heuristic cleared the cross-corpus
+        legit-recall bar, so a corpus-specific threshold derived from
+        the corpus's OWN data is the only safe way to enable abstention
+        on a non-bundled corpus.
+
+        Args:
+            corpus: The corpus to calibrate against and retrieve from.
+            queries: In-corpus ("legit") query strings — questions the
+                corpus SHOULD answer. The threshold will keep at least
+                ``target_legit_kept`` of them answerable.
+            negatives: Out-of-corpus query strings — questions the
+                corpus should ABSTAIN on.
+            k: Top-k used during calibration probes (matches retrieval k).
+            target_legit_kept: Minimum fraction of ``queries`` that must
+                stay above the chosen threshold (default 0.95).
+            **pipeline_kwargs: Forwarded to ``RagPipeline.__init__``
+                (``expander=``, ``reranker=``).
+
+        Returns:
+            A ``RagPipeline`` wired with
+            ``KeywordRetriever(min_score=<recommended>)``. When no
+            threshold separates the sets, the recommendation is 0.0 —
+            i.e. "don't abstain", the honest answer when there is no
+            signal (the sweep's T=0 row).
+
+        Same sweep as ``attune-rag-benchmark --calibrate-abstention``
+        (single source of truth: :func:`benchmark._calibrate_abstention`).
+        """
+        from .benchmark import _calibrate_abstention
+
+        report = _calibrate_abstention(
+            [{"query": q} for q in queries],
+            [{"query": q} for q in negatives],
+            k=k,
+            corpus=corpus,
+            target_legit_kept=target_legit_kept,
+        )
+        threshold = report["recommended_threshold"]
+        logger.info(
+            "rag.calibrated_pipeline",
+            corpus=corpus.name,
+            min_score=threshold,
+            legit_kept=report["recommended_legit_kept"],
+            negatives_abstained=report["recommended_negatives_abstained"],
+        )
+        return cls(
+            corpus=corpus,
+            retriever=KeywordRetriever(min_score=threshold),
+            **pipeline_kwargs,
+        )
 
     def _retrieve(self, query: str, k: int) -> list:
         """Run retrieval (with optional expansion + reranking).
