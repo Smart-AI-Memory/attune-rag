@@ -1,12 +1,11 @@
 # Spec: attune-rag 1.0.0 release
 
-> **Status: approved 2026-08-09** — scoped and ratified by Patrick in
-> the same session (D1–D10 locked, including D7 = Option A). Execution
-> is unblocked; first task is M0.1 (M0.5 voided 2026-08-10 — already
-> shipped, see decisions.md D7). The scoping audit found three stale
-> premises in the scaffolding (0.2.0-as-parent, an Alpha classifier
-> that never existed, and consumer pins that all exclude 1.0.0) —
-> decisions.md §0 records them; the files here are corrected inline.
+> **Status: complete (2026-08-10)** — M0–M4 closed. 1.0.0 shipped and
+> verified on PyPI; the M4 watch was retired early the same day when
+> the chair pulled 1.1.0 forward (zero 1.0.z hotfixes). Retrospective:
+> [exit-summary.md](exit-summary.md). Historical scoping note: the
+> audit found three stale premises in the scaffolding — decisions.md
+> §0 records them; files corrected inline.
 
 - **Owner:** Patrick
 - **Created:** 2026-05-20
