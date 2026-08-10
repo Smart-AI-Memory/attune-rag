@@ -12,19 +12,17 @@ NB: at n=11 the 95% legit bar allows zero drops
 
 | statistic (median) | help legit | help neg | corpus_b legit | corpus_b neg |
 |---|---:|---:|---:|---:|
-| raw top-1 | 13.50 | 3.38 | 6.00 | 0.00 |
-| top-1 / query-token | 3.79 | 0.58 | 1.67 | 0.00 |
-| top-1 − top-2 gap | 2.62 | 0.68 | 4.00 | 0.00 |
+| raw top-1 | 15.62 | 3.38 | 6.00 | 0.00 |
+| top-1 / query-token | 4.38 | 0.58 | 1.67 | 0.00 |
+| top-1 − top-2 gap | 6.62 | 0.68 | 4.00 | 0.00 |
 
 ## M1 — bundled-corpus calibration (re-derived)
 
-Recommended bundled `min_score` = **5** (legit kept 98%, false-answer rate 8%, target legit-kept >= 95%).
+Recommended bundled `min_score` = **5** (legit kept 100%, false-answer rate 8%, target legit-kept >= 95%).
 
 ### R1-strict view (gate set must hold 100%)
 
-Max `min_score` keeping **100%** of the gate set = **3** (negatives abstained 41.7%).
-Gate queries the recommended T=5 would drop (alias-remediation candidates):
-- `SAST scan my repository` (top-1 score 3.75)
+Max `min_score` keeping **100%** of the gate set = **5** (negatives abstained 91.7%).
 
 ## M2 — C3 relative-heuristic sweep (decides Q3)
 

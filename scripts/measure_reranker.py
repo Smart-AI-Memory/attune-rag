@@ -389,8 +389,16 @@ def main(argv: list[str] | None = None) -> int:
     baseline_queries, baseline_sha = _load_queries(args.baseline_queries)
     paraphrased_queries, paraphrased_sha = _load_queries(args.paraphrased_queries)
 
-    # Build pipelines.
-    pipeline_off = RagPipeline()
+    # Build pipelines. Explicit conservative KeywordRetriever: since
+    # safe-abstention-defaults M3, RagPipeline() wires the bundled
+    # corpus with its calibrated min_score=5, and an abstained query
+    # reports a miss regardless of ranking quality — masking the
+    # rank-effect signal this D5 diagnostic (and its _R1_REFERENCE
+    # mirror of the golden file) measures. Abstention posture is
+    # measured by scripts/measure_abstention_distributions.py.
+    from attune_rag.retrieval import KeywordRetriever
+
+    pipeline_off = RagPipeline(retriever=KeywordRetriever())
     pipeline_on: RagPipeline | None = None
     reranker_model = "n/a"
     if not args.skip_run_b:
@@ -398,7 +406,7 @@ def main(argv: list[str] | None = None) -> int:
 
         reranker = LLMReranker(candidate_multiplier=args.candidate_multiplier)
         reranker_model = getattr(reranker, "_model", "unknown")
-        pipeline_on = RagPipeline(reranker=reranker)
+        pipeline_on = RagPipeline(retriever=KeywordRetriever(), reranker=reranker)
 
     # Run A.
     a_result = run_a(pipeline_off, baseline_queries, paraphrased_queries)

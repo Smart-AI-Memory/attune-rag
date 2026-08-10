@@ -323,14 +323,26 @@ def _load_queries(path: Path) -> tuple[list[dict[str, Any]], str]:
 
 
 def _build_retriever(name: str):
-    """Map a retriever name to an instance; ``None`` keeps the pipeline default.
+    """Map a retriever name to an instance.
+
+    ``"keyword"`` returns an explicit ``KeywordRetriever()`` at the
+    conservative CLASS default rather than ``None``: since
+    safe-abstention-defaults M3, ``RagPipeline()`` wires the bundled
+    corpus with its calibrated ``min_score=5``, and an abstained query
+    would report ✗ regardless of ranking quality — masking exactly the
+    signal the golden strict-dominance net exists to catch. Quality
+    measurement stays threshold-conservative here; the abstention
+    posture is measured separately by
+    ``scripts/measure_abstention_distributions.py``.
 
     ``"hybrid"`` / ``"transformer"`` need the ``[embeddings]`` /
     ``[transformers]`` extras at score time; the lazily-raised
     ``RuntimeError`` carries the install hint.
     """
     if name == "keyword":
-        return None
+        from .retrieval import KeywordRetriever
+
+        return KeywordRetriever()
     if name == "hybrid":
         from .hybrid import HybridRetriever
 

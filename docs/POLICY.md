@@ -208,6 +208,15 @@ Enforcement: [`tests/golden/test_golden.py`](../tests/golden/test_golden.py)
 on every PR, plus the watermark guard for the paraphrased set
 (R@3 floor at 85%, set in 0.1.23).
 
+**Bundled abstention default (factual, not a floor).** Since
+safe-abstention-defaults M3, `RagPipeline()` wires the bundled corpus
+with a calibrated abstention threshold; the calibration is reproducible
+from `scripts/measure_abstention_distributions.py` + the committed
+query sets. The threshold VALUE is a §7.2 lever, not a §7.1
+commitment — keyword-score scales are composition-dependent and move
+when the corpus does. What §7.1's P@1/R@3 floors continue to guarantee
+is that recalibration never regresses the gate set.
+
 ### 7.2 What we do *not* commit to
 
 Selection-criteria internals evolve freely within a minor series
@@ -225,6 +234,9 @@ and ship as CHANGELOG `### Changed` — not `### Added`, not breaking:
   `_MIN_STEM_LEN`, stemmer choice are all internal.
 - **Reranker prompt wording** and the `candidate_multiplier`
   default (currently `3`).
+- **The bundled abstention threshold's numeric value** (currently 5,
+  calibrated) — re-derived when the corpus changes; the calibration
+  script is the contract, not the number.
 
 These are the levers we tune to *hold* the §7.1 floors, not the
 floors themselves.
