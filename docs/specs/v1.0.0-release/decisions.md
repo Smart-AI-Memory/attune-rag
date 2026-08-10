@@ -6,8 +6,9 @@
 > decisions below are binding on the cut PR; the three scaffolding files
 > are corrected in the same commit to match.
 >
-> **Human approval required** before M0 work begins — D7 in particular
-> changes the size of the phase.
+> **Approved 2026-08-09** — Patrick ratified the decisions including
+> D7 = Option A (same session, at retro). All ten decisions are locked;
+> execution is unblocked.
 
 - **Owner:** Patrick
 - **Scoped:** 2026-08-09
@@ -248,6 +249,16 @@ supposed to earn.
 release copy is built on it. But B is coherent and cheaper, and the
 choice is a scope call, not a technical one — hence the approval gate.
 
+> **RESOLVED 2026-08-09 — Patrick ruled Option A.** The `DirectoryCorpus`
+> `aliases_override.json` support lands pre-cut as **M0.5**, sequenced
+> before M0.1–M0.3 so consumers validate once against a 0.9.x that
+> already carries the symbol. This is the recorded amendment to the
+> "no new public symbols" Non-Goal in [requirements.md](requirements.md).
+> The steelman for B (a stability cut is the wrong moment for unburned-in
+> surface) was put to Patrick explicitly at the same session's retro and
+> A was reaffirmed. Consequence accepted: M0.5's symbol enters 1.0.0
+> without Phase-4 burn-in; the M4 seven-day watch is its burn-in.
+
 ---
 
 ## D8 — `perf-baseline-multi-run` is already satisfied
@@ -330,16 +341,15 @@ authoritative for it. Make M4.2 the single source.
 | D4 | N = 14 days — already satisfied (22 days, zero hotfixes) | locked, ✅ |
 | D5 | Support window = 6 months, with the scope-honesty paragraph | locked |
 | D6 | 1.x deprecation cycle ratified as sketched; **verify shim removal** | locked, 1 open check |
-| D7 | `user-corpus-onboarding` — `DirectoryCorpus` override gap | **needs Patrick's ruling (A or B)** |
+| D7 | `user-corpus-onboarding` — **Option A ratified 2026-08-09**: `DirectoryCorpus` override lands pre-cut as M0.5 | locked |
 | D8 | perf methodology ✅; **numbers must be re-measured at M1** | locked |
 | D9 | Backlog triage — Q3/Q4 fold in, 2 specs promoted, 5 to 1.0.x | locked |
 | D10 | ROADMAP-v1.md corrected in this commit | locked |
 
 ## Open items carried into execution
 
-1. **D7 ruling** — Option A (land the `DirectoryCorpus` override pre-cut)
-   or Option B (descope to 1.1.0 and soften the release copy). Blocks M0
-   sizing.
+1. ~~**D7 ruling**~~ — **RESOLVED: Option A** (Patrick, 2026-08-09).
+   M0.5 is unconditional and sequenced first.
 2. **D6 shim check** — are the five `attune_rag.editor._*` shims still
    present at 0.9.0? If yes they inherit 1.x rules and are stuck until
    2.0.0. Answer at M1, before the docs roll.

@@ -2,10 +2,10 @@
 
 ## Phase 3: Tasks
 
-**Status:** **scoped 2026-08-09** — this is now a work-tracker, not a
-skeleton. Scoping decisions in [decisions.md](decisions.md).
-**Blocked on Patrick's D7 ruling** before M0 is sized; M0.1–M0.4 can
-start regardless.
+**Status:** **approved 2026-08-09** — scoped and ratified by Patrick
+(including D7 = Option A) in the same session. Work-tracker is live;
+execution is unblocked. Scoping decisions in
+[decisions.md](decisions.md).
 
 Six of seven inherited entry gates are closed (see
 [requirements.md](requirements.md) "Entry gates"). The soak gate (D4) is
@@ -37,7 +37,7 @@ watch.
 | M0.2 | attune-ai: `attune-rag>=0.1.5,<0.10` → `<2.0` at all three sites (`pyproject.toml` lines 78, 222, 406). | attune-ai | The line-78 comment requires explicit re-validation before lifting the cap — honor it; don't just move the bound. Golden-query suite + consumer suites, per the precedent recorded there for 0.9.0. |
 | M0.3 | attune-gui: `attune-rag>=0.1.22,<1.0` → `>=0.9.0,<2.0` (`pyproject.toml:32`). Full rag + editor contract suite green. | attune-gui | The gating downstream per ROADMAP Decision 2. |
 | M0.4 | attune-help: confirm no attune-rag dependency. Record and close. | attune-help | Verified 2026-08-09 — expected no-op. |
-| M0.5 | **Conditional on D7 = Option A.** Land first-class `aliases_override.json` support on `DirectoryCorpus` (`src/attune_rag/corpus/directory.py`), mirroring `AttuneHelpCorpus` (`corpus/attune_help.py:44`). Update the surface snapshot in the same commit. | attune-rag | **Sequence before M0.1–M0.3** so consumers validate once, against a 0.9.x that already carries the symbol. Skip entirely under Option B. |
+| M0.5 | Land first-class `aliases_override.json` support on `DirectoryCorpus` (`src/attune_rag/corpus/directory.py`), mirroring `AttuneHelpCorpus` (`corpus/attune_help.py:44`). Update the surface snapshot in the same commit. | attune-rag | **D7 = Option A ratified 2026-08-09** — unconditional. **Sequence before M0.1–M0.3** so consumers validate once, against a 0.9.x that already carries the symbol. |
 | **M1** | **Pre-release audit** — must complete before M2 starts. | | |
 | M1.0 | **Re-measure the multi-run perf baseline against the cut commit** and rewrite `downstream-validation/perf-baseline.md`. | attune-rag | D8: the *methodology* is settled (v2, σ=2.0) but the numbers are from 2026-05-22 on 0.1.x code, and PR [#194](https://github.com/Smart-AI-Memory/attune-rag/pull/194) has since changed the retrieval hot path. Gates the release-notes perf claim, not the tag. |
 | M1.4 | **Shim check:** are the five `attune_rag.editor._*` underscore-shims still present at 0.9.0? They were scheduled for removal in 0.3.0 under the 0.x policy. | attune-rag | D6 — **answer this before M2.** If they survive into 1.0.0 they inherit 1.x rules and cannot be removed until 2.0.0. Cheapest thing on this page to check, most expensive to miss. |

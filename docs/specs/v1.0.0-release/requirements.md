@@ -2,10 +2,11 @@
 
 ## Phase 1: Requirements
 
-> **Status: scoped 2026-08-09** — pending human approval of D7.
-> Scoping decisions are locked in [decisions.md](decisions.md); read
-> that first. It also records the three stale premises this file
-> carried until 2026-08-09 and how each was corrected.
+> **Status: approved 2026-08-09** — scoped and ratified by Patrick in
+> the same session, including D7 = Option A. Scoping decisions are
+> locked in [decisions.md](decisions.md); read that first. It also
+> records the three stale premises this file carried until 2026-08-09
+> and how each was corrected.
 
 - **Owner:** Patrick
 - **Target version:** 1.0.0
@@ -91,12 +92,11 @@ pins (M0) — is open and blocks the cut.**
 - **New public symbols.** The surface is what 0.9.x carries; Phase 5
   does not expand it. New surface lands as 1.0.x or 1.1.0 *after* the
   cut, under the policy this spec extends.
-  > **One explicit, recorded exception if D7 resolves as Option A:**
-  > `aliases_override.json` support on `DirectoryCorpus` (M0.5). That
-  > is genuinely new public surface, admitted because design.md's
-  > ratified framing makes it load-bearing for the 1.0.0 claim. It is
-  > an amendment to this Non-Goal, not an oversight — and it is void
-  > under Option B.
+  > **One explicit, recorded exception — D7 = Option A, ratified
+  > 2026-08-09:** `aliases_override.json` support on `DirectoryCorpus`
+  > (M0.5). That is genuinely new public surface, admitted because
+  > design.md's ratified framing makes it load-bearing for the 1.0.0
+  > claim. It is an amendment to this Non-Goal, not an oversight.
 - **Eval / perf re-baseline.** Inherited from Phases 1 and 4.
 - **Signature-level locking.** Symbol-level lock test from 0.2.0
   is the contract. Signature locking remains a 1.x follow-on if
@@ -170,7 +170,7 @@ mistaken for a Phase-5 work item.
 | Should the cut bundle surface tidy-ups (alphabetise `__all__`, etc.)? | **Yes, exactly two** — Q4 (`__all__` ordering) and Q3 (local variable rename). Both cosmetic, snapshot test updated in the same commit. |
 | What is the `1.0.0` `### Added` section, given the freeze policy? | Unchanged from the scaffolding: `### Added` lists *declarations* (classifier flip, support-window policy); `### Changed` lists policy tightening. Code-level changes shipped in 0.2.x–0.9.x. |
 | **Do consumers admit 1.0.0?** *(new — not in the scaffolding)* | **No. Blocking.** All four cap below 1.0. M0 widens them to `<2.0` against 0.9.x first, using the surface-lock test as evidence (D3). |
-| **Is the `user-corpus-onboarding` framing earned?** *(new)* | Guide ✅ and harness ✅ shipped; the `DirectoryCorpus` override ❌ has not. **Open — needs Patrick's ruling** between D7 Option A (land pre-cut) and Option B (descope to 1.1.0 and soften the release copy). |
+| **Is the `user-corpus-onboarding` framing earned?** *(new)* | Guide ✅ and harness ✅ shipped; the `DirectoryCorpus` override lands pre-cut as **M0.5** — **D7 = Option A, ratified 2026-08-09**. |
 
 ### Affected layers
 
