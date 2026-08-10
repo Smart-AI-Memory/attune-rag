@@ -2,23 +2,31 @@
 
 ## Phase 1: Requirements
 
-> **Status: scaffolding — not yet scoped; activates after the 0.2.0
-> cut closes cleanly + the 7-day post-1.0.0 no-hotfix gate is
-> achievable (per [ROADMAP-v1.md](../ROADMAP-v1.md) Phase 5 gate).**
+> **Status: scoped 2026-08-09** — pending human approval of D7.
+> Scoping decisions are locked in [decisions.md](decisions.md); read
+> that first. It also records the three stale premises this file
+> carried until 2026-08-09 and how each was corrected.
 
 - **Owner:** Patrick
 - **Target version:** 1.0.0
-- **Shape parent:** [api-v0.2-public-surface/requirements.md](../api-v0.2-public-surface/requirements.md)
+- **Cut parent:** 0.9.x (per [decisions.md](decisions.md) D1 — **not**
+  0.2.x, which this file assumed until the scoping pass)
+- **Shape parent:** [api-v0.2-public-surface/requirements.md](../archive/api-v0.2-public-surface/requirements.md)
 
 ### Problem statement
 
-`attune-rag` will, by the time Phase 4 closes, have a
-documented-and-frozen public API (0.2.0), a perf baseline that has
-held across one freeze, and a downstream consumer (attune-gui) that
-has survived a minor bump. What it will *not* have is a SemVer-level
-stability claim. The package is still classified
-[`Development Status :: 3 - Alpha`](../../../pyproject.toml) and
+`attune-rag` has a documented-and-frozen public API, a perf baseline
+methodology that held across a freeze, and downstream consumers that
+have survived repeated minor bumps. What it does *not* have is a
+SemVer-level stability claim. The package is classified
+[`Development Status :: 4 - Beta`](../../../pyproject.toml) and
 [`docs/POLICY.md`](../../POLICY.md) only governs 0.x removals.
+
+> **Corrected 2026-08-09.** This paragraph previously said the package
+> was classified `3 - Alpha`. It never was — `git log -S'Development
+> Status' -- pyproject.toml` returns one commit, the initial scaffold,
+> at `4 - Beta`. See [decisions.md](decisions.md) D2; the release copy
+> must not claim to be leaving alpha.
 
 Downstream maintainers cannot pin against attune-rag with the
 confidence that a major version implies until the package itself
@@ -26,45 +34,23 @@ says so. Phase 5 is the small, mostly-paperwork phase that makes
 the claim official: classifier flip, support-window doc, 1.x
 deprecation cycle, the cut.
 
-### Entry gates (inherited)
+### Entry gates — audited 2026-08-09
 
-Every entry gate is owned upstream — this spec only checks them
-before scoping begins. Reproduced from
-[README.md](README.md#inherited-entry-gates):
+Audited during the scoping pass against the tree and PyPI, not against
+status headers. Six of seven inherited gates are closed; the seventh is
+this spec's own doc work. **One gate the scaffolding never had — consumer
+pins (M0) — is open and blocks the cut.**
 
-- [ ] **Phase 4 W4.3 exit-summary exists and recommends the cut.**
-      File: `docs/specs/downstream-validation/exit-summary.md`.
-      The recommendation is the Phase-4 owner's call; Phase 5
-      reads, it does not re-litigate.
-- [ ] **0.2.0 cut spec executed and shipped.** The W4.4 successor
-      spec [`docs/specs/api-v0.2.0-cut/`](../api-v0.2.0-cut/) (already
-      scaffolded — see
-      [#83](https://github.com/Smart-AI-Memory/attune-rag/pull/83))
-      has been scoped via `/spec`, all milestones completed,
-      `attune-rag==0.2.0` published to PyPI. The 0.2.0 cut spec
-      explicitly *does not* flip the classifier — that gate stays
-      this spec's problem.
-- [ ] **0.2.0 has been on PyPI for at least N days with zero
-      hotfixes** — N is a placeholder. Pin N during the formal
-      scoping pass (`/spec` on this directory). Candidate range:
-      14–30 days. Rationale: long enough that a latent regression
-      would have surfaced via the weekly downstream-validation
-      cycle; short enough that the 1.0.0 cut doesn't drift
-      indefinitely.
-- [ ] **attune-gui pinned to 0.2.x** and reports clean across one
-      full weekly downstream-validation cycle on the new pin
-      (cycle definition lives in
-      [downstream-validation/design.md](../downstream-validation/design.md)).
-- [ ] **Perf-thresholds baseline holds.** No regression past the
-      `perf-thresholds.json` σ-band recorded in
-      [downstream-validation/perf-baseline.md](../downstream-validation/perf-baseline.md)
-      across the 0.2.0 release window.
-- [ ] **`security-findings.md` has zero open severity-high items.**
-      File: `docs/specs/downstream-validation/security-findings.md`.
-- [ ] **`docs/POLICY.md` updated for 1.x.** This is the actual
-      Phase-5 doc work (M2.1 in [tasks.md](tasks.md)) — not an
-      external prerequisite. Listed here so the gate-check is
-      complete in one place.
+| Gate | Verdict | Evidence |
+|---|---|---|
+| Phase 4 W4.3 exit-summary exists and recommends the cut | ✅ | `downstream-validation/exit-summary.md:48` "Recommendation"; cut authorized ahead of nominal calendar (W4 −26 d via W4.2 override) |
+| Predecessor cut executed and shipped | ✅ | 0.2.0 executed 2026-05-25; **0.3.0–0.9.0 have since shipped.** Re-read per [decisions.md](decisions.md) D1 — the parent is 0.9.x |
+| Predecessor on PyPI ≥ N days, zero hotfixes | ✅ | N pinned at **14** (D4). 0.9.0 shipped 2026-07-18 (PR [#199](https://github.com/Smart-AI-Memory/attune-rag/pull/199)) — 22 days, no 0.9.1 |
+| Downstream consumer clean on the current pin | ✅ | attune-gui green on `>=0.1.22,<1.0`; attune-ai re-validated against 0.9.0 (`pyproject.toml:78`) |
+| Perf-thresholds baseline holds | ⚠️ **methodology ✅, numbers stale** | `perf-baseline.md` is methodology v2 at σ=2.0 — but measured 2026-05-22 on 0.1.x code. **M1 re-measures.** See D8 |
+| `security-findings.md` zero open severity-high | ✅ | "Zero `severity: high` open"; W09.A.001–003 all `high → fixed` with tests |
+| `docs/POLICY.md` updated for 1.x | ⬜ this spec's M2.1 | not an external prerequisite |
+| **Consumer pins admit 1.0.0** | ❌ **BLOCKING — new** | gui `<1.0`, attune-ai `<0.10`, attune-author `<0.9`. Nothing resolves 1.0.0 today. See D3 / **M0** |
 
 ### Scope
 
@@ -76,25 +62,41 @@ before scoping begins. Reproduced from
   - `docs/POLICY.md` — append a "Support window" section and a
     "1.x deprecation cycle" section on top of the existing 0.2.x
     policy.
-  - `README.md` — headline update (no longer "alpha"), Public-API
-    section unchanged.
-  - `CHANGELOG.md` — `[1.0.0]` roll-up (Phase 4 burn-in summary,
-    classifier flip, policy update).
+  - `README.md` — headline update to a **Beta → Stable** promotion
+    (D2 — *not* "no longer alpha"; it never was), Public-API section
+    unchanged. Closes as a no-op if the headline never claimed a
+    maturity level.
+  - `CHANGELOG.md` — `[1.0.0]` roll-up (burn-in summary, classifier
+    flip, policy update).
+- **Consumer pin widening (M0) — added 2026-08-09 (D3).** attune-gui,
+  attune-ai, and attune-author all cap attune-rag below 1.0.0. Widening
+  them to `<2.0` is a prerequisite, not a follow-up: without it the cut
+  publishes a release nothing can install.
 - Source / metadata changes:
-  - `pyproject.toml` classifier: `3 - Alpha` → `5 - Production/Stable`.
+  - `pyproject.toml` classifier: `4 - Beta` → `5 - Production/Stable`.
   - `pyproject.toml` + `src/attune_rag/__init__.py` version:
-    `0.2.x` → `1.0.0`.
+    `0.9.x` → `1.0.0`.
+  - Two ratified cosmetic tidy-ups folded in (D9): Q4 `__all__`
+    ordering, Q3 local-variable rename.
 - Release mechanics: tag `v1.0.0`, PyPI publish (via the standard
   `attune-release-check` skill flow), GitHub release notes.
-- Post-release watch: seven-day no-hotfix gate. Any hotfix release
-  in that window restarts the seven-day clock (per the Phase 5
-  gate in [ROADMAP-v1.md](../ROADMAP-v1.md)).
+- Post-release watch: seven-day no-hotfix gate, **read per
+  [tasks.md](tasks.md) M4.2** — ship hotfixes on their real urgency and
+  log the root cause. The older "any hotfix restarts the clock" wording
+  in [ROADMAP-v1.md](../ROADMAP-v1.md) is superseded (D10); it
+  incentivized delaying fixes to protect a clean window.
 
 **Out of scope (Non-Goals):**
 
-- **New public symbols.** The surface is what 0.2.0 ratified;
-  Phase 5 does not expand it. New surface lands as 1.0.x or 1.1.0
-  *after* the cut, under the policy this spec extends.
+- **New public symbols.** The surface is what 0.9.x carries; Phase 5
+  does not expand it. New surface lands as 1.0.x or 1.1.0 *after* the
+  cut, under the policy this spec extends.
+  > **One explicit, recorded exception if D7 resolves as Option A:**
+  > `aliases_override.json` support on `DirectoryCorpus` (M0.5). That
+  > is genuinely new public surface, admitted because design.md's
+  > ratified framing makes it load-bearing for the 1.0.0 claim. It is
+  > an amendment to this Non-Goal, not an oversight — and it is void
+  > under Option B.
 - **Eval / perf re-baseline.** Inherited from Phases 1 and 4.
 - **Signature-level locking.** Symbol-level lock test from 0.2.0
   is the contract. Signature locking remains a 1.x follow-on if
@@ -130,6 +132,12 @@ are triaged at Phase-5 scoping time into one of three buckets:
 This is process, not a deliverable — call it out here so it isn't
 mistaken for a Phase-5 work item.
 
+> **✅ Triage completed 2026-08-09** — [decisions.md](decisions.md) D9.
+> Outcome: **Q3 + Q4** fold into the cut (M3.5); **Q1 + T2** and
+> **T1 + T3** promote to two new specs (scaffolded during Phase 5, not
+> executed); **P1–P4** and **Q2** land as 1.0.x. Nothing in the backlog
+> blocks the cut. Nothing was closed won't-do.
+
 ### User stories
 
 1. *As a downstream maintainer*, I want attune-rag to declare a
@@ -149,24 +157,34 @@ mistaken for a Phase-5 work item.
 
 ### Edge cases & open questions
 
-Resolved during the `/spec` scoping pass. Listed here as
-placeholders so they aren't forgotten.
+**All resolved 2026-08-09.** Full reasoning in
+[decisions.md](decisions.md); this table is the index.
 
-| Question / Edge case | Placeholder resolution |
+| Question / Edge case | Resolution |
 |---|---|
-| What value of N for "0.2.0 soak before cut"? | Pin during scoping. Candidate: 14–30 days. |
-| What length of support window per minor? | Pin during scoping. Candidate: latest minor receives security fixes for the duration of the next minor's life, plus N months. |
-| How many minors of deprecation warning before removal in 1.x? | Pin during scoping. Candidate: at least one full minor between warning and removal (matches POLICY.md's 0.x→1.x stricter step). |
-| What happens if a P0 / security hotfix fires during the seven-day post-release watch? | Per [ROADMAP-v1.md](../ROADMAP-v1.md) Phase 5 gate: the seven-day clock restarts. |
-| What happens to Phase-5 backlog items not folded in? | Promote to own spec or close as won't-do — see "Disposition" section. |
-| Should the cut bundle any 0.2.x → 1.0.0 surface tidy-ups (alphabetise `__all__`, etc.)? | Decide during scoping. The cut is the rare moment when surface churn is cheap; small tidy-ups may bundle if they are *purely* cosmetic and the snapshot test is updated atomically. |
-| What is the `1.0.0` `### Added` section in CHANGELOG, given the freeze policy? | Treat 1.0.0 as a release-of-the-burn-in: `### Added` lists the *declaration* changes (classifier flip, support-window policy); `### Changed` lists policy-level changes (deprecation cycle tightens). Code-level changes shipped earlier. |
+| What value of N for the pre-cut soak? | **14 days** (D4). Already satisfied — 0.9.0 has 22 days with zero hotfixes. |
+| What length of support window per minor? | **6 months** past the next minor, or 6 from its own release, whichever is longer (D5). Bug fixes: latest minor only. POLICY.md must carry the scope-honesty paragraph verbatim. |
+| How many minors of deprecation warning before removal in 1.x? | Warning in `1.M.0`; removal **only at 2.0.0** (D6). Ratified as sketched. |
+| What happens if a P0 / security hotfix fires during the seven-day watch? | **tasks.md M4.2 governs, not ROADMAP-v1.md.** Ship on real urgency; log root cause in the retrospective. The window is a signal-strength threshold, not a reason to delay fixes. ROADMAP's older "clock restarts" wording is corrected per D10. |
+| What happens to Phase-5 backlog items not folded in? | Triaged (D9): Q3+Q4 fold into the cut; Q1+T2 and T1+T3 promote to two new specs; P1–P4 and Q2 land as 1.0.x. |
+| Should the cut bundle surface tidy-ups (alphabetise `__all__`, etc.)? | **Yes, exactly two** — Q4 (`__all__` ordering) and Q3 (local variable rename). Both cosmetic, snapshot test updated in the same commit. |
+| What is the `1.0.0` `### Added` section, given the freeze policy? | Unchanged from the scaffolding: `### Added` lists *declarations* (classifier flip, support-window policy); `### Changed` lists policy tightening. Code-level changes shipped in 0.2.x–0.9.x. |
+| **Do consumers admit 1.0.0?** *(new — not in the scaffolding)* | **No. Blocking.** All four cap below 1.0. M0 widens them to `<2.0` against 0.9.x first, using the surface-lock test as evidence (D3). |
+| **Is the `user-corpus-onboarding` framing earned?** *(new)* | Guide ✅ and harness ✅ shipped; the `DirectoryCorpus` override ❌ has not. **Open — needs Patrick's ruling** between D7 Option A (land pre-cut) and Option B (descope to 1.1.0 and soften the release copy). |
 
 ### Affected layers
 
-- [x] **attune-rag** — `pyproject.toml`, `src/attune_rag/__init__.py`,
-      `docs/POLICY.md`, `README.md`, `CHANGELOG.md`, tag + PyPI publish.
-- [ ] **attune-gui** — no code change required. The 0.2.x pin
-      established in Phase 4 is what gets exercised across the cut.
-- [ ] **attune-help** — no code change required.
-- [ ] **attune-author** — no code change required.
+**Corrected 2026-08-09.** The scaffolding marked every consumer "no code
+change required." That is wrong for three of them — see D3.
+
+- [x] **attune-rag** — `pyproject.toml` (version + classifier),
+      `src/attune_rag/__init__.py`, `docs/POLICY.md`, `README.md`,
+      `CHANGELOG.md`, `tests/unit/test_api_surface.py` (Q4 snapshot),
+      tag + PyPI publish.
+- [x] **attune-gui** — **pin change required.** `<1.0` → `<2.0`
+      (M0.3). Without it the cut is unusable downstream.
+- [x] **attune-ai** — **pin change required.** `<0.10` → `<2.0` at three
+      sites (M0.2), with the re-validation its own comment demands.
+- [x] **attune-author** — **pin change required, and already broken.**
+      `>=0.8.0,<0.9` excludes the published 0.9.0 (M0.1).
+- [ ] **attune-help** — no attune-rag dependency; genuinely unaffected.

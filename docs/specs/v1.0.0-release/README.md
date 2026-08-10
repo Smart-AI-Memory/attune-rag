@@ -1,14 +1,18 @@
 # Spec: attune-rag 1.0.0 release
 
-> **Status: scaffolding — not yet scoped; activates after the 0.2.0
-> cut closes cleanly + the 7-day post-1.0.0 no-hotfix gate is
-> achievable (per [ROADMAP-v1.md](../ROADMAP-v1.md) Phase 5 gate).**
+> **Status: scoped 2026-08-09** — decisions locked in
+> [decisions.md](decisions.md); execution blocked on Patrick's D7
+> ruling. The scoping audit found three stale premises in the
+> scaffolding (0.2.0-as-parent, an Alpha classifier that never existed,
+> and consumer pins that all exclude 1.0.0) — decisions.md §0 records
+> them; the files here are corrected inline.
 
 - **Owner:** Patrick
 - **Created:** 2026-05-20
+- **Scoped:** 2026-08-09
 - **Target version:** 1.0.0
 - **Roadmap phase:** [Phase 5](../ROADMAP-v1.md#phase-5--100-release)
-- **Shape parent:** [docs/specs/api-v0.2-public-surface/](../api-v0.2-public-surface/)
+- **Shape parent:** [docs/specs/api-v0.2-public-surface/](../archive/api-v0.2-public-surface/)
   — this spec mirrors its `requirements.md` / `design.md` / `tasks.md`
   layout.
 
@@ -18,12 +22,14 @@ Produce the formal **attune-rag 1.0.0** release. 1.0.0 is a
 **stability claim**, not new public surface:
 
 - The public surface was frozen at 0.2.0 (see
-  [api-v0.2-public-surface/](../api-v0.2-public-surface/)).
+  [api-v0.2-public-surface/](../archive/api-v0.2-public-surface/)).
 - Phase 4 ([downstream-validation/](../downstream-validation/)) is
   the burn-in that earns the stability claim.
 - Phase 5 takes the claim and ratifies it on the package itself:
-  flip the classifier `3 - Alpha` → `5 - Production/Stable` in
-  [pyproject.toml](../../../pyproject.toml), publish a support
+  flip the classifier `4 - Beta` → `5 - Production/Stable` in
+  [pyproject.toml](../../../pyproject.toml) (corrected — the package
+  was never `3 - Alpha`; see [decisions.md](decisions.md) D2), widen
+  consumer pins so 1.0.0 is installable (M0, D3), publish a support
   window + 1.x deprecation policy in [docs/POLICY.md](../../POLICY.md),
   cut and tag 1.0.0, watch for hotfixes for seven days.
 
@@ -37,46 +43,42 @@ Produce the formal **attune-rag 1.0.0** release. 1.0.0 is a
   `exit-summary.md` (see W4.3 of
   [downstream-validation/tasks.md](../downstream-validation/tasks.md)).
 
-## Inherited entry-gates
+## Inherited entry-gates — audited closed 2026-08-09
 
-Phase 5 cannot start scoping until all of the following are true.
-Each gate is owned upstream; this spec only checks them.
+Each gate is owned upstream; this spec only checks them. The full
+audit with evidence is in [requirements.md](requirements.md)
+"Entry gates".
 
-- [ ] **Phase 4 closed.** [`docs/specs/downstream-validation/`](../downstream-validation/)
-      `exit-summary.md` (W4.3) exists and recommends the 0.2.0 cut.
-- [ ] **0.2.0 cut closed.** [`docs/specs/api-v0.2.0-cut/`](../api-v0.2.0-cut/)
-      (the W4.4 successor spec, scaffolded in
-      [#83](https://github.com/Smart-AI-Memory/attune-rag/pull/83))
-      has been scoped, executed, and shipped. PyPI shows
-      `attune-rag==0.2.0`. The classifier flip is *not* part of
-      0.2.0 (that's this spec's job — see
-      [api-v0.2.0-cut/README.md](../api-v0.2.0-cut/README.md)
-      "What 0.2.0 means here").
-- [ ] **0.2.0 has soaked.** N days on PyPI with zero hotfix releases
-      (N is a placeholder — pinned during the formal scoping pass).
-- [ ] **attune-gui is pinned to 0.2.x** and reports clean across
-      one full weekly downstream-validation cycle on the new pin.
-- [ ] **Perf baseline holds.** `perf-thresholds.json` from Phase 4 is
-      not breached by 0.2.0.
-- [ ] **No open severity-high security findings.** Phase 4's
-      `security-findings.md` is at zero open.
-
-If any gate is missing, this spec stays in scaffolding state.
+- [x] **Phase 4 closed.** `exit-summary.md` (W4.3) exists and
+      recommends the cut.
+- [x] **Predecessor cut closed.** 0.2.0 shipped 2026-05-25; the line
+      has since advanced to **0.9.0** — the cut's parent per
+      [decisions.md](decisions.md) D1.
+- [x] **Soak.** N pinned at 14 days (D4); 0.9.0 has 22 with zero
+      hotfixes.
+- [x] **Downstream clean** on current pins.
+- [x] **Perf baseline** — methodology holds; numbers re-measured at
+      M1.0 (D8).
+- [x] **No open severity-high security findings.**
+- [ ] **Consumer pins admit 1.0.0** — ❌ **the one open gate**, found
+      during scoping (D3). All consumers cap below 1.0; milestone M0
+      fixes this before the cut.
 
 ## Files
 
 | File | Purpose |
 |---|---|
 | [README.md](README.md) | This one-pager. |
-| [requirements.md](requirements.md) | Entry-gate requirements + scope/non-goals. |
-| [design.md](design.md) | What 1.0.0 means; classifier flip; support window; 1.x deprecation policy; backlog disposition. |
-| [tasks.md](tasks.md) | Unscoped milestone skeleton (M1–M4). Promotes via `/spec` after 0.2.0 closes. |
+| [decisions.md](decisions.md) | **Scoping decisions D1–D10 (2026-08-09)** — read first; binding on the cut PR. |
+| [requirements.md](requirements.md) | Entry-gate audit + scope/non-goals. |
+| [design.md](design.md) | What 1.0.0 means; classifier flip; support window; 1.x deprecation policy; M0 pin-widening design. |
+| [tasks.md](tasks.md) | Work-tracker (M0–M4). Scoped 2026-08-09. |
 
 ## See also
 
 - [docs/specs/ROADMAP-v1.md](../ROADMAP-v1.md) — Phase 5 section is
   the source of truth for outcome, gate, and attune-ai workflows.
-- [docs/specs/api-v0.2-public-surface/](../api-v0.2-public-surface/)
+- [docs/specs/api-v0.2-public-surface/](../archive/api-v0.2-public-surface/)
   — what 1.0.0 ratifies as the stable surface (symbol-level lock).
 - [docs/specs/api-v0.2.0-cut/](../api-v0.2.0-cut/) — the SemVer-level
   0.2.0 cut (W4.4 successor spec); ships *before* 1.0.0 and is one
