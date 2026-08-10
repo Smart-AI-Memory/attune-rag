@@ -1,7 +1,7 @@
 # Spec: transformer-retriever — requirements
 
-> **Status:** scoping (2026-06-07). Scaffold is docs-only/freeze-clean.
-> Requirements below bind the **implementation PR**.
+> **Status:** complete (2026-08-10) — see [`tasks.md`](tasks.md).
+> Historical scoping text below is preserved as the record.
 
 ## Entry gates
 

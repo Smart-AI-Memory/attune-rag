@@ -1,6 +1,7 @@
 # Spec: transformer-retriever — risks
 
-> **Status:** scoping (2026-06-07).
+> **Status:** complete (2026-08-10) — see [`tasks.md`](tasks.md).
+> Historical scoping text below is preserved as the record.
 
 ## 1. Single-corpus signal (n=26, corpus_b only)
 

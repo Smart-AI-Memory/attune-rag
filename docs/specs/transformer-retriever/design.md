@@ -1,7 +1,7 @@
 # Spec: transformer-retriever — design
 
-> **Status:** scoping (2026-06-07). Candidates below; locked at the
-> `/spec` pass (top of [`tasks.md`](tasks.md)).
+> **Status:** complete (2026-08-10) — see [`tasks.md`](tasks.md).
+> Historical scoping text below is preserved as the record.
 
 ## 1. Problem
 
