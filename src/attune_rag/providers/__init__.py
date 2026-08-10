@@ -57,4 +57,4 @@ def get_provider(name: str, **kwargs: Any) -> LLMProvider:
     raise ValueError(f"Unknown provider {name!r}. Known providers: {sorted(_SDK_PROBES)}.")
 
 
-__all__ = ["LLMProvider", "list_available", "get_provider"]
+__all__ = ["LLMProvider", "get_provider", "list_available"]

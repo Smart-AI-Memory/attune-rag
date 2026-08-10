@@ -189,3 +189,26 @@ def test_duplicate_aliases_caught() -> None:
     src = "type: concept\nname: x\naliases: [foo, foo]\n"
     _, issues = parse_frontmatter(src)
     assert any(i.code == "duplicate-items" for i in issues)
+
+
+def test_bad_type_caught() -> None:
+    # tags must be an array — a bare string trips the "type" keyword.
+    src = "type: concept\nname: x\ntags: notalist\n"
+    _, issues = parse_frontmatter(src)
+    bad = next(i for i in issues if i.code == "bad-type")
+    assert "tags" in bad.message
+    assert bad.path == ("tags",)
+
+
+def test_unhandled_keyword_falls_back_to_schema_violation() -> None:
+    # A keyword outside the translated set (required/enum/type/
+    # uniqueItems/minLength) lands on the generic fallback issue.
+    from jsonschema.exceptions import ValidationError
+
+    from attune_rag.editor.schema import _issue_from_error
+
+    err = ValidationError("value too long", validator="maxLength", path=["summary"])
+    issue = _issue_from_error(err)
+    assert issue.code == "schema-violation"
+    assert issue.message == "value too long"
+    assert issue.path == ("summary",)
