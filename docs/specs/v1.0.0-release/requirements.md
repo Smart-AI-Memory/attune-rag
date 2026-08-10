@@ -102,8 +102,12 @@ pins (M0) — is open and blocks the cut.**
 - **Signature-level locking.** Symbol-level lock test from 0.2.0
   is the contract. Signature locking remains a 1.x follow-on if
   ever taken up.
-- **`py.typed` marker.** Carried over from 0.2.0 backlog; revisit
-  as a 1.0.x or 1.1.0 candidate, not as part of the cut.
+- ~~**`py.typed` marker.** Carried over from 0.2.0 backlog; revisit
+  as a 1.0.x or 1.1.0 candidate, not as part of the cut.~~
+  **Corrected 2026-08-10 (M1 audit): already shipped** — `py.typed`
+  landed in PR [#175](https://github.com/Smart-AI-Memory/attune-rag/pull/175)
+  and is wired in `pyproject.toml:114`. Fourth stale premise caught by
+  this scoping; nothing to revisit.
 - **Phase-5 backlog grooming as a deliverable.** Triage happens at
   scoping time (see [design.md](design.md) "Backlog disposition");
   individual items either fold into `tasks.md` here, promote to
