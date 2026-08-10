@@ -87,8 +87,8 @@ def parse_frontmatter(yaml_text: str) -> tuple[dict[str, Any], list[FrontmatterI
 def _issue_from_error(err: ValidationError) -> FrontmatterIssue:
     """Map a jsonschema ValidationError to a stable issue code + message."""
     path = tuple(err.absolute_path)
-    validator = err.validator
-    if validator == "required":
+    keyword = err.validator
+    if keyword == "required":
         # err.message is e.g. "'name' is a required property"
         missing = err.message.split("'")[1] if "'" in err.message else "?"
         return FrontmatterIssue(
@@ -96,7 +96,7 @@ def _issue_from_error(err: ValidationError) -> FrontmatterIssue:
             message=f"Missing required field: {missing}",
             path=path + (missing,),
         )
-    if validator == "enum":
+    if keyword == "enum":
         field = path[-1] if path else "?"
         allowed = ", ".join(repr(v) for v in (err.validator_value or []))
         return FrontmatterIssue(
@@ -104,7 +104,7 @@ def _issue_from_error(err: ValidationError) -> FrontmatterIssue:
             message=f"Field {field!r} must be one of: {allowed}",
             path=path,
         )
-    if validator == "type":
+    if keyword == "type":
         field = path[-1] if path else "?"
         expected = err.validator_value
         return FrontmatterIssue(
@@ -112,14 +112,14 @@ def _issue_from_error(err: ValidationError) -> FrontmatterIssue:
             message=f"Field {field!r} must be of type {expected!r}",
             path=path,
         )
-    if validator == "uniqueItems":
+    if keyword == "uniqueItems":
         field = path[-1] if path else "?"
         return FrontmatterIssue(
             code="duplicate-items",
             message=f"Field {field!r} must contain unique items",
             path=path,
         )
-    if validator == "minLength":
+    if keyword == "minLength":
         field = path[-1] if path else "?"
         return FrontmatterIssue(
             code="too-short",

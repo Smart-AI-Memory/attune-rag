@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0] — UNRELEASED (ships at the M3 cut; see docs/specs/v1.0.0-release/)
+## [1.0.0] — 2026-08-10
 
 The release of the burn-in. 1.0.0 is a **stability claim, not new
 code**: the public surface is 0.9.x's surface, validated by Phase 4's
