@@ -15,7 +15,7 @@ working session so state is recoverable cold from disk.
 |---|---|
 | Current version | **0.9.0** (published 2026-07-18, PR [#199](https://github.com/Smart-AI-Memory/attune-rag/pull/199)) — 0.2.0 cut executed 2026-05-25; 0.3.0–0.9.0 shipped since |
 | Target version | 1.0.0 |
-| Current phase | **Phase 5 — approved 2026-08-09** ([v1.0.0-release/decisions.md](v1.0.0-release/decisions.md), D1–D10 all locked; Patrick ratified same-session, including **D7 = Option A**). Phase 4 closed; its exit-summary recommends the cut. Six of seven inherited entry gates verified closed; the 14-day soak (D4) is satisfied at 22 days with zero hotfixes. **One new blocking gate: consumer pins.** attune-gui `<1.0`, attune-ai `<0.10`, attune-author `<0.9` — nothing resolves 1.0.0 today, so milestone **M0** widens all three to `<2.0` before the cut. **Next action:** M0.2–M0.3 pin widening (M0.5 + M0.1 voided 2026-08-10 — override already shipped in PR #130; attune-author retired/archived 2026-07-27; see decisions.md). |
+| Current phase | **Phase 5 — approved 2026-08-09** ([v1.0.0-release/decisions.md](v1.0.0-release/decisions.md), D1–D10 all locked; Patrick ratified same-session, including **D7 = Option A**). Phase 4 closed; its exit-summary recommends the cut. Six of seven inherited entry gates verified closed; the 14-day soak (D4) is satisfied at 22 days with zero hotfixes. **One new blocking gate: consumer pins.** attune-gui `<1.0`, attune-ai `<0.10`, attune-author `<0.9` — nothing resolves 1.0.0 today, so milestone **M0** widens all three to `<2.0` before the cut. **Next action:** land M0.2 (attune-ai#2032) — the only surviving M0 task (M0.5/M0.1/M0.3 voided 2026-08-10: override already shipped; attune-author retired 2026-07-27; attune-gui retired 2026-07-31; see decisions.md). Then M1 audit. |
 | Last updated | **2026-08-10** |
 
 ---
@@ -156,7 +156,7 @@ security audit clean.
 ## Phase 5 — 1.0.0 release
 
 **Spec:** [`docs/specs/v1.0.0-release/`](v1.0.0-release/) — **scoped 2026-08-09**, decisions at [`decisions.md`](v1.0.0-release/decisions.md)
-**Status:** approved 2026-08-09 (D1–D10 locked); D7 + M0.1 voided 2026-08-10 (override already shipped; attune-author retired) — next action M0.2
+**Status:** approved 2026-08-09 (D1–D10 locked); D7 + M0.1 + M0.3 voided 2026-08-10 (override already shipped; attune-author AND attune-gui retired) — M0 = M0.2 alone (attune-ai#2032 in flight)
 **Estimate:** **6–8 weeks of attention** (revised 2026-05-21; unchanged
 by the scoping pass — M0 adds ~4 small PRs, D8's methodology work turned
 out to be already done, which roughly cancels)
@@ -208,7 +208,7 @@ ship hotfixes on their actual urgency and read the retrospective.
 | # | Date | Decision |
 |---|---|---|
 | 1 | 2026-05-15 | **Regression threshold = `mean − 2σ` per metric, with the noise floor measured from N ≥ 10 back-to-back benchmark runs on an unchanged HEAD.** Re-measure when `--thinking` defaults change. Rationale: judge non-determinism (e.g., gq-017's 43 pp single-query swing) makes any fixed round-number threshold a guess; measuring the floor first pre-empts the "false positive" objection. Lands as Phase 1's first deliverable. |
-| 2 | 2026-05-15 | **attune-gui is the gating downstream for Phase 4.** Rationale: tightest coupling — consumes pipeline, dashboard refresh, and rename plans, so it stresses the largest fraction of attune-rag's public surface. Phase 3's `__all__` audit must cover everything attune-gui imports from `attune_rag.*`. |
+| 2 | 2026-05-15 | **attune-gui is the gating downstream for Phase 4.** Rationale: tightest coupling — consumes pipeline, dashboard refresh, and rename plans, so it stresses the largest fraction of attune-rag's public surface. Phase 3's `__all__` audit must cover everything attune-gui imports from `attune_rag.*`. *(Superseded 2026-08-10: attune-gui archived 2026-07-31 — it served this role through Phase 4's close, but the active gating downstream for the 1.0.0 cut is now attune-ai. The weekly downstream-attune-gui.yml workflow is flagged for retirement.)* |
 | 3 | 2026-05-15 | **Phase 2 / Phase 3 sequencing = soft-parallel.** Phase 3 scoping (surface mapping, `__all__` audit, spec drafting) may begin during Phase 2; 0.2.0 release ships only after Phase 2 lands. Rationale: captures ~2 weeks of calendar without freezing the API around an unstable gate. |
 
 ## Open decisions

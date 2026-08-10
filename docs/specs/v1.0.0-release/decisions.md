@@ -93,7 +93,7 @@ not corroboration when one was copied from the other; only
 
 | Consumer | Current pin | Resolves 1.0.0? |
 |---|---|---|
-| attune-gui | `attune-rag>=0.1.22,<1.0` (`pyproject.toml:32`) | ✗ |
+| ~~attune-gui~~ | ~~`attune-rag>=0.1.22,<1.0`~~ **retired — repo archived 2026-07-31**, pin frozen forever, moot | n/a |
 | attune-ai | `attune-rag>=0.1.5,<0.10` (three sites: lines 78, 222, 406) | ✗ |
 | ~~attune-author~~ | ~~`attune-rag>=0.8.0,<0.9`~~ **retired — repo archived 2026-07-27**, pin frozen forever, moot | n/a |
 
@@ -114,7 +114,17 @@ resolve the current attune-rag since 2026-07-18 and nothing surfaced it.
 > the D3 sweep checked pins and PR lists but never `isArchived` — the
 > third premise error this scoping has caught (after §0's and D7's),
 > and the second of my own. The "drift" was a tombstone, not a bug.
-> M0 is now M0.2 (attune-ai) + M0.3 (attune-gui) + M0.4 (no-op).
+> ~~M0 is now M0.2 (attune-ai) + M0.3 (attune-gui) + M0.4 (no-op).~~
+> **Extended same-day: attune-gui is retired too** (archived
+> 2026-07-31, discovered via the M0.3 push 403 — no dedicated
+> retirement spec located; the decision record itself is flagged for
+> Patrick). **M0 reduces to M0.2 alone.** With gui gone, attune-ai is
+> the ONLY active consumer of attune-rag — which also invalidates the
+> D5 scope-honesty paragraph's 'only external consumer is attune-gui'
+> line and ROADMAP Decision 2's gating-downstream premise; both
+> corrected in this commit. attune-rag's downstream-attune-gui.yml
+> weekly workflow now exercises an archived repo — flagged for
+> retirement with the workspace-docs sweep.
 > Workspace-level docs (CLAUDE.md layer table, tech.md, deploy order)
 > still describe attune-author as an active layer — flagged to Patrick
 > for a separate workspace-docs sweep, not changed unilaterally here.
@@ -309,8 +319,9 @@ choice is a scope call, not a technical one — hence the approval gate.
 >   `scoped 2026-05-22` with its work complete — same drift class D8
 >   flagged for `perf-baseline-multi-run`. Both go to the next
 >   status sweep.
-> - ~~Next action is M0.1~~ **M0.1 also voided 2026-08-10** (repo
->   retired) — next action is **M0.2** (attune-ai pin widening).
+> - ~~Next action is M0.1~~ **M0.1 and M0.3 both voided 2026-08-10**
+>   (attune-author and attune-gui retired) — M0 is **M0.2 alone**,
+>   in flight as attune-ai#2032.
 
 ---
 
