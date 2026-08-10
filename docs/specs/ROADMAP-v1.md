@@ -15,8 +15,8 @@ working session so state is recoverable cold from disk.
 |---|---|
 | Current version | **0.9.0** (published 2026-07-18, PR [#199](https://github.com/Smart-AI-Memory/attune-rag/pull/199)) — 0.2.0 cut executed 2026-05-25; 0.3.0–0.9.0 shipped since |
 | Target version | 1.0.0 |
-| Current phase | **Phase 5 — approved 2026-08-09** ([v1.0.0-release/decisions.md](v1.0.0-release/decisions.md), D1–D10 all locked; Patrick ratified same-session, including **D7 = Option A**). Phase 4 closed; its exit-summary recommends the cut. Six of seven inherited entry gates verified closed; the 14-day soak (D4) is satisfied at 22 days with zero hotfixes. **One new blocking gate: consumer pins.** attune-gui `<1.0`, attune-ai `<0.10`, attune-author `<0.9` — nothing resolves 1.0.0 today, so milestone **M0** widens all three to `<2.0` before the cut. **Next action:** M0.5 — land `DirectoryCorpus` `aliases_override` support (the ratified D7 surface addition), then M0.1–M0.3 pin widening. |
-| Last updated | **2026-08-09** |
+| Current phase | **Phase 5 — approved 2026-08-09** ([v1.0.0-release/decisions.md](v1.0.0-release/decisions.md), D1–D10 all locked; Patrick ratified same-session, including **D7 = Option A**). Phase 4 closed; its exit-summary recommends the cut. Six of seven inherited entry gates verified closed; the 14-day soak (D4) is satisfied at 22 days with zero hotfixes. **One new blocking gate: consumer pins.** attune-gui `<1.0`, attune-ai `<0.10`, attune-author `<0.9` — nothing resolves 1.0.0 today, so milestone **M0** widens all three to `<2.0` before the cut. **Next action:** M0.1–M0.3 pin widening (M0.5 voided 2026-08-10 — the D7 override was already shipped in PR #130; see decisions.md). |
+| Last updated | **2026-08-10** |
 
 ---
 
@@ -156,7 +156,7 @@ security audit clean.
 ## Phase 5 — 1.0.0 release
 
 **Spec:** [`docs/specs/v1.0.0-release/`](v1.0.0-release/) — **scoped 2026-08-09**, decisions at [`decisions.md`](v1.0.0-release/decisions.md)
-**Status:** approved 2026-08-09 (D1–D10 locked, D7 = Option A); execution unblocked — next action M0.5
+**Status:** approved 2026-08-09 (D1–D10 locked); D7 voided 2026-08-10 (already shipped) — next action M0.1
 **Estimate:** **6–8 weeks of attention** (revised 2026-05-21; unchanged
 by the scoping pass — M0 adds ~4 small PRs, D8's methodology work turned
 out to be already done, which roughly cancels)
@@ -181,8 +181,9 @@ v1.1.0 per
   (`scripts/measure_corpus.py`) and the "your own corpus" guide
   (`docs/USER_CORPUS_GUIDE.md`, 939 lines) **shipped**. The
   `aliases_override.json` support for `DirectoryCorpus` did **not** —
-  it exists only on `AttuneHelpCorpus`. That gap is D7, **ratified
-  Option A 2026-08-09**: it lands pre-cut as M0.5.
+  ~~it exists only on `AttuneHelpCorpus`~~ — **correction 2026-08-10:
+  it shipped on `DirectoryCorpus` too** (`extra_aliases_file`, PR #130,
+  user-corpus-onboarding M2). D7 voided; nothing left to land.
 
 **Gate:** 1.0.0 on PyPI; support policy published; seven
 days post-release with no hotfix — read per

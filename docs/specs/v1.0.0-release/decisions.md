@@ -259,6 +259,46 @@ choice is a scope call, not a technical one — hence the approval gate.
 > A was reaffirmed. Consequence accepted: M0.5's symbol enters 1.0.0
 > without Phase-4 burn-in; the M4 seven-day watch is its burn-in.
 
+> **VOIDED 2026-08-10 — the gap this decision resolves does not exist.**
+> On starting M0.5, the implementation read of
+> [`corpus/directory.py`](../../../src/attune_rag/corpus/directory.py)
+> found the deliverable already shipped: `DirectoryCorpus` has carried an
+> `extra_aliases_file: Path | str | None` kwarg with strict
+> `load_aliases_from_file` semantics since PR
+> [#130](https://github.com/Smart-AI-Memory/attune-rag/pull/130) — the
+> `user-corpus-onboarding` spec's own **M2 milestone** (tasks M2.1–M2.5:
+> public helper in `corpus.__all__`, kwarg, dedicated test file
+> `tests/unit/test_directory_corpus_extra_aliases_file.py`, surface
+> snapshot updated, `AttuneHelpCorpus` refactored onto the helper). The
+> guide documents it (`USER_CORPUS_GUIDE.md` §3, "one-liner override
+> loading").
+>
+> **The premise error was mine and it is exactly the class this scoping
+> pass exists to catch:** the D7 audit grepped for the literal string
+> `aliases_override` in `directory.py` — the shipped parameter is named
+> `extra_aliases_file`, so the grep returned nothing and I concluded
+> "no override support at all." A feature-shaped grep (or reading the
+> constructor signature) would have found it. Symmetric with §0's
+> lesson: verify against the live tree means *reading* the tree, not
+> string-matching one spelling of a concept.
+>
+> **Consequences:**
+> - **M0.5 is void** — nothing to build. All three `user-corpus-onboarding`
+>   deliverables (guide, harness, override) are shipped; the v1.0.0
+>   framing is fully earned as-is.
+> - **The Non-Goal amendment is void** — 1.0.0 adds no public symbols
+>   after all. The surface identity (1.0.0 ≡ 0.9.x) holds cleanly,
+>   which simplifies M0: consumers validate against 0.9.x exactly as
+>   published, one ordering, no re-validation caveat.
+> - Patrick's A-over-B ruling stands recorded as the scope preference
+>   it expressed (ship the override before the cut) — satisfied
+>   trivially, since it already shipped pre-cut.
+> - The `user-corpus-onboarding` spec header still reads
+>   `scoped 2026-05-22` with its work complete — same drift class D8
+>   flagged for `perf-baseline-multi-run`. Both go to the next
+>   status sweep.
+> - **Next action is M0.1** (attune-author pin repair).
+
 ---
 
 ## D8 — `perf-baseline-multi-run` is already satisfied
@@ -341,15 +381,16 @@ authoritative for it. Make M4.2 the single source.
 | D4 | N = 14 days — already satisfied (22 days, zero hotfixes) | locked, ✅ |
 | D5 | Support window = 6 months, with the scope-honesty paragraph | locked |
 | D6 | 1.x deprecation cycle ratified as sketched; **verify shim removal** | locked, 1 open check |
-| D7 | `user-corpus-onboarding` — **Option A ratified 2026-08-09**: `DirectoryCorpus` override lands pre-cut as M0.5 | locked |
+| D7 | `user-corpus-onboarding` — Option A ratified 2026-08-09; **VOIDED 2026-08-10: the gap was fiction** — `extra_aliases_file` shipped in PR #130 (M2 of that spec). M0.5 void; no Non-Goal exception; surface identity holds | closed |
 | D8 | perf methodology ✅; **numbers must be re-measured at M1** | locked |
 | D9 | Backlog triage — Q3/Q4 fold in, 2 specs promoted, 5 to 1.0.x | locked |
 | D10 | ROADMAP-v1.md corrected in this commit | locked |
 
 ## Open items carried into execution
 
-1. ~~**D7 ruling**~~ — **RESOLVED: Option A** (Patrick, 2026-08-09).
-   M0.5 is unconditional and sequenced first.
+1. ~~**D7 ruling**~~ — resolved Option A (2026-08-09), then **VOIDED
+   2026-08-10**: the deliverable already shipped (PR #130). M0.5 void;
+   first real task is M0.1.
 2. **D6 shim check** — are the five `attune_rag.editor._*` shims still
    present at 0.9.0? If yes they inherit 1.x rules and are stuck until
    2.0.0. Answer at M1, before the docs roll.

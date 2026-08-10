@@ -2,7 +2,8 @@
 
 > **Status: approved 2026-08-09** — scoped and ratified by Patrick in
 > the same session (D1–D10 locked, including D7 = Option A). Execution
-> is unblocked; first task is M0.5. The scoping audit found three stale
+> is unblocked; first task is M0.1 (M0.5 voided 2026-08-10 — already
+> shipped, see decisions.md D7). The scoping audit found three stale
 > premises in the scaffolding (0.2.0-as-parent, an Alpha classifier
 > that never existed, and consumer pins that all exclude 1.0.0) —
 > decisions.md §0 records them; the files here are corrected inline.
@@ -62,9 +63,9 @@ audit with evidence is in [requirements.md](requirements.md)
 - [x] **No open severity-high security findings.**
 - [ ] **Consumer pins admit 1.0.0** — ❌ **the one open gate**, found
       during scoping (D3). All consumers cap below 1.0; milestone M0
-      fixes this before the cut, starting with M0.5 (the ratified
-      `DirectoryCorpus` override, D7 = Option A) so consumers validate
-      against the final surface.
+      fixes this before the cut. (M0.5 voided 2026-08-10 — the D7
+      override was already shipped, so consumers validate against
+      0.9.x exactly as published.)
 
 ## Files
 

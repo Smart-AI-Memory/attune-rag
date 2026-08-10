@@ -3,10 +3,11 @@
 ## Phase 2: Design
 
 > **Status: approved 2026-08-09** — scoped and ratified by Patrick in
-> the same session, including D7 = Option A. Decisions locked in
-> [decisions.md](decisions.md). Sections below are corrected where the
-> scoping audit found them stale; corrections are marked inline rather
-> than silently applied.
+> the same session. D7 was ratified Option A, then **voided 2026-08-10**
+> (the override was already shipped — see decisions.md D7). Decisions
+> locked in [decisions.md](decisions.md). Sections below are corrected
+> where the scoping audit found them stale; corrections are marked
+> inline rather than silently applied.
 
 - **Shape parent:** [api-v0.2-public-surface/design.md](../archive/api-v0.2-public-surface/design.md)
 
@@ -18,7 +19,7 @@
 
 | Dimension | 0.9.x | 1.0.0 |
 |---|---|---|
-| Public surface | Documented, snapshot-tested, frozen. | **Same surface plus one ratified addition** — the M0.5 `DirectoryCorpus` override (D7 = Option A). |
+| Public surface | Documented, snapshot-tested, frozen. | **Same surface.** No additions — the D7 override turned out to be already shipped (PR #130; D7 voided 2026-08-10). |
 | SemVer commitment | 0.x semantics: no removals within a minor; removals OK at next minor with a prior deprecation warning ([POLICY.md §2](../../POLICY.md#2-semver-commitment)). | 1.x semantics: removals only at major bumps, after at least one full minor with a `DeprecationWarning` at the symbol's call site. |
 | Classifier | `Development Status :: 4 - Beta` | `Development Status :: 5 - Production/Stable` |
 | Support window | Not documented. | Documented in `POLICY.md` — **6 months** (D5). |
@@ -57,9 +58,11 @@ inherits the decision rather than re-litigating it.
 > shipped: `perf-baseline-multi-run`'s methodology is in the tree at
 > σ=2.0 (D8 — only the numbers need re-measuring, M1.0), and
 > `user-corpus-onboarding`'s guide + quality harness are shipped. The
-> last item, the `DirectoryCorpus` override, was ratified pre-cut as
-> M0.5 (D7 = Option A, same day). The telemetry config-surface
-> reservation and the standard cut work remain as written.
+> last item, the `DirectoryCorpus` override, turned out to be ALREADY
+> SHIPPED too (`extra_aliases_file`, PR #130 — found 2026-08-10 on
+> starting M0.5; D7 voided). All three deliverables are live. The
+> telemetry config-surface reservation and the standard cut work
+> remain as written.
 
 **In v1.0.0:**
 
@@ -292,11 +295,10 @@ This is the surface freeze finally paying for something beyond
 discipline: it converts "we think the upgrade is safe" into "the
 snapshot test says the surface did not move."
 
-**D7 = Option A (ratified 2026-08-09), so the sequencing is fixed.**
-Adding the `DirectoryCorpus` override *does* move the surface, which
-breaks the identity above. Therefore M0.5 lands first, the snapshot
-updates, and consumer validation (M0.1–M0.3) runs against a 0.9.x that
-already carries the new symbol — one ordering, one validation pass.
+**D7 voided 2026-08-10, so the identity holds cleanly.** The override
+was already shipped (PR #130), M0.5 is void, and 1.0.0 adds no surface
+at all. Consumer validation (M0.1–M0.3) runs against 0.9.x exactly as
+published — no re-validation caveat, no special ordering.
 
 ### Release mechanics
 
