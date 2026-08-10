@@ -260,7 +260,11 @@ def main(argv: list[str] | None = None) -> int:
     payload = build_payload(payloads=payloads, sigma=args.sigma, metrics=metrics)
 
     args.thresholds_out.parent.mkdir(parents=True, exist_ok=True)
-    args.thresholds_out.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    # Newline-terminated so the committed file passes end-of-file-fixer
+    # (the 2026-08-10 v2 lock landed without one and turned main red).
+    args.thresholds_out.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(render_markdown(payload), encoding="utf-8")
     print(f"wrote {args.out}", file=sys.stderr)

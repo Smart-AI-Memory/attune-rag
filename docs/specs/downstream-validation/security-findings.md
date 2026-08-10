@@ -202,3 +202,23 @@ defensible answer to "did the partial deep_review miss something".
 The Phase 5 ticket for re-running the original `security_audit`
 MCP once its `AttributeError` is fixed remains documented for
 methodological completeness — not for an outstanding known issue.
+
+---
+
+## M1 re-run (Phase 5, v1.0.0 cut — 2026-08-10)
+
+Per `v1.0.0-release/tasks.md` M1.1: repo-wide re-scan on the head
+commit (`6720393`, post-M0).
+
+| Check | Tool | Threshold | Result |
+|---|---|---|---|
+| dynamic-code / path-traversal / secrets / deserialization | `scripts/security_scan.py` (Phase-4 W0.10 scanner) | **low** (strictest) | **0 findings** across `src/attune_rag` + `scripts` |
+| Second opinion | bandit `-ll` (medium+) | medium | clean |
+
+Note: the attune-ai MCP audit tool used for the W0.9 deep pass cannot
+cross the workspace symlink boundary in the current session sandbox, so
+this re-run used the house scanner (whose four check classes were
+designed as the W0.9 secondary sweep's primary filter) plus bandit.
+
+**Zero `severity: high` open — the M1 entry gate holds.** No new
+findings to triage; the W09.A.001–003 dispositions above stand.

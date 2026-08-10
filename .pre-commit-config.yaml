@@ -29,7 +29,12 @@ repos:
     rev: v1.5.0
     hooks:
       - id: detect-secrets
-        args: ['--baseline', '.secrets.baseline']
+        # perf-thresholds.json is GENERATED (perf.yml lock-baseline) and
+        # embeds the measured commit's 40-char SHA — a guaranteed
+        # hex-high-entropy false positive that ROTATES on every re-lock,
+        # so a baseline pin goes stale each time. Exclude the file.
+        args: ['--baseline', '.secrets.baseline',
+               '--exclude-files', 'docs/specs/downstream-validation/perf-thresholds\.json']
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
