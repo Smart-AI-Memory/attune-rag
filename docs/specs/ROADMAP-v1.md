@@ -13,10 +13,10 @@ working session so state is recoverable cold from disk.
 
 | Field | Value |
 |---|---|
-| Current version | **0.9.0** (published 2026-07-18, PR [#199](https://github.com/Smart-AI-Memory/attune-rag/pull/199)) — 0.2.0 cut executed 2026-05-25; 0.3.0–0.9.0 shipped since |
+| Current version | **1.0.0** (published 2026-08-10 — Beta → Production/Stable; PR [#206](https://github.com/Smart-AI-Memory/attune-rag/pull/206), release [v1.0.0](https://github.com/Smart-AI-Memory/attune-rag/releases/tag/v1.0.0)) |
 | Target version | 1.0.0 |
-| Current phase | **Phase 5 — approved 2026-08-09** ([v1.0.0-release/decisions.md](v1.0.0-release/decisions.md), D1–D10 all locked; Patrick ratified same-session, including **D7 = Option A**). Phase 4 closed; its exit-summary recommends the cut. Six of seven inherited entry gates verified closed; the 14-day soak (D4) is satisfied at 22 days with zero hotfixes. **One new blocking gate: consumer pins.** attune-gui `<1.0`, attune-ai `<0.10`, attune-author `<0.9` — nothing resolves 1.0.0 today, so milestone **M0** widens all three to `<2.0` before the cut. **Next action:** land M0.2 (attune-ai#2032) — the only surviving M0 task (M0.5/M0.1/M0.3 voided 2026-08-10: override already shipped; attune-author retired 2026-07-27; attune-gui retired 2026-07-31; see decisions.md). Then M1 audit. |
-| Last updated | **2026-08-10** |
+| Current phase | **Phase 5 — M0–M3 COMPLETE 2026-08-10; 1.0.0 live on PyPI.** M4 seven-day watch runs to **2026-08-17** (M4.2 semantics: hotfixes ship on real urgency + root-cause note; no clock-restart theater). Close-out: M4.3 on 2026-08-17 → Phase 5 exit-summary. |
+| Last updated | **2026-08-10 (post-release)** |
 
 ---
 
