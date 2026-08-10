@@ -1,26 +1,56 @@
 # Spec: confidence-gated-retrieval — tasks
 
-> **Status:** scoping (2026-06-07). M1+ are **not** executable until the
-> entry gate ([`requirements.md`](requirements.md#entry-gates)) opens.
-> Scoping decisions are filled at the `/spec` pass.
+> **Status:** **active — M0+M2 complete (2026-08-10).** Entry gates all
+> opened: R1's >=30-query validation passed at M1, v1.0.0 shipped
+> 2026-08-10 (freeze lifted), and
+> [`safe-abstention-defaults`](../safe-abstention-defaults/) completed
+> 2026-08-10 with the shared calibration machinery (its Q6 explicitly
+> defers cross-tier confidence to this spec). M2 locked Q1/Q2 by
+> measurement (`scripts/measure_gated_mechanism.py`). **M3 build is
+> gated on the chair ratifying the escalated scope decision + Q3.**
 
 ## Scoping decisions (locked at `/spec` — TBD)
 
 From [`design.md` §8](design.md#8-open-questions-for-scoping) /
 [`requirements.md` "Open questions"](requirements.md#open-questions-for-scoping):
 
-1. Hard switch vs below-T RRF blend — _TBD_ (decided by M2)
-2. Gate signal: top-1 score vs top1−top2 gap — _TBD_
-3. `GatedRetriever` class vs `gate=`/`mode=` on `HybridRetriever` — _TBD_
-4. Shared calibration tool with `safe-abstention-defaults` vs linked — _TBD_
-5. Default model: `potion-retrieval-32M` vs larger static — _TBD_
+1. Hard switch vs below-T RRF blend — **below-gate 1:1 RRF blend
+   (LOCKED at M2)**: ties switch on corpus_b, +15pts hard P@1 over
+   switch on corpus_c (0.70 vs 0.55) — weak-but-nonzero keyword signal
+   still contributes below the gate.
+2. Gate signal: top-1 score vs top1−top2 gap — **top-1 score (LOCKED at
+   M2)**: every gap-keyed config breaks the attune-help guard
+   (0.75–0.95, never 1.00). Structural, not tunable: a tuned corpus
+   routinely holds two strong close-scored relevant docs, so the gap
+   misreads redundant strength as doubt.
+3. `GatedRetriever` class vs `gate=`/`mode=` on `HybridRetriever` —
+   **recommended: a `gate_threshold=` option on `HybridRetriever`**
+   (the blend below the gate IS hybrid's existing 1:1 RRF; above the
+   gate is a short-circuit return of the keyword leg — simpler-is-
+   better, no new public class). **Ratification owed (API surface).**
+4. Shared calibration tool with `safe-abstention-defaults` vs linked —
+   **shared (per R4)**: extend the `RagPipeline.calibrated()` /
+   `_calibrate_abstention` sweep to emit the gate threshold from the
+   same keyword-confidence distribution. Mechanics finalized at M4.
+5. Default model: `potion-retrieval-32M` vs larger static — **`potion-
+   retrieval-32M` (LOCKED at M1/M2)**: `potion-base-8M` never reached
+   the torch-free ceiling; larger static models unmeasured and not
+   needed for the observed plateau.
 
 ## Milestones
 
 ### M0 — Entry + reopen
-- [ ] Record the reopen in [`embedding-retriever`](../embedding-retriever/)
-      (status note → here).
-- [ ] Confirm joint design with `safe-abstention-defaults` (shared signal).
+- [x] Record the reopen in [`embedding-retriever`](../embedding-retriever/)
+      (status note → here). *(2026-08-10: narrow reopen note added atop
+      its README — opt-in rescue-leg scope only; the attune-help-corpus
+      defer stands.)*
+- [x] Confirm joint design with `safe-abstention-defaults` (shared signal).
+      *(2026-08-10: that spec is COMPLETE — bundled corpus abstains at
+      the calibrated `min_score=5.0`; its Q6 defers cross-tier
+      confidence here; `RagPipeline.calibrated()` is the shared
+      calibration entry point R4 requires. And the M2 plateau below
+      CONTAINS T=5 — the single shared threshold is empirically
+      comfortable, not a compromise.)*
 
 ### M1 — Build + validate the ≥30-query hard set (the gate)
 - [x] Author a **≥30-query paraphrase/hard set**
@@ -111,9 +141,61 @@ torch is **not** justified. This narrowly reopens the
 defer) — as an opt-in heavyweight tier, not a default flip.
 
 ### M2 — Mechanism bake-off
-- [ ] Measure hard-switch vs below-T RRF blend (Q1), and gate-on-score vs
-      gate-on-gap (Q2), on the ≥30-set incl. medium tier.
-- [ ] Lock the rule + gate signal.
+- [x] Measure hard-switch vs below-T RRF blend (Q1), and gate-on-score vs
+      gate-on-gap (Q2), on the ≥30-set incl. medium tier — **plus
+      corpus_c** (20 hard + 4 medium; second arbitrary corpus, absent at
+      M1). Script: `scripts/measure_gated_fusion.py` promoted to
+      `scripts/measure_gated_mechanism.py`.
+- [x] Lock the rule + gate signal. **Q1 = below-gate 1:1 RRF blend;
+      Q2 = keyword top-1 score** (scoping decisions above).
+
+### M2 results (2026-08-10) — blend/score wins; the plateau contains the abstention threshold
+
+`PYTHONPATH=src python3 scripts/measure_gated_mechanism.py`
+(torch-free, deterministic; P@1/R@3 per cell):
+
+| config | cb-hard (26) | cb-med (6) | cc-hard (20) | cc-med (4) | help (40) |
+|---|---:|---:|---:|---:|---:|
+| keyword (default) | 0.31/0.38 | 0.50/0.67 | 0.25/0.25 | 0.50/0.50 | 1.00/1.00 |
+| hybrid 2:1 (8M, shipped) | 0.50/0.73 | 0.67/1.00 | 0.50/0.90 | 0.50/1.00 | 0.95/1.00 |
+| embedding-only (ret-32M) | 0.46/0.69 | 0.83/1.00 | 0.55/0.85 | 0.25/0.75 | 0.47/0.70 |
+| switch/score T=2..6 | 0.46–0.50/0.65 | 0.67/0.83 | 0.45–0.55/0.75–0.85 | 0.25–0.50/0.75 | **1.00/1.00** |
+| **blend/score T=4–6** | **0.50/0.65** | 0.67/0.83 | **0.70/0.85** | 0.50/0.50 | **1.00/1.00** |
+| switch/gap G=1..4 | 0.46/0.65 | 0.67–0.83 | 0.55–0.60/0.85 | 0.25/0.50–0.75 | 0.75–0.85 💥 |
+| blend/gap G=1..4 | 0.46–0.50/0.65 | 0.67/0.83–1.00 | 0.70/0.80–0.85 | 0.50/0.50 | 0.90–0.95 💥 |
+
+- **Q2 is structural:** every gap-keyed config breaks the attune-help
+  guard (R2), at every threshold, in both mechanisms. Tuned corpora
+  hold multiple strong close-scored relevant docs; top1−top2 misreads
+  that redundant strength as doubt and rescues queries that were right.
+  Top-1 score holds 1.00/1.00 at **every** T measured (2–6).
+- **Q1 is a corpus_c story:** switch and blend tie on corpus_b (0.50
+  hard-P@1 ceiling, unchanged from M1), but below-gate 1:1 fusion lifts
+  corpus_c hard P@1 to **0.70** — vs 0.55 switch, 0.55 embedding-only,
+  0.50 shipped hybrid, 0.25 keyword. Fusing the weak keyword leg below
+  the gate beats discarding it.
+- **The safe plateau T=4–6 contains T=5** — exactly the bundled-corpus
+  abstention threshold `safe-abstention-defaults` calibrated. One
+  shared per-corpus threshold (R4) costs nothing on this data.
+- **Cross-spec confirmation:** M1 measured switch T=3–6 costing help
+  (→0.95); today the same sweep holds 1.00/1.00 through T=6. The delta
+  is abstention-M3's alias remediation (gq-032 top-1 3.75 → 12.75) —
+  fixing the corpus widened the safe gate range, exactly as the
+  shared-signal design predicts.
+- **Watch item (not a blocker):** cc-med R@3 is blend's soft spot
+  (0.50 vs hybrid's 1.00; n=4, two queries). Blend matches the keyword
+  baseline there; re-check at M3 with the shipped config.
+
+**The escalated scope decision now has its data.** M1's verdict was
+"gated's only edge over shipped hybrid is zero tuned-corpus
+regression." M2 with a second corpus strengthens that materially:
+blend-gated at T=5 is **+20pts hard P@1 over shipped hybrid on
+corpus_c (0.70 vs 0.50) AND zero-regression (1.00/1.00 vs hybrid's
+0.95)** — stronger on the corpus it was built for and safer on the
+corpus it must not harm. That is the safe-everywhere default-candidate
+profile the M1 reframe asked for. Recommendation to the chair: build
+M3 as the opt-in `[embeddings]` rung with explicit default-candidate
+framing; any default flip stays a separate decision (R5 intact).
 
 ### M3 — Implement (the build PR)
 - [ ] `GatedRetriever` (or `HybridRetriever(gate=…)`, per Q3), opt-in
@@ -121,6 +203,9 @@ defer) — as an opt-in heavyweight tier, not a default flip.
 - [ ] Prove R2 (help 100/100), R3 (hard lift), R5 (base install
       unchanged) in CI. Disclose footprint delta (risk §2).
 - [ ] `### Added`/`### Changed` per freeze decision (Q3 / R-NFR).
+- [ ] State the `RagResult.confidence` contract (requirements.md 2026-06-10
+      audit input): either the gated retriever normalizes it or the field
+      is documented retriever-relative — decided in the M3 design.
 
 ### M4 — Shared calibration + threshold
 - [ ] Per-corpus T via the **shared** abstention/gate calibration (R4,

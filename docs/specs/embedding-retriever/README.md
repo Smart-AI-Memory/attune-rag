@@ -2,6 +2,15 @@
 
 > **Status: deferred (permanent for the attune-help corpus context as of 2026-05-21) — the [alias-expansion-sweep](../alias-expansion-sweep/) closed the paraphrase gap (R@3 28.75% → 100% after D4, baseline still 100%/100%) without any new dependency. Revival for the bundled corpus would require evidence the alias mechanism can't close a gap that matters for shipped usage; none observed. For arbitrary user corpora the defer is *scope-specific, not absolute* — see "Scope of the defer" below.**
 
+> **Reopened (narrow) 2026-08-10** by
+> [`confidence-gated-retrieval`](../confidence-gated-retrieval/) per its
+> M0: torch-free static embeddings (model2vec `potion-retrieval-32M`) as
+> the below-gate rescue leg of a confidence-gated retriever — opt-in,
+> arbitrary-corpus scope. The attune-help-corpus defer above stands
+> untouched (keyword stays the bundled default; the gated design holds
+> attune-help at 1.00/1.00 by construction). This is the
+> "scope-specific, not absolute" path the defer explicitly preserved.
+
 - **Owner:** Patrick
 - **Created:** 2026-05-21
 - **Deferred:** 2026-05-21 (same day, after D2 and D3 results landed)
