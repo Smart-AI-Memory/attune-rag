@@ -38,6 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   P@1/R@3 where ungated hybrid costs 5pts, and lifts unseen-corpus
   hard-tier P@1 to 0.70 vs 0.50 ungated. `RagResult.confidence` is now
   documented as retriever-relative (not comparable across retrievers).
+  `RagPipeline.calibrated(..., gated=True)` wires the SAME swept
+  threshold into `gate_threshold` (one calibration, one number: below
+  it the keyword tier abstains, the gated tier rescues); the gated
+  tier does not abstain — an embedding-side confidence floor is
+  explicitly deferred as unmeasured.
 - `RagPipeline.calibrated(corpus, queries, negatives)` — the honest
   BYO abstention path: derives a corpus-specific threshold from the
   corpus's own in/out-of-corpus query sets (same sweep as

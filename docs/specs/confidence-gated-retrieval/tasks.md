@@ -11,8 +11,14 @@
 > your recommendation"): the escalated scope decision (safe-everywhere
 > default-candidate, opt-in first, default flip a separate decision)
 > and Q3 (a `gate_threshold=` option on `HybridRetriever`, no new
-> class). M3 shipped same session — remaining: M4 (shared
-> calibration) + M5 (docs).**
+> class). M3+M4+M5 shipped same session ("go M4+M5") — **spec
+> COMPLETE 2026-08-10** with one explicit deferral: an embedding-side
+> confidence floor (abstention ON the gated tier) is unmeasured and
+> unshipped; reopen trigger = a real BYO corpus needing out-of-corpus
+> protection on the gated tier (this also closes the loop on
+> safe-abstention-defaults Q6, which deferred cross-tier abstention
+> here — the honest answer today is "stay on the calibrated keyword
+> tier if abstention matters more than rescue").**
 
 ## Scoping decisions (locked at `/spec` — TBD)
 
@@ -229,13 +235,30 @@ framing; any default flip stays a separate decision (R5 intact).
       class+config; a normalized cross-retriever signal is explicitly
       out of scope as a separate breaking design.
 
-### M4 — Shared calibration + threshold
-- [ ] Per-corpus T via the **shared** abstention/gate calibration (R4,
+### M4 — Shared calibration + threshold — complete 2026-08-10
+- [x] Per-corpus T via the **shared** abstention/gate calibration (R4,
       Q4). One threshold, one tool, reproducible (R6).
+      *(`RagPipeline.calibrated(..., gated=True, embedding=None)`: the
+      SAME `_calibrate_abstention` sweep emits the threshold, wired as
+      `gate_threshold` on a `HybridRetriever` in the measured recipe —
+      unfiltered keyword leg, 1:1 weights, `RETRIEVAL_TUNED_MODEL`
+      (new single-sourced constant in `embedding.py`, consumed by the
+      measurement script too). Receipts: 3 new unit tests — the R4
+      shared-number assertion (`gate_threshold == MIN_SCORE`), the
+      decision tree in one test (same threshold: keyword tier abstains
+      on a paraphrase, gated tier rescues it), and the lazy
+      default-model contract. Base install degrades gracefully: the
+      embedding leg's lazy imports raise the install-hint error at
+      encode time and `HybridRetriever` falls back keyword-only.)*
 
-### M5 — Docs
-- [ ] README/onboarding: when to enable gated retrieval; footprint; the
+### M5 — Docs — complete 2026-08-10
+- [x] README/onboarding: when to enable gated retrieval; footprint; the
       one "do I trust this retrieval?" decision tree (rescue vs abstain).
+      *(New "Confidence-gated retrieval" section in the opt-in ladder
+      between hybrid and transformer: the `calibrated(gated=True)`
+      one-call recipe, measured numbers, ~250 MB footprint disclosure,
+      the tier decision tree, and the honest "gated tier does not
+      abstain" note.)*
 
 ## Done when
 

@@ -24,14 +24,14 @@ import structlog
 from attune_rag import RagPipeline
 from attune_rag.benchmark import _load_queries
 from attune_rag.corpus import DirectoryCorpus
-from attune_rag.embedding import EmbeddingRetriever
+from attune_rag.embedding import RETRIEVAL_TUNED_MODEL, EmbeddingRetriever
 from attune_rag.hybrid import HybridRetriever
 from attune_rag.retrieval import KeywordRetriever
 
 structlog.configure(wrapper_class=structlog.make_filtering_bound_logger(logging.WARNING))
 
 ROOT = Path(__file__).resolve().parent.parent / "tests" / "golden"
-MODEL = "minishlab/potion-retrieval-32M"
+MODEL = RETRIEVAL_TUNED_MODEL
 
 
 class GatedRetriever:

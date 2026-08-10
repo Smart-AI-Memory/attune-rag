@@ -9,10 +9,12 @@
 > abstention-calibrated T=5. On corpus_c, blend-gated beats the shipped
 > hybrid by +20pts hard P@1 at zero attune-help regression
 > ([`tasks.md` M2 results](tasks.md)). **Chair ratified scope + Q3
-> 2026-08-10; M3 shipped same session** — `HybridRetriever(
-> gate_threshold=…)`, opt-in, with the shipped code path reproducing
-> the M2 winner exactly. Remaining: M4 (shared calibration) + M5
-> (docs).**
+> 2026-08-10; M3+M4+M5 shipped same session — spec COMPLETE.**
+> Shipped: `HybridRetriever(gate_threshold=…)` (opt-in; the shipped
+> code path reproduces the M2 winner exactly) and
+> `RagPipeline.calibrated(..., gated=True)` (one sweep, one number —
+> R4). Explicit deferral: embedding-side confidence floor (abstention
+> on the gated tier) — unmeasured; reopen on a real BYO need.
 >
 > **Reopens** the [`embedding-retriever`](../embedding-retriever/)
 > permanent defer — with a *torch-free* design that the earlier defer

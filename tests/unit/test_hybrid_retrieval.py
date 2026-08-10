@@ -271,3 +271,90 @@ def test_gate_default_none_preserves_ungated_fusion() -> None:
     hits = list(h.retrieve("q", corpus=None, k=1))
     assert emb.calls == 1
     assert hits[0].match_reason == "rrf:embedding+keyword"
+
+
+# ---------------------------------------------------------------------------
+# Shared gate/abstention calibration (confidence-gated-retrieval M4, R4)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def widget_corpus(tmp_path):
+    from attune_rag import DirectoryCorpus
+
+    (tmp_path / "doc.md").write_text(
+        "---\ntype: concept\nname: widget\n---\n# Widget guide\n"
+        "Widgets use sprockets and flanges.\n"
+    )
+    return DirectoryCorpus(tmp_path)
+
+
+class _PinnedQueryRetriever:
+    """Embedding-leg stand-in: retrieves with a pinned in-corpus phrasing,
+    simulating a semantic match on a paraphrase (no model download)."""
+
+    def __init__(self, phrase: str) -> None:
+        from attune_rag.retrieval import KeywordRetriever
+
+        self._phrase = phrase
+        self._kw = KeywordRetriever(min_score=0.0)
+
+    def retrieve(self, query: str, corpus, k: int = 3):
+        return self._kw.retrieve(self._phrase, corpus, k=k)
+
+
+_LEGIT = ["widget sprocket flange guide"]
+_NEGS = ["marathon training plan for beginners"]
+
+
+def test_calibrated_gated_shares_threshold_with_abstention(widget_corpus) -> None:
+    # R4 receipt: ONE sweep, ONE number — the ungated pipeline's abstention
+    # min_score and the gated pipeline's gate_threshold are the same value.
+    from attune_rag import RagPipeline
+
+    ungated = RagPipeline.calibrated(widget_corpus, queries=_LEGIT, negatives=_NEGS)
+    gated = RagPipeline.calibrated(
+        widget_corpus,
+        queries=_LEGIT,
+        negatives=_NEGS,
+        gated=True,
+        embedding=_PinnedQueryRetriever(_LEGIT[0]),
+    )
+    assert isinstance(gated.retriever, HybridRetriever)
+    assert gated.retriever.gate_threshold == ungated.retriever.MIN_SCORE > 0.0
+    # The measured recipe: unfiltered keyword leg, 1:1 weights.
+    assert gated.retriever.keyword.MIN_SCORE == 0.0
+    assert gated.retriever.keyword_weight == 1.0
+    assert gated.retriever.embedding_weight == 1.0
+
+
+def test_calibrated_gated_rescues_paraphrase_where_keyword_tier_abstains(
+    widget_corpus,
+) -> None:
+    # The decision tree in one test: below the SAME threshold, the keyword
+    # tier abstains while the gated tier rescues via the embedding leg.
+    from attune_rag import RagPipeline
+
+    paraphrase = "instructions for building the gizmo"  # zero token overlap
+    ungated = RagPipeline.calibrated(widget_corpus, queries=_LEGIT, negatives=_NEGS)
+    gated = RagPipeline.calibrated(
+        widget_corpus,
+        queries=_LEGIT,
+        negatives=_NEGS,
+        gated=True,
+        embedding=_PinnedQueryRetriever(_LEGIT[0]),
+    )
+    assert ungated.run(paraphrase).fallback_used is True
+    assert gated.run(paraphrase).fallback_used is False
+
+
+def test_calibrated_gated_defaults_to_retrieval_tuned_model(widget_corpus) -> None:
+    # No embedding injected -> the gated leg defaults to the retrieval-tuned
+    # model (construction is lazy; nothing downloads here).
+    from attune_rag import RagPipeline
+    from attune_rag.embedding import RETRIEVAL_TUNED_MODEL, EmbeddingRetriever
+
+    gated = RagPipeline.calibrated(widget_corpus, queries=_LEGIT, negatives=_NEGS, gated=True)
+    emb = gated.retriever.embedding
+    assert isinstance(emb, EmbeddingRetriever)
+    assert emb._model_name == RETRIEVAL_TUNED_MODEL
