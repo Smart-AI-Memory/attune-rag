@@ -1,13 +1,14 @@
 # attune-rag Public API and Deprecation Policy
 
 This policy governs the public surface of the `attune-rag` package.
-The surface is **documented and snapshot-tested as of 0.1.18**;
-**formal SemVer commitments take effect with 0.2.0** (gated on
-Phase 4 of the v1.0 roadmap — downstream-validation burn-in; the
-cut spec is [docs/specs/api-v0.2.0-cut/](specs/api-v0.2.0-cut/)).
-Between those two markers the freeze is honor-system: the lock
-test in `tests/unit/test_api_surface.py` catches accidental drift,
-but downstreams should treat 0.1.x as still-evolving and pin tightly.
+The surface has been **documented and snapshot-tested since 0.1.18**,
+and **formal SemVer commitments have been binding since 0.2.0**
+(shipped 2026-05-25; cut spec at
+[docs/specs/api-v0.2.0-cut/](specs/api-v0.2.0-cut/)). The lock test
+in `tests/unit/test_api_surface.py` is the executable contract.
+Sections 8–9 (support window, 1.x deprecation) take effect at the
+1.0.0 release (spec:
+[docs/specs/v1.0.0-release/](specs/v1.0.0-release/)).
 
 The spec that introduced this policy is
 [docs/specs/api-v0.2-public-surface/](specs/api-v0.2-public-surface/).
@@ -56,9 +57,10 @@ following commitments:
   minor version (e.g. anything PUBLIC in 0.2.0 stays through every
   0.2.z). PUBLIC symbols *may* be removed at the next minor bump
   (0.3.0) provided they were marked deprecated in a prior 0.2.z.
-- **1.x onward (future).** PUBLIC symbols are only removed at major
+- **1.x onward.** PUBLIC symbols are only removed at major
   version bumps, and only after at least one minor release shipped
-  with a `DeprecationWarning` at the symbol's call site.
+  with a `DeprecationWarning` at the symbol's call site. The full
+  procedure is §9.
 
 The classifier in `pyproject.toml` (`Development Status`) tracks this
 commitment level. The 1.0 release flips it to
@@ -82,7 +84,12 @@ When a PUBLIC symbol needs to go:
    and any deprecation shim in the same PR.
 
 The five `attune_rag.editor._*` shim modules introduced in 0.2.0
-follow this procedure — they are scheduled for removal in 0.3.0.
+follow this procedure. *(Correction, 2026-08-10: they were scheduled
+for removal in 0.3.0 but survived through 0.9.x — the v1.0.0 cut
+removes them (spec task M3.6, ruled at
+[v1.0.0-release/decisions.md](specs/v1.0.0-release/decisions.md) D6).
+Removal at a major bump satisfies this procedure with seven minors of
+`DeprecationWarning` instead of one.)*
 
 ## 4. Procedure for adding a PUBLIC symbol
 
@@ -106,7 +113,7 @@ construction — the test is the source of truth.
 Between the **0.2.0 SemVer cut** and the **v1.0.0 graduation**, the
 public surface grows by at most **5 new symbols**. This cap is the
 cost-of-stability commitment that lets `attune-rag` graduate from
-"alpha" to "Production/Stable" — every new symbol added before v1.0.0
+Beta to "Production/Stable" — every new symbol added before v1.0.0
 is a symbol we commit to never break under SemVer for the entire 1.x
 line.
 
@@ -148,7 +155,8 @@ surface, even if a downstream imports them today. The five-module
 rename in 0.2.0 (`attune_rag.editor._rename` → `attune_rag.editor.rename`,
 plus four siblings) is the one-time correction of a historical
 accident — the deprecation shims at the underscore paths exist for
-backward compatibility only and are removed in 0.3.0.
+backward compatibility only and are removed at 1.0.0 (originally
+scheduled for 0.3.0; see §3).
 
 New submodules that need to be PUBLIC must use non-underscore names
 from the start. New submodules that need to be INTERNAL use the
@@ -250,6 +258,54 @@ This section codifies as POLICY what the alias-expansion sweep
 with a baseline-diagnostic check; baseline numbers are not allowed
 to move. §7 makes that internal discipline a downstream-facing
 commitment.
+
+## 8. Support window (1.x)
+
+*Lands with the 1.0.0 release. Numbers pinned at the v1.0.0 scoping
+pass ([v1.0.0-release/decisions.md](specs/v1.0.0-release/decisions.md)
+D5, 2026-08-09).*
+
+**Scope honesty first.** `attune-rag`'s only active external consumer
+at 1.0.0 is `attune-ai`, which is maintained by the same author. The
+1.0.0 stability claim is therefore *"the author is confident in this
+for the author's own production use"*, not *"battle-tested across an
+independent user base"*. The support-window policy below is sized
+accordingly — it is a labor budget (how much backport work the author
+is willing to take on), not an SLA derived from observed external
+dependency on a given minor. If the consumer base broadens past
+`attune-ai`, revisit the window length and the
+bug-fix-latest-minor-only rule before the next major.
+
+Each minor release of 1.x receives security fixes for **6 months**
+after the *next* minor release ships, or **6 months** from its own
+release date, whichever is longer. Bug fixes are only guaranteed for
+the latest minor.
+
+Example: 1.0.x receives security fixes through
+`release_date(1.1.0) + 6 months`. When 1.1.0 ships, 1.0.x users have
+6 months to upgrade before security support ends.
+
+## 9. Deprecation under 1.x
+
+Supersedes the §3 procedure for releases ≥ 1.0.0 (§3 remains
+documented for historical context). Removing a PUBLIC symbol from 1.x:
+
+1. **Land a `DeprecationWarning`** at the symbol's call site, naming
+   the deprecated path, the replacement, and the major version in
+   which removal will occur.
+2. **CHANGELOG entry under "Deprecated"** with a link to the spec or
+   issue that motivated the removal.
+3. **Ship at least one full minor release** with the warning live
+   before removing. "One full minor" means: the warning appears in
+   1.M.0 and the removal cannot happen before 2.0.0.
+4. **Removal lands at the major bump** (2.0.0), with the
+   `EXPECTED_*` constants in
+   [`tests/unit/test_api_surface.py`](../tests/unit/test_api_surface.py)
+   and any shim cleared in the same PR.
+
+The difference from §3 is strictness: in 0.x a removal could happen at
+the next minor after a deprecation warning; in 1.x it waits for the
+next major. Same shape, longer clock.
 
 ## See also
 

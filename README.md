@@ -603,15 +603,17 @@ Anything not listed above is INTERNAL and may change in any release.
 The underscore-prefixed editor modules (`attune_rag.editor._rename`
 etc.) shipped in 0.1.x are deprecation shims as of 0.2.0; they
 re-export the new non-underscore names and emit `DeprecationWarning`.
-They are removed in 0.3.0.
+They are removed at 1.0.0 (originally scheduled for 0.3.0 — see
+[`docs/POLICY.md`](docs/POLICY.md) §3).
 
 ## Status
 
-**0.5.1 — the retrieval-capabilities line.** 0.5.0 landed the full
-opt-in retrieval ladder — torch-free static hybrid (`[embeddings]`),
-transformer dense tier (`[transformers]`), and configurable
-abstention (`min_score=`); 0.5.1 is a packaging/docs correction on
-top. Quality baselines (P@1 ≥ 0.95, R@3 = 1.00, mean faithfulness ≥
+**0.9.x — the release line the 1.0.0 cut ships from.** The opt-in
+retrieval ladder (0.5.x: `[embeddings]` static hybrid,
+`[transformers]` dense tier, `min_score=` abstention), model tiers +
+fable-5 handling (0.8.0), and the ranking correction that stopped the
+content preview double-counting frontmatter aliases (0.9.0) are all
+in. Quality baselines (P@1 ≥ 0.95, R@3 = 1.00, mean faithfulness ≥
 0.9686) hold and gate CI throughout.
 
 SemVer commitments have been binding since 0.2.0 —
@@ -620,13 +622,15 @@ line stay PUBLIC through every patch of that line, and the snapshot
 test catches drift.
 
 Classifier is `4 - Beta` — the Production/Stable flip is a v1.0.0
-deliverable.
+deliverable, alongside a documented support window and 1.x
+deprecation policy ([`docs/POLICY.md`](docs/POLICY.md) §8–§9).
 
 Part of the attune ecosystem
 ([attune-ai](https://github.com/Smart-AI-Memory/attune-ai),
-[attune-help](https://github.com/Smart-AI-Memory/attune-help),
-[attune-author](https://github.com/Smart-AI-Memory/attune-author),
-[attune-gui](https://github.com/Smart-AI-Memory/attune-gui)).
+[attune-help](https://github.com/Smart-AI-Memory/attune-help);
+the earlier [attune-author](https://github.com/Smart-AI-Memory/attune-author)
+and [attune-gui](https://github.com/Smart-AI-Memory/attune-gui)
+packages are archived — their roles were absorbed into attune-ai).
 
 ## License
 

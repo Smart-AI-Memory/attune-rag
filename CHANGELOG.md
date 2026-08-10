@@ -6,6 +6,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] — UNRELEASED (ships at the M3 cut; see docs/specs/v1.0.0-release/)
+
+The release of the burn-in. 1.0.0 is a **stability claim, not new
+code**: the public surface is 0.9.x's surface, validated by Phase 4's
+four-week freeze, a 22-day 0.9.0 soak with zero hotfixes, a re-measured
+perf baseline (methodology v2, retrieval hot path flat), a clean
+security re-scan, and ≥90% coverage on every public module
+([spec](docs/specs/v1.0.0-release/), decisions D1–D10).
+
+### Added
+
+- **Support window** — each 1.x minor receives security fixes for
+  6 months past the next minor (or 6 months from its own release,
+  whichever is longer); bug fixes on the latest minor only.
+  [`docs/POLICY.md`](docs/POLICY.md) §8.
+- `Development Status :: 5 - Production/Stable` classifier (from
+  `4 - Beta` — the package was never Alpha).
+
+### Changed
+
+- **Deprecation cycle tightens** ([`docs/POLICY.md`](docs/POLICY.md)
+  §9): removing a PUBLIC symbol now requires a `DeprecationWarning`
+  live for at least one full minor AND waits for the next major —
+  under 0.x it could land at the next minor.
+
+### Removed
+
+- The five `attune_rag.editor._*` deprecation shims
+  (`_autocomplete`, `_lint`, `_references`, `_rename`, `_schema`) —
+  underscore paths deprecated since 0.2.0, warning live for seven
+  minors. Import the non-underscore module names instead
+  (`attune_rag.editor.rename` etc.). *(The internal `_regex.py` is
+  not a shim and stays.)* Ruled at
+  [v1.0.0-release/decisions.md](docs/specs/v1.0.0-release/decisions.md) D6.
+
 ## [0.9.0] — 2026-07-17
 
 Retrieval-ranking correction and alias-home migration: the content
