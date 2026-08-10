@@ -225,6 +225,16 @@ stricter 1.x policy and cannot be removed until 2.0.0. That is a real
 consequence of the version drift in §0 and is the single most expensive
 thing on this page if missed.
 
+> **ANSWERED at M1.4 + RULED 2026-08-10 (Patrick): never removed;
+> remove at the cut.** Six shim modules (incl. `_regex`) survived
+> seven minors past the promised 0.3.0. Removal verified zero-impact
+> (absent from the `__all__` snapshot; zero consumer imports across
+> attune-ai/gui/help; only self-references + their own test). Lands as
+> **M3.6** in the cut PR — a major bump is where removals belong, and
+> it is the last exit before the 1.x policy locks them until 2.0.0.
+> M2.2 corrects POLICY.md's "removed in 0.3.0" text; the CHANGELOG
+> `[1.0.0]` entry gains a `### Removed` section.
+
 ---
 
 ## D7 — `user-corpus-onboarding`: one gap remains, and it is surface
