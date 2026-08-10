@@ -29,10 +29,13 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Install with [embeddings,transformers] extras
+      - name: Install with [embeddings,transformers,attune-help] extras
+        # attune-help: the gated measurement's zero-regression guard leg
+        # runs against the bundled corpus (first cloud run failed on the
+        # missing extra — local venvs mask it).
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e ".[embeddings,transformers]"
+          python -m pip install -e ".[embeddings,transformers,attune-help]"
 
       - name: Transformer tier (bge-small, real model)
         run: |
