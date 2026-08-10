@@ -95,7 +95,7 @@ not corroboration when one was copied from the other; only
 |---|---|---|
 | attune-gui | `attune-rag>=0.1.22,<1.0` (`pyproject.toml:32`) | ✗ |
 | attune-ai | `attune-rag>=0.1.5,<0.10` (three sites: lines 78, 222, 406) | ✗ |
-| attune-author | `attune-rag>=0.8.0,<0.9` (`[rag]` extra, line 54) | ✗ |
+| ~~attune-author~~ | ~~`attune-rag>=0.8.0,<0.9`~~ **retired — repo archived 2026-07-27**, pin frozen forever, moot | n/a |
 
 Publishing 1.0.0 into this state produces a release that no consumer can
 install. The scaffolding's Affected-layers table marks attune-gui,
@@ -105,7 +105,19 @@ wrong for gui, author, and attune-ai.
 **Pre-existing drift found in passing:** attune-author's `<0.9` cap
 already excludes the published 0.9.0. attune-author has been unable to
 resolve the current attune-rag since 2026-07-18 and nothing surfaced it.
-Fix it in the same milestone.
+~~Fix it in the same milestone.~~
+
+> **Amended 2026-08-10 — M0.1 void: attune-author is RETIRED.** The
+> repo was archived 2026-07-27 (attune-ai's `attune-author-consolidation`
+> spec — complete, absorbed into attune-ai, PyPI 0.25.0 left un-yanked),
+> discovered when the M0.1 push returned 403. **This audit missed it**:
+> the D3 sweep checked pins and PR lists but never `isArchived` — the
+> third premise error this scoping has caught (after §0's and D7's),
+> and the second of my own. The "drift" was a tombstone, not a bug.
+> M0 is now M0.2 (attune-ai) + M0.3 (attune-gui) + M0.4 (no-op).
+> Workspace-level docs (CLAUDE.md layer table, tech.md, deploy order)
+> still describe attune-author as an active layer — flagged to Patrick
+> for a separate workspace-docs sweep, not changed unilaterally here.
 
 **Decision.** Add **M0 — consumer pin widening**, sequenced *before* the
 cut, not after.
@@ -123,7 +135,7 @@ consumers; one layer per commit — four separate PRs, not one):
 
 | # | Repo | Change |
 |---|---|---|
-| M0.1 | attune-author | `>=0.8.0,<0.9` → `>=0.9.0,<2.0`; re-validate against 0.9.0 (this repairs existing drift, independent of the cut) |
+| ~~M0.1~~ | ~~attune-author~~ | **VOID 2026-08-10** — repo archived 2026-07-27; pin frozen forever, nothing to repair |
 | M0.2 | attune-ai | `<0.10` → `<2.0` at all three sites; the line-78 comment demands explicit re-validation before lifting the cap — honor it, don't just edit the bound |
 | M0.3 | attune-gui | `<1.0` → `<2.0`; full rag + editor contract suite green |
 | M0.4 | attune-help | confirmed no attune-rag dependency — no-op, recorded for completeness |
@@ -297,7 +309,8 @@ choice is a scope call, not a technical one — hence the approval gate.
 >   `scoped 2026-05-22` with its work complete — same drift class D8
 >   flagged for `perf-baseline-multi-run`. Both go to the next
 >   status sweep.
-> - **Next action is M0.1** (attune-author pin repair).
+> - ~~Next action is M0.1~~ **M0.1 also voided 2026-08-10** (repo
+>   retired) — next action is **M0.2** (attune-ai pin widening).
 
 ---
 
@@ -390,7 +403,8 @@ authoritative for it. Make M4.2 the single source.
 
 1. ~~**D7 ruling**~~ — resolved Option A (2026-08-09), then **VOIDED
    2026-08-10**: the deliverable already shipped (PR #130). M0.5 void;
-   first real task is M0.1.
+   first real task was M0.1 — **also voided 2026-08-10** (attune-author
+   retired/archived 2026-07-27); first real task is **M0.2**.
 2. **D6 shim check** — are the five `attune_rag.editor._*` shims still
    present at 0.9.0? If yes they inherit 1.x rules and are stuck until
    2.0.0. Answer at M1, before the docs roll.

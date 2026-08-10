@@ -6,7 +6,9 @@
 (including D7 = Option A) in the same session. Work-tracker is live;
 execution is unblocked. Scoping decisions in
 [decisions.md](decisions.md). **2026-08-10: M0.5 voided** (deliverable
-found already shipped, PR #130) — execution starts at M0.1.
+found already shipped, PR #130) **and M0.1 voided** (attune-author
+retired/archived 2026-07-27 — see the M0.1 row) — execution starts
+at M0.2.
 
 Six of seven inherited entry gates are closed (see
 [requirements.md](requirements.md) "Entry gates"). The soak gate (D4) is
@@ -34,7 +36,7 @@ watch.
 | # | Task | Layer | Notes |
 |---|------|-------|-------|
 | **M0** | **Consumer pin widening** — gates M3.3. Four repos, four PRs. | | |
-| M0.1 | attune-author: `attune-rag>=0.8.0,<0.9` → `>=0.9.0,<2.0` (`pyproject.toml:54`, `[rag]` extra). Re-validate against 0.9.0. | attune-author | **Repairs existing drift** — the `<0.9` cap has excluded the published 0.9.0 since 2026-07-18. Worth doing even if the cut slips. |
+| M0.1 | ~~attune-author: widen `attune-rag<0.9`~~ | attune-author | **VOID — repo retired.** Executing this hit a push 403: attune-author was ARCHIVED 2026-07-27 (attune-ai `attune-author-consolidation` spec, complete; T4 archive-without-yank) — before this spec was even scoped. The pin is frozen forever in a package with no future releases; the drift is moot, not repairable. Validation evidence from the attempt (0.9.0 wheel: 5-symbol import sweep OK, 1261 tests passed) recorded here for the archives. Pin-drift checker updated to skip archived repos (attune #53). |
 | M0.2 | attune-ai: `attune-rag>=0.1.5,<0.10` → `<2.0` at all three sites (`pyproject.toml` lines 78, 222, 406). | attune-ai | The line-78 comment requires explicit re-validation before lifting the cap — honor it; don't just move the bound. Golden-query suite + consumer suites, per the precedent recorded there for 0.9.0. |
 | M0.3 | attune-gui: `attune-rag>=0.1.22,<1.0` → `>=0.9.0,<2.0` (`pyproject.toml:32`). Full rag + editor contract suite green. | attune-gui | The gating downstream per ROADMAP Decision 2. |
 | M0.4 | attune-help: confirm no attune-rag dependency. Record and close. | attune-help | Verified 2026-08-09 — expected no-op. |

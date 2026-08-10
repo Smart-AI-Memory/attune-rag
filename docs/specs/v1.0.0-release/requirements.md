@@ -51,7 +51,7 @@ pins (M0) — is open and blocks the cut.**
 | Perf-thresholds baseline holds | ⚠️ **methodology ✅, numbers stale** | `perf-baseline.md` is methodology v2 at σ=2.0 — but measured 2026-05-22 on 0.1.x code. **M1 re-measures.** See D8 |
 | `security-findings.md` zero open severity-high | ✅ | "Zero `severity: high` open"; W09.A.001–003 all `high → fixed` with tests |
 | `docs/POLICY.md` updated for 1.x | ⬜ this spec's M2.1 | not an external prerequisite |
-| **Consumer pins admit 1.0.0** | ❌ **BLOCKING — new** | gui `<1.0`, attune-ai `<0.10`, attune-author `<0.9`. Nothing resolves 1.0.0 today. See D3 / **M0** |
+| **Consumer pins admit 1.0.0** | ❌ **BLOCKING — new** | gui `<1.0`, attune-ai `<0.10`. Nothing resolves 1.0.0 today. See D3 / **M0**. (attune-author's `<0.9` is moot — repo retired/archived 2026-07-27, M0.1 void.) |
 
 ### Scope
 
@@ -186,6 +186,7 @@ change required." That is wrong for three of them — see D3.
       (M0.3). Without it the cut is unusable downstream.
 - [x] **attune-ai** — **pin change required.** `<0.10` → `<2.0` at three
       sites (M0.2), with the re-validation its own comment demands.
-- [x] **attune-author** — **pin change required, and already broken.**
-      `>=0.8.0,<0.9` excludes the published 0.9.0 (M0.1).
+- [ ] **attune-author** — ~~pin change required~~ **retired.** Repo
+      archived 2026-07-27 (attune-ai consolidation spec); the frozen
+      `<0.9` pin is moot. M0.1 void (2026-08-10).
 - [ ] **attune-help** — no attune-rag dependency; genuinely unaffected.
