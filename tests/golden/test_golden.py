@@ -3,7 +3,12 @@
 Loads ``queries.yaml`` and asserts each query's expected
 template(s) appear in the top-3 retrieval hits against the
 real attune-help corpus. Skipped when the ``[attune-help]``
-extra is not installed.
+extra is not installed. All difficulties assert hard: the
+hard-query ``xfail(strict=False)`` marks were graduated to
+hard assertions on 2026-08-18, after the full hard set passed
+via alias expansion + path-keyed summaries (the embeddings
+retriever they were waiting on is permanently deferred — see
+docs/specs/archive/alias-expansion-sweep/README.md).
 
 Also loads ``queries_paraphrased.yaml`` (the no-token-overlap
 variants authored in diagnostic-1 for the alias-expansion-sweep)
@@ -49,24 +54,9 @@ def pipeline() -> RagPipeline:
     return RagPipeline()
 
 
-def _entry_marks(entry: dict) -> list:
-    """xfail hard queries — they document the keyword-retriever gap
-    that the Phase 2 embeddings decision (task 2.5) is gated on.
-    `strict=False` so if a hard query starts passing (e.g. after a
-    retriever upgrade), the test doesn't fail — it passes as XPASS."""
-    if entry.get("difficulty") == "hard":
-        return [
-            pytest.mark.xfail(
-                reason="Hard queries need embeddings — task 2.5 gate",
-                strict=False,
-            )
-        ]
-    return []
-
-
 @pytest.mark.parametrize(
     "entry",
-    [pytest.param(e, id=e["id"], marks=_entry_marks(e)) for e in _load_queries()],
+    [pytest.param(e, id=e["id"]) for e in _load_queries()],
 )
 def test_golden_query_top3(entry: dict, pipeline: RagPipeline) -> None:
     """Each query's expected_in_top_3 must overlap with top 3 hits."""
@@ -172,8 +162,7 @@ def test_paraphrased_aggregate_watermark(pipeline: RagPipeline) -> None:
 
     # Visible in pytest -v output; CI logs this for trend tracking.
     print(
-        f"\n[paraphrase-watermark] n={n} P@1={p1:.2%} ({p1_hits}/{n}) "
-        f"R@3={r3:.2%} ({r3_hits}/{n})"
+        f"\n[paraphrase-watermark] n={n} P@1={p1:.2%} ({p1_hits}/{n}) R@3={r3:.2%} ({r3_hits}/{n})"
     )
 
     assert r3 >= _PARAPHRASED_R3_FLOOR, (
