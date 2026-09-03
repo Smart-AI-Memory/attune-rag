@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 _RETENTION_HINT = (
-    "claude-fable-5 requires >=30-day org data retention - check the org's "
+    "claude-fable-* models require >=30-day org data retention - check the org's "
     "retention configuration before debugging the payload."
 )
 

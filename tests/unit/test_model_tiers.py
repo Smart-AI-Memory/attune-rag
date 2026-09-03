@@ -32,7 +32,7 @@ class TestResolveModel:
 
     def test_defaults_are_the_spec_tiers(self):
         assert _DEFAULTS == {
-            "premium": "claude-fable-5",
+            "premium": "claude-fable-5-1",
             "capable": "claude-sonnet-5",
             "cheap": "claude-haiku-4-5",
         }
@@ -92,6 +92,12 @@ class TestFableExtras:
 
     def test_prefix_gating_covers_future_fable_ids(self):
         assert fable_extras("claude-fable-5-20260601") != {}
+
+    def test_fable_5_1_gets_the_same_extras(self):
+        assert fable_extras("claude-fable-5-1") == fable_extras("claude-fable-5")
+
+    def test_both_fable_generations_are_known_overrides(self):
+        assert {"claude-fable-5-1", "claude-fable-5"} <= _KNOWN_MODELS
 
     @pytest.mark.parametrize(
         "model",
