@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-09-03
+
+The Fable 5.1 release: the canonical premium tier moves to
+`claude-fable-5-1`, and the faithfulness judge stops forcing
+`tool_choice` on fable models (a 400 on 5.1). No API surface changes;
+`ATTUNE_MODEL_PREMIUM=claude-fable-5` keeps the previous default.
+
 ### Changed
 
 - **Premium tier moves to Claude Fable 5.1** (`claude-fable-5-1`) in the
