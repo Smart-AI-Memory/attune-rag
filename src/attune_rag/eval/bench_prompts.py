@@ -384,7 +384,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--judge-model",
         default=None,
         help=(
-            "Judge model (default: the premium tier, claude-fable-5; "
+            "Judge model (default: the premium tier, claude-fable-5-1; "
             "ATTUNE_MODEL_PREMIUM overrides)"
         ),
     )

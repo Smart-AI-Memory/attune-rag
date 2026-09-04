@@ -6,6 +6,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Premium tier moves to Claude Fable 5.1** (`claude-fable-5-1`) in the
+  canonical `attune_rag.model_tiers` contract (mirrored byte-for-byte by
+  attune-ai and attune-author, whose drift guards pin to this copy).
+  `claude-fable-5` stays a known `ATTUNE_MODEL_PREMIUM` override; the
+  retention hint now reads `claude-fable-* models require ...`.
+
+### Fixed
+
+- **FaithfulnessJudge no longer forces `tool_choice` on fable models**:
+  Fable 5.1 returns 400 on forced tool use, which would have broken the
+  default premium-tier judge. Fable models steer with `tool_choice: auto`
+  and keep the schema guarantee through strict tool use (`strict: true`,
+  `additionalProperties: false` on the report schema); every other model
+  keeps the forced call.
+
 ## [1.1.0] — 2026-08-10
 
 The "one threshold, one decision" release: the bundled corpus becomes

@@ -111,6 +111,8 @@ _JUDGE_TOOL: dict[str, Any] = {
             },
         },
         "required": ["supported_claims", "unsupported_claims", "reasoning"],
+        # Strict tool use (the fable path below) requires this.
+        "additionalProperties": False,
     },
 }
 
@@ -383,6 +385,14 @@ class FaithfulnessJudge:
                     "type": "enabled",
                     "budget_tokens": thinking_budget_tokens,
                 }
+                request_kwargs["tool_choice"] = {"type": "auto"}
+            elif fable_extras(self._model):
+                # Fable 5.1 returns 400 on forced tool_choice (type
+                # "tool"/"any" are not supported for this model). Steer
+                # with ``auto`` — the tool description already says
+                # "exactly once" — and keep the schema-valid-arguments
+                # guarantee through strict tool use.
+                request_kwargs["tools"] = [{**_JUDGE_TOOL, "strict": True}]
                 request_kwargs["tool_choice"] = {"type": "auto"}
             else:
                 request_kwargs["tool_choice"] = {

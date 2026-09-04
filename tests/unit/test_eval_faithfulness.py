@@ -544,7 +544,7 @@ def _payload() -> dict[str, Any]:
 def test_default_judge_model_is_premium_tier(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("ATTUNE_MODEL_PREMIUM", raising=False)
     judge = FaithfulnessJudge(client=_FakeClient(_payload()))
-    assert judge.model == "claude-fable-5"
+    assert judge.model == "claude-fable-5-1"
 
 
 def test_premium_env_pin_changes_judge_default(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -570,7 +570,22 @@ async def test_fable_judge_routes_to_beta_with_extras() -> None:
     assert sent is not None
     assert sent["betas"] == ["server-side-fallback-2026-06-01"]
     assert sent["extra_body"] == {"fallbacks": [{"model": "claude-opus-4-8"}]}
+    # Fable 5.1 rejects forced tool_choice: auto + strict keeps the schema.
+    assert sent["tool_choice"] == {"type": "auto"}
+    assert sent["tools"][0]["name"] == "report_faithfulness"
+    assert sent["tools"][0]["strict"] is True
+    assert sent["tools"][0]["input_schema"]["additionalProperties"] is False
+
+
+@pytest.mark.asyncio
+async def test_non_fable_judge_keeps_forced_tool_choice() -> None:
+    client = _FakeClient(_payload())
+    judge = FaithfulnessJudge(client=client, model="claude-opus-4-8")  # type: ignore[arg-type]
+    await judge.score("q", "a", "p")
+    sent = client.messages.last_call
+    assert sent is not None
     assert sent["tool_choice"] == {"type": "tool", "name": "report_faithfulness"}
+    assert "strict" not in sent["tools"][0]
 
 
 @pytest.mark.asyncio
@@ -599,7 +614,7 @@ async def test_fable_judge_with_thinking_downgrades_to_no_thinking(
     assert sent is not None
     assert "thinking" not in sent
     assert sent["max_tokens"] == 3072  # thinking budget NOT added on top
-    assert sent["tool_choice"] == {"type": "tool", "name": "report_faithfulness"}
+    assert sent["tool_choice"] == {"type": "auto"}  # fable: never forced
     assert result.thinking_used is False
     assert any("not supported on fable" in r.message for r in caplog.records)
 
