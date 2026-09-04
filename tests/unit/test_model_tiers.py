@@ -1,7 +1,7 @@
 """Unit tests for attune_rag.model_tiers (task 1, specs/fable-model-tiers).
 
 No anthropic import anywhere on this path — the module is stdlib only
-(stdlib logging, so the attune-author mirror imports cleanly without
+(stdlib logging, so attune-ai's lightest import paths stay free of
 structlog). Env precedence is exercised via monkeypatch per the
 per-call-resolution design.
 """
