@@ -1,19 +1,21 @@
-"""Model tier resolution — the canonical copy of the attune tier contract.
+"""Model tier resolution — the canonical (and only) copy of the attune tier contract.
 
 Three tiers map to three model IDs, each overridable via an environment
-variable. attune-author carries a byte-for-byte mirror of this module
-(``attune_author/model_tiers.py``) because attune-rag is only an optional
-dependency there; a drift test in attune-author asserts ``_DEFAULTS`` and
-``_ENV`` stay identical. Change them here first.
+variable. attune-ai imports this module directly (``attune.model_tiers``
+is a thin re-export; attune-rag is a core dependency there). The earlier
+byte-for-byte mirrors in attune-author and attune-ai are retired —
+attune-author is archived, and attune-ai's mirror was removed once its
+"installs standalone" premise proved false (attune-rag has been core
+there since 2026-04-30). Change tier defaults here and only here.
 
 Resolution is per-call (``os.getenv`` on every ``resolve_model``), not
 import-time, so tests can flip tiers with ``monkeypatch.setenv`` and CI
 pins take effect without re-import ordering concerns — same pattern as
 ``_cache_control()`` in ``providers/claude.py``.
 
-Stdlib only (logging, not structlog): the attune-author mirror must
-import cleanly there too, and structlog is not in attune-author's
-dependency set. No anthropic import, no network I/O.
+Stdlib only (logging, not structlog): consumers import this on their
+lightest paths (config loading, agent factories) and must not pull
+structlog, anthropic, or any I/O just to resolve a model ID.
 """
 
 from __future__ import annotations

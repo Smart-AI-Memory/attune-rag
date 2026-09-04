@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **`attune_rag.model_tiers` is the single copy of the tier contract.**
+  attune-ai now imports it directly instead of carrying a byte-for-byte
+  mirror with a drift test (its "installs standalone" premise was false:
+  attune-rag has been a core dependency there since 2026-04-30), and the
+  attune-author mirror went with that package's archival. Docstrings that
+  described the mirrors are updated; no code or surface change.
+
 ## [1.2.0] — 2026-09-03
 
 The Fable 5.1 release: the canonical premium tier moves to
