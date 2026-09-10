@@ -1,0 +1,117 @@
+{
+  "ok": true,
+  "status": "findings",
+  "seat": "claude",
+  "thread": "review-main-20260910-0222",
+  "findings": [
+    {
+      "file": "src/attune_rag/benchmark.py",
+      "line": 1108,
+      "severity": "medium",
+      "claim": "`--compare-thinking` combined with `--native-citations` now sets `use_native_citations=args.native_citations` on the secondary pass while storing/labelling it as `faithfulness_thinking_on` / \"thinking on\"; the old code forced native off for pass B, so the A/B comparison silently varies two independent variables."
+    },
+    {
+      "file": "scripts/check_thresholds.py",
+      "line": 205,
+      "severity": "medium",
+      "claim": "`_quality_value` is applied to every entry in `thresholds.metrics`, including skipped and unmeasured ones, so any future non-[0,1] threshold (latency, counts, token budgets) makes the gate a permanent exit 2 rather than a metric the checker ignores."
+    },
+    {
+      "file": "src/attune_rag/benchmark.py",
+      "line": 894,
+      "severity": "medium",
+      "claim": "the new catch-all prints only `type(exc).__name__`, discarding the message; the actionable `ValueError` text from `_load_queries(args.negatives/args.extended/args.corpus_queries)` and from the `--min-precision`/`--min-faithfulness`/`--k` validators is lost, leaving CI with only `error: local_error:ValueError`."
+    },
+    {
+      "file": "src/attune_rag/benchmark.py",
+      "line": 996,
+      "severity": "low",
+      "claim": "moving the precision gate ahead of the negatives/extended/generalization passes means a retrieval regression now produces none of the advisory diagnostics that previously accompanied the failure, exactly when triage needs them."
+    },
+    {
+      "file": ".github/workflows/benchmark.yml",
+      "line": 196,
+      "severity": "low",
+      "claim": "the outcome validator hardcodes `\"faithfulness_legacy\" in report` for `completed`, so a `--compare-thinking` run (which writes `faithfulness_thinking_off`) would be rejected as invalid evidence; `extract_metrics` has the same single-key assumption."
+    },
+    {
+      "file": ".github/workflows/benchmark.yml",
+      "line": 301,
+      "severity": "low",
+      "claim": "`always() && rc != '0' && rc != '1'` also fires on job cancellation and whenever an earlier step fails and `check` is skipped (empty `rc`), attributing unrelated failures to \"validation error\"."
+    },
+    {
+      "file": ".github/workflows/benchmark.yml",
+      "line": 218,
+      "severity": "low",
+      "claim": "RC precedence maps `BENCH_RC=2` plus `FAITH_RC=1` to `RC=1`, reporting a local/harness failure as a measured quality regression (covered and locked in by the `completed-faithfulness-before-error` case)."
+    },
+    {
+      "file": "scripts/check_thresholds.py",
+      "line": 74,
+      "severity": "low",
+      "claim": "`math.isfinite(value)` is unreachable — `0 <= value <= 1` already rejects NaN and ±inf — so the ordering comment documents dead code."
+    },
+    {
+      "file": "src/attune_rag/benchmark.py",
+      "line": 977,
+      "severity": "low",
+      "claim": "`--calibrate --with-faithfulness` returns 0 while leaving `outcomes.faithfulness == \"pending\"`, i.e. a success exit paired with an unresolved outcome; only the workflow validator catches this, not the CLI."
+    },
+    {
+      "file": "src/attune_rag/benchmark.py",
+      "line": 975,
+      "severity": "low",
+      "claim": "`payload[\"calibration\"] = cal` is not pre-checked with `json.dumps(..., allow_nan=False)` the way `negatives` is, so one non-finite calibration value fails the entire receipt write instead of that section."
+    },
+    {
+      "file": "src/attune_rag/benchmark.py",
+      "line": 642,
+      "severity": "low",
+      "claim": "`_save_progress` now serialises and rewrites the dump up to three times per run and prints \"Wrote per-query JSON\" to stderr each time; the final write in `main` duplicates the checkpoint written by `_run_faithfulness_passes`."
+    },
+    {
+      "file": "src/attune_rag/benchmark.py",
+      "line": 127,
+      "severity": "low",
+      "claim": "the generator variable `path` in the `expected_in_top_3` check shadows the `_load_queries` parameter of the same name used two lines above in the error message; correct by genexp scoping but easy to misread and to break in a later edit."
+    },
+    {
+      "file": "tests/unit/test_benchmark.py",
+      "line": 812,
+      "severity": "low",
+      "claim": "the `bad-options` case assumes a bare `--compare-thinking` is rejected, but the only guard visible in the diff is `if args.compare_thinking and args.thinking`; confirm an explicit \"requires --with-faithfulness\" check exists or the case asserts the wrong exit path."
+    },
+    {
+      "file": "tests/unit/test_quality_workflow_outcomes.py",
+      "line": 76,
+      "severity": "low",
+      "claim": "`_dump()` pins the real `tests/golden/queries.yaml` and repo `thresholds.json`, so every workflow-replay case fails during any PR that legitimately re-measures the baseline sha, and the 20s subprocess timeout at line 113 is tight given each case spawns four-plus real interpreters."
+    }
+  ],
+  "reply": "FINDING: src/attune_rag/benchmark.py:1108 [medium] `--compare-thinking` combined with `--native-citations` now sets `use_native_citations=args.native_citations` on the secondary pass while storing/labelling it as `faithfulness_thinking_on` / \"thinking on\"; the old code forced native off for pass B, so the A/B comparison silently varies two independent variables.\nFINDING: scripts/check_thresholds.py:205 [medium] `_quality_value` is applied to every entry in `thresholds.metrics`, including skipped and unmeasured ones, so any future non-[0,1] threshold (latency, counts, token budgets) makes the gate a permanent exit 2 rather than a metric the checker ignores.\nFINDING: src/attune_rag/benchmark.py:894 [medium] the new catch-all prints only `type(exc).__name__`, discarding the message; the actionable `ValueError` text from `_load_queries(args.negatives/args.extended/args.corpus_queries)` and from the `--min-precision`/`--min-faithfulness`/`--k` validators is lost, leaving CI with only `error: local_error:ValueError`.\nFINDING: src/attune_rag/benchmark.py:996 [low] moving the precision gate ahead of the negatives/extended/generalization passes means a retrieval regression now produces none of the advisory diagnostics that previously accompanied the failure, exactly when triage needs them.\nFINDING: .github/workflows/benchmark.yml:196 [low] the outcome validator hardcodes `\"faithfulness_legacy\" in report` for `completed`, so a `--compare-thinking` run (which writes `faithfulness_thinking_off`) would be rejected as invalid evidence; `extract_metrics` has the same single-key assumption.\nFINDING: .github/workflows/benchmark.yml:301 [low] `always() && rc != '0' && rc != '1'` also fires on job cancellation and whenever an earlier step fails and `check` is skipped (empty `rc`), attributing unrelated failures to \"validation error\".\nFINDING: .github/workflows/benchmark.yml:218 [low] RC precedence maps `BENCH_RC=2` plus `FAITH_RC=1` to `RC=1`, reporting a local/harness failure as a measured quality regression (covered and locked in by the `completed-faithfulness-before-error` case).\nFINDING: scripts/check_thresholds.py:74 [low] `math.isfinite(value)` is unreachable — `0 <= value <= 1` already rejects NaN and ±inf — so the ordering comment documents dead code.\nFINDING: src/attune_rag/benchmark.py:977 [low] `--calibrate --with-faithfulness` returns 0 while leaving `outcomes.faithfulness == \"pending\"`, i.e. a success exit paired with an unresolved outcome; only the workflow validator catches this, not the CLI.\nFINDING: src/attune_rag/benchmark.py:975 [low] `payload[\"calibration\"] = cal` is not pre-checked with `json.dumps(..., allow_nan=False)` the way `negatives` is, so one non-finite calibration value fails the entire receipt write instead of that section.\nFINDING: src/attune_rag/benchmark.py:642 [low] `_save_progress` now serialises and rewrites the dump up to three times per run and prints \"Wrote per-query JSON\" to stderr each time; the final write in `main` duplicates the checkpoint written by `_run_faithfulness_passes`.\nFINDING: src/attune_rag/benchmark.py:127 [low] the generator variable `path` in the `expected_in_top_3` check shadows the `_load_queries` parameter of the same name used two lines above in the error message; correct by genexp scoping but easy to misread and to break in a later edit.\nFINDING: tests/unit/test_benchmark.py:812 [low] the `bad-options` case assumes a bare `--compare-thinking` is rejected, but the only guard visible in the diff is `if args.compare_thinking and args.thinking`; confirm an explicit \"requires --with-faithfulness\" check exists or the case asserts the wrong exit path.\nFINDING: tests/unit/test_quality_workflow_outcomes.py:76 [low] `_dump()` pins the real `tests/golden/queries.yaml` and repo `thresholds.json`, so every workflow-replay case fails during any PR that legitimately re-measures the baseline sha, and the 20s subprocess timeout at line 113 is tight given each case spawns four-plus real interpreters.",
+  "manifest": {
+    "sent": [
+      "src/attune_rag/benchmark.py",
+      "tests/unit/test_quality_workflow_outcomes.py",
+      "tests/unit/test_benchmark.py",
+      "tests/unit/test_check_thresholds.py",
+      ".github/workflows/benchmark.yml",
+      "scripts/check_thresholds.py"
+    ],
+    "omitted": [],
+    "chars": 71260,
+    "cap": 250000
+  },
+  "target": "staged changes — SCOPED to 6 path(s): .github/workflows/benchmark.yml, scripts/check_thresholds.py, src/attune_rag/benchmark.py, tests/unit/test_benchmark.py, tests/unit/test_check_thresholds.py, tests/unit/test_quality_workflow_outcomes.py",
+  "board": "posted",
+  "claude_auth": "subscription",
+  "scoped_to": [
+    ".github/workflows/benchmark.yml",
+    "scripts/check_thresholds.py",
+    "src/attune_rag/benchmark.py",
+    "tests/unit/test_benchmark.py",
+    "tests/unit/test_check_thresholds.py",
+    "tests/unit/test_quality_workflow_outcomes.py"
+  ]
+}

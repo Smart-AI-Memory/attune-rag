@@ -26,17 +26,29 @@ Use with ``--json PATH`` to also dump the full per-query
 verdict records (reasoning + claim text) for offline analysis.
 
 Queries file format matches tests/golden/queries.yaml.
+
+Exit codes: 0 completed and passed CLI gates; 1 measured regression;
+2 local, credential, schema, or invalid-data failure; 3 classified
+transient failure during the primary provider pass. With ``--json``,
+completed retrieval and primary faithfulness are saved before later work,
+and an additive ``outcomes`` object records completion or failure.
 """
 
 from __future__ import annotations
 
 import argparse
 import asyncio
+import json
+import math
 import os
 import sys
 import time
 from pathlib import Path
 from typing import Any
+
+
+class _BenchmarkValidationError(ValueError):
+    """A controlled local diagnostic safe to include in benchmark outcomes."""
 
 
 def _default_queries_path() -> Path:
@@ -102,10 +114,35 @@ def _load_queries(path: Path) -> list[dict[str, Any]]:
     """
     import yaml
 
-    data = yaml.safe_load(path.read_text(encoding="utf-8"))
-    queries = data.get("queries", [])
-    if not queries:
-        raise ValueError(f"No queries found in {path}")
+    try:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError:
+        raise _BenchmarkValidationError(
+            f"Invalid YAML in queries file {str(path)!r}; check YAML syntax"
+        ) from None
+    except UnicodeError:
+        raise _BenchmarkValidationError(f"Queries file {str(path)!r} must be UTF-8 text") from None
+    queries = data.get("queries") if isinstance(data, dict) else None
+    if not isinstance(queries, list) or not queries:
+        raise _BenchmarkValidationError(f"No queries found in {str(path)!r}")
+    ids = set()
+    for row in queries:
+        if not isinstance(row, dict) or any(
+            not isinstance(row.get(key), str) or not row[key].strip() for key in ("id", "query")
+        ):
+            raise _BenchmarkValidationError(
+                "Every query requires nonempty string id and query fields"
+            )
+        if row["id"] in ids:
+            raise _BenchmarkValidationError("Query IDs must be unique")
+        ids.add(row["id"])
+        if "expected_in_top_3" in row and (
+            not isinstance(row["expected_in_top_3"], list)
+            or any(not isinstance(path, str) or not path for path in row["expected_in_top_3"])
+        ):
+            raise _BenchmarkValidationError(
+                "Expected retrieval paths must be a list of nonempty strings"
+            )
     return queries
 
 
@@ -384,8 +421,7 @@ def _print_calibration(report: dict[str, Any]) -> None:
     print(f"  {'threshold':>9}  {'legit kept':>10}  {'neg abstained':>13}")
     for r in report["rows"]:
         print(
-            f"  {r['threshold']:>9.0f}  {r['legit_kept']:>10.0%}  "
-            f"{r['negatives_abstained']:>13.0%}"
+            f"  {r['threshold']:>9.0f}  {r['legit_kept']:>10.0%}  {r['negatives_abstained']:>13.0%}"
         )
     t = report["recommended_threshold"]
     print(
@@ -573,7 +609,7 @@ def _print_per_query_compare(
 
     print()
     print(f"Per-query verdict comparison ({a_label} vs {b_label}):")
-    print(f"  {'id':<18}  {'score Δ':>8}  {'claims A→B':>14}  " f"{'verdict shift':<24}")
+    print(f"  {'id':<18}  {'score Δ':>8}  {'claims A→B':>14}  {'verdict shift':<24}")
     n_changed = 0
     for qid in common:
         qa = by_id_a[qid]
@@ -594,7 +630,7 @@ def _print_per_query_compare(
         shift = ",".join(shift_bits) or "—"
         if shift_bits:
             n_changed += 1
-        print(f"  {qid:<18}  {delta:>+8.3f}  " f"{claims_a:>5} → {claims_b:<6}  {shift:<24}")
+        print(f"  {qid:<18}  {delta:>+8.3f}  {claims_a:>5} → {claims_b:<6}  {shift:<24}")
     pct = n_changed / len(common) if common else 0.0
     print(f"\nVerdict-shift rate: {n_changed}/{len(common)} = {pct:.1%}")
 
@@ -611,14 +647,74 @@ def _dump_json(
     path to stderr so the user sees where the file landed even
     when stdout is being captured.
     """
-    import json
-
+    encoded = json.dumps(payload, indent=2, sort_keys=True, allow_nan=False)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, sort_keys=True),
-        encoding="utf-8",
-    )
+    path.write_text(encoded, encoding="utf-8")
     print(f"\nWrote per-query JSON: {path}", file=sys.stderr)
+
+
+def _bounded_number(value: Any, label: str, maximum: float | None = None) -> None:
+    try:
+        valid = (
+            not isinstance(value, bool)
+            and isinstance(value, int | float)
+            and math.isfinite(value)
+            and value >= 0
+            and (maximum is None or value <= maximum)
+        )
+    except OverflowError:
+        valid = False
+    if not valid:
+        domain = "nonnegative" if maximum is None else f"between 0 and {maximum:g}"
+        raise _BenchmarkValidationError(
+            f"Invalid numeric measurement: {label}; expected a finite number {domain}"
+        )
+
+
+def _validate_measurement(
+    report: dict[str, Any], queries: list[dict[str, Any]], *, faithfulness: bool = False
+) -> None:
+    """Reject incomplete or invalid measurements before recording completion."""
+    rates = (
+        ("mean_faithfulness", "refusal_rate", "hallucination_rate", "citation_emit_rate")
+        if faithfulness
+        else ("precision_at_1", "recall_at_k")
+    )
+    for metric in rates:
+        _bounded_number(report[metric], metric, 1.0)
+    for metric in ("mean_latency_ms", "p95_latency_ms" if faithfulness else "max_latency_ms"):
+        _bounded_number(report[metric], metric)
+    rows = report["per_query"]
+    if not isinstance(rows, list) or [row["id"] for row in rows] != [q["id"] for q in queries]:
+        raise _BenchmarkValidationError("Measured query IDs do not match the complete query set")
+    if faithfulness:
+        for row in rows:
+            _bounded_number(row["score"], "per-query faithfulness", 1.0)
+            _bounded_number(row["latency_ms"], "per-query latency")
+    else:
+        if type(report["k"]) is not int or report["k"] <= 0:
+            raise _BenchmarkValidationError("Retrieval k must be a positive integer")
+        if type(report["total_queries"]) is not int or report["total_queries"] != len(queries):
+            raise _BenchmarkValidationError("Retrieval query count does not match the query set")
+    # Strict serialization also checks advisory fields not consumed above.
+    # Its arbitrary exception text remains redacted by the CLI boundary.
+    json.dumps(report, allow_nan=False)
+
+
+def _transient_primary_provider_error(exc: Exception) -> bool:
+    """Only typed Anthropic transport/rate-limit/server errors are retryable."""
+    try:
+        from anthropic import APIConnectionError, APIStatusError, RateLimitError
+    except ImportError:
+        return False
+    return isinstance(exc, APIConnectionError | RateLimitError) or (
+        isinstance(exc, APIStatusError) and 500 <= exc.status_code <= 599
+    )
+
+
+def _save_progress(args: argparse.Namespace, payload: dict[str, Any]) -> None:
+    if args.json is not None:
+        _dump_json(args.json, payload)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -799,6 +895,47 @@ def main(argv: list[str] | None = None) -> int:
         help="Print per-query detail including misses",
     )
     args = parser.parse_args(argv)
+    payload: dict[str, Any] = {
+        "queries_path": str(args.queries),
+        "outcomes": {
+            "retrieval": "pending",
+            "faithfulness": "pending" if args.with_faithfulness else "skipped",
+        },
+    }
+    try:
+        if args.json is not None:
+            args.json.unlink(missing_ok=True)
+        rc = _execute_benchmark(args, payload)
+    except Exception as exc:  # noqa: BLE001 — CLI failures must leave current evidence, not pass.
+        outcomes = payload["outcomes"]
+        stage = "secondary_failed" if outcomes["faithfulness"] == "completed" else "local_error"
+        outcomes["reason"] = f"{stage}:{type(exc).__name__}"
+        if type(exc) is _BenchmarkValidationError:
+            outcomes["detail"] = str(exc)
+            print(f"error: {outcomes['detail']}", file=sys.stderr)
+        else:
+            print(f"error: {outcomes['reason']}", file=sys.stderr)
+        rc = 2
+    if rc == 2:
+        outcomes = payload["outcomes"]
+        if outcomes["retrieval"] == "pending":
+            outcomes["retrieval"] = "failed"
+        if outcomes["faithfulness"] == "pending":
+            outcomes["faithfulness"] = "failed"
+        outcomes.setdefault("reason", "local_failure")
+    try:
+        _save_progress(args, payload)
+    except Exception as exc:  # noqa: BLE001 — an unwritable receipt is a failed local check.
+        print(f"error: could not write benchmark JSON ({type(exc).__name__})", file=sys.stderr)
+        return 2
+    return rc
+
+
+def _execute_benchmark(args: argparse.Namespace, payload: dict[str, Any]) -> int:
+    _bounded_number(args.min_precision, "min-precision", 1.0)
+    _bounded_number(args.min_faithfulness, "min-faithfulness", 1.0)
+    if args.k <= 0:
+        raise _BenchmarkValidationError("k must be positive")
 
     if args.compare_thinking and args.thinking:
         print(
@@ -863,6 +1000,10 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         cal = _calibrate_abstention(queries, _load_queries(args.negatives), k=args.k)
         _print_calibration(cal)
+        payload["calibration"] = cal
+        payload["outcomes"].update(
+            retrieval="skipped", faithfulness="skipped", reason="calibration_only"
+        )
         return 0
 
     try:
@@ -873,20 +1014,35 @@ def main(argv: list[str] | None = None) -> int:
         # the actionable message, not a traceback.
         print(f"error: {exc}", file=sys.stderr)
         return 2
+    _validate_measurement(report, queries)
+    payload["retrieval"] = report
+    payload["outcomes"]["retrieval"] = "completed"
+    _save_progress(args, payload)
     _print_summary(report, verbose=args.verbose)
+
+    if report["precision_at_1"] < args.min_precision:
+        payload["outcomes"].update(faithfulness="skipped", reason="retrieval_regression")
+        print(
+            f"\nFAIL: precision@1 {report['precision_at_1']:.2%} < gate {args.min_precision:.2%}",
+            file=sys.stderr,
+        )
+        return 1
 
     # Out-of-corpus abstention measurement (advisory; never gates).
     negatives_report: dict[str, Any] | None = None
     if args.negatives and args.negatives.is_file():
         negatives_report = _run_negative_benchmark(_load_queries(args.negatives), k=args.k)
+        json.dumps(negatives_report, allow_nan=False)
+        payload["negatives"] = negatives_report
         _print_negatives(negatives_report, verbose=args.verbose)
 
     # Extended advisory hard-query pass (advisory; never gates).
     extended_report: dict[str, Any] | None = None
     if args.extended and args.extended.is_file():
-        extended_report = _run_benchmark(
-            _load_queries(args.extended), k=args.k, retriever=retriever_obj
-        )
+        extended_queries = _load_queries(args.extended)
+        extended_report = _run_benchmark(extended_queries, k=args.k, retriever=retriever_obj)
+        _validate_measurement(extended_report, extended_queries)
+        payload["extended"] = extended_report
         print("\n=== Extended (advisory hard) set ===")
         _print_summary(extended_report, verbose=args.verbose)
 
@@ -903,39 +1059,18 @@ def main(argv: list[str] | None = None) -> int:
         from .corpus import DirectoryCorpus
 
         corpus_b = DirectoryCorpus(args.corpus)
+        corpus_queries = _load_queries(args.corpus_queries)
         generalization_report = _run_benchmark(
-            _load_queries(args.corpus_queries), k=args.k, corpus=corpus_b, retriever=retriever_obj
+            corpus_queries, k=args.k, corpus=corpus_b, retriever=retriever_obj
         )
+        _validate_measurement(generalization_report, corpus_queries)
+        payload["generalization"] = generalization_report
         print(f"\n=== Generalization: unseen corpus ({args.corpus.name}) ===")
         _print_summary(generalization_report, verbose=args.verbose)
 
-    if report["precision_at_1"] < args.min_precision:
-        print(
-            f"\nFAIL: precision@1 {report['precision_at_1']:.2%} < gate {args.min_precision:.2%}",
-            file=sys.stderr,
-        )
-        return 1
-
-    # Retrieval-only `--json` path. Used by the CI quality gate
-    # when faithfulness gating is off-budget for the PR. The dump
-    # carries `retrieval` + `queries_path`; downstream consumers
-    # treat the absence of `faithfulness_legacy` as
-    # "retrieval-only run".
-    if args.json is not None and not args.with_faithfulness:
-        retrieval_payload: dict[str, Any] = {
-            "retrieval": report,
-            "queries_path": str(args.queries),
-        }
-        if negatives_report is not None:
-            retrieval_payload["negatives"] = negatives_report
-        if extended_report is not None:
-            retrieval_payload["extended"] = extended_report
-        if generalization_report is not None:
-            retrieval_payload["generalization"] = generalization_report
-        _dump_json(args.json, retrieval_payload)
-
     if args.with_faithfulness:
         if not os.environ.get("ANTHROPIC_API_KEY"):
+            payload["outcomes"].update(faithfulness="failed", reason="missing_credentials")
             print(
                 "error: --with-faithfulness requires ANTHROPIC_API_KEY "
                 "(answer generation is API-only; --auth-mode only "
@@ -943,116 +1078,77 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 2
-
-        json_payload: dict[str, Any] = {
-            "retrieval": report,
-            "queries_path": str(args.queries),
-        }
-
-        if args.compare_thinking:
-            print(
-                "\nRunning faithfulness pass A (thinking OFF)...",
-                file=sys.stderr,
-            )
-            pass_a = asyncio.run(
-                _score_faithfulness(
-                    queries,
-                    k=args.k,
-                    use_native_citations=False,
-                    use_thinking=False,
-                    auth_mode=args.auth_mode,
-                )
-            )
-            _print_faithfulness(pass_a, label="thinking off")
-            print(
-                "\nRunning faithfulness pass B (thinking ON)...",
-                file=sys.stderr,
-            )
-            pass_b = asyncio.run(
-                _score_faithfulness(
-                    queries,
-                    k=args.k,
-                    use_native_citations=False,
-                    use_thinking=True,
-                    thinking_budget_tokens=args.thinking_budget,
-                    auth_mode=args.auth_mode,
-                )
-            )
-            _print_faithfulness(pass_b, label="thinking on")
-            _print_side_by_side(
-                pass_a,
-                pass_b,
-                a_label="thinking off",
-                b_label="thinking on",
-            )
-            _print_per_query_compare(
-                pass_a,
-                pass_b,
-                a_label="off",
-                b_label="on",
-            )
-            json_payload["faithfulness_thinking_off"] = pass_a
-            json_payload["faithfulness_thinking_on"] = pass_b
-            gate_report = pass_a
-            gate_label = "thinking-off"
-        else:
-            print(
-                "\nRunning faithfulness pass (legacy [P{n}] path)...",
-                file=sys.stderr,
-            )
-            legacy = asyncio.run(
-                _score_faithfulness(
-                    queries,
-                    k=args.k,
-                    use_native_citations=False,
-                    use_thinking=args.thinking,
-                    thinking_budget_tokens=args.thinking_budget,
-                    auth_mode=args.auth_mode,
-                )
-            )
-            _print_faithfulness(legacy, label="legacy")
-            json_payload["faithfulness_legacy"] = legacy
-
-            if args.native_citations:
-                print(
-                    "\nRunning faithfulness pass (native citations path)...",
-                    file=sys.stderr,
-                )
-                native = asyncio.run(
-                    _score_faithfulness(
-                        queries,
-                        k=args.k,
-                        use_native_citations=True,
-                        use_thinking=args.thinking,
-                        thinking_budget_tokens=args.thinking_budget,
-                        auth_mode=args.auth_mode,
-                    )
-                )
-                _print_faithfulness(native, label="native")
-                _print_side_by_side(legacy, native)
-                json_payload["faithfulness_native"] = native
-
-            gate_report = legacy
-            gate_label = "legacy"
-
-        if args.json is not None:
-            _dump_json(args.json, json_payload)
-
-        if gate_report["mean_faithfulness"] < args.min_faithfulness:
-            print(
-                f"\nFAIL: {gate_label} mean_faithfulness "
-                f"{gate_report['mean_faithfulness']:.3f} "
-                f"< gate {args.min_faithfulness:.3f}",
-                file=sys.stderr,
-            )
-            return 1
-        print(
-            f"\nPASS: P@1 ≥ {args.min_precision:.2%} and "
-            f"{gate_label} faithfulness ≥ {args.min_faithfulness:.3f}."
-        )
-        return 0
+        return _run_faithfulness_passes(args, queries, payload)
 
     print(f"\nPASS: precision@1 meets gate ({args.min_precision:.2%}).")
+    return 0
+
+
+def _run_faithfulness_passes(
+    args: argparse.Namespace, queries: list[dict[str, Any]], payload: dict[str, Any]
+) -> int:
+    """Persist and gate the primary pass before attempting optional comparisons."""
+    primary_key = "faithfulness_thinking_off" if args.compare_thinking else "faithfulness_legacy"
+    primary_label = "thinking off" if args.compare_thinking else "legacy"
+    kwargs: dict[str, Any] = {
+        "k": args.k,
+        "use_native_citations": False,
+        "use_thinking": False if args.compare_thinking else args.thinking,
+        "auth_mode": args.auth_mode,
+    }
+    if not args.compare_thinking:
+        kwargs["thinking_budget_tokens"] = args.thinking_budget
+    print(f"\nRunning faithfulness pass ({primary_label})...", file=sys.stderr)
+    try:
+        primary = asyncio.run(_score_faithfulness(queries, **kwargs))
+    except Exception as exc:  # noqa: BLE001 — classify only the primary provider boundary.
+        transient = _transient_primary_provider_error(exc)
+        payload["outcomes"].update(
+            faithfulness="unavailable" if transient else "failed",
+            reason=f"primary_provider:{type(exc).__name__}",
+        )
+        print(f"error: {payload['outcomes']['reason']}", file=sys.stderr)
+        return 3 if transient else 2
+
+    _validate_measurement(primary, queries, faithfulness=True)
+    payload[primary_key] = primary
+    payload["outcomes"]["faithfulness"] = "completed"
+    _save_progress(args, payload)
+    _print_faithfulness(primary, label=primary_label)
+    if primary["mean_faithfulness"] < args.min_faithfulness:
+        payload["outcomes"]["reason"] = "faithfulness_regression"
+        print(
+            f"\nFAIL: {primary_label} mean_faithfulness "
+            f"{primary['mean_faithfulness']:.3f} < gate {args.min_faithfulness:.3f}",
+            file=sys.stderr,
+        )
+        return 1
+
+    if args.compare_thinking or args.native_citations:
+        secondary_key = (
+            "faithfulness_thinking_on" if args.compare_thinking else "faithfulness_native"
+        )
+        secondary_label = "thinking on" if args.compare_thinking else "native"
+        kwargs.update(
+            use_native_citations=args.native_citations,
+            use_thinking=True if args.compare_thinking else args.thinking,
+            thinking_budget_tokens=args.thinking_budget,
+        )
+        print(f"\nRunning faithfulness pass ({secondary_label})...", file=sys.stderr)
+        # A failure here is a local hard failure: the primary result is
+        # already complete and must never be erased by retrying the run.
+        secondary = asyncio.run(_score_faithfulness(queries, **kwargs))
+        _validate_measurement(secondary, queries, faithfulness=True)
+        payload[secondary_key] = secondary
+        _print_faithfulness(secondary, label=secondary_label)
+        _print_side_by_side(primary, secondary, a_label=primary_label, b_label=secondary_label)
+        if args.compare_thinking:
+            _print_per_query_compare(primary, secondary, a_label="off", b_label="on")
+
+    print(
+        f"\nPASS: P@1 ≥ {args.min_precision:.2%} and "
+        f"{primary_label} faithfulness ≥ {args.min_faithfulness:.3f}."
+    )
     return 0
 
 

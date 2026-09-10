@@ -7,8 +7,9 @@ corpora. Works with Claude, Gemini, or any LLM.
 
 ## Proven retrieval — the numbers
 
-Every figure is reproducible with `attune-rag-benchmark`. The bundled-corpus
-row is a **hard CI gate** — a PR that regresses it fails automatically.
+Every figure is reproducible with `attune-rag-benchmark`. Bundled-corpus
+retrieval has **required CI thresholds**; faithfulness is checked when
+selected by the [quality gate](#quality-baselines).
 
 | | Bundled corpus¹ | Unseen corpus, overall² | Unseen corpus, **hard paraphrases**³ |
 |---|---|---|---|
@@ -24,8 +25,9 @@ asking questions worded *nothing* like the docs, the transformer tier goes
 from a keyword baseline of **1-in-4** to **9-in-10** top-1 correct, and
 **finds the right doc in the top 3 every single time** (recall@3 100%).
 
-<sub>¹ bundled attune-help corpus, gated in CI at `P@1 ≥ 0.95 / R@3 = 1.00 /
-faithfulness ≥ 0.9686`; actuals shown.  ² lightweight keyword on an unseen
+<sub>¹ bundled attune-help corpus: required `P@1 ≥ 0.975 / R@3 = 1.00`,
+with `faithfulness ≥ 0.9698` when selected and measured; actuals shown.
+² lightweight keyword on an unseen
 corpus (`corpus_b`), no embeddings.  ³ pure-paraphrase stress test
 (`corpus_c`, queries with almost no vocabulary overlap with the docs) —
 measured in `docs/specs/transformer-retriever/`.</sub>
@@ -65,17 +67,14 @@ measured in `docs/specs/transformer-retriever/`.</sub>
 
 ## Why attune-rag
 
-Most RAG libraries ship features. attune-rag ships **measured
-quality numbers** and gates merges against them. The CI badge
-isn't "tests pass" — it's `P@1 ≥ 0.95, R@3 = 1.00, mean
-faithfulness ≥ 0.9686` (locked at
-[`docs/specs/release-quality-baseline/baseline-1.md`](docs/specs/release-quality-baseline/baseline-1.md))
-plus per-axis CPU + wall-clock perf thresholds (locked at
-[`docs/specs/downstream-validation/perf-baseline.md`](docs/specs/downstream-validation/perf-baseline.md)).
-
-A PR that drops `mean_faithfulness` below `0.9686` fails CI
-automatically. Same for any latency hot-path regressing past
-`mean + 2σ`. That's the differentiator.
+attune-rag publishes **measured quality thresholds** in the active
+[quality baseline JSON](docs/specs/release-quality-baseline/thresholds.json)
+and [performance baseline JSON](docs/specs/downstream-validation/perf-thresholds.json).
+CI requires `P@1 ≥ 0.975` and `R@3 = 1.00`; completed, selected
+faithfulness measurements must reach `0.9698`. Performance regressions
+block on two selected CPU metrics; other timing metrics remain advisory.
+The [quality-baseline section](#quality-baselines) describes selection,
+failure handling, and installed-artifact checks.
 
 ### vs LangChain / LlamaIndex
 
@@ -99,9 +98,9 @@ for the `attune-*` family's content-quality discipline. The
 `attune-author` polish/fact-check pipeline uses attune-rag's
 retrieval + faithfulness primitives to verify generated help
 content is grounded in source material before it's marked
-authoritative — the same `mean_faithfulness ≥ 0.9686` discipline
-that gates this library's own benchmarks, extended to the
-authoring loop.
+authoritative. This library's own selected faithfulness measurements
+are checked against `mean_faithfulness ≥ 0.9698`; downstream authoring
+policies are separate.
 
 ### What attune-rag is **not**
 
@@ -455,58 +454,104 @@ attune-rag dashboard render --out report.html  # HTML snapshot
 
 ## Quality baselines
 
-attune-rag locks two baselines, both gated by CI. Thresholds
-are empirically derived (`mean ± 2σ`) from back-to-back
-benchmark runs on an unchanged HEAD — grounded, not guessed.
+The repository's active JSON baselines define the gates below. Historical
+measurement notes explain their derivation; the JSON files supply the
+current thresholds. The packaging and validation repairs described here
+ship in [1.2.1](CHANGELOG.md#121--2026-09-09).
 
 ### Retrieval + faithfulness
 
 | Metric | Threshold (current) | Source |
 |---|---:|---|
-| `precision_at_1` | **≥ 0.95** | retrieval, deterministic |
-| `recall_at_3` | **= 1.00** | retrieval, deterministic |
-| `mean_faithfulness` | **≥ 0.9686** | Claude judge, σ ≈ 0.005 |
+| `precision_at_1` | **≥ 0.975** | keyword retrieval |
+| `recall_at_3` | **= 1.00** | keyword retrieval |
+| `mean_faithfulness` | **≥ 0.9698** | Claude judge; locked aggregate σ = 0.0052 |
 
-Gated by [`.github/workflows/benchmark.yml`](.github/workflows/benchmark.yml).
-Faithfulness gating engages when the PR touches retrieval,
-reranker, expander, pipeline, prompts, or eval paths, or when
-the PR title contains `[full-bench]`. Methodology + raw numbers
-in [`docs/specs/release-quality-baseline/`](docs/specs/release-quality-baseline/baseline-1.md).
+Values and the SHA-256 lock for the 40-query set live in
+[`thresholds.json`](docs/specs/release-quality-baseline/thresholds.json).
+[The quality workflow](.github/workflows/benchmark.yml) requires retrieval
+in every mode. With `ANTHROPIC_API_KEY` configured, it selects faithfulness
+for pushes to `main`, manual runs, and PRs whose title contains
+`[full-bench]` or whose diff touches retrieval, reranker, expander, pipeline,
+prompts, or eval code. Otherwise it reports why faithfulness was skipped.
+
+A completed faithfulness regression fails the gate. A classified transient
+failure in the primary provider pass permits at most one workflow retry,
+and only after retrieval passes its locked thresholds. If the provider
+remains unavailable, the workflow discloses that state and still requires
+retrieval to pass. Authentication failures, other local errors, malformed
+or missing evidence, and measured regressions fail validation or gating;
+they do not qualify for that retry. The checker rejects nonfinite values,
+booleans, numeric strings, and quality values outside `[0, 1]`.
+
+The [measurement notes](docs/specs/archive/release-quality-baseline/baseline-1.md)
+record the historical runs behind the current quality lock.
 
 ### Per-hot-path latency
 
-Locked dual-axis (wall-clock + CPU-time) thresholds on the four
-benchmarks. CPU-time is the gating axis (deterministic);
-wall-clock is advisory.
+The active [performance JSON](docs/specs/downstream-validation/perf-thresholds.json)
+contains eight measurements: CPU time and wall-clock time for four
+benchmarks. [The per-PR workflow](.github/workflows/perf.yml) selects exactly
+`keyword_retriever_retrieve.cpu` and `rag_pipeline_run.cpu` as blocking.
 
-Numbers measured under the V2 multi-run methodology (5
-invocations × 20 runs = 100 measurements per metric) on the
-locked-baseline runner (Linux `ubuntu-latest`, CPython 3.11.15).
-Inter-run and intra-run variance are tracked separately;
-thresholds are `mean + 2σ × inter_run_stdev`. **Full 8-row
-dual-axis table + hardware fingerprint + per-metric noise
-profile:**
-[`docs/specs/downstream-validation/perf-baseline.md`](docs/specs/downstream-validation/perf-baseline.md).
+| Benchmark | CPU regression | Wall-clock regression |
+|---|---|---|
+| `keyword_retriever_retrieve` | blocking | advisory |
+| `rag_pipeline_run` | blocking | advisory |
+| `directory_corpus_load` | advisory | advisory |
+| `llm_reranker_rerank` | advisory | advisory |
 
-Why two threshold styles in the locked table:
+Both reranker axes exist in the locked baseline; the regular per-PR
+measurement omits LLM benchmarks. It runs 30 trials of the local benchmarks.
+Missing or invalid selected CPU evidence, a missing baseline, or a failed
+measurement blocks the gate. Valid advisory-metric regressions remain
+visible in the comment without blocking.
 
-- **`keyword_retriever_retrieve`** has a wider CPU band because
-  measured intra-run variance reflects cold-cache effects on the
-  first few iterations — empirically derived, not tuned for
-  tightness.
-- **`llm_reranker_rerank`** is wall-clock-only because Anthropic
-  network variance dominates the CPU axis; the gate is set
-  generously.
+The recorded V2 baseline uses five invocations × 20 trials, with `sigma=2`
+on Linux and CPython 3.11.15. It tracks intra-run and inter-run variance
+separately and sets thresholds to `mean + 2 × inter_run_stdev`.
+CPU timings still vary with execution conditions; they are not deterministic.
+See the [measurement notes](docs/specs/downstream-validation/perf-baseline.md)
+for the runner fingerprint and per-metric results.
 
-Gated by [`.github/workflows/perf.yml`](.github/workflows/perf.yml)
-per-PR (blocking on the CPU axis as of W3.1).
+### Installed distribution checks
+
+Source tests and installed-artifact checks cover different failure modes.
+The shared [distribution checker](scripts/check_distribution.py) copies the
+current contents of Git-tracked files into a clean snapshot, honoring
+deletions and excluding untracked build debris. It builds an sdist and then
+a wheel from that sdist. Newly added files must be tracked to enter this
+snapshot.
+
+Run from the repository root with an empty output directory:
+
+```bash
+python -m pip install build ".[attune-help]"
+python scripts/check_distribution.py --output-dir dist --report artifact-validation.json
+```
+
+Both distributions must contain byte-identical copies of the snapshot's
+package `.py`/`.pyi` files and five required resources: the typing marker,
+corpus alias and summary overrides, editor schema, and dashboard HTML.
+The checker installs the wheel in a temporary environment, verifies import
+origins, and runs separate source and wheel probes with the same prepared
+dependencies. It compares ordered top-three paths and scores for all 40
+locked queries and requires both probes to meet the retrieval thresholds.
+It makes no generation or faithfulness calls. To check an existing pair
+without rebuilding, supply `--sdist PATH --wheel PATH --report PATH`.
+
+The JSON receipt records source and query hashes, dependency versions,
+import origins, per-query results, and distribution checksums.
+[Test CI](.github/workflows/tests.yml) runs this checker separately from
+the source suite. [Publication](.github/workflows/publish.yml) verifies the
+receipt's checksum and the exact sdist/wheel checksums before uploading
+those same files to PyPI, without rebuilding them.
 
 ### Why this is the differentiator
 
-Most RAG libraries A/B-test internally and ship the result.
-attune-rag publishes the thresholds, gates merges against them,
-and re-measures whenever the corpus, judge prompt, or hardware
-changes. The receipts are checked in.
+The threshold JSON files and historical measurement notes are checked in,
+so the selected metrics, cutoffs, and measurement methods can be inspected
+alongside the code that enforces them.
 
 ## Bundled `.help/` corpus
 
@@ -568,7 +613,7 @@ The judge implementation lives at
 is currently INTERNAL and may move — the `attune-rag-benchmark
 --with-faithfulness` CLI is the stable contract.
 
-For the methodology behind the `0.9686` threshold, the v1/v2 ground-truth
+For the historical faithfulness methodology, the v1/v2 ground-truth
 calibration runs, and the extended-thinking-vs-default decision record, see
 [`docs/rag/faithfulness-thinking-calibration.md`](https://github.com/Smart-AI-Memory/attune-rag/blob/main/docs/rag/faithfulness-thinking-calibration.md).
 
@@ -674,8 +719,9 @@ retrieval ladder (0.5.x: `[embeddings]` static hybrid,
 `[transformers]` dense tier, `min_score=` abstention), model tiers +
 fable-5 handling (0.8.0), and the ranking correction that stopped the
 content preview double-counting frontmatter aliases (0.9.0) are all
-in. Quality baselines (P@1 ≥ 0.95, R@3 = 1.00, mean faithfulness ≥
-0.9686) hold and gate CI throughout.
+in. The current quality gates use P@1 ≥ 0.975, R@3 = 1.00, and
+mean faithfulness ≥ 0.9698 when selected and measured; see
+[Quality baselines](#quality-baselines) for the conditions.
 
 SemVer commitments have been binding since 0.2.0 —
 [`docs/POLICY.md`](docs/POLICY.md) §2; symbols PUBLIC in a minor

@@ -5,7 +5,7 @@ feature: benchmark
 depth: concept
 generated_at: 2026-06-10T06:07:59.695109+00:00
 source_hash: 82975cf88c844b87657deb87845f45f4f5fbc32319ccba10e0eb8a798867630f
-status: generated
+status: verified
 ---
 
 # Benchmark
@@ -23,13 +23,11 @@ These two dimensions are independent: you can ship a pipeline that retrieves wel
 
 ## Retriever tiers
 
-The `--retriever` flag accepts three values — `keyword`, `hybrid`, and `transformer` — each representing a different retrieval strategy. When you select a tier whose optional dependency is not installed, the runner exits with code `2` and prints an install hint rather than failing silently.
-
-This design lets a single CI job benchmark whichever tiers are present without breaking on tiers that aren't.
+The `--retriever` flag selects one tier per run: `keyword`, `hybrid`, or `transformer`. Keyword needs no retriever extra. Hybrid uses `[embeddings]` but can fall back to keyword-only if its embedding leg is unavailable. Transformer requires `[transformers]`; a missing dependency produces exit `2` with an install hint. Install the intended tier before comparing scores.
 
 ## Abstention calibration
 
-Passing `--calibrate-abstention` tunes the threshold at which the pipeline declines to answer rather than returning a low-confidence result. Calibrating this threshold is a separate concern from raw precision/recall: a pipeline can score well on retrieval but still answer questions it should abstain from.
+Passing `--calibrate-abstention` with legitimate and negative query sets recommends an absolute keyword-score threshold. It does not change the retriever configuration. With `--json`, successful calibration records a `calibration` result and marks retrieval and faithfulness `skipped` with reason `calibration_only`, even if `--with-faithfulness` was supplied. Calibrating this threshold is a separate concern from raw precision/recall: a pipeline can score well on retrieval but still answer questions it should abstain from.
 
 ## How the pieces fit together
 
@@ -45,7 +43,9 @@ custom query file  →  benchmark runner (main)
             exit 0 (pass) or non-zero (fail)
 ```
 
-`main()` is the single entry point — it parses arguments, selects the retriever tier, runs queries, scores results, and returns `0` on success. A non-zero exit code lets CI treat a quality regression as a build failure.
+`main()` is the single entry point — it parses arguments, selects the retriever tier, runs queries, scores results, and returns `0` on success. Exit `1` means a measured regression, `2` means a local or invalid-data failure, and `3` means a classified transient failure during the primary provider pass. With `--json`, completed retrieval and primary faithfulness are saved before later work, so a later failure does not erase completed measurements.
+
+The CLI gates precision@1 at `--min-precision` (default `0.70`) and optional primary faithfulness at `--min-faithfulness` (default `0.85`). It reports recall; the repository CI gates recall separately using its locked threshold file.
 
 ## When benchmark matters
 

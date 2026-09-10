@@ -1,0 +1,4 @@
+{
+  "status": "failed",
+  "error": "ValueError: sdist missing or ambiguous required resource: attune_rag/corpus/aliases_override.json"
+}

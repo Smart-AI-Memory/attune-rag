@@ -1,0 +1,39 @@
+{
+  "status": "passed",
+  "artifact_sha256": {
+    "attune_rag-1.2.0.tar.gz": "1d899397e9880eaeff25498bbdecd0c5fbec2bad820b6748427fb9805fa76baa",
+    "attune_rag-1.2.0-py3-none-any.whl": "56c613f081334d69c79b68645208fc7e6cf54a2bd62f92f77396eadade7d898b"
+  },
+  "checks": [
+    {
+      "control": "remove final wheel resource",
+      "resource": "attune_rag/corpus/aliases_override.json",
+      "exit_code": 1,
+      "report": {
+        "status": "failed",
+        "error": "ValueError: wheel missing or ambiguous required resource: attune_rag/corpus/aliases_override.json"
+      }
+    },
+    {
+      "control": "remove final wheel resource",
+      "resource": "attune_rag/corpus/summaries_override.json",
+      "exit_code": 1,
+      "report": {
+        "status": "failed",
+        "error": "ValueError: wheel missing or ambiguous required resource: attune_rag/corpus/summaries_override.json"
+      }
+    },
+    {
+      "control": "actual final distribution publication transfer",
+      "exit_code": 0,
+      "stdout": "Exact validated sdist and wheel verified for publication",
+      "report_sha256": "decc4b30f4dd17736b661a303ee3d3fef6aae2579874f51b1e9b122dda073bbc"
+    },
+    {
+      "control": "alter final wheel after validation",
+      "exit_code": 1,
+      "error": "Artifact checksum mismatch"
+    }
+  ],
+  "limits": "Local checks only; no upload/publication/provider calls; original final artifact bytes unchanged"
+}

@@ -38,8 +38,12 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
+      # Raw validation receipts retain their recorded bytes and checksums.
+      # JSON parsing and secret scanning still apply to these files.
       - id: trailing-whitespace
+        exclude: ^docs/specs/release-artifact-reliability/receipts/.*\.(json|xml)$
       - id: end-of-file-fixer
+        exclude: ^docs/specs/release-artifact-reliability/receipts/.*\.(json|xml)$
       - id: check-yaml
       - id: check-toml
       - id: check-json

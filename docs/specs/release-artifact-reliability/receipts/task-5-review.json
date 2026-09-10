@@ -1,0 +1,103 @@
+{
+  "task_id": "5",
+  "status": "passed",
+  "suite": {
+    "passed": 1505,
+    "xfailed": 2,
+    "xpassed": 78,
+    "seconds": 55.79,
+    "seconds_source": "lead console result",
+    "junit_seconds": 55.781,
+    "coverage_percent": 93.02918017600742,
+    "junit": "task-5-tests.xml",
+    "coverage": "task-5-coverage.json"
+  },
+  "distribution": {
+    "receipt": "task-5-distribution.json",
+    "artifact_sha256": {
+      "attune_rag-1.2.0.tar.gz": "7f0eaf5ff5dfa85b13997bce460bef18a74594fc30777bcc0110af2054590153",
+      "attune_rag-1.2.0-py3-none-any.whl": "d051bfc33a45fec8550e398bfb819afe288a18ba66f261e0b6269d2203a499e9"
+    },
+    "members": 45,
+    "queries": 40,
+    "precision_at_1": 1.0,
+    "recall_at_3": 1.0,
+    "attune_help_version": "0.13.0",
+    "source_snapshot_sha256": "1c70264caab94acf5367fe1a93db088033f7f3c8ddd3c43d1666080b5a200609"
+  },
+  "negative_controls": "task-5-negative-controls.json",
+  "static_checks": [
+    "Ruff passed",
+    "Black passed",
+    "git diff --check passed"
+  ],
+  "initial_environment_failures": "task-5-initial-environment-tests.xml",
+  "limits": [
+    "Local macOS/Python 3.11, prepared backend without build isolation",
+    "Reused installed same-Python dependencies without downloads",
+    "No live providers or remote CI in this integrated validation",
+    "These are local source-version 1.2.0 artifacts; they do not establish a 1.2.1 publication or remote CI result"
+  ],
+  "cross_review": {
+    "status": "completed",
+    "advisory_only": true,
+    "disposition": {
+      "real_corrected": [
+        "F3",
+        "F6",
+        "F9"
+      ],
+      "noise": [
+        "F1",
+        "F2",
+        "F8",
+        "F10",
+        "F12",
+        "F13",
+        "F14"
+      ],
+      "intentional": [
+        "F4",
+        "F5",
+        "F7",
+        "F11"
+      ]
+    },
+    "followup": "task-3-cross-review-followup.json",
+    "api_fallback": "forbidden"
+  },
+  "independent_review": {
+    "reviewer": "Codex retrieval_review",
+    "receipt": "task-3-cross-review-independent.md",
+    "scope": "F3/F6/F9 corrections and corresponding tests",
+    "mechanism": "Read-only source/diff review; integrated tests run separately by lead",
+    "numerical_score_assigned": false,
+    "actionable_findings": []
+  },
+  "historical_independent_review": {
+    "receipt": "task-5-pre-cross-review-review.json",
+    "note": "Preserves the original subjective 96-point review and earlier measured results; no new score is inferred."
+  },
+  "receipt_verification": {
+    "reviewer": "Codex quality_review",
+    "checks": [
+      "Parsed refreshed JUnit and coverage",
+      "Verified 45 recorded source/resource members and identical 40-query source/wheel results with same dependency versions",
+      "Rehashed both actual distributions and matched all four negative controls to those bytes",
+      "Matched independent follow-up hashes to current four corrected files",
+      "Preserved immutable original claims, runner postconditions, F9 pre-fix reproduction, and five historical Task 5 receipts"
+    ],
+    "receipt_sha256": {
+      "task-5-tests.xml": "7b7286cb17b341c3bc0ee13ebf435174779e21c5ff9f0527b2569d2f51d98685",
+      "task-5-coverage.json": "044982a43d02cdbb40f12739457f8c05077c02690b4cbb1385f0fc6086fb0c98",
+      "task-5-distribution.json": "4f5ad65c377a0cfa2f08a2b5eb4763349053cf8d77cb211261e1093d39b64296",
+      "task-5-negative-controls.json": "8d31b506a5c244a8c8e5f7ce3126f99234ab6937b92e28398f765c049911a2e9",
+      "task-3-cross-review-independent.md": "906e690c6fedcafa18fe9f5cdcd8f902f269c63fc5a040e55fa35dcfb621e8e4"
+    }
+  },
+  "state": {
+    "phase_1": "completed locally; canonical revision 19",
+    "release_1_2_1": "separately authorized under D13; preparation in progress in /private/tmp/attune-rag-release-1.2.1",
+    "published_or_remote_ci_pass_claimed": false
+  }
+}

@@ -1,0 +1,72 @@
+[
+  {
+    "detail": "Path() called with non-literal path arg; confirm the value is sanitized if user-influenced",
+    "file": "scripts/check_distribution.py",
+    "kind": "path-traversal",
+    "line": 126,
+    "severity": "medium"
+  },
+  {
+    "detail": "Path() called with non-literal path arg; confirm the value is sanitized if user-influenced",
+    "file": "scripts/check_distribution.py",
+    "kind": "path-traversal",
+    "line": 233,
+    "severity": "medium"
+  },
+  {
+    "detail": "Path() called with non-literal path arg; confirm the value is sanitized if user-influenced",
+    "file": "scripts/check_distribution.py",
+    "kind": "path-traversal",
+    "line": 271,
+    "severity": "medium"
+  },
+  {
+    "detail": "Path() called with non-literal path arg; confirm the value is sanitized if user-influenced",
+    "file": "scripts/check_distribution.py",
+    "kind": "path-traversal",
+    "line": 381,
+    "severity": "medium"
+  },
+  {
+    "detail": "Path() called with non-literal path arg; confirm the value is sanitized if user-influenced",
+    "file": "scripts/check_distribution.py",
+    "kind": "path-traversal",
+    "line": 381,
+    "severity": "medium"
+  },
+  {
+    "detail": "Path() called with non-literal path arg; confirm the value is sanitized if user-influenced",
+    "file": "scripts/check_distribution.py",
+    "kind": "path-traversal",
+    "line": 174,
+    "severity": "medium"
+  },
+  {
+    "detail": "Path() called with non-literal path arg; confirm the value is sanitized if user-influenced",
+    "file": "scripts/check_distribution.py",
+    "kind": "path-traversal",
+    "line": 328,
+    "severity": "medium"
+  },
+  {
+    "detail": "Path() called with non-literal path arg; confirm the value is sanitized if user-influenced",
+    "file": "scripts/check_distribution.py",
+    "kind": "path-traversal",
+    "line": 285,
+    "severity": "medium"
+  },
+  {
+    "detail": "Path() called with non-literal path arg; confirm the value is sanitized if user-influenced",
+    "file": "tests/unit/test_distribution_contract.py",
+    "kind": "path-traversal",
+    "line": 26,
+    "severity": "medium"
+  },
+  {
+    "detail": "Path() called with non-literal path arg; confirm the value is sanitized if user-influenced",
+    "file": "tests/unit/test_distribution_contract.py",
+    "kind": "path-traversal",
+    "line": 341,
+    "severity": "medium"
+  }
+]

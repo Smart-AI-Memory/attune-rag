@@ -25,7 +25,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
+from collections.abc import Mapping
 from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
@@ -58,9 +60,23 @@ def _load_json(path: Path, label: str) -> dict[str, Any]:
     if not path.exists():
         raise FileNotFoundError(f"{label} not found at {path}")
     try:
-        return json.loads(path.read_text())
+        data = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
         raise ValueError(f"{label} at {path} is not valid JSON: {e}") from e
+    if not isinstance(data, dict):
+        raise ValueError(f"{label} at {path} must be a JSON object")
+    return data
+
+
+def _quality_value(value: Any, label: str) -> float:
+    """Accept finite JSON numbers in the quality metric domain, without coercion."""
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        raise ValueError(f"{label} must be a finite number between 0 and 1")
+    # Check the range first so an arbitrarily large JSON integer cannot overflow
+    # when math.isfinite converts it to a float.
+    if not 0 <= value <= 1 or not math.isfinite(value):
+        raise ValueError(f"{label} must be a finite number between 0 and 1")
+    return float(value)
 
 
 def extract_metrics(dump: dict[str, Any]) -> dict[str, float]:
@@ -68,30 +84,40 @@ def extract_metrics(dump: dict[str, Any]) -> dict[str, float]:
 
     Returns a flat ``{metric_name: value}`` dict using the same
     metric names as ``thresholds.json``. Raises :class:`KeyError`
-    if any expected metric is missing — the caller turns that into
-    an exit-2 validation error so a malformed dump can't silently
-    pass the gate.
+    if any expected metric is missing, or :class:`ValueError` for
+    invalid types or values. The caller turns either into an exit-2
+    validation error so a malformed dump can't silently pass the gate.
     """
+    if not isinstance(dump, Mapping):
+        raise ValueError("dump must be an object")
     retrieval = dump.get("retrieval")
-    if not isinstance(retrieval, dict):
+    if not isinstance(retrieval, Mapping):
         raise KeyError("dump missing top-level 'retrieval' object")
 
     k = retrieval.get("k")
-    if not isinstance(k, int):
-        raise KeyError("dump.retrieval missing integer 'k'")
+    if isinstance(k, bool) or not isinstance(k, int) or k <= 0:
+        raise ValueError("dump.retrieval 'k' must be a positive integer")
 
     out: dict[str, float] = {}
     if "precision_at_1" not in retrieval:
         raise KeyError("dump.retrieval missing 'precision_at_1'")
-    out["precision_at_1"] = float(retrieval["precision_at_1"])
+    out["precision_at_1"] = _quality_value(
+        retrieval["precision_at_1"], "dump.retrieval.precision_at_1"
+    )
 
     if "recall_at_k" not in retrieval:
         raise KeyError("dump.retrieval missing 'recall_at_k'")
-    out[f"recall_at_{k}"] = float(retrieval["recall_at_k"])
+    out[f"recall_at_{k}"] = _quality_value(retrieval["recall_at_k"], "dump.retrieval.recall_at_k")
 
-    faith = dump.get("faithfulness_legacy")
-    if isinstance(faith, dict) and "mean_faithfulness" in faith:
-        out["mean_faithfulness"] = float(faith["mean_faithfulness"])
+    if "faithfulness_legacy" in dump:
+        faith = dump["faithfulness_legacy"]
+        if not isinstance(faith, Mapping):
+            raise ValueError("dump.faithfulness_legacy must be an object")
+        if "mean_faithfulness" not in faith:
+            raise KeyError("dump.faithfulness_legacy missing 'mean_faithfulness'")
+        out["mean_faithfulness"] = _quality_value(
+            faith["mean_faithfulness"], "dump.faithfulness_legacy.mean_faithfulness"
+        )
     # When the dump is retrieval-only (no --with-faithfulness) we
     # simply omit mean_faithfulness. The caller decides whether
     # that's a problem for a given thresholds.json.
@@ -116,32 +142,42 @@ def check(
     validation: list[str] = []
     failures: list[MetricFailure] = []
 
+    if not isinstance(thresholds, Mapping):
+        return failures, ["thresholds must be an object"]
     try:
         measured = extract_metrics(dump)
-    except KeyError as e:
+    except (KeyError, ValueError) as e:
         # KeyError.__str__ repr-wraps its arg, which double-quotes
         # the message when the arg contains single quotes. Pull the
         # original message string directly to keep stderr clean.
         validation.append(e.args[0] if e.args else str(e))
         return failures, validation
 
-    threshold_block = thresholds.get("metrics") or {}
-    if not threshold_block:
-        validation.append("thresholds.json has no 'metrics' block")
+    threshold_block = thresholds.get("metrics")
+    if not isinstance(threshold_block, Mapping) or not threshold_block:
+        validation.append("thresholds.json 'metrics' must be a non-empty object")
         return failures, validation
 
     if verify_queries_sha256:
         expected_sha = thresholds.get("queries_sha256")
-        actual_path = dump.get("queries_path")
-        if expected_sha and actual_path:
+        if expected_sha is not None:
+            if (
+                not isinstance(expected_sha, str)
+                or len(expected_sha) != 64
+                or any(char not in "0123456789abcdefABCDEF" for char in expected_sha)
+            ):
+                return failures, ["thresholds.queries_sha256 must be a 64-character hex digest"]
+            actual_path = dump.get("queries_path")
+            if not isinstance(actual_path, str) or not actual_path.strip():
+                return failures, ["dump.queries_path must name the queries file to verify sha256"]
             try:
                 actual_sha = sha256(Path(actual_path).read_bytes()).hexdigest()
-            except OSError as e:
+            except (OSError, ValueError) as e:
                 validation.append(
-                    f"could not read queries file {actual_path!r} " f"to verify sha256: {e}"
+                    f"could not read queries file {actual_path!r} to verify sha256: {e}"
                 )
                 return failures, validation
-            if actual_sha != expected_sha:
+            if actual_sha != expected_sha.lower():
                 validation.append(
                     "queries.yaml SHA-256 mismatch: dump used "
                     f"{actual_sha[:16]}…, thresholds expect "
@@ -157,15 +193,27 @@ def check(
     # faithfulness-affecting paths — see M3.3). Missing →
     # validation error (not a quiet pass).
     for metric_name, spec in threshold_block.items():
-        if metric_name in skip_metrics:
+        if not isinstance(metric_name, str) or not metric_name:
+            validation.append("thresholds.metrics keys must be non-empty metric names")
             continue
-        threshold_val = spec.get("threshold")
-        if threshold_val is None:
+        if not isinstance(spec, Mapping):
+            validation.append(f"thresholds.metrics.{metric_name} must be an object")
+            continue
+        if "threshold" not in spec:
             validation.append(f"thresholds.metrics.{metric_name} missing 'threshold'")
+            continue
+        try:
+            threshold_val = _quality_value(
+                spec["threshold"], f"thresholds.metrics.{metric_name}.threshold"
+            )
+        except ValueError as e:
+            validation.append(str(e))
+            continue
+        if metric_name in skip_metrics:
             continue
         if metric_name not in measured:
             validation.append(
-                f"dump missing measured value for '{metric_name}' " f"(thresholds expect it)"
+                f"dump missing measured value for '{metric_name}' (thresholds expect it)"
             )
             continue
         if measured[metric_name] < threshold_val:
@@ -217,9 +265,7 @@ def format_failure_comment(failures: list[MetricFailure]) -> str:
         "|---|---:|---:|---:|",
     ]
     for f in ordered:
-        lines.append(
-            f"| `{f.metric}` | {f.measured:.4f} | " f"{f.threshold:.4f} | {f.delta:+.4f} |"
-        )
+        lines.append(f"| `{f.metric}` | {f.measured:.4f} | {f.threshold:.4f} | {f.delta:+.4f} |")
     lines.extend(
         [
             "",
@@ -229,9 +275,9 @@ def format_failure_comment(failures: list[MetricFailure]) -> str:
             "- If this PR intentionally changes the corpus, the "
             "judge, or the prompts, re-measure the baseline:",
             "  ```",
-            "  python scripts/measure_baseline_variance.py " "--runs 20 \\",
-            "      --out docs/specs/release-quality-baseline/" "baseline-N.md \\",
-            "      --thresholds-out docs/specs/" "release-quality-baseline/thresholds.json",
+            "  python scripts/measure_baseline_variance.py --runs 20 \\",
+            "      --out docs/specs/release-quality-baseline/baseline-N.md \\",
+            "      --thresholds-out docs/specs/release-quality-baseline/thresholds.json",
             "  ```",
             "  and commit the updated baseline in this same PR "
             "with `[baseline-update]` in the title.",
@@ -311,7 +357,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         dump = _load_json(args.dump, "dump")
         thresholds = _load_json(args.thresholds, "thresholds")
-    except (FileNotFoundError, ValueError) as e:
+    except (OSError, ValueError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 2
 

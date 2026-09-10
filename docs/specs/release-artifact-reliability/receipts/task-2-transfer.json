@@ -1,0 +1,9 @@
+{
+  "task_id": "2",
+  "actual_built_artifact_transfer": "passed",
+  "tampered_wheel": "rejected",
+  "tampered_returncode": 1,
+  "message": "Artifact checksum mismatch: attune_rag-1.2.0-py3-none-any.whl\n",
+  "scratch": "/private/tmp/attune-rag-task2-transfer-7til45gy",
+  "publication_performed": false
+}

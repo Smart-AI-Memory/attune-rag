@@ -1,0 +1,162 @@
+{
+  "calibration": {
+    "recommended_false_answer_rate": 0.08333333333333337,
+    "recommended_legit_kept": 1.0,
+    "recommended_negatives_abstained": 0.9166666666666666,
+    "recommended_threshold": 1.0,
+    "rows": [
+      {
+        "legit_kept": 1.0,
+        "negatives_abstained": 0.0,
+        "threshold": 0.0
+      },
+      {
+        "legit_kept": 1.0,
+        "negatives_abstained": 0.9166666666666666,
+        "threshold": 1.0
+      },
+      {
+        "legit_kept": 1.0,
+        "negatives_abstained": 0.9166666666666666,
+        "threshold": 2.0
+      },
+      {
+        "legit_kept": 1.0,
+        "negatives_abstained": 0.9166666666666666,
+        "threshold": 3.0
+      },
+      {
+        "legit_kept": 1.0,
+        "negatives_abstained": 0.9166666666666666,
+        "threshold": 4.0
+      },
+      {
+        "legit_kept": 1.0,
+        "negatives_abstained": 0.9166666666666666,
+        "threshold": 5.0
+      },
+      {
+        "legit_kept": 0.975,
+        "negatives_abstained": 0.9166666666666666,
+        "threshold": 6.0
+      },
+      {
+        "legit_kept": 0.925,
+        "negatives_abstained": 0.9166666666666666,
+        "threshold": 7.0
+      },
+      {
+        "legit_kept": 0.875,
+        "negatives_abstained": 1.0,
+        "threshold": 8.0
+      },
+      {
+        "legit_kept": 0.8,
+        "negatives_abstained": 1.0,
+        "threshold": 9.0
+      },
+      {
+        "legit_kept": 0.725,
+        "negatives_abstained": 1.0,
+        "threshold": 10.0
+      },
+      {
+        "legit_kept": 0.7,
+        "negatives_abstained": 1.0,
+        "threshold": 11.0
+      },
+      {
+        "legit_kept": 0.675,
+        "negatives_abstained": 1.0,
+        "threshold": 12.0
+      },
+      {
+        "legit_kept": 0.6,
+        "negatives_abstained": 1.0,
+        "threshold": 13.0
+      },
+      {
+        "legit_kept": 0.575,
+        "negatives_abstained": 1.0,
+        "threshold": 14.0
+      },
+      {
+        "legit_kept": 0.575,
+        "negatives_abstained": 1.0,
+        "threshold": 15.0
+      },
+      {
+        "legit_kept": 0.45,
+        "negatives_abstained": 1.0,
+        "threshold": 16.0
+      },
+      {
+        "legit_kept": 0.4,
+        "negatives_abstained": 1.0,
+        "threshold": 17.0
+      },
+      {
+        "legit_kept": 0.4,
+        "negatives_abstained": 1.0,
+        "threshold": 18.0
+      },
+      {
+        "legit_kept": 0.325,
+        "negatives_abstained": 1.0,
+        "threshold": 19.0
+      },
+      {
+        "legit_kept": 0.3,
+        "negatives_abstained": 1.0,
+        "threshold": 20.0
+      },
+      {
+        "legit_kept": 0.225,
+        "negatives_abstained": 1.0,
+        "threshold": 21.0
+      },
+      {
+        "legit_kept": 0.2,
+        "negatives_abstained": 1.0,
+        "threshold": 22.0
+      },
+      {
+        "legit_kept": 0.2,
+        "negatives_abstained": 1.0,
+        "threshold": 23.0
+      },
+      {
+        "legit_kept": 0.125,
+        "negatives_abstained": 1.0,
+        "threshold": 24.0
+      },
+      {
+        "legit_kept": 0.075,
+        "negatives_abstained": 1.0,
+        "threshold": 25.0
+      },
+      {
+        "legit_kept": 0.05,
+        "negatives_abstained": 1.0,
+        "threshold": 26.0
+      },
+      {
+        "legit_kept": 0.025,
+        "negatives_abstained": 1.0,
+        "threshold": 27.0
+      },
+      {
+        "legit_kept": 0.0,
+        "negatives_abstained": 1.0,
+        "threshold": 28.0
+      }
+    ],
+    "target_legit_kept": 0.95
+  },
+  "outcomes": {
+    "faithfulness": "pending",
+    "reason": "calibration_only",
+    "retrieval": "skipped"
+  },
+  "queries_path": "/Users/patrickroebuck/attune-rag/tests/golden/queries.yaml"
+}
