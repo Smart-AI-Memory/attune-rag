@@ -13,3 +13,11 @@ The help generator's signature-based staleness check missed benchmark behavior c
 Pre-commit whitespace mutators preserve the raw JSON/XML receipts so recorded checksums remain valid. JSON validation and secret scanning still apply; cryptographic digests and deliberate redaction sentinels are reviewed individually in the existing secrets baseline.
 
 All repository-pinned pre-commit checks pass, including secret scanning. The [scanner audit](receipts/release-1.2.1-secret-audit.md) records individually reviewed hashes, test sentinels and fixture paths; scanner settings remain intact.
+
+## First remote run and Windows follow-up
+
+[PR #223](https://github.com/Smart-AI-Memory/attune-rag/pull/223) passed lint, lockfile, quality, performance, artifact parity, and all eight Linux/macOS test jobs. The cloud artifact checker used normal build isolation and validated 45 members with identical ordered results on all 40 queries (P@1/R@3 both 1.0).
+
+The [first test run](https://github.com/Smart-AI-Memory/attune-rag/actions/runs/34430634861) found the same three test portability failures on each of Python 3.10–3.13 on Windows: two assertions expected unescaped path separators in a diagnostic that deliberately uses `repr`, and one test read UTF-8 formatter output using the Windows default encoding. The follow-up makes the expected path representation explicit and reads/writes the new performance test fixtures as UTF-8. Production behavior, metric thresholds, and diagnostic redaction remain unchanged.
+
+The two affected test files pass together locally: **189 passed** using `pytest tests/unit/test_benchmark.py tests/unit/test_format_perf_delta.py -q -rN`. This targeted follow-up does not replace the pending rerun of the full remote matrix; the original local suite and artifact receipts above remain measurements of the first release candidate.

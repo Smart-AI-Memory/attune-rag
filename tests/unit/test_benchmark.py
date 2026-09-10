@@ -945,7 +945,7 @@ def test_query_parse_errors_show_file_context_without_raw_input(
     raw = cli_measurement.output.read_text()
     report = json.loads(raw)
     detail = report["outcomes"]["detail"]
-    assert diagnostic in detail and str(cli_measurement.path) in detail
+    assert diagnostic in detail and repr(str(cli_measurement.path)) in detail
     stderr = capsys.readouterr().err
     assert detail in stderr
     assert "PRIVATE_QUERY_TEXT" not in raw + stderr

@@ -576,8 +576,10 @@ def perf_cli(tmp_path: Path):
         "comment": tmp_path / "comment.md",
     }
     for side in ("baseline", "current"):
-        files[side].write_text(json.dumps(_payload({"bench.cpu": _metric(1, 0, 2)})))
-    files["comment"].write_text("STALE PASS: within baseline")
+        files[side].write_text(
+            json.dumps(_payload({"bench.cpu": _metric(1, 0, 2)})), encoding="utf-8"
+        )
+    files["comment"].write_text("STALE PASS: within baseline", encoding="utf-8")
     args = [
         "--baseline",
         str(files["baseline"]),
@@ -594,12 +596,12 @@ def perf_cli(tmp_path: Path):
 @pytest.mark.parametrize("side", ["baseline", "current"])
 def test_required_gate_missing_from_measurement_fails(perf_cli, capsys, side: str) -> None:
     files, args = perf_cli
-    files[side].write_text(json.dumps(_payload({"other.cpu": _metric(1, 0, 2)})))
+    files[side].write_text(json.dumps(_payload({"other.cpu": _metric(1, 0, 2)})), encoding="utf-8")
 
     assert fpd.main(args) == 2
     error = capsys.readouterr().err
     assert side in error and "bench.cpu" in error and "missing" in error
-    comment = files["comment"].read_text()
+    comment = files["comment"].read_text(encoding="utf-8")
     assert "validation error" in comment and "STALE PASS" not in comment
 
 
@@ -610,7 +612,7 @@ def test_required_gate_missing_file_fails(perf_cli, capsys, side: str) -> None:
 
     assert fpd.main(args) == 2
     assert side in capsys.readouterr().err
-    assert "validation error" in files["comment"].read_text()
+    assert "validation error" in files["comment"].read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("side", ["baseline", "current"])
@@ -620,19 +622,19 @@ def test_required_gate_missing_file_fails(perf_cli, capsys, side: str) -> None:
 )
 def test_invalid_document_shapes_fail(perf_cli, capsys, side: str, payload) -> None:
     files, args = perf_cli
-    files[side].write_text(json.dumps(payload))
+    files[side].write_text(json.dumps(payload), encoding="utf-8")
 
     assert fpd.main(args) == 2
     error = capsys.readouterr().err
     assert side in error and "JSON object" in error
-    assert "STALE PASS" not in files["comment"].read_text()
+    assert "STALE PASS" not in files["comment"].read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize("side", ["baseline", "current"])
 @pytest.mark.parametrize("entry", [None, [], True, 1, "metric"])
 def test_invalid_metric_shapes_fail(perf_cli, capsys, side: str, entry) -> None:
     files, args = perf_cli
-    files[side].write_text(json.dumps(_payload({"bench.cpu": entry})))
+    files[side].write_text(json.dumps(_payload({"bench.cpu": entry})), encoding="utf-8")
 
     assert fpd.main(args) == 2
     error = capsys.readouterr().err
@@ -650,14 +652,14 @@ def test_invalid_metric_shapes_fail(perf_cli, capsys, side: str, entry) -> None:
 )
 def test_invalid_verdict_numbers_fail(perf_cli, capsys, side: str, field: str, value) -> None:
     files, args = perf_cli
-    payload = json.loads(files[side].read_text())
+    payload = json.loads(files[side].read_text(encoding="utf-8"))
     payload["metrics"]["bench.cpu"][field] = value
-    files[side].write_text(json.dumps(payload))
+    files[side].write_text(json.dumps(payload), encoding="utf-8")
 
     assert fpd.main(args) == 2
     error = capsys.readouterr().err
     assert all(text in error for text in (side, "bench.cpu", field, "finite nonnegative"))
-    assert "validation error" in files["comment"].read_text()
+    assert "validation error" in files["comment"].read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize(
@@ -666,9 +668,9 @@ def test_invalid_verdict_numbers_fail(perf_cli, capsys, side: str, field: str, v
 )
 def test_missing_verdict_fields_fail(perf_cli, capsys, side: str, field: str) -> None:
     files, args = perf_cli
-    payload = json.loads(files[side].read_text())
+    payload = json.loads(files[side].read_text(encoding="utf-8"))
     del payload["metrics"]["bench.cpu"][field]
-    files[side].write_text(json.dumps(payload))
+    files[side].write_text(json.dumps(payload), encoding="utf-8")
 
     assert fpd.main(args) == 2
     assert field in capsys.readouterr().err
@@ -676,12 +678,14 @@ def test_missing_verdict_fields_fail(perf_cli, capsys, side: str, field: str) ->
 
 def test_zero_means_and_threshold_are_valid(perf_cli) -> None:
     files, args = perf_cli
-    files["baseline"].write_text(json.dumps(_payload({"bench.cpu": {"mean": 0, "threshold": 0}})))
+    files["baseline"].write_text(
+        json.dumps(_payload({"bench.cpu": {"mean": 0, "threshold": 0}})), encoding="utf-8"
+    )
     # A current threshold is not used to decide the verdict and isn't required.
-    files["current"].write_text(json.dumps(_payload({"bench.cpu": {"mean": 0}})))
+    files["current"].write_text(json.dumps(_payload({"bench.cpu": {"mean": 0}})), encoding="utf-8")
 
     assert fpd.main(args) == 0
-    assert "within baseline" in files["comment"].read_text()
+    assert "within baseline" in files["comment"].read_text(encoding="utf-8")
 
 
 @pytest.mark.parametrize(
@@ -692,9 +696,9 @@ def test_cli_validation_failures_exit_two_without_traceback(perf_cli, failure: s
     if failure == "baseline-missing":
         files["baseline"].unlink()
     elif failure == "baseline-json":
-        files["baseline"].write_text("{bad json")
+        files["baseline"].write_text("{bad json", encoding="utf-8")
     elif failure == "current-shape":
-        files["current"].write_text("[]")
+        files["current"].write_text("[]", encoding="utf-8")
     elif failure == "current-io":
         files["current"].unlink()
         files["current"].mkdir()
@@ -706,7 +710,7 @@ def test_cli_validation_failures_exit_two_without_traceback(perf_cli, failure: s
     )
     assert result.returncode == 2
     assert "error:" in result.stderr and "Traceback" not in result.stderr
-    assert "validation error" in files["comment"].read_text()
+    assert "validation error" in files["comment"].read_text(encoding="utf-8")
 
 
 def test_cli_output_io_failure_is_validation_error(perf_cli, capsys) -> None:
@@ -747,7 +751,7 @@ def test_active_thresholds_gate_only_the_selected_cpu_axes(
     assert baseline.read_bytes() == baseline_bytes
     assert current.read_bytes() == current_bytes
     if regression == "all-advisory":
-        body = out.read_text()
+        body = out.read_text(encoding="utf-8")
         assert "possible regression" in body and "⛔" not in body
         for name in payload["metrics"].keys() - CPU_GATES:
             row = next(line for line in body.splitlines() if line.startswith(f"| `{name}`"))
