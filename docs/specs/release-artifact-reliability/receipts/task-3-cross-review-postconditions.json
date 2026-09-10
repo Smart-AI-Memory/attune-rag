@@ -1,0 +1,31 @@
+{
+  "real_index_unchanged": true,
+  "head_unchanged": true,
+  "working_files_unchanged": true,
+  "working_files_after": {
+    "src/attune_rag/benchmark.py": {
+      "exists": true,
+      "sha256": "4d9fea51391877f2687b8346d6753a2735f34c4a4ecf753e95fb6a1c9c7d0af1"
+    },
+    "scripts/check_thresholds.py": {
+      "exists": true,
+      "sha256": "430ba7394f745beabe844b6b451d771a2173c2c45b111910c59d8af1e10b27fc"
+    },
+    ".github/workflows/benchmark.yml": {
+      "exists": true,
+      "sha256": "469aa737c273921d50eda4593ea152e790e2f9cc4aee07900dbd917dca4a55eb"
+    },
+    "tests/unit/test_benchmark.py": {
+      "exists": true,
+      "sha256": "78f0f56cd3968edf69abc311e95f985c047625cb8411dd37a79accaf662aa0b3"
+    },
+    "tests/unit/test_check_thresholds.py": {
+      "exists": true,
+      "sha256": "98494401ea617194c65a91274c59674d990183f113c69ade860762131be601b9"
+    },
+    "tests/unit/test_quality_workflow_outcomes.py": {
+      "exists": true,
+      "sha256": "74afcb150f1e3a469f8b7dee71134f92c9c44d16ab837f26329767e9f1fc7ca8"
+    }
+  }
+}

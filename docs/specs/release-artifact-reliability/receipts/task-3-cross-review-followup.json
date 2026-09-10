@@ -1,0 +1,83 @@
+{
+  "status": "passed",
+  "receipt_type": "evidence-chain with linked behavioral results",
+  "advisory_only": true,
+  "triage": {
+    "real_corrected": [
+      "F3",
+      "F6",
+      "F9"
+    ],
+    "noise": [
+      "F1",
+      "F2",
+      "F8",
+      "F10",
+      "F12",
+      "F13",
+      "F14"
+    ],
+    "intentional": [
+      "F4",
+      "F5",
+      "F7",
+      "F11"
+    ]
+  },
+  "unresolved_actionable_findings": [],
+  "corrections": {
+    "F3": "Controlled local diagnostics; arbitrary exception text remains hidden",
+    "F6": "Distinguish missing checker result from validation error without weakening failure",
+    "F9": "Calibration-only success marks both unused measurement stages skipped"
+  },
+  "file_sha256": {
+    "src/attune_rag/benchmark.py": "1542a1114e4d0f09f85f303eae2c2e59e1066a3f3d65e2ab7def5a6082015ac1",
+    "tests/unit/test_benchmark.py": "31de2041ad59e515022ae201df106893d362c011807a4bafe71c53ad19f4e1f4",
+    ".github/workflows/benchmark.yml": "c161874b1ab2de87b50384fd9919e60a9b33c132c0448825e3790761867770f7",
+    "tests/unit/test_quality_workflow_outcomes.py": "49e15c9f2e6907766bd7acb04ccf5a4c8472c6380e14314df38fed51df7f9098"
+  },
+  "immutable_history_sha256": {
+    "docs/specs/release-artifact-reliability/receipts/task-3-cross-review-result.json": "b0dfdd71feeb795e0e74d01852f1c70bcb2ce9eaf8c26292b5ef05b5d8b4a5a0",
+    "docs/specs/release-artifact-reliability/receipts/task-3-cross-review-postconditions.json": "03e64472a2f3d3f84293342845b509aa85916c714f25946c9b3cd23cd8a5d3ca",
+    "docs/specs/release-artifact-reliability/receipts/task-3-cross-review-f9-before.json": "24d4727f52e5d862b0863cc5628626605af43309cd7078b241b506f1aa0078c9",
+    "docs/specs/release-artifact-reliability/receipts/task-5-pre-cross-review-coverage.json": "cc67554c7156855be825c7dc8c64a3c816f50bd5eed6698e4c5552cab7b2a1c5",
+    "docs/specs/release-artifact-reliability/receipts/task-5-pre-cross-review-distribution.json": "decc4b30f4dd17736b661a303ee3d3fef6aae2579874f51b1e9b122dda073bbc",
+    "docs/specs/release-artifact-reliability/receipts/task-5-pre-cross-review-negative-controls.json": "a0012158e07c1c24bb25eb86f7a21bd9f0718333aa6d2660af0f8d56614dfaa0",
+    "docs/specs/release-artifact-reliability/receipts/task-5-pre-cross-review-review.json": "b7855c03fc8386b09eb3b6cf82876aac163a2aad54bea720766724b3f14e98f7",
+    "docs/specs/release-artifact-reliability/receipts/task-5-pre-cross-review-tests.xml": "4c46c64eb8a578cf4f3357fde6e2bebfa76e48b49766eb8364a24f145858cd71"
+  },
+  "independent_review": {
+    "receipt": "task-3-cross-review-independent.md",
+    "numerical_score_assigned": false,
+    "actionable_findings": []
+  },
+  "suite": {
+    "passed": 1505,
+    "xfailed": 2,
+    "xpassed": 78,
+    "seconds": 55.79,
+    "seconds_source": "lead console result",
+    "junit_seconds": 55.781,
+    "coverage_percent": 93.02918017600742,
+    "junit": "task-5-tests.xml",
+    "coverage": "task-5-coverage.json"
+  },
+  "artifact_sha256": {
+    "attune_rag-1.2.0.tar.gz": "7f0eaf5ff5dfa85b13997bce460bef18a74594fc30777bcc0110af2054590153",
+    "attune_rag-1.2.0-py3-none-any.whl": "d051bfc33a45fec8550e398bfb819afe288a18ba66f261e0b6269d2203a499e9"
+  },
+  "receipt_sha256": {
+    "task-5-tests.xml": "7b7286cb17b341c3bc0ee13ebf435174779e21c5ff9f0527b2569d2f51d98685",
+    "task-5-coverage.json": "044982a43d02cdbb40f12739457f8c05077c02690b4cbb1385f0fc6086fb0c98",
+    "task-5-distribution.json": "4f5ad65c377a0cfa2f08a2b5eb4763349053cf8d77cb211261e1093d39b64296",
+    "task-5-negative-controls.json": "8d31b506a5c244a8c8e5f7ce3126f99234ab6937b92e28398f765c049911a2e9",
+    "task-3-cross-review-independent.md": "906e690c6fedcafa18fe9f5cdcd8f902f269c63fc5a040e55fa35dcfb621e8e4"
+  },
+  "negative_controls_passed": 4,
+  "limits": [
+    "Original claims retain reviewed-snapshot lines; current correction evidence uses current files",
+    "No model/provider/network calls during local triage or this receipt refresh",
+    "No remote CI or published-release claim",
+    "Phase 1 acceptance remains complete; later release execution is separate under D13"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "task_id": "2",
+  "status": "passed",
+  "method": "Codex reviews and local workflow replay",
+  "quality_score": 94,
+  "security_score": 97,
+  "score_note": "Subjective reviewer judgments; existing threshold70",
+  "tests_passed": 11,
+  "actual_artifact_transfer": "passed",
+  "tampered_artifact_transfer": "rejected",
+  "unresolved_findings": [],
+  "remote_CI_or_publication_run": false,
+  "file_sha256": {
+    ".github/workflows/tests.yml": "d05244b11874a3a8ab2cfa7687cd68d755288bffa817f5fed7d895257fb3b85a",
+    ".github/workflows/publish.yml": "9af632976f367a51993dc53af8b1f30289018d2fa5ecbbeb84a39869390de255",
+    "tests/unit/test_distribution_workflow.py": "1ac207f29580d1fb8806797b54bf82bab114d3d0d1599c17212ac048b0eda985"
+  }
+}
