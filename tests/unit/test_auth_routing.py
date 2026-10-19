@@ -293,3 +293,43 @@ async def test_adapter_raises_without_structured_output(
 
     with pytest.raises(auth.SubscriptionCallError, match="no structured output"):
         await auth.query_subscription_structured(system="s", user_message="u", model="m", schema={})
+
+
+async def test_adapter_with_installed_sdk_types(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Exercise real SDK option/result types while replacing the network boundary."""
+    sdk = pytest.importorskip("claude_agent_sdk")
+    schema = {"type": "object"}
+    calls = []
+
+    async def fake_query(*, prompt: str, options: Any):
+        assert isinstance(options, sdk.ClaudeAgentOptions)
+        assert prompt == "hello"
+        assert options.system_prompt == "ground only in supplied facts"
+        assert options.model == "explicit-test-model"
+        assert options.setting_sources == []
+        assert options.tools == []
+        assert options.resume is None
+        assert options.extra_args == {}
+        assert options.max_turns == 2
+        assert options.output_format == {"type": "json_schema", "schema": schema}
+        assert options.env == {"ATTUNE_RAG_SDK_SUBPROCESS": "1"}
+        calls.append(options)
+        yield sdk.ResultMessage(
+            subtype="success",
+            duration_ms=0,
+            duration_api_ms=0,
+            is_error=False,
+            num_turns=1,
+            session_id="offline-test",
+            structured_output=_PAYLOAD,
+        )
+
+    monkeypatch.setattr(sdk, "query", fake_query)
+    payload = await auth.query_subscription_structured(
+        system="ground only in supplied facts",
+        user_message="hello",
+        model="explicit-test-model",
+        schema=schema,
+    )
+    assert payload == _PAYLOAD
+    assert len(calls) == 1
