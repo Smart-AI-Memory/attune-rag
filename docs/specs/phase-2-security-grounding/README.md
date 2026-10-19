@@ -1,4 +1,4 @@
-> **Status: Phase 2 approved 2026-10-19; Milestone 1 implementation authorized and in progress. Milestone 2 has not started.**
+> **Status: Phase 2 approved 2026-10-19; Milestone 1 implemented for review in PR #224. Milestone 2 has not started.**
 
 # Phase 2 — Dependency security and grounding integrity
 
@@ -73,7 +73,9 @@ dependency repairs. Scope: T1–T2, R1–R2, and their inherited R7 checks. Done
 published metadata and the lock exclude known critical affected versions,
 minimum/current installation and platform-resolution evidence is inspectable,
 and remaining advisories have explicit dispositions. No grounding implementation,
-new paid model calls, merge, or publication is included. Completion review: pending
-for Milestone 1; the earlier planning completion remains historical.
+new paid model calls, merge, or publication is included. Completion review: complete for the implementation checkpoint; CI acceptance
+and Patrick's review remain tracked by PR #224. The earlier planning completion
+remains historical.
 
-[Milestone 1 implementation and validation](m1-validation.md): local checks pass; remote CI pending.
+[Milestone 1 implementation and validation](m1-validation.md): local checks pass;
+[PR #224](https://github.com/Smart-AI-Memory/attune-rag/pull/224) tracks exact-head CI and review.

@@ -1,4 +1,4 @@
-> **Status: current-state evidence for a draft spec — no repair is claimed.**
+> **Status: preserved pre-implementation baseline; see [Milestone 1 validation](m1-validation.md) for the candidate repair.**
 
 # Evidence and traceability
 
@@ -127,3 +127,8 @@ source-hash, requirement/task-coverage, and changed-path checks are saved in
 [spec validation](receipts/spec-validation.json) after drafting. No dependency
 update, new install, exploit, model download, provider call, CI dispatch, full
 implementation test run, or publication occurred.
+
+**Approval chronology:** `spec-validation.json` records checks performed on the
+original planning draft. Its historical unapproved-status assertion is superseded
+by D9, not a current execution restriction. The grounding baseline remains valid:
+Milestone 1 changes dependencies, tests, and documentation only.

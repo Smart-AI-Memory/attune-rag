@@ -1,6 +1,6 @@
 # Milestone 1 validation
 
-**Status: local implementation checks passed; remote CI pending.**
+**Status: implementation and local checks complete; exact-head CI and review are tracked in [PR #224](https://github.com/Smart-AI-Memory/attune-rag/pull/224).**
 **Baseline:** released `0ebb72dd0727bf8261a762f472cfdcf38873ddac`.
 
 Published optional requirements now reject the four critical affected ranges.
@@ -49,3 +49,16 @@ execution or other architectures. The inherited 12-job test matrix remains the
 execution evidence. GitHub's main-branch alerts remain open until the repair is
 merged and reanalyzed; no alert was dismissed or suppressed. No paid model run,
 merge, or publication occurred.
+
+[Installed environment inventories](receipts/m1-installed-environments.json) retain
+package versions separately for the minimum, current, and base-only cases.
+
+The new `[all]` SDK dependency enables existing judge auth auto-detection when
+`CLAUDECODE=1`; the documented `ATTUNE_RAG_AUTH_MODE=api` override remains available.
+This is adapter selection, not proof of a billing route. The offline SDK tests
+verify option/result compatibility and do not execute that authentication path.
+
+All normal pre-commit checks pass. The secret-scanner baseline adds specific
+false-positive entries for generated checksum/commit fields only: every finding
+was matched to its parsed JSON hash field. Scanner plugins, filters, and existing
+baseline entries are preserved; no receipt directory is excluded from scanning.

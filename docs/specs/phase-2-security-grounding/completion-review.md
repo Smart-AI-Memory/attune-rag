@@ -73,3 +73,39 @@ remain pending. Evidence: [M1 validation](m1-validation.md) and its linked recei
 published 1.2.1 wheel remains unchanged, so downstream users do not receive this
 repair until a separately authorized release. The next step is candidate review,
 not automatic grounding work or publication. Completion review: pending for M1.
+
+## Milestone 1 implementation checkpoint — 2026-10-19
+
+**Goal:** secure supported installations while preserving measured retrieval and
+existing documented contracts. **Completion review: complete for implementation;**
+remote candidate acceptance remains visible in PR #224, and no merge/release is
+performed by this review.
+
+**R2 update (requirements):** T1–T2 now implement secure optional bounds, the
+runtime-extra union, a targeted lock refresh, and inspectable environment/alert
+receipts. Twelve repaired-wheel conflicts have twelve successful published-wheel
+controls; 240 resolution cases and both local installations pass. Both offline
+suites pass with unchanged 40-query artifact retrieval. Each of the 27 advertised
+affected ranges is excluded in the candidate; OSV returns no known findings in
+245 lookups. Scope/limits are retained in [validation](m1-validation.md).
+The remaining acceptance work is exact-head CI plus human review. Users receive
+the fix only after a separately authorized merge and release.
+
+**R2 follow-up (ladder):** advisory data ages after a release. The existing
+`security-scan.yml` reviews selected source patterns; this milestone's installed
+and range audit is a point-in-time receipt. Candidate follow-up: scope a repeatable,
+LLM-free dependency audit across lock and supported extras, with database timestamp,
+explicit unavailable state, and minimum/current environments. Done when a maintainer
+can refresh and inspect those results without weakening the gate or manually
+reconstructing package paths. Effort: small CI/tooling task. This note grants no
+new automation, implementation, spending, or publication authority.
+
+**Expert lens:** completing `[all]` changes SDK availability for existing judge
+auto-detection inside Claude Code. Installation docs now name that consequence
+and the existing direct-API override. Neither a package import nor the stubbed
+SDK test certifies account authentication or billing.
+
+**R3 disposition:** Milestone 2 remains unstarted; the native policy/evidence and
+strict fallback issues are still present. No grounding outcome is claimed here.
+**First user encounter:** the optional-feature install gains secure version
+bounds; maintainers encounter the dated audit-refresh follow-up next.

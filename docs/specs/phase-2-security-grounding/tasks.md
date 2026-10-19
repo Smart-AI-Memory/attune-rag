@@ -1,10 +1,10 @@
-> **Status: approved 2026-10-19; T1–T2 in progress under Milestone 1 authorization. T3–T5 have not started.**
+> **Status: approved 2026-10-19; T1–T2 implemented for review in PR #224. T3–T5 have not started.**
 
 # Tasks and milestone acceptance
 
 Order: T1 → T2 → M1 acceptance; then T3 → T4 → T5 → M2 acceptance.
 M1 can ship independently. T3's report work precedes live evaluation of T4.
-T1 is locally complete. T2 local validation passes; remote CI is pending. T3–T5 remain **not started**.
+T1–T2 are implemented and locally validated. Candidate acceptance follows PR #224 CI and review. T3–T5 remain **not started**.
 
 | Task | Deliverable | Requirements | Evidence required |
 |---|---|---|---|
@@ -107,3 +107,8 @@ by completion of this planning session.
 - 2026-10-19: T1 requirements/lock repair and T2 local installation, resolver,
   artifact, SDK-type, and offline suite checks pass. See [Milestone 1 validation](m1-validation.md).
   Remote CI and final milestone completion review remain pending.
+
+- 2026-10-19: implementation checkpoint complete at PR #224. Installed dependency
+  inventories, metadata controls, and milestone completion review are saved.
+  Exact-head remote checks and Patrick's review govern candidate acceptance;
+  no merge or publication is implied.
