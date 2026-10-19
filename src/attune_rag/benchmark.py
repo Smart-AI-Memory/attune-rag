@@ -749,6 +749,21 @@ def _primary_provider_error_reason(exc: Exception, *, transient: bool) -> str:
     while cause is not None and id(cause) not in seen:
         label = labels.get(type(cause).__name__)
         if label is not None:
+            if label == "invalid_request_header_or_protocol":
+                request = vars(exc).get("request")
+                if request is not None:
+                    for name, value in request.headers.raw:
+                        if (
+                            value[:1] in (b" ", b"\t")
+                            or value[-1:] in (b" ", b"\t")
+                            or any(byte in value for byte in (b"\r", b"\n", b"\x00"))
+                        ):
+                            label = (
+                                "invalid_api_key_header_format"
+                                if name.lower() == b"x-api-key"
+                                else "invalid_other_request_header_format"
+                            )
+                            break
             return f"{reason}:{label}"
         seen.add(id(cause))
         cause = cause.__cause__

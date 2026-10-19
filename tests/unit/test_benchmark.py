@@ -1111,3 +1111,41 @@ def test_wrapped_local_errors_do_not_become_provider_outages(
         assert report["outcomes"]["reason"].endswith(":" + expected_labels[cause_kind])
     assert sentinel not in raw + capsys.readouterr().err
     assert cli_measurement.scorer.await_count == 1
+
+
+@pytest.mark.parametrize(
+    ("header_name", "header_value", "expected_label"),
+    [
+        ("x-api-key", " dummy-key", "invalid_api_key_header_format"),
+        ("x-api-key", "dummy-key ", "invalid_api_key_header_format"),
+        ("x-api-key", "dummy\nkey", "invalid_api_key_header_format"),
+        ("x-api-key", "dummy\rkey", "invalid_api_key_header_format"),
+        ("x-api-key", "dummy\x00key", "invalid_api_key_header_format"),
+        ("x-api-key", "dummy-key\t", "invalid_api_key_header_format"),
+        ("x-custom", "dummy\nvalue", "invalid_other_request_header_format"),
+        ("x-api-key", "dummy-valid", "invalid_request_header_or_protocol"),
+    ],
+)
+def test_local_header_diagnostic_never_reports_header_values(
+    cli_measurement: SimpleNamespace,
+    capsys: pytest.CaptureFixture[str],
+    header_name: str,
+    header_value: str,
+    expected_label: str,
+) -> None:
+    anthropic = pytest.importorskip("anthropic")
+    import httpx
+
+    request = httpx.Request("POST", "https://provider.invalid", headers={header_name: header_value})
+    exc = anthropic.APIConnectionError(request=request)
+    exc.__cause__ = httpx.LocalProtocolError("Invalid value: " + header_value)
+    cli_measurement.scorer.side_effect = exc
+
+    assert main([*cli_measurement.args, "--with-faithfulness"]) == 2
+
+    raw = cli_measurement.output.read_text()
+    report = json.loads(raw)
+    assert report["outcomes"]["reason"].endswith(":" + expected_label)
+    assert report["outcomes"]["faithfulness"] == "failed"
+    assert "faithfulness_legacy" not in report
+    assert header_value not in raw + capsys.readouterr().err

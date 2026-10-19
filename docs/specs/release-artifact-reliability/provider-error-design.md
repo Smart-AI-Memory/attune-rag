@@ -25,7 +25,11 @@ actual CI connection failure.
 - Emit only fixed diagnostic labels for rejected connection wrappers: invalid
   request headers/protocol, unsupported or invalid endpoint, or certificate
   verification failure when the cause chain identifies one. Never include
-  credential values, exception messages, or response content.
+  credential values, exception messages, or response content. For a local protocol
+  error, inspect only the already-prepared request in memory to distinguish an
+  API-key header containing boundary whitespace, CR/LF, or NUL from another
+  malformed header. Emit only a fixed category; never return a header name or
+  value. A valid API-key header does not imply valid authentication.
 - Exercise the benchmark boundary: preserve retrieval, return exit 2 and failed
   faithfulness for local errors, and preserve exit 3 for genuine transport errors.
   Re-run the real SDK offline probe and the serial suite. Prove the regression
