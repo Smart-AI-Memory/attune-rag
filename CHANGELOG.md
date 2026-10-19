@@ -23,6 +23,11 @@ Retrieval and performance baselines remain unchanged.
 
 ### Fixed
 
+- **Local configuration errors remain blocking:** inspect the cause of SDK
+  connection errors before treating them as provider unavailability. Malformed
+  request headers, unsupported URLs, unknown wrapped exceptions, and certificate
+  verification failures no longer pass through the outage exception. Diagnostics
+  retain only error categories, without credential or response contents.
 - **Incomplete faithfulness verdicts fail validation:** require both claim
   lists and reasoning in tool, text JSON, and subscription responses. Missing
   fields no longer become a perfect score. Complete zero-claim verdicts and

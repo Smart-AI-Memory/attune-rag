@@ -1037,3 +1037,68 @@ def test_calibration_skips_both_benchmark_stages_even_when_faithfulness_requeste
     assert report["calibration"]["recommended_threshold"] == 1.0
     assert "retrieval" not in report and "faithfulness_legacy" not in report
     cli_measurement.scorer.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("cause_kind", "exit_code"),
+    [
+        ("local_protocol", 2),
+        ("unsupported_protocol", 2),
+        ("invalid_url", 2),
+        ("runtime", 2),
+        ("value", 2),
+        ("certificate", 2),
+        ("nested_certificate", 2),
+        ("cycle", 2),
+        ("connect", 3),
+        ("read", 3),
+        ("write", 3),
+        ("timeout", 3),
+        ("remote_protocol", 3),
+    ],
+)
+def test_wrapped_local_errors_do_not_become_provider_outages(
+    cli_measurement: SimpleNamespace,
+    capsys: pytest.CaptureFixture[str],
+    cause_kind: str,
+    exit_code: int,
+) -> None:
+    import ssl
+
+    anthropic = pytest.importorskip("anthropic")
+    import httpx
+
+    sentinel = "SENSITIVE_LOCAL_CONFIGURATION"
+    causes = {
+        "local_protocol": httpx.LocalProtocolError(sentinel),
+        "unsupported_protocol": httpx.UnsupportedProtocol(sentinel),
+        "invalid_url": httpx.InvalidURL(sentinel),
+        "runtime": RuntimeError(sentinel),
+        "value": ValueError(sentinel),
+        "certificate": ssl.SSLCertVerificationError(sentinel),
+        "nested_certificate": httpx.ConnectError(sentinel),
+        "cycle": httpx.ConnectError(sentinel),
+        "connect": httpx.ConnectError(sentinel),
+        "read": httpx.ReadError(sentinel),
+        "write": httpx.WriteError(sentinel),
+        "timeout": httpx.ReadTimeout(sentinel),
+        "remote_protocol": httpx.RemoteProtocolError(sentinel),
+    }
+    cause = causes[cause_kind]
+    if cause_kind == "nested_certificate":
+        cause.__cause__ = ssl.SSLCertVerificationError(sentinel)
+    if cause_kind == "cycle":
+        cause.__cause__ = cause
+    exc = anthropic.APIConnectionError(request=httpx.Request("POST", "https://provider.invalid"))
+    exc.__cause__ = cause
+    cli_measurement.scorer.side_effect = exc
+
+    assert main([*cli_measurement.args, "--with-faithfulness"]) == exit_code
+
+    raw = cli_measurement.output.read_text()
+    report = json.loads(raw)
+    assert report["retrieval"] == cli_measurement.retrieval
+    assert report["outcomes"]["faithfulness"] == ("unavailable" if exit_code == 3 else "failed")
+    assert "faithfulness_legacy" not in report
+    assert sentinel not in raw + capsys.readouterr().err
+    assert cli_measurement.scorer.await_count == 1

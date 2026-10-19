@@ -707,7 +707,27 @@ def _transient_primary_provider_error(exc: Exception) -> bool:
         from anthropic import APIConnectionError, APIStatusError, RateLimitError
     except ImportError:
         return False
-    return isinstance(exc, APIConnectionError | RateLimitError) or (
+    if isinstance(exc, APIConnectionError):
+        import ssl
+
+        import httpx
+
+        cause = exc.__cause__
+        if cause is None:
+            return True
+        # The SDK also wraps local header/configuration errors in this class.
+        if not isinstance(
+            cause, httpx.NetworkError | httpx.TimeoutException | httpx.RemoteProtocolError
+        ):
+            return False
+        seen: set[int] = set()
+        while cause is not None:
+            if id(cause) in seen or isinstance(cause, ssl.SSLCertVerificationError):
+                return False
+            seen.add(id(cause))
+            cause = cause.__cause__
+        return True
+    return isinstance(exc, RateLimitError) or (
         isinstance(exc, APIStatusError) and 500 <= exc.status_code <= 599
     )
 
@@ -1105,7 +1125,10 @@ def _run_faithfulness_passes(
         transient = _transient_primary_provider_error(exc)
         payload["outcomes"].update(
             faithfulness="unavailable" if transient else "failed",
-            reason=f"primary_provider:{type(exc).__name__}",
+            reason=(
+                f"primary_provider:{type(exc).__name__}"
+                + ("" if transient else ":non_transient_or_local")
+            ),
         )
         print(f"error: {payload['outcomes']['reason']}", file=sys.stderr)
         return 3 if transient else 2
