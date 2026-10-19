@@ -457,7 +457,7 @@ attune-rag dashboard render --out report.html  # HTML snapshot
 The repository's active JSON baselines define the gates below. Historical
 measurement notes explain their derivation; the JSON files supply the
 current thresholds. The packaging and validation repairs described here
-ship in [1.2.1](CHANGELOG.md#121--2026-09-09).
+ship in [1.2.1](CHANGELOG.md#121--2026-10-19).
 
 ### Retrieval + faithfulness
 

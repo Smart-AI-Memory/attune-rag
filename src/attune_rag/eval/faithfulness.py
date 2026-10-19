@@ -425,14 +425,15 @@ class FaithfulnessJudge:
 
 
 def _parse_judge_payload(payload: dict[str, Any]) -> tuple[list[str], list[str], str]:
-    """Validate and extract fields from the judge's tool_use input.
+    """Validate fields from tool, text JSON, or subscription output.
 
-    ``tool_choice`` forces the schema, but a future SDK / API
-    change could still hand us an unexpected shape. Validate
-    each field explicitly so the error points at the schema
-    violation instead of surfacing as a cryptic ``TypeError``
-    on ``len()`` further down.
+    Missing fields are invalid evidence, not an explicit zero-claim
+    verdict. Check them before scoring so an incomplete response
+    cannot receive a perfect score through empty defaults.
     """
+    missing = [name for name in _JUDGE_TOOL["input_schema"]["required"] if name not in payload]
+    if missing:
+        raise RuntimeError(f"FaithfulnessJudge: missing required fields: {', '.join(missing)}")
 
     def _as_str_list(value: Any, field_name: str) -> list[str]:
         if not isinstance(value, list):
@@ -442,10 +443,10 @@ def _parse_judge_payload(payload: dict[str, Any]) -> tuple[list[str], list[str],
             )
         return [str(item) for item in value]
 
-    supported = _as_str_list(payload.get("supported_claims", []), "supported_claims")
-    unsupported = _as_str_list(payload.get("unsupported_claims", []), "unsupported_claims")
+    supported = _as_str_list(payload["supported_claims"], "supported_claims")
+    unsupported = _as_str_list(payload["unsupported_claims"], "unsupported_claims")
 
-    reasoning_raw = payload.get("reasoning", "")
+    reasoning_raw = payload["reasoning"]
     if not isinstance(reasoning_raw, str):
         raise RuntimeError(
             f"FaithfulnessJudge: expected str for 'reasoning', "

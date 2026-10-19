@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.2.1] — 2026-09-09
+## [1.2.1] — 2026-10-19
 
 A reliability patch that ships the corpus data used by source retrieval and
 makes release, quality, and performance validation preserve real failures.
@@ -23,6 +23,10 @@ Retrieval and performance baselines remain unchanged.
 
 ### Fixed
 
+- **Incomplete faithfulness verdicts fail validation:** require both claim
+  lists and reasoning in tool, text JSON, and subscription responses. Missing
+  fields no longer become a perfect score. Complete zero-claim verdicts and
+  the empty-answer short circuit retain their existing behavior.
 - **Distribution resource parity:** include both corpus override JSON files
   in package data. A shared checker builds an sdist and then its wheel from
   a clean tracked-source snapshot, verifies required resources and package
