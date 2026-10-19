@@ -5,7 +5,7 @@ feature: benchmark
 depth: warning
 generated_at: 2026-06-10T06:07:59.717643+00:00
 source_hash: 82975cf88c844b87657deb87845f45f4f5fbc32319ccba10e0eb8a798867630f
-status: generated
+status: verified
 ---
 
 # Benchmark cautions
@@ -16,13 +16,15 @@ status: generated
 
 ## Risk areas
 
-### Missing extras cause a silent tier skip with exit code 2
+### Local failures and provider outages need distinct handling
 
-When you pass `--retriever transformer` (or another tier whose package extra is not installed), `main()` exits with code 2 and prints an install hint rather than raising an exception. If your CI script treats only exit code 1 as a failure, a missing-extra condition passes silently. Check your pipeline's exit-code handling to ensure exit code 2 is also treated as a failure.
+Exit `1` is a measured regression; exit `2` is a local, credential, dependency, schema, or invalid-data failure. Exit `3` is reserved for a classified transient primary-provider failure. Do not treat every nonzero result as an outage or retry it blindly. Repository CI validates the current retrieval receipt before retrying an outage once, and retrieval still gates after an unavailable primary provider.
 
-### Abstention threshold calibration changes recall metrics
+Keyword needs no retriever extra. Transformer requires `[transformers]` and fails with exit `2` when it is absent. Hybrid can fall back to keyword-only without `[embeddings]`; install the intended dependency before interpreting a hybrid comparison.
 
-`--calibrate-abstention` adjusts the threshold at which the system abstains from answering. Calibrating on a small or unrepresentative query set can move the abstention cutoff in a direction that artificially inflates precision while suppressing recall. Run calibration against a query file that reflects your actual workload, and re-run the full benchmark after calibration to confirm the effect on all reported metrics.
+### Abstention calibration recommends a threshold without applying it
+
+`--calibrate-abstention` recommends an absolute keyword-score threshold from legitimate and negative query sets. It does not mutate the retriever configuration. A successful calibration exits `0`, but its JSON marks retrieval and faithfulness `skipped` with reason `calibration_only`; do not submit that receipt as a completed quality benchmark. Evaluate a recommendation on representative data before applying it.
 
 ### Faithfulness scoring is opt-in and its absence changes what the benchmark measures
 
@@ -34,13 +36,15 @@ The queries you supply define what "good retrieval" means for that run. A query 
 
 ## How to avoid problems
 
-1. **Treat exit code 2 as a failure in CI.** Add an explicit check for exit code 2 alongside exit code 1 so that a missing retriever extra does not silently pass your pipeline.
+1. **Keep failures visible in CI.** Block on measured regressions and local failures. Only a classified primary outage with valid, passing retrieval evidence can receive the repository workflow's unavailable-faithfulness treatment. Save `--json` receipts and inspect `outcomes`.
 
 2. **Pin your query file in version control.** Because every metric is relative to the queries you provide, changing the query file between runs makes scores incomparable. Commit the file and reference it by path in your CI configuration.
 
 3. **Run with `--with-faithfulness` before promoting a retriever to production.** Retrieval metrics alone do not capture whether the system produces faithful answers. Use faithfulness scoring at least once per retriever configuration change, even if you omit it from routine CI runs for speed.
 
-4. **Calibrate abstention on a representative sample, then re-benchmark.** After running `--calibrate-abstention`, immediately re-run the full benchmark to observe the effect on precision and recall together, not just the abstention rate in isolation.
+4. **Calibrate abstention on a representative sample.** After applying a recommendation to your retriever, measure precision and recall again. Calibration alone changes no configuration.
+
+5. **Distinguish CLI cutoffs from the locked CI baseline.** A local pass at the default `0.70` precision and `0.85` faithfulness cutoffs does not prove the repository's stricter precision, recall, and faithfulness checks pass. Invalid data or a query-file hash mismatch must be fixed or deliberately re-measured, not hidden by lowering thresholds.
 
 ## Source files
 

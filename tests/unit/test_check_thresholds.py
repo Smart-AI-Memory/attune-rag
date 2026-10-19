@@ -482,3 +482,202 @@ def test_comment_out_not_written_on_validation_error(
     )
     assert rc == 2
     assert not comment_path.exists()
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        float("nan"),
+        float("inf"),
+        -float("inf"),
+        True,
+        False,
+        "0.99",
+        None,
+        [],
+        -0.01,
+        1.01,
+        10**400,
+    ],
+    ids=[
+        "nan",
+        "inf",
+        "negative-inf",
+        "true",
+        "false",
+        "string",
+        "null",
+        "list",
+        "negative",
+        "over-one",
+        "huge-int",
+    ],
+)
+@pytest.mark.parametrize("target", ["measured", "threshold"])
+def test_invalid_quality_values_fail_validation_in_helper_and_cli(
+    tmp_path: Path, capsys: pytest.CaptureFixture, target: str, value: object
+) -> None:
+    """Invalid numbers must never compare as a pass or a genuine regression."""
+    dump, thresholds = _good_dump(), _thresholds()
+    if target == "measured":
+        dump["retrieval"]["precision_at_1"] = value
+    else:
+        thresholds["metrics"]["precision_at_1"]["threshold"] = value
+
+    failures, errors = ct.check(dump, thresholds)
+    assert failures == []
+    assert any("precision_at_1" in error and "finite number" in error for error in errors)
+    dump_path, thr_path = _write_pair(tmp_path, dump, thresholds)
+    assert ct.main(["--dump", str(dump_path), "--thresholds", str(thr_path)]) == 2
+    assert "finite number" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    ("block", "metric"),
+    [("retrieval", "recall_at_k"), ("faithfulness_legacy", "mean_faithfulness")],
+)
+def test_every_quality_metric_rejects_nan(block: str, metric: str) -> None:
+    dump = _good_dump()
+    dump[block][metric] = float("nan")
+    failures, errors = ct.check(dump, _thresholds())
+    assert failures == []
+    assert any(metric in error and "finite number" in error for error in errors)
+
+
+@pytest.mark.parametrize("value", [0, 1, 0.0, 1.0])
+def test_quality_domain_endpoints_remain_valid(value: int | float) -> None:
+    failures, errors = ct.check(
+        _good_dump(p1=value, rk=value, faith=value),
+        _thresholds(p1=value, r3=value, faith=value),
+    )
+    assert (failures, errors) == ([], [])
+
+
+@pytest.mark.parametrize("k", [True, False, 0, -1, 3.0, "3", None])
+def test_recall_k_must_be_positive_integer(
+    tmp_path: Path, capsys: pytest.CaptureFixture, k: object
+) -> None:
+    dump = _good_dump()
+    dump["retrieval"]["k"] = k
+    dump_path, thr_path = _write_pair(tmp_path, dump, _thresholds())
+    assert ct.main(["--dump", str(dump_path), "--thresholds", str(thr_path)]) == 2
+    assert "positive integer" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("target", ["dump", "thresholds"])
+@pytest.mark.parametrize("value", [None, [], "not an object"])
+def test_non_object_json_roots_fail_helper_and_cli(
+    tmp_path: Path, capsys: pytest.CaptureFixture, target: str, value: object
+) -> None:
+    dump = value if target == "dump" else _good_dump()
+    thresholds = value if target == "thresholds" else _thresholds()
+    failures, errors = ct.check(dump, thresholds)
+    assert failures == []
+    assert errors == [f"{target} must be an object"]
+    dump_path, thr_path = _write_pair(tmp_path, dump, thresholds)
+    assert ct.main(["--dump", str(dump_path), "--thresholds", str(thr_path)]) == 2
+    assert "must be a JSON object" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("block", [None, [], {}, "metrics"])
+def test_threshold_metrics_block_requires_nonempty_object(block: object) -> None:
+    thresholds = _thresholds()
+    thresholds["metrics"] = block
+    failures, errors = ct.check(_good_dump(), thresholds)
+    assert failures == []
+    assert errors == ["thresholds.json 'metrics' must be a non-empty object"]
+
+
+@pytest.mark.parametrize("spec", [None, [], 0.95, "0.95", {}])
+def test_malformed_threshold_spec_exits_two(
+    tmp_path: Path, capsys: pytest.CaptureFixture, spec: object
+) -> None:
+    thresholds = _thresholds()
+    thresholds["metrics"]["precision_at_1"] = spec
+    dump_path, thr_path = _write_pair(tmp_path, _good_dump(), thresholds)
+    assert ct.main(["--dump", str(dump_path), "--thresholds", str(thr_path)]) == 2
+    assert "thresholds.metrics.precision_at_1" in capsys.readouterr().err
+
+
+def test_skipping_metric_does_not_accept_malformed_threshold_configuration() -> None:
+    thresholds = _thresholds()
+    thresholds["metrics"]["mean_faithfulness"]["threshold"] = float("nan")
+    failures, errors = ct.check(
+        _good_dump(faith=None), thresholds, skip_metrics=frozenset({"mean_faithfulness"})
+    )
+    assert failures == []
+    assert any("mean_faithfulness" in error and "finite number" in error for error in errors)
+
+
+@pytest.mark.parametrize("faith", [None, [], False, {}])
+def test_present_malformed_faithfulness_is_not_treated_as_absent(faith: object) -> None:
+    dump = _good_dump()
+    dump["faithfulness_legacy"] = faith
+    failures, errors = ct.check(dump, _thresholds(), skip_metrics=frozenset({"mean_faithfulness"}))
+    assert failures == []
+    assert any("faithfulness_legacy" in error for error in errors)
+
+
+@pytest.mark.parametrize("path", [None, "", "  ", 42, [], "invalid\0path"])
+def test_configured_sha_requires_valid_query_path(
+    tmp_path: Path, capsys: pytest.CaptureFixture, path: object
+) -> None:
+    dump = _good_dump()
+    dump["queries_path"] = path
+    dump_path, thr_path = _write_pair(tmp_path, dump, _thresholds())
+    assert ct.main(["--dump", str(dump_path), "--thresholds", str(thr_path)]) == 2
+    assert "queries" in capsys.readouterr().err
+
+
+def test_missing_query_path_cannot_bypass_configured_sha() -> None:
+    dump = _good_dump()
+    del dump["queries_path"]
+    failures, errors = ct.check(dump, _thresholds())
+    assert failures == []
+    assert errors == ["dump.queries_path must name the queries file to verify sha256"]
+
+
+@pytest.mark.parametrize("sha", ["", "abc", "z" * 64, 42, []])
+def test_invalid_configured_query_sha_is_validation_error(sha: object) -> None:
+    thresholds = _thresholds()
+    thresholds["queries_sha256"] = sha
+    failures, errors = ct.check(_good_dump(), thresholds)
+    assert failures == []
+    assert errors == ["thresholds.queries_sha256 must be a 64-character hex digest"]
+
+
+def test_query_path_optional_without_configured_sha() -> None:
+    dump = _good_dump()
+    del dump["queries_path"]
+    assert ct.check(dump, _thresholds(queries_sha=None)) == ([], [])
+    thresholds = _thresholds()
+    del thresholds["queries_sha256"]
+    assert ct.check(dump, thresholds) == ([], [])
+
+
+def test_explicit_sha_override_allows_missing_query_path(tmp_path: Path) -> None:
+    dump = _good_dump()
+    del dump["queries_path"]
+    dump_path, thr_path = _write_pair(tmp_path, dump, _thresholds())
+    assert (
+        ct.main(
+            ["--dump", str(dump_path), "--thresholds", str(thr_path), "--skip-queries-sha-check"]
+        )
+        == 0
+    )
+
+
+@pytest.mark.parametrize("target", ["dump", "thresholds"])
+@pytest.mark.parametrize("defect", ["directory", "invalid-utf8"])
+def test_unreadable_json_inputs_exit_two(
+    tmp_path: Path, capsys: pytest.CaptureFixture, target: str, defect: str
+) -> None:
+    dump_path, thr_path = _write_pair(tmp_path, _good_dump(), _thresholds())
+    path = dump_path if target == "dump" else thr_path
+    if defect == "directory":
+        path.unlink()
+        path.mkdir()
+    else:
+        path.write_bytes(b"\xff")
+    assert ct.main(["--dump", str(dump_path), "--thresholds", str(thr_path)]) == 2
+    assert capsys.readouterr().err.startswith("error: ")

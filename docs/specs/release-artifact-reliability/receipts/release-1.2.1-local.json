@@ -1,0 +1,44 @@
+{
+  "version": "1.2.1",
+  "status": "local_validation_passed",
+  "base_sha": "f00815d22cfa28c0abca6ab7b4bcd5d6a1059dcd",
+  "suite": {
+    "passed": 1505,
+    "xfailed": 2,
+    "xpassed": 78,
+    "seconds": 55.68,
+    "coverage_percent": 93.02918017600742,
+    "receipt": "release-1.2.1-tests.xml"
+  },
+  "distribution": {
+    "receipt": "release-1.2.1-distribution.json",
+    "artifact_sha256": {
+      "attune_rag-1.2.1.tar.gz": "ba8bd17cc8a545f912a4fe4f14d53a1ed8a810f5a50ed12de56977be46efdeed",
+      "attune_rag-1.2.1-py3-none-any.whl": "9a8db295e57d193887754df27d4fb470ee5287395772b8c9f5a6224445083e5d"
+    },
+    "members": 45,
+    "queries": 40,
+    "precision_at_1": 1.0,
+    "recall_at_3": 1.0
+  },
+  "negative_controls": "release-1.2.1-negative-controls.json",
+  "release_prep_changes": [
+    "Version bump in pyproject, source constant, and project lock entry",
+    "Four Python 3.10 union isinstance forms required by pinned Ruff",
+    "Version mismatch negative control derives a distinct .post1 value",
+    "Source-reviewed benchmark help; no model regeneration"
+  ],
+  "static_checks": {
+    "pinned_black": "passed",
+    "pinned_ruff": "passed",
+    "uv_0.9.22_lock_check": "passed",
+    "all_pre_commit": "passed",
+    "scanner_review": "release-1.2.1-secret-audit.md"
+  },
+  "limits": [
+    "Local macOS/Python 3.11 with prepared dependencies and build isolation disabled",
+    "Remote CI, merge, publication and PyPI verification still pending",
+    "No API/provider calls in this local verification"
+  ],
+  "notes": "Phase 1 receipts preserve their original 1.2.0 working-snapshot evidence; this separate receipt covers release 1.2.1."
+}

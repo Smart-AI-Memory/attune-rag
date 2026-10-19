@@ -1,0 +1,44 @@
+{
+  "task_id": "5",
+  "status": "passed",
+  "suite": {
+    "passed": 1480,
+    "xfailed": 2,
+    "xpassed": 78,
+    "seconds": 54.94,
+    "coverage_percent": 92.81896351382757,
+    "junit": "task-5-tests.xml"
+  },
+  "distribution": {
+    "receipt": "task-5-distribution.json",
+    "artifact_sha256": {
+      "attune_rag-1.2.0.tar.gz": "1d899397e9880eaeff25498bbdecd0c5fbec2bad820b6748427fb9805fa76baa",
+      "attune_rag-1.2.0-py3-none-any.whl": "56c613f081334d69c79b68645208fc7e6cf54a2bd62f92f77396eadade7d898b"
+    },
+    "members": 45,
+    "queries": 40,
+    "precision_at_1": 1.0,
+    "recall_at_3": 1.0,
+    "attune_help_version": "0.13.0"
+  },
+  "negative_controls": "task-5-negative-controls.json",
+  "static_checks": [
+    "Ruff passed",
+    "Black passed",
+    "git diff --check passed"
+  ],
+  "initial_environment_failures": "task-5-initial-environment-tests.xml",
+  "limits": [
+    "Local macOS/Python 3.11, prepared backend without build isolation",
+    "Reused installed same-Python dependencies without downloads",
+    "No live providers, remote CI, publication, commit, or push"
+  ],
+  "cross_review": "Separate advisory Claude subscription review running after explicit user command; no API fallback",
+  "independent_review": {
+    "reviewer": "Codex editor_review",
+    "score": 96,
+    "score_type": "subjective quality judgment",
+    "actionable_findings": [],
+    "checks": "Parsed final and initial JUnit/coverage; rehashed actual final distributions; read-only inspected all 45 members; verified docs against implementation"
+  }
+}

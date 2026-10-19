@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "attune-rag"
-version = "1.2.0"
+version = "1.2.1"
 description = "Lightweight, LLM-agnostic RAG pipeline with pluggable corpora. Works with Claude, Gemini, or any LLM."
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.10"
@@ -112,6 +112,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "attune_rag" = ["py.typed"]
+"attune_rag.corpus" = ["summaries_override.json", "aliases_override.json"]
 "attune_rag.dashboard" = ["templates/*.html"]
 "attune_rag.editor" = ["template_schema.json"]
 

@@ -1,0 +1,49 @@
+{
+  "task_id": "1",
+  "task_name": "Preserve package resources and prove source-wheel parity",
+  "executed": true,
+  "quality_gate_passed": true,
+  "tests_passed": true,
+  "simplified": false,
+  "gate_details": {
+    "method": "Codex independent code-quality/security review plus local tests/static checks; user-authorized replacement in decisions.md D7",
+    "score_interpretation": "Subjective reviewer judgments, not correctness measurements or probabilities",
+    "gate_results": {
+      "min_quality": {
+        "score": 93,
+        "threshold": 70.0
+      },
+      "min_security": {
+        "score": 96,
+        "threshold": 70.0
+      }
+    },
+    "unresolved_actionable_findings": [],
+    "security_scan": "exit 0; 10 conservative medium nonliteral-path warnings reviewed in context, no blocking findings",
+    "test_results": {
+      "focused_passed": 65,
+      "targeted_passed": 151,
+      "xfailed": 2,
+      "xpassed": 78
+    },
+    "format_lint_diff_checks": "passed",
+    "artifact_check": "45 package-source/required-resource members; 40/40 top1 and top3 on source and wheel; identical ordered paths/scores; poisoned pip destinations not created",
+    "file_sha256": {
+      "pyproject.toml": "6cfca12692bf031c45f23f21f081a58080d2ef4640f5c27b4a1c0e6caac27a34",
+      "scripts/check_distribution.py": "de2e996118f7ec943df77bbc02495115b42f4bae3d36fe368b875fed4452d5d8",
+      "tests/unit/test_distribution_contract.py": "bb825e17af910e4713fa29c282be881871def40311b182e7b9e137f8c0e3c94a"
+    },
+    "limitations": [
+      "macOS/Python3.11 execution only; remote matrix not run",
+      "Local build used prepared backend without isolated dependency downloads",
+      "Review does not establish safety for arbitrary hostile wheels",
+      "No release performed; version1.2.0 already published"
+    ],
+    "claude_used_for_this_review": false
+  },
+  "gate_score": 93,
+  "error": null,
+  "cost": null,
+  "severity": "low",
+  "cost_note": "No external model/API calls for the replacement review; Codex usage not separately priced here."
+}

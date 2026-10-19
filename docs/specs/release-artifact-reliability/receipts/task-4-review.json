@@ -1,0 +1,11 @@
+{
+  "task_id": "4",
+  "status": "passed",
+  "mechanism": "Authorized Codex/local task review",
+  "tests": {"passed": 158, "seconds": 3.18, "junit": "task-4-tests.xml"},
+  "checks": ["Ruff passed", "Black passed", "git diff --check passed"],
+  "independent_review": {"reviewer": "Codex retrieval_review", "score": 96, "score_type": "subjective code-quality/security judgment", "actionable_findings": []},
+  "behavior": ["Both selected CPU metrics must exist in valid current and baseline inputs", "Failed/cancelled/skipped/unknown measurement outcomes fail validation", "Measurement step clears stale outputs", "Invalid numeric values, malformed or missing files, and oversized integers fail validation", "Validation failures replace stale passing comments", "Both selected CPU regressions fail; all six other valid metric regressions remain advisory", "Missing baseline remains advisory only when no explicit gates are selected"],
+  "unchanged": ["Two blocking CPU metric selections", "Locked baseline and threshold values", "Measurement/aggregation scripts and variance methodology"],
+  "limits": ["Workflow replay uses local shell and synthetic measurements, not a remote CI run", "No live provider or performance re-baselining run"]
+}

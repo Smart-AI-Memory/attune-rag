@@ -1,0 +1,42 @@
+{
+  "task_id": "1",
+  "status": "blocked",
+  "quality_gate_passed": false,
+  "gate_score": null,
+  "files": [
+    "pyproject.toml",
+    "scripts/check_distribution.py",
+    "tests/unit/test_distribution_contract.py"
+  ],
+  "attempts": [
+    {
+      "kind": "sandboxed_orchestrator",
+      "result": "unavailable",
+      "observed_errors": [
+        "Code review: SdkSubprocessError; Claude API ENOTFOUND",
+        "Security audit: SdkSubprocessError; Claude API ENOTFOUND"
+      ],
+      "disposition": "Stopped the launched review process and its children after confirmed network failure; no overall scored result returned."
+    },
+    {
+      "kind": "network_enabled_rerun",
+      "result": "automatic_approval_rejected",
+      "reason": "The rerun would send repository code and review context to an external Claude API and write a receipt; authorization covers the local review task but does not specifically authorize this sensitive code export to that destination.",
+      "executed": false
+    }
+  ],
+  "local_verification": {
+    "distribution_tests_passed": 63,
+    "targeted_suite_passed": 143,
+    "targeted_suite_xfailed": 2,
+    "targeted_suite_xpassed": 78,
+    "ruff": "passed",
+    "black": "passed",
+    "source_and_wheel_top1_hits": 40,
+    "source_and_wheel_top3_hits": 40,
+    "queries": 40,
+    "ordered_paths_and_scores": "identical",
+    "independent_review": "No residual material findings after fixes"
+  },
+  "next_required": "Explicit authorization to send Task 1 code and relevant review context to Claude, or an explicit change to the required review process. No implementation success is inferred from unavailable automated review."
+}

@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] — 2026-10-19
+
+A reliability patch that ships the corpus data used by source retrieval and
+makes release, quality, and performance validation preserve real failures.
+Retrieval and performance baselines remain unchanged.
+
 ### Changed
 
 - **`attune_rag.model_tiers` is the single copy of the tier contract.**
@@ -14,6 +20,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   attune-rag has been a core dependency there since 2026-04-30), and the
   attune-author mirror went with that package's archival. Docstrings that
   described the mirrors are updated; no code or surface change.
+
+### Fixed
+
+- **Local configuration errors remain blocking:** inspect the cause of SDK
+  connection errors before treating them as provider unavailability. Malformed
+  request headers, unsupported URLs, unknown wrapped exceptions, and certificate
+  verification failures no longer pass through the outage exception. Diagnostics
+  retain only error categories, without credential or response contents.
+- **Incomplete faithfulness verdicts fail validation:** require both claim
+  lists and reasoning in tool, text JSON, and subscription responses. Missing
+  fields no longer become a perfect score. Complete zero-claim verdicts and
+  the empty-answer short circuit retain their existing behavior.
+- **Distribution resource parity:** include both corpus override JSON files
+  in package data. A shared checker builds an sdist and then its wheel from
+  a clean tracked-source snapshot, verifies required resources and package
+  source bytes, and compares isolated source/installed-wheel retrieval on
+  the locked queries with the same prepared dependencies.
+- **Publication uses the validated artifacts:** CI records a JSON validation
+  receipt; the publish job verifies its checksum and the exact sdist/wheel
+  checksums before publishing those files without rebuilding.
+- **Quality failures no longer become blanket inconclusive successes:**
+  benchmark reports preserve completed retrieval and primary faithfulness
+  results with explicit stage outcomes. The workflow requires retrieval
+  in every mode and retries at most once only for a classified transient
+  primary-provider failure after retrieval passes. Persistent provider
+  unavailability is disclosed; local errors, malformed evidence, and
+  measured regressions remain blocking. Quality validation rejects invalid
+  numeric types, nonfinite/out-of-range values, and missing query-lock
+  evidence.
+- **Required performance evidence cannot silently disappear:** failed
+  measurements and missing/invalid selected CPU metrics now fail validation.
+  Blocking regressions remain limited to `keyword_retriever_retrieve.cpu`
+  and `rag_pipeline_run.cpu`; other timing regressions remain advisory.
+  The active quality/performance thresholds and query SHA are unchanged.
 
 ## [1.2.0] — 2026-09-03
 

@@ -1,0 +1,1582 @@
+{
+  "status": "passed",
+  "source": {
+    "base_commit": "25d2cf00bbe4a71daa7e8894402153ed6465d238",
+    "tracked_changes": true,
+    "snapshot_sha256": "1c70264caab94acf5367fe1a93db088033f7f3c8ddd3c43d1666080b5a200609"
+  },
+  "resources": {
+    "attune_rag/__init__.py": "531092665fee909f6de4f90395d2297825aeb1a245c61225d5d9f5684140198d",
+    "attune_rag/_scoring.py": "ca4a969e4b2ee466091eac51a95f3330bf06c4ec23cdcc8d2c9bf05e5c429248",
+    "attune_rag/auth.py": "c94df68e2cafa25fd7110c634f40957cfaf60fcbefda40bf193588bfe94ee756",
+    "attune_rag/benchmark.py": "1542a1114e4d0f09f85f303eae2c2e59e1066a3f3d65e2ab7def5a6082015ac1",
+    "attune_rag/cli.py": "6946e47918789dcff69bd01691d13bc9abfc56b759bbc73e6ea8b46cdc11d9bd",
+    "attune_rag/corpus/__init__.py": "af10db55352affa1ace511dd334eeebb61c5b38721fdf4a917862d33152d92fe",
+    "attune_rag/corpus/_aliases.py": "1fd8d68f5162a0c889b054b13bd7ac3713058bdd940c1870a2957bf219c09d72",
+    "attune_rag/corpus/aliases_override.json": "98fd524d7b6b1f6cf9e8188e25fd0afbe3ab6500a9f04b172e3668617e469d61",
+    "attune_rag/corpus/attune_help.py": "9700f3adf6129860381c13e206718a8257908da790a698fa5f0be9e419c4a857",
+    "attune_rag/corpus/base.py": "43d895e06ec3fa7557c850e56b4e62fb27fdb4e14707fb2186b7c2f47abd45c6",
+    "attune_rag/corpus/directory.py": "675862629bf74f480b594fa75e887f67eb5c03c8b97356184ffdbdd401978afa",
+    "attune_rag/corpus/help_adapter.py": "a4fd7bb34bfcf7161396d206c9a10a39c52ba17a4c487409d4acb17b904f331c",
+    "attune_rag/corpus/summaries_override.json": "8d220e50dffa3b89a15da85fdbd1bb6aeb02aaf09d9fded892c929028fff12f1",
+    "attune_rag/dashboard/__init__.py": "bc2513ee977a1488338c45e0e0b5ee1a69fd43706e4acd981c25d3eabb287582",
+    "attune_rag/dashboard/refresh.py": "3be6c90c6fc9db7a83b08617f17c5edf4488b71d9d4267f26f5b31ff202de5b2",
+    "attune_rag/dashboard/render.py": "20147130bb0c808685ce23361dd7a66933653e6d18a29185ff90348efff4f186",
+    "attune_rag/dashboard/show.py": "9b7de77d009baa0205144d27a5b03f67918e9b886e3856a1e955853e1bf00406",
+    "attune_rag/dashboard/templates/dashboard.html": "be3dc860de6921515a1804db063b9bbc1945c744579038a6b331f7f35883de6e",
+    "attune_rag/editor/__init__.py": "5e68837cb594c4450d6704910639d7a0f2b6af329ccbc4f096a9918cc083a523",
+    "attune_rag/editor/_regex.py": "ccd24ff695a063f7262a47e478d06b23e4c8667cb9ba43923cff4577f6243cf5",
+    "attune_rag/editor/autocomplete.py": "b6f8c62d8cb81bc448c89456a4244b0f8c9883958f7367bba83a5e859196d814",
+    "attune_rag/editor/lint.py": "a6df811b67fa44e2c3ae4591fac11d8852f3c314acf4ce11602ee5630e7b8ef3",
+    "attune_rag/editor/references.py": "e2b3cf6fd8ef22473bec21894f6a9bb7163a1b3858f17590eef5805f87f0d2aa",
+    "attune_rag/editor/rename.py": "f051da256525ab8fb78b20567f6606c1b350c07019d8ace3bd7d3de6e92a778f",
+    "attune_rag/editor/schema.py": "bc663af6aba06cfb762d5b32b0c25a4a0a43f12e16e94e7453b14b9d4b03408b",
+    "attune_rag/editor/template_schema.json": "0477a405369b21679c1749661cb08adaa45d49d8431cda88b9df5eb0502f7f3d",
+    "attune_rag/embedding.py": "b4df8d1afd7401caf76c671045627147146e79e5e257a1481d473c21e35f871c",
+    "attune_rag/eval/__init__.py": "7bb25981a9a17675186b56de75de4caaa6ca0cc6bcc34d3e711c730ecf78d38a",
+    "attune_rag/eval/bench_prompts.py": "9fc731a32bd1f8b6ac83a4db7da71205d9de06eb11faace94b61aea6390d2cb1",
+    "attune_rag/eval/faithfulness.py": "9e3c0bf86f5b626132a99b6238711187c7820396ed29f4e786f6e4918d6d634e",
+    "attune_rag/expander.py": "936f26051562480455d872ab9b82bf81e17a50fafba20ae4e5f3eacce1d95852",
+    "attune_rag/hybrid.py": "4582ec0b32298cf37d3b1412c743b0330cc12bf8407bda5a862f7df3a2410796",
+    "attune_rag/measure_corpus.py": "f6a35144f742569120e215e1308925f2b63ed9575cad3afb372b3b330e25f392",
+    "attune_rag/model_tiers.py": "899a85d8467edcc5517baeb1fbf7fae72702936a8985096e06de34065286ada7",
+    "attune_rag/pipeline.py": "d523def16dc02da8af008150d8fcd8a3070b279274761376f91d83c438e7e8e1",
+    "attune_rag/prompts.py": "3c35e8e0b30791a15e2c36afa2edf13ea407da219b38803d3325fc50b9980c18",
+    "attune_rag/provenance.py": "9cb8f3c58ca213f89b9ae966c0863a355d52f514a4eab6c9ebae18b4e03615b7",
+    "attune_rag/providers/__init__.py": "df8195655b6d955768ebdc6c202b8fcc82516e5b81b146bd6c0de1449012bfa7",
+    "attune_rag/providers/base.py": "6644f3d1d5d103c99c33b4ec8bc6b9fbe8e5d0446a180c282b856a73be45e907",
+    "attune_rag/providers/claude.py": "f184220a00fd8848e5d757a0f82de13efbf08f5ec93a527092cee0130f5d68f6",
+    "attune_rag/providers/gemini.py": "9868deb8cfb51d5cfcf57aac4141c4bb958707a2bb4cc3e8d9d75e57d971ca1e",
+    "attune_rag/py.typed": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "attune_rag/reranker.py": "14add1a66b6048bcd5f557b47ffbdcb59be6e13c0d87f61d3ff19359992f2f85",
+    "attune_rag/retrieval.py": "f0eeb25eb8d248e231182916edf9e60d0757cb5b5ac980f0c9f793523734fd0b",
+    "attune_rag/transformer.py": "0399698e8e0cb25b384edefe09f2deb55bf93cef3985cd368c05de72db552051"
+  },
+  "artifacts": {
+    "attune_rag-1.2.0.tar.gz": {
+      "path": "/private/tmp/attune-rag-phase1-post-review-dist/attune_rag-1.2.0.tar.gz",
+      "sha256": "7f0eaf5ff5dfa85b13997bce460bef18a74594fc30777bcc0110af2054590153"
+    },
+    "attune_rag-1.2.0-py3-none-any.whl": {
+      "path": "/private/tmp/attune-rag-phase1-post-review-dist/attune_rag-1.2.0-py3-none-any.whl",
+      "sha256": "d051bfc33a45fec8550e398bfb819afe288a18ba66f261e0b6269d2203a499e9"
+    }
+  },
+  "probes": {
+    "source": {
+      "version": "1.2.0",
+      "import_origin": "/private/var/folders/5t/bzsz5qd17pd7h_wwwd5qjbnw0000gn/T/attune-rag-distribution-14s4imsx/source/src/attune_rag/__init__.py",
+      "dependencies": {
+        "shellingham": "1.5.4",
+        "fsspec": "2026.4.0",
+        "transformers": "5.10.2",
+        "tqdm": "4.68.1",
+        "threadpoolctl": "3.6.0",
+        "requests": "2.33.1",
+        "rfc3986": "2.0.0",
+        "torch": "2.12.0",
+        "jaraco.classes": "3.4.0",
+        "structlog": "25.5.0",
+        "certifi": "2026.2.25",
+        "iniconfig": "2.3.0",
+        "jaraco.context": "6.1.2",
+        "nodeenv": "1.10.0",
+        "build": "1.4.3",
+        "attune-author": "0.25.0",
+        "pytokens": "0.4.1",
+        "cfgv": "3.5.0",
+        "jsonschema-specifications": "2025.9.1",
+        "websockets": "16.0",
+        "narwhals": "2.22.1",
+        "rich": "15.0.0",
+        "pydantic_core": "2.46.2",
+        "pip": "24.0",
+        "networkx": "3.6.1",
+        "pytest-cov": "7.1.0",
+        "PyJWT": "2.13.0",
+        "scikit-learn": "1.9.0",
+        "jsonschema": "4.26.0",
+        "hf-xet": "1.5.0",
+        "mcp": "1.27.2",
+        "jiter": "0.14.0",
+        "black": "26.3.1",
+        "starlette": "1.3.0",
+        "anthropic": "0.96.0",
+        "python-discovery": "1.4.2",
+        "attune-help": "0.13.0",
+        "idna": "3.11",
+        "cffi": "2.0.0",
+        "docstring_parser": "0.18.0",
+        "numpy": "2.4.6",
+        "tenacity": "9.1.4",
+        "setuptools": "79.0.1",
+        "httpcore": "1.0.9",
+        "huggingface_hub": "1.16.1",
+        "pydantic-settings": "2.14.1",
+        "model2vec": "0.8.2",
+        "nh3": "0.3.4",
+        "cryptography": "46.0.7",
+        "sympy": "1.14.0",
+        "markdown-it-py": "4.0.0",
+        "filelock": "3.29.1",
+        "platformdirs": "4.9.6",
+        "docutils": "0.22.4",
+        "claude-agent-sdk": "0.2.97",
+        "google-auth": "2.49.2",
+        "ruff": "0.15.11",
+        "python-dotenv": "1.2.2",
+        "twine": "6.2.0",
+        "h11": "0.16.0",
+        "coverage": "7.13.5",
+        "sniffio": "1.3.1",
+        "pycparser": "3.0",
+        "Pygments": "2.20.0",
+        "virtualenv": "21.5.1",
+        "mdurl": "0.1.2",
+        "packaging": "26.1",
+        "python-multipart": "0.0.32",
+        "pathspec": "1.0.4",
+        "distlib": "0.4.3",
+        "mpmath": "1.3.0",
+        "PyYAML": "6.0.3",
+        "pytest-asyncio": "1.3.0",
+        "regex": "2026.5.9",
+        "backports.tarfile": "1.2.0",
+        "id": "1.6.1",
+        "google-genai": "1.73.1",
+        "urllib3": "2.6.3",
+        "readme_renderer": "44.0",
+        "typing_extensions": "4.15.0",
+        "jaraco.functools": "4.4.0",
+        "scipy": "1.17.1",
+        "zipp": "3.23.1",
+        "joblib": "1.5.3",
+        "Jinja2": "3.1.6",
+        "typer": "0.26.7",
+        "referencing": "0.37.0",
+        "charset-normalizer": "3.4.7",
+        "uvicorn": "0.49.0",
+        "pytest": "9.0.3",
+        "MarkupSafe": "3.0.3",
+        "sse-starlette": "3.4.4",
+        "distro": "1.9.0",
+        "pluggy": "1.6.0",
+        "more-itertools": "11.0.2",
+        "attrs": "26.1.0",
+        "importlib_metadata": "9.0.0",
+        "requests-toolbelt": "1.0.0",
+        "identify": "2.6.19",
+        "httpx": "0.28.1",
+        "pyasn1_modules": "0.4.2",
+        "click": "8.3.2",
+        "safetensors": "0.7.0",
+        "tokenizers": "0.22.2",
+        "pydantic": "2.13.2",
+        "sentence-transformers": "5.5.1",
+        "pyproject_hooks": "1.2.0",
+        "pre_commit": "4.6.0",
+        "typing-inspection": "0.4.2",
+        "annotated-types": "0.7.0",
+        "keyring": "25.7.0",
+        "httpx-sse": "0.4.3",
+        "mypy_extensions": "1.1.0",
+        "rpds-py": "0.30.0",
+        "python-frontmatter": "1.1.0",
+        "annotated-doc": "0.0.4",
+        "anyio": "4.13.0",
+        "pyasn1": "0.6.3"
+      },
+      "queries_sha256": "f47486df87c61e2391a4326f9ffe68659373f6837063cf70c5b990a639f2290c",
+      "queries": [
+        {
+          "hits": [
+            {
+              "path": "quickstarts/run-security-audit.md",
+              "score": 18.0
+            },
+            {
+              "path": "quickstarts/skill-security-audit.md",
+              "score": 13.5
+            },
+            {
+              "path": "concepts/tool-security-audit.md",
+              "score": 11.25
+            }
+          ],
+          "id": "gq-001"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-smart-test.md",
+              "score": 20.25
+            },
+            {
+              "path": "quickstarts/generate-tests.md",
+              "score": 17.25
+            },
+            {
+              "path": "quickstarts/skill-smart-test.md",
+              "score": 14.25
+            }
+          ],
+          "id": "gq-002"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-fix-test.md",
+              "score": 26.25
+            },
+            {
+              "path": "quickstarts/skill-fix-test.md",
+              "score": 17.25
+            },
+            {
+              "path": "tasks/use-fix-test.md",
+              "score": 13.799999999999999
+            }
+          ],
+          "id": "gq-003"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-code-quality.md",
+              "score": 23.25
+            },
+            {
+              "path": "quickstarts/run-code-review.md",
+              "score": 15.0
+            },
+            {
+              "path": "quickstarts/skill-code-quality.md",
+              "score": 15.0
+            }
+          ],
+          "id": "gq-004"
+        },
+        {
+          "hits": [
+            {
+              "path": "references/tool-deep-review.md",
+              "score": 15.0
+            },
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 6.0
+            }
+          ],
+          "id": "gq-005"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 23.25
+            },
+            {
+              "path": "quickstarts/skill-bug-predict.md",
+              "score": 15.75
+            },
+            {
+              "path": "references/tool-bug-predict.md",
+              "score": 12.5
+            }
+          ],
+          "id": "gq-006"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-refactor-plan.md",
+              "score": 10.5
+            },
+            {
+              "path": "quickstarts/skill-refactor-plan.md",
+              "score": 10.5
+            },
+            {
+              "path": "tasks/use-refactor-plan.md",
+              "score": 7.199999999999999
+            }
+          ],
+          "id": "gq-007"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-release-prep.md",
+              "score": 6.75
+            },
+            {
+              "path": "quickstarts/skill-release-prep.md",
+              "score": 6.75
+            },
+            {
+              "path": "references/skill-release-prep.md",
+              "score": 5.5
+            }
+          ],
+          "id": "gq-008"
+        },
+        {
+          "hits": [
+            {
+              "path": "references/tool-doc-audit.md",
+              "score": 8.0
+            },
+            {
+              "path": "quickstarts/run-security-audit.md",
+              "score": 6.75
+            },
+            {
+              "path": "quickstarts/skill-security-audit.md",
+              "score": 6.75
+            }
+          ],
+          "id": "gq-009"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-planning.md",
+              "score": 15.0
+            }
+          ],
+          "id": "gq-010"
+        },
+        {
+          "hits": [
+            {
+              "path": "quickstarts/run-security-audit.md",
+              "score": 7.5
+            },
+            {
+              "path": "quickstarts/skill-security-audit.md",
+              "score": 7.5
+            },
+            {
+              "path": "concepts/tool-security-audit.md",
+              "score": 5.25
+            }
+          ],
+          "id": "gq-011"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-doc-gen.md",
+              "score": 13.5
+            },
+            {
+              "path": "quickstarts/skill-doc-gen.md",
+              "score": 5.25
+            },
+            {
+              "path": "references/skill-doc-gen.md",
+              "score": 5.0
+            }
+          ],
+          "id": "gq-012"
+        },
+        {
+          "hits": [
+            {
+              "path": "references/tool-doc-orchestrator.md",
+              "score": 15.5
+            },
+            {
+              "path": "concepts/tool-workflow-orchestration.md",
+              "score": 13.5
+            },
+            {
+              "path": "concepts/meta-orchestration.md",
+              "score": 12.0
+            }
+          ],
+          "id": "gq-013"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 8.25
+            }
+          ],
+          "id": "gq-014"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 9.0
+            },
+            {
+              "path": "concepts/task-ci-cd-pipeline.md",
+              "score": 7.5
+            },
+            {
+              "path": "quickstarts/skill-bug-predict.md",
+              "score": 6.75
+            }
+          ],
+          "id": "gq-015"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 21.75
+            },
+            {
+              "path": "quickstarts/skill-code-quality.md",
+              "score": 12.0
+            },
+            {
+              "path": "concepts/tool-code-quality.md",
+              "score": 10.5
+            }
+          ],
+          "id": "gq-016"
+        },
+        {
+          "hits": [
+            {
+              "path": "quickstarts/skill-doc-gen.md",
+              "score": 7.5
+            },
+            {
+              "path": "concepts/task-code-migration.md",
+              "score": 6.75
+            },
+            {
+              "path": "concepts/tool-code-quality.md",
+              "score": 6.75
+            }
+          ],
+          "id": "gq-017"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-code-quality.md",
+              "score": 24.75
+            },
+            {
+              "path": "quickstarts/skill-code-quality.md",
+              "score": 13.5
+            },
+            {
+              "path": "concepts/tool-security-audit.md",
+              "score": 12.0
+            }
+          ],
+          "id": "gq-018"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-release-prep.md",
+              "score": 6.75
+            },
+            {
+              "path": "quickstarts/skill-release-prep.md",
+              "score": 6.75
+            },
+            {
+              "path": "tasks/use-release-prep.md",
+              "score": 5.3999999999999995
+            }
+          ],
+          "id": "gq-019"
+        },
+        {
+          "hits": [
+            {
+              "path": "quickstarts/generate-tests.md",
+              "score": 9.0
+            },
+            {
+              "path": "concepts/tool-fix-test.md",
+              "score": 6.75
+            },
+            {
+              "path": "concepts/tool-smart-test.md",
+              "score": 6.75
+            }
+          ],
+          "id": "gq-020"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-refactor-plan.md",
+              "score": 12.0
+            }
+          ],
+          "id": "gq-021"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-smart-test.md",
+              "score": 16.5
+            },
+            {
+              "path": "quickstarts/generate-tests.md",
+              "score": 9.0
+            },
+            {
+              "path": "quickstarts/skill-smart-test.md",
+              "score": 9.0
+            }
+          ],
+          "id": "gq-022"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-security-audit.md",
+              "score": 18.75
+            },
+            {
+              "path": "quickstarts/run-security-audit.md",
+              "score": 10.5
+            },
+            {
+              "path": "quickstarts/skill-security-audit.md",
+              "score": 10.5
+            }
+          ],
+          "id": "gq-023"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-fix-test.md",
+              "score": 16.5
+            },
+            {
+              "path": "quickstarts/skill-fix-test.md",
+              "score": 10.5
+            },
+            {
+              "path": "tasks/use-fix-test.md",
+              "score": 8.4
+            }
+          ],
+          "id": "gq-024"
+        },
+        {
+          "hits": [
+            {
+              "path": "references/tool-doc-audit.md",
+              "score": 11.5
+            },
+            {
+              "path": "quickstarts/browse-help.md",
+              "score": 5.25
+            }
+          ],
+          "id": "gq-025"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-release-prep.md",
+              "score": 15.75
+            },
+            {
+              "path": "quickstarts/skill-release-prep.md",
+              "score": 11.25
+            },
+            {
+              "path": "quickstarts/task-package-publishing.md",
+              "score": 7.5
+            }
+          ],
+          "id": "gq-026"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 27.75
+            },
+            {
+              "path": "references/tool-deep-review.md",
+              "score": 15.0
+            },
+            {
+              "path": "concepts/tool-code-quality.md",
+              "score": 12.75
+            }
+          ],
+          "id": "gq-027"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-planning.md",
+              "score": 15.75
+            }
+          ],
+          "id": "gq-028"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-code-quality.md",
+              "score": 24.0
+            },
+            {
+              "path": "quickstarts/skill-code-quality.md",
+              "score": 13.5
+            },
+            {
+              "path": "quickstarts/run-code-review.md",
+              "score": 10.5
+            }
+          ],
+          "id": "gq-029"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-refactor-plan.md",
+              "score": 9.75
+            },
+            {
+              "path": "references/tool-simplify-code.md",
+              "score": 9.5
+            },
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 7.5
+            }
+          ],
+          "id": "gq-030"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-fix-test.md",
+              "score": 19.5
+            },
+            {
+              "path": "quickstarts/task-ci-cd-pipeline.md",
+              "score": 13.5
+            },
+            {
+              "path": "concepts/task-ci-cd-pipeline.md",
+              "score": 11.25
+            }
+          ],
+          "id": "gq-031"
+        },
+        {
+          "hits": [
+            {
+              "path": "quickstarts/run-security-audit.md",
+              "score": 12.75
+            }
+          ],
+          "id": "gq-032"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-doc-gen.md",
+              "score": 5.25
+            }
+          ],
+          "id": "gq-033"
+        },
+        {
+          "hits": [
+            {
+              "path": "references/tool-doc-orchestrator.md",
+              "score": 8.0
+            },
+            {
+              "path": "concepts/task-ci-cd-pipeline.md",
+              "score": 6.75
+            },
+            {
+              "path": "quickstarts/task-ci-cd-pipeline.md",
+              "score": 6.75
+            }
+          ],
+          "id": "gq-034"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-release-prep.md",
+              "score": 12.0
+            },
+            {
+              "path": "concepts/task-package-publishing.md",
+              "score": 10.5
+            },
+            {
+              "path": "quickstarts/task-package-publishing.md",
+              "score": 10.5
+            }
+          ],
+          "id": "gq-035"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 23.25
+            },
+            {
+              "path": "quickstarts/task-git-workflow.md",
+              "score": 9.75
+            },
+            {
+              "path": "references/tool-bug-predict.md",
+              "score": 6.0
+            }
+          ],
+          "id": "gq-036"
+        },
+        {
+          "hits": [
+            {
+              "path": "references/tool-deep-review.md",
+              "score": 20.5
+            },
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 13.5
+            },
+            {
+              "path": "concepts/tool-planning.md",
+              "score": 6.0
+            }
+          ],
+          "id": "gq-037"
+        },
+        {
+          "hits": [
+            {
+              "path": "references/tool-doc-orchestrator.md",
+              "score": 18.5
+            },
+            {
+              "path": "concepts/tool-memory-and-context.md",
+              "score": 7.5
+            },
+            {
+              "path": "quickstarts/skill-memory-and-context.md",
+              "score": 6.0
+            }
+          ],
+          "id": "gq-038"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-planning.md",
+              "score": 20.25
+            },
+            {
+              "path": "concepts/tool-spec.md",
+              "score": 7.5
+            },
+            {
+              "path": "concepts/task-code-migration.md",
+              "score": 6.75
+            }
+          ],
+          "id": "gq-039"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 25.5
+            },
+            {
+              "path": "references/tool-bug-predict.md",
+              "score": 11.0
+            },
+            {
+              "path": "concepts/task-error-handling-design.md",
+              "score": 6.75
+            }
+          ],
+          "id": "gq-040"
+        }
+      ],
+      "retrieval": {
+        "precision_at_1": 1.0,
+        "recall_at_k": 1.0,
+        "k": 3
+      }
+    },
+    "wheel": {
+      "version": "1.2.0",
+      "import_origin": "/private/var/folders/5t/bzsz5qd17pd7h_wwwd5qjbnw0000gn/T/attune-rag-distribution-14s4imsx/installed/lib/python3.11/site-packages/attune_rag/__init__.py",
+      "dependencies": {
+        "shellingham": "1.5.4",
+        "fsspec": "2026.4.0",
+        "transformers": "5.10.2",
+        "tqdm": "4.68.1",
+        "threadpoolctl": "3.6.0",
+        "requests": "2.33.1",
+        "rfc3986": "2.0.0",
+        "torch": "2.12.0",
+        "jaraco.classes": "3.4.0",
+        "structlog": "25.5.0",
+        "certifi": "2026.2.25",
+        "iniconfig": "2.3.0",
+        "jaraco.context": "6.1.2",
+        "nodeenv": "1.10.0",
+        "build": "1.4.3",
+        "attune-author": "0.25.0",
+        "pytokens": "0.4.1",
+        "cfgv": "3.5.0",
+        "jsonschema-specifications": "2025.9.1",
+        "websockets": "16.0",
+        "narwhals": "2.22.1",
+        "rich": "15.0.0",
+        "pydantic_core": "2.46.2",
+        "pip": "24.0",
+        "networkx": "3.6.1",
+        "pytest-cov": "7.1.0",
+        "PyJWT": "2.13.0",
+        "scikit-learn": "1.9.0",
+        "jsonschema": "4.26.0",
+        "hf-xet": "1.5.0",
+        "mcp": "1.27.2",
+        "jiter": "0.14.0",
+        "black": "26.3.1",
+        "starlette": "1.3.0",
+        "anthropic": "0.96.0",
+        "python-discovery": "1.4.2",
+        "attune-help": "0.13.0",
+        "idna": "3.11",
+        "cffi": "2.0.0",
+        "docstring_parser": "0.18.0",
+        "numpy": "2.4.6",
+        "tenacity": "9.1.4",
+        "setuptools": "79.0.1",
+        "httpcore": "1.0.9",
+        "huggingface_hub": "1.16.1",
+        "pydantic-settings": "2.14.1",
+        "model2vec": "0.8.2",
+        "nh3": "0.3.4",
+        "cryptography": "46.0.7",
+        "sympy": "1.14.0",
+        "markdown-it-py": "4.0.0",
+        "filelock": "3.29.1",
+        "platformdirs": "4.9.6",
+        "docutils": "0.22.4",
+        "claude-agent-sdk": "0.2.97",
+        "google-auth": "2.49.2",
+        "ruff": "0.15.11",
+        "python-dotenv": "1.2.2",
+        "twine": "6.2.0",
+        "h11": "0.16.0",
+        "coverage": "7.13.5",
+        "sniffio": "1.3.1",
+        "pycparser": "3.0",
+        "Pygments": "2.20.0",
+        "virtualenv": "21.5.1",
+        "mdurl": "0.1.2",
+        "packaging": "26.1",
+        "python-multipart": "0.0.32",
+        "pathspec": "1.0.4",
+        "distlib": "0.4.3",
+        "mpmath": "1.3.0",
+        "PyYAML": "6.0.3",
+        "pytest-asyncio": "1.3.0",
+        "regex": "2026.5.9",
+        "backports.tarfile": "1.2.0",
+        "id": "1.6.1",
+        "google-genai": "1.73.1",
+        "urllib3": "2.6.3",
+        "readme_renderer": "44.0",
+        "typing_extensions": "4.15.0",
+        "jaraco.functools": "4.4.0",
+        "scipy": "1.17.1",
+        "zipp": "3.23.1",
+        "joblib": "1.5.3",
+        "Jinja2": "3.1.6",
+        "typer": "0.26.7",
+        "referencing": "0.37.0",
+        "charset-normalizer": "3.4.7",
+        "uvicorn": "0.49.0",
+        "pytest": "9.0.3",
+        "MarkupSafe": "3.0.3",
+        "sse-starlette": "3.4.4",
+        "distro": "1.9.0",
+        "pluggy": "1.6.0",
+        "more-itertools": "11.0.2",
+        "attrs": "26.1.0",
+        "importlib_metadata": "9.0.0",
+        "requests-toolbelt": "1.0.0",
+        "identify": "2.6.19",
+        "httpx": "0.28.1",
+        "pyasn1_modules": "0.4.2",
+        "click": "8.3.2",
+        "safetensors": "0.7.0",
+        "tokenizers": "0.22.2",
+        "pydantic": "2.13.2",
+        "sentence-transformers": "5.5.1",
+        "pyproject_hooks": "1.2.0",
+        "pre_commit": "4.6.0",
+        "typing-inspection": "0.4.2",
+        "annotated-types": "0.7.0",
+        "keyring": "25.7.0",
+        "httpx-sse": "0.4.3",
+        "mypy_extensions": "1.1.0",
+        "rpds-py": "0.30.0",
+        "python-frontmatter": "1.1.0",
+        "annotated-doc": "0.0.4",
+        "anyio": "4.13.0",
+        "pyasn1": "0.6.3"
+      },
+      "queries_sha256": "f47486df87c61e2391a4326f9ffe68659373f6837063cf70c5b990a639f2290c",
+      "queries": [
+        {
+          "hits": [
+            {
+              "path": "quickstarts/run-security-audit.md",
+              "score": 18.0
+            },
+            {
+              "path": "quickstarts/skill-security-audit.md",
+              "score": 13.5
+            },
+            {
+              "path": "concepts/tool-security-audit.md",
+              "score": 11.25
+            }
+          ],
+          "id": "gq-001"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-smart-test.md",
+              "score": 20.25
+            },
+            {
+              "path": "quickstarts/generate-tests.md",
+              "score": 17.25
+            },
+            {
+              "path": "quickstarts/skill-smart-test.md",
+              "score": 14.25
+            }
+          ],
+          "id": "gq-002"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-fix-test.md",
+              "score": 26.25
+            },
+            {
+              "path": "quickstarts/skill-fix-test.md",
+              "score": 17.25
+            },
+            {
+              "path": "tasks/use-fix-test.md",
+              "score": 13.799999999999999
+            }
+          ],
+          "id": "gq-003"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-code-quality.md",
+              "score": 23.25
+            },
+            {
+              "path": "quickstarts/run-code-review.md",
+              "score": 15.0
+            },
+            {
+              "path": "quickstarts/skill-code-quality.md",
+              "score": 15.0
+            }
+          ],
+          "id": "gq-004"
+        },
+        {
+          "hits": [
+            {
+              "path": "references/tool-deep-review.md",
+              "score": 15.0
+            },
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 6.0
+            }
+          ],
+          "id": "gq-005"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 23.25
+            },
+            {
+              "path": "quickstarts/skill-bug-predict.md",
+              "score": 15.75
+            },
+            {
+              "path": "references/tool-bug-predict.md",
+              "score": 12.5
+            }
+          ],
+          "id": "gq-006"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-refactor-plan.md",
+              "score": 10.5
+            },
+            {
+              "path": "quickstarts/skill-refactor-plan.md",
+              "score": 10.5
+            },
+            {
+              "path": "tasks/use-refactor-plan.md",
+              "score": 7.199999999999999
+            }
+          ],
+          "id": "gq-007"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-release-prep.md",
+              "score": 6.75
+            },
+            {
+              "path": "quickstarts/skill-release-prep.md",
+              "score": 6.75
+            },
+            {
+              "path": "references/skill-release-prep.md",
+              "score": 5.5
+            }
+          ],
+          "id": "gq-008"
+        },
+        {
+          "hits": [
+            {
+              "path": "references/tool-doc-audit.md",
+              "score": 8.0
+            },
+            {
+              "path": "quickstarts/run-security-audit.md",
+              "score": 6.75
+            },
+            {
+              "path": "quickstarts/skill-security-audit.md",
+              "score": 6.75
+            }
+          ],
+          "id": "gq-009"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-planning.md",
+              "score": 15.0
+            }
+          ],
+          "id": "gq-010"
+        },
+        {
+          "hits": [
+            {
+              "path": "quickstarts/run-security-audit.md",
+              "score": 7.5
+            },
+            {
+              "path": "quickstarts/skill-security-audit.md",
+              "score": 7.5
+            },
+            {
+              "path": "concepts/tool-security-audit.md",
+              "score": 5.25
+            }
+          ],
+          "id": "gq-011"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-doc-gen.md",
+              "score": 13.5
+            },
+            {
+              "path": "quickstarts/skill-doc-gen.md",
+              "score": 5.25
+            },
+            {
+              "path": "references/skill-doc-gen.md",
+              "score": 5.0
+            }
+          ],
+          "id": "gq-012"
+        },
+        {
+          "hits": [
+            {
+              "path": "references/tool-doc-orchestrator.md",
+              "score": 15.5
+            },
+            {
+              "path": "concepts/tool-workflow-orchestration.md",
+              "score": 13.5
+            },
+            {
+              "path": "concepts/meta-orchestration.md",
+              "score": 12.0
+            }
+          ],
+          "id": "gq-013"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 8.25
+            }
+          ],
+          "id": "gq-014"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 9.0
+            },
+            {
+              "path": "concepts/task-ci-cd-pipeline.md",
+              "score": 7.5
+            },
+            {
+              "path": "quickstarts/skill-bug-predict.md",
+              "score": 6.75
+            }
+          ],
+          "id": "gq-015"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 21.75
+            },
+            {
+              "path": "quickstarts/skill-code-quality.md",
+              "score": 12.0
+            },
+            {
+              "path": "concepts/tool-code-quality.md",
+              "score": 10.5
+            }
+          ],
+          "id": "gq-016"
+        },
+        {
+          "hits": [
+            {
+              "path": "quickstarts/skill-doc-gen.md",
+              "score": 7.5
+            },
+            {
+              "path": "concepts/task-code-migration.md",
+              "score": 6.75
+            },
+            {
+              "path": "concepts/tool-code-quality.md",
+              "score": 6.75
+            }
+          ],
+          "id": "gq-017"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-code-quality.md",
+              "score": 24.75
+            },
+            {
+              "path": "quickstarts/skill-code-quality.md",
+              "score": 13.5
+            },
+            {
+              "path": "concepts/tool-security-audit.md",
+              "score": 12.0
+            }
+          ],
+          "id": "gq-018"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-release-prep.md",
+              "score": 6.75
+            },
+            {
+              "path": "quickstarts/skill-release-prep.md",
+              "score": 6.75
+            },
+            {
+              "path": "tasks/use-release-prep.md",
+              "score": 5.3999999999999995
+            }
+          ],
+          "id": "gq-019"
+        },
+        {
+          "hits": [
+            {
+              "path": "quickstarts/generate-tests.md",
+              "score": 9.0
+            },
+            {
+              "path": "concepts/tool-fix-test.md",
+              "score": 6.75
+            },
+            {
+              "path": "concepts/tool-smart-test.md",
+              "score": 6.75
+            }
+          ],
+          "id": "gq-020"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-refactor-plan.md",
+              "score": 12.0
+            }
+          ],
+          "id": "gq-021"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-smart-test.md",
+              "score": 16.5
+            },
+            {
+              "path": "quickstarts/generate-tests.md",
+              "score": 9.0
+            },
+            {
+              "path": "quickstarts/skill-smart-test.md",
+              "score": 9.0
+            }
+          ],
+          "id": "gq-022"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-security-audit.md",
+              "score": 18.75
+            },
+            {
+              "path": "quickstarts/run-security-audit.md",
+              "score": 10.5
+            },
+            {
+              "path": "quickstarts/skill-security-audit.md",
+              "score": 10.5
+            }
+          ],
+          "id": "gq-023"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-fix-test.md",
+              "score": 16.5
+            },
+            {
+              "path": "quickstarts/skill-fix-test.md",
+              "score": 10.5
+            },
+            {
+              "path": "tasks/use-fix-test.md",
+              "score": 8.4
+            }
+          ],
+          "id": "gq-024"
+        },
+        {
+          "hits": [
+            {
+              "path": "references/tool-doc-audit.md",
+              "score": 11.5
+            },
+            {
+              "path": "quickstarts/browse-help.md",
+              "score": 5.25
+            }
+          ],
+          "id": "gq-025"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-release-prep.md",
+              "score": 15.75
+            },
+            {
+              "path": "quickstarts/skill-release-prep.md",
+              "score": 11.25
+            },
+            {
+              "path": "quickstarts/task-package-publishing.md",
+              "score": 7.5
+            }
+          ],
+          "id": "gq-026"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 27.75
+            },
+            {
+              "path": "references/tool-deep-review.md",
+              "score": 15.0
+            },
+            {
+              "path": "concepts/tool-code-quality.md",
+              "score": 12.75
+            }
+          ],
+          "id": "gq-027"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-planning.md",
+              "score": 15.75
+            }
+          ],
+          "id": "gq-028"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-code-quality.md",
+              "score": 24.0
+            },
+            {
+              "path": "quickstarts/skill-code-quality.md",
+              "score": 13.5
+            },
+            {
+              "path": "quickstarts/run-code-review.md",
+              "score": 10.5
+            }
+          ],
+          "id": "gq-029"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-refactor-plan.md",
+              "score": 9.75
+            },
+            {
+              "path": "references/tool-simplify-code.md",
+              "score": 9.5
+            },
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 7.5
+            }
+          ],
+          "id": "gq-030"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-fix-test.md",
+              "score": 19.5
+            },
+            {
+              "path": "quickstarts/task-ci-cd-pipeline.md",
+              "score": 13.5
+            },
+            {
+              "path": "concepts/task-ci-cd-pipeline.md",
+              "score": 11.25
+            }
+          ],
+          "id": "gq-031"
+        },
+        {
+          "hits": [
+            {
+              "path": "quickstarts/run-security-audit.md",
+              "score": 12.75
+            }
+          ],
+          "id": "gq-032"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-doc-gen.md",
+              "score": 5.25
+            }
+          ],
+          "id": "gq-033"
+        },
+        {
+          "hits": [
+            {
+              "path": "references/tool-doc-orchestrator.md",
+              "score": 8.0
+            },
+            {
+              "path": "concepts/task-ci-cd-pipeline.md",
+              "score": 6.75
+            },
+            {
+              "path": "quickstarts/task-ci-cd-pipeline.md",
+              "score": 6.75
+            }
+          ],
+          "id": "gq-034"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-release-prep.md",
+              "score": 12.0
+            },
+            {
+              "path": "concepts/task-package-publishing.md",
+              "score": 10.5
+            },
+            {
+              "path": "quickstarts/task-package-publishing.md",
+              "score": 10.5
+            }
+          ],
+          "id": "gq-035"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 23.25
+            },
+            {
+              "path": "quickstarts/task-git-workflow.md",
+              "score": 9.75
+            },
+            {
+              "path": "references/tool-bug-predict.md",
+              "score": 6.0
+            }
+          ],
+          "id": "gq-036"
+        },
+        {
+          "hits": [
+            {
+              "path": "references/tool-deep-review.md",
+              "score": 20.5
+            },
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 13.5
+            },
+            {
+              "path": "concepts/tool-planning.md",
+              "score": 6.0
+            }
+          ],
+          "id": "gq-037"
+        },
+        {
+          "hits": [
+            {
+              "path": "references/tool-doc-orchestrator.md",
+              "score": 18.5
+            },
+            {
+              "path": "concepts/tool-memory-and-context.md",
+              "score": 7.5
+            },
+            {
+              "path": "quickstarts/skill-memory-and-context.md",
+              "score": 6.0
+            }
+          ],
+          "id": "gq-038"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-planning.md",
+              "score": 20.25
+            },
+            {
+              "path": "concepts/tool-spec.md",
+              "score": 7.5
+            },
+            {
+              "path": "concepts/task-code-migration.md",
+              "score": 6.75
+            }
+          ],
+          "id": "gq-039"
+        },
+        {
+          "hits": [
+            {
+              "path": "concepts/tool-bug-predict.md",
+              "score": 25.5
+            },
+            {
+              "path": "references/tool-bug-predict.md",
+              "score": 11.0
+            },
+            {
+              "path": "concepts/task-error-handling-design.md",
+              "score": 6.75
+            }
+          ],
+          "id": "gq-040"
+        }
+      ],
+      "retrieval": {
+        "precision_at_1": 1.0,
+        "recall_at_k": 1.0,
+        "k": 3
+      }
+    }
+  },
+  "faithfulness": "skipped: retrieval-only; no provider calls",
+  "mode": "build",
+  "build_isolation": false
+}

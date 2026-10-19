@@ -5,7 +5,7 @@ feature: benchmark
 depth: note
 generated_at: 2026-06-10T06:07:59.729746+00:00
 source_hash: 82975cf88c844b87657deb87845f45f4f5fbc32319ccba10e0eb8a798867630f
-status: generated
+status: verified
 ---
 
 # Note: benchmark
@@ -18,10 +18,14 @@ The module is designed to gate CI pipelines on configurable quality thresholds r
 
 ## Design decisions
 
-**Retrieval tiers are opt-in.** The `--retriever` flag accepts `keyword`, `hybrid`, or `transformer`. If the selected tier's optional dependency is not installed, the runner exits with code `2` and prints an install hint rather than raising an unhandled exception. This keeps the base install lightweight.
+**Retrieval tiers are opt-in.** The `--retriever` flag selects `keyword`, `hybrid`, or `transformer` for one run. Keyword needs no retriever extra. Hybrid uses `[embeddings]` but can fall back to keyword-only; transformer requires `[transformers]` and exits `2` with an install hint when it is missing.
 
-**Faithfulness scoring is off by default.** Pass `--with-faithfulness` to enable it. Faithfulness scoring typically requires an additional model call, so omitting it speeds up routine retrieval benchmarks in CI.
+**Faithfulness scoring is off by default.** Pass `--with-faithfulness` to enable it. It generates and judges an answer per query; answer generation uses API tokens even with a subscription-routed judge.
 
-**Abstention threshold calibration is built in.** The `--calibrate-abstention` flag lets you tune the threshold at which the retriever declines to answer, without writing a separate calibration script.
+**Abstention threshold calibration is built in.** `--calibrate-abstention` recommends a keyword-score threshold from `--queries` and `--negatives`; it does not apply it. JSON records the calibration and marks both benchmark stages `skipped` (`calibration_only`).
+
+**Results survive later failures.** With `--json`, completed retrieval and primary faithfulness are saved before later work. The `outcomes` object distinguishes completed, skipped, unavailable, and failed stages. Exit `1` is a regression, `2` is a local or invalid-data failure, and `3` is a classified transient primary-provider failure.
+
+**CLI cutoffs and CI thresholds are separate.** The CLI gates precision@1 and optional primary faithfulness; repository CI also gates recall using its locked threshold file. A CLI pass is not the full CI verdict.
 
 **Custom query files are supported.** You can supply your own query set instead of the built-in defaults, which makes it straightforward to benchmark against domain-specific corpora.

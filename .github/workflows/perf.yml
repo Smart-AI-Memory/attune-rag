@@ -19,13 +19,14 @@ name: Perf
 #
 # 2. `delta-check` — triggered on every PR. Runs an N=30 LLM-free
 #    measurement, compares against the locked baseline, posts an
-#    advisory comment. Bumped from N=10 pre-W3.1: the original
+#    delta comment. Two selected CPU axes are blocking; other axes
+#    are advisory. Bumped from N=10 pre-W3.1: the original
 #    N=10 produced ±23% swings between consecutive PRs on
 #    identical perf-relevant code (rag_pipeline_run, PR #72/#74),
 #    making the gate unreliable. N=30 cuts that swing by √3 ≈ 1.73x
 #    and brings per-PR variance closer to the baseline's intra-run
-#    measurement methodology. Advisory mode through W3.1 (per
-#    design.md §2's promotion ramp); doesn't fail the PR.
+#    measurement methodology. Missing/invalid required measurements
+#    fail validation; no baseline values or variance method change here.
 
 on:
   pull_request:
@@ -300,7 +301,7 @@ jobs:
           python -m pip install -e ".[dev]"
         shell: bash
 
-      # ── Measure current HEAD on this runner (no LLM, N=10) ────
+      # ── Measure current HEAD on this runner (no LLM, N=30) ────
       # continue-on-error so a script crash doesn't kill the
       # whole job silently — the next step branches on outcome
       # and emits a "measurement failed" comment instead.
@@ -309,6 +310,7 @@ jobs:
         continue-on-error: true
         run: |
           set -euo pipefail
+          rm -f "$CURRENT_JSON" "$CURRENT_MD"
           python scripts/measure_perf_baseline.py \
             --runs 30 \
             --out "$CURRENT_MD" \
@@ -327,30 +329,31 @@ jobs:
       # metrics (wall-clock, reranker, directory_corpus_load) stay
       # advisory — they appear in the comment table with the ⚠️ icon
       # but don't fail the job. Re-evaluate wall-clock promotion in
-      # W4 based on observed σ. Measurement-failure branch stays
-      # advisory (RC=0) — a script crash shouldn't block merge.
+      # W4 based on observed σ. Failed local measurement cannot
+      # establish that the required CPU checks passed.
       - name: Format delta
         id: delta
+        if: always()
+        env:
+          MEASURE_OUTCOME: ${{ steps.measure.outcome }}
         run: |
           set +e
-          if [ "${{ steps.measure.outcome }}" = "failure" ]; then
+          if [ "$MEASURE_OUTCOME" != "success" ]; then
             cat > "$COMMENT_PATH" <<'EOF'
           <!-- attune-rag-perf-gate -->
           ## Perf delta — measurement failed
 
-          The per-PR perf measurement step crashed before producing
-          data. See the workflow run log for details (top-level CI
+          The per-PR perf measurement did not complete successfully.
+          See the workflow run log for details (top-level CI
           summary links the failing step).
 
-          Measurement-failure stays non-blocking even under W3.1
-          gating — the alternative would make every PR depend on the
-          perf-script infrastructure being green. Fix the measurement
-          step in a follow-up; real regressions in gated metrics will
-          remain detectable once measurement runs again.
+          Required CPU evidence is unavailable, so validation failed.
+          Fix the measurement error and rerun to establish whether
+          the selected CPU metrics meet the existing baseline.
 
           <!-- attune-rag-perf-gate -->
           EOF
-            RC=0
+            RC=2
           else
             python scripts/format_perf_delta.py \
               --baseline "$BASELINE_JSON" \
@@ -362,9 +365,8 @@ jobs:
           fi
           echo "rc=$RC" >> "$GITHUB_OUTPUT"
           # W3.1: propagate the script's exit code. RC=1 (regression
-          # in a gated metric) fails the job and blocks merge under
-          # branch protection. Measurement-failure branch above
-          # explicitly sets RC=0 so it doesn't trip the gate.
+          # in a gated metric) or RC=2 (invalid/missing measurement)
+          # fails the job. Posting diagnostics does not suppress it.
           exit $RC
         shell: bash
 

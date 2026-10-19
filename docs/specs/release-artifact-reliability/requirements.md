@@ -1,0 +1,37 @@
+# Phase 1 requirements
+
+> **Status: Phase 1 complete locally; all five tasks accepted under authorized auto-run.**
+
+**Interpretation:** Current-state claims are governed by the checked-out code and active configuration, as recorded in [evidence](evidence.md). R1–R7 are approved requirements; All five tasks are implemented, locally validated, and accepted. Documentation and earlier specs inform desired contracts; they do not establish that those contracts are currently implemented.
+
+**Problem.** Source tests exercise behavior that the distribution does not preserve, and CI sometimes converts evidence of failure into an inconclusive success. At reviewed commit `25d2cf0`, a clean sdist-to-wheel build omits both corpus override JSON files. Against the same dependency corpus, source top-1/top-3 scores are 40/40 and 40/40; wheel scores are 32/40 and 39/40. A mocked faithfulness result of 0.50 is rejected by the benchmark but converted to successful/inconclusive by the workflow. All-NaN measurements pass the threshold checker. These are verified defects, not new measurement hypotheses. See [evidence](evidence.md).
+
+**R1 — Complete distributable resources.** Both sdist and wheel include the runtime corpus override files, editor schema, dashboard template, and declared typing marker. Contents match their source inputs. Artifact validation diagnoses missing or corrupted required resources. Runtime corpus-loading and optional user-sidecar failure policies remain unchanged in this phase.
+
+Acceptance: build from a clean tracked snapshot, build the wheel from the sdist, inspect required members/content, and run imports outside the checkout. Deliberately remove each required corpus override and show the artifact check fails, including when an override currently contains no active aliases.
+
+**R2 — Behavioral source/artifact parity.** With identical resolved corpus dependencies and retriever configuration, source and wheel return identical ordered paths and scores for each existing locked golden query. Compare deterministic retrieval fields, not timestamps or elapsed time. Each build also meets the active locked retrieval thresholds. This artifact check explicitly skips faithfulness: it makes no provider calls. Conditional faithfulness remains the separate R4–R5 workflow.
+
+Acceptance: verify imported module paths and installed metadata; prohibit editable/source-path fallback in the artifact probe; run the existing 40-query set; retain the query SHA and dependency versions in the receipt. At scoping time the active thresholds are P@1 ≥ 0.975 and R@3 = 1.0. They remain sourced from `docs/specs/release-quality-baseline/thresholds.json`, not duplicated test constants. The review's 40/40 baseline demonstrates the current defect; it is not a new universal quality threshold.
+
+**R3 — Validate the artifact that is released.** A PR-level package check catches omissions before release. The release workflow validates built distributions before uploading them for publication, and publication consumes those same validated bytes.
+
+Acceptance: a bad artifact prevents publication; record and compare artifact hashes across validation/upload/download; do not rebuild after validation. Preserve the configured OIDC publisher and `pypi` environment. Current remote required-reviewer settings were not inspected; environment configuration alone does not establish approval enforcement. This spec does not itself authorize a release or change release-approval requirements.
+
+**R4 — Required local checks and measured regressions cannot pass.** Required retrieval evaluation runs independently of optional faithfulness. Completed metrics below locked thresholds fail even when the benchmark's own severity threshold already returned nonzero. Missing, malformed, incomplete, out-of-domain, or nonfinite required metrics fail validation. Unclassified local exceptions and failed commands are not provider outages.
+
+Acceptance: exercise both sides of the CLI's current internal cutoffs (precision 0.70 and faithfulness 0.85), intermediate violations of locked thresholds, ordinary pass, missing/invalid JSON, missing required metrics, NaN, positive/negative infinity, and query SHA mismatch. Run the command-to-workflow path, not only `check_thresholds.check()`. A completed low score is not retried to seek a passing sample.
+
+**R5 — Restrict the external-unavailability exception.** The reviewed baseline retried every nonzero benchmark result once in full mode and converted remaining failures to inconclusive success; retrieval-only failures also became inconclusive without retry. Phase 1 restricts this handling to classified transient provider failures: retry once, then report explicitly inconclusive/nonblocking faithfulness with a visible reason. This implements the narrower policy described in the archived baseline spec, which is design context rather than proof of current behavior. Missing credentials retain the implemented disclosed retrieval-only mode. The proposed exception cannot erase a completed regression or suppress required retrieval results.
+
+Acceptance: typed connection/timeout/rate-limit/transient service failures follow one bounded retry; persistent known transient failure leaves only faithfulness unavailable. Authentication/configuration errors and arbitrary exceptions do not silently masquerade as transient availability. Tests prove successful retrieval plus unavailable faithfulness, failed retrieval plus unavailable faithfulness, measured faithfulness regression, and invalid faithfulness output remain distinct. The exact classifier is reviewed with the task; no new provider calls or run triggers are required to test it.
+
+**R6 — Preserve performance policy while requiring evidence.** Keep the existing blocking CPU metrics for `KeywordRetriever.retrieve` and `RagPipeline.run`. Wall-clock, directory-load, and reranker measurements remain advisory. An absent or invalid selected blocking metric, or a crash in the required local measurement path, produces failed validation rather than successful validation.
+
+Acceptance: actual workflow/control-flow tests cover a CPU regression, advisory-only regression, valid pass, missing/nonfinite selected CPU data, and measurement-process failure. Baseline values and the existing variance methodology are unchanged. The provider-outage exception does not apply to this local, LLM-free measurement.
+
+**R7 — Public claims describe the implemented checks.** README and workflow summaries distinguish enforced measurements, advisory measurements, intentionally skipped faithfulness, and genuine unavailability. Reference the active threshold artifact and describe the artifact check. Preserve the broader review as the input to later phase scoping.
+
+Acceptance: claimed thresholds and blocking axes agree with configuration; no blanket promise that every API failure or every performance axis blocks every PR. Documentation of installed-package quality is backed by the artifact check. Limit this task's prose edits to Phase 1 claims; other example/provider/corpus-guide defects remain later-phase findings.
+
+**Boundaries.** No scoring changes, new retrieval tier, new corpus dataset, baseline reset, new performance threshold, transformer/model benchmark expansion, generation-policy change, editor fix, provider-model switch, or general CLI redesign belongs to Phase 1. Those items are retained in the review. Implementation must remain within this approved plan; actual execution follows the spec lifecycle.

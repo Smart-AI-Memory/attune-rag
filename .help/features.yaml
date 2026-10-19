@@ -54,7 +54,7 @@ features:
     tags: [eval, faithfulness, judge, hallucination, scoring]
 
   benchmark:
-    description: Precision/recall/faithfulness benchmark runner, installed as the attune-rag-benchmark console script — gates CI on configurable thresholds; --retriever {keyword,hybrid,transformer} benchmarks each retrieval tier (exits 2 with an install hint when the tier's extra is missing); supports custom query files, abstention-threshold calibration via --calibrate-abstention, and optional faithfulness scoring via --with-faithfulness
+    description: Precision/recall/faithfulness benchmark runner, installed as the attune-rag-benchmark console script — gates CI on configurable thresholds; --retriever {keyword,hybrid,transformer} selects one tier (keyword needs no retriever extra; hybrid can fall back without embeddings; transformer requires its extra); supports custom query files, abstention-threshold calibration via --calibrate-abstention, and optional faithfulness scoring via --with-faithfulness
     files:
       - src/attune_rag/benchmark.py
     tags: [benchmark, ci, precision, recall, quality, retriever-tiers]

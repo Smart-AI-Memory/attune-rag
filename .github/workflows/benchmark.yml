@@ -6,7 +6,7 @@ name: Quality gate
 # docs/specs/release-quality-baseline/thresholds.json.
 #
 # Faithfulness gating requires ANTHROPIC_API_KEY in repo Secrets.
-# When the secret is missing (default state of the repo today),
+# When the secret is missing,
 # this workflow degrades gracefully to retrieval-only gating and
 # logs a notice. Add the secret to enable faithfulness gating —
 # no workflow edit needed.
@@ -110,7 +110,7 @@ jobs:
             echo "Faithfulness gate: ENABLED ($REASON)."
           fi
 
-      # ── M3.1 + M3.4: run the benchmark with one retry on transient errors ─
+      # Retry only a classified provider outage, after validating retrieval.
       - name: Run benchmark (retry once on transient failure)
         id: bench
         env:
@@ -118,50 +118,113 @@ jobs:
           MODE: ${{ steps.mode.outputs.mode }}
         run: |
           set +e
+          set -uo pipefail
           if [ "$MODE" = "full" ]; then
             FLAGS=(--with-faithfulness --json "$DUMP_PATH")
-            ATTEMPTS=2  # full pass spends API tokens; one retry on transient error
           else
             FLAGS=(--json "$DUMP_PATH")
-            ATTEMPTS=1  # retrieval is deterministic + free; no retry needed
           fi
 
-          RC=0
-          for attempt in $(seq 1 $ATTEMPTS); do
+          for attempt in 1 2; do
+            rm -f "$DUMP_PATH"
             python -m attune_rag.benchmark "${FLAGS[@]}"
             RC=$?
-            if [ $RC -eq 0 ]; then break; fi
-            echo "::warning::Benchmark attempt $attempt failed with exit $RC."
-            if [ $attempt -lt $ATTEMPTS ]; then sleep 30; fi
+            if [ "$RC" -ne 3 ] || [ "$MODE" != "full" ] || [ "$attempt" -eq 2 ]; then
+              break
+            fi
+            # Exit 3 alone is insufficient: a current, valid retrieval pass
+            # and an explicitly unavailable primary judge must corroborate it.
+            python - "$DUMP_PATH" <<'PY'
+          import json, sys
+          from pathlib import Path
+          try:
+              report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+              outcomes = report["outcomes"]
+              assert outcomes["retrieval"] == "completed"
+              assert outcomes["faithfulness"] == "unavailable"
+              assert not any(key.startswith("faithfulness_") for key in report)
+          except (OSError, ValueError, KeyError, TypeError, AssertionError):
+              sys.exit(2)
+          PY
+            if [ "$?" -ne 0 ]; then break; fi
+            python scripts/check_thresholds.py --dump "$DUMP_PATH" \
+              --thresholds "$THRESHOLDS_PATH" --skip-metric mean_faithfulness
+            if [ "$?" -ne 0 ]; then break; fi
+            echo "::warning::Primary faithfulness provider unavailable; retrying once."
+            sleep 30
           done
-
-          if [ $RC -ne 0 ]; then
-            echo "::warning::Benchmark failed after $ATTEMPTS attempt(s) — marking gate inconclusive (not blocking PR)."
-            echo "inconclusive=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo "inconclusive=false" >> "$GITHUB_OUTPUT"
+          echo "rc=$RC" >> "$GITHUB_OUTPUT"
+          # The next step validates all independent evidence and this exit code.
+          exit 0
         shell: bash
 
       # ── M3.1: check thresholds ────────────────────────────────────
       - name: Check thresholds
         id: check
-        if: steps.bench.outputs.inconclusive == 'false'
         env:
           MODE: ${{ steps.mode.outputs.mode }}
+          BENCH_RC: ${{ steps.bench.outputs.rc }}
         run: |
           set +e
-          SKIP_ARGS=()
-          if [ "$MODE" = "retrieval-only" ]; then
-            SKIP_ARGS+=(--skip-metric mean_faithfulness)
-          fi
+          set -uo pipefail
+          # Retrieval is required in every mode, including provider outages.
           python scripts/check_thresholds.py \
             --dump "$DUMP_PATH" \
             --thresholds "$THRESHOLDS_PATH" \
             --comment-out "$COMMENT_PATH" \
-            "${SKIP_ARGS[@]}"
-          RC=$?
+            --skip-metric mean_faithfulness
+          RETRIEVAL_RC=$?
+
+          FAITH_STATUS=$(python - "$DUMP_PATH" "$MODE" "$BENCH_RC" <<'PY'
+          import json, sys
+          from pathlib import Path
+          try:
+              report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+              outcomes = report["outcomes"]
+              assert outcomes["retrieval"] == "completed"
+              faith = outcomes["faithfulness"]
+              mode, rc = sys.argv[2:]
+              assert mode in {"full", "retrieval-only"}
+              assert faith in {"completed", "unavailable", "skipped", "pending", "failed"}
+              if faith == "completed":
+                  assert mode == "full" and "faithfulness_legacy" in report and rc != "3"
+              else:
+                  assert not any(key.startswith("faithfulness_") for key in report)
+                  if faith == "unavailable":
+                      assert mode == "full" and rc == "3"
+                  elif rc in {"0", "1"}:
+                      assert faith == "skipped"
+                      assert mode == "retrieval-only" or (
+                          rc == "1" and outcomes.get("reason") == "retrieval_regression"
+                      )
+                  else:
+                      assert rc != "3"
+              print(faith)
+          except (OSError, ValueError, KeyError, TypeError, AssertionError) as exc:
+              print(f"Invalid benchmark outcome evidence: {type(exc).__name__}", file=sys.stderr)
+              sys.exit(2)
+          PY
+          )
+          OUTCOME_RC=$?
+          FAITH_RC=0
+          if [ "$OUTCOME_RC" -eq 0 ] && [ "$FAITH_STATUS" = "completed" ]; then
+            python scripts/check_thresholds.py --dump "$DUMP_PATH" \
+              --thresholds "$THRESHOLDS_PATH" --comment-out "$COMMENT_PATH"
+            FAITH_RC=$?
+          fi
+
+          RC=0
+          if [ "$RETRIEVAL_RC" -gt 1 ] || [ "$FAITH_RC" -gt 1 ] || [ "$OUTCOME_RC" -ne 0 ]; then
+            RC=2
+          elif [ "$RETRIEVAL_RC" -eq 1 ] || [ "$FAITH_RC" -eq 1 ] || [ "$BENCH_RC" = "1" ]; then
+            RC=1
+          elif [ "$BENCH_RC" = "3" ] && [ "$FAITH_STATUS" = "unavailable" ]; then
+            echo "::warning::Faithfulness unavailable after classified provider failure; retrieval passed."
+          elif [ "$BENCH_RC" != "0" ]; then
+            RC=2
+          fi
           echo "rc=$RC" >> "$GITHUB_OUTPUT"
+          echo "faithfulness=${FAITH_STATUS:-invalid}" >> "$GITHUB_OUTPUT"
           exit $RC
         shell: bash
         continue-on-error: true
@@ -204,15 +267,17 @@ jobs:
         env:
           MODE: ${{ steps.mode.outputs.mode }}
           REASON: ${{ steps.mode.outputs.reason }}
-          BENCH_RC: ${{ steps.bench.outputs.inconclusive }}
+          BENCH_RC: ${{ steps.bench.outputs.rc }}
           CHECK_RC: ${{ steps.check.outputs.rc }}
+          FAITH_STATUS: ${{ steps.check.outputs.faithfulness }}
         run: |
           {
             echo "### attune-rag quality gate"
             echo ""
             echo "- Mode: \`${MODE}\`"
             echo "- Reason: ${REASON}"
-            echo "- Inconclusive: ${BENCH_RC}"
+            echo "- Benchmark exit: ${BENCH_RC:-missing}"
+            echo "- Faithfulness: ${FAITH_STATUS:-invalid}"
             echo "- check_thresholds.py exit: ${CHECK_RC:-skipped}"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -225,7 +290,7 @@ jobs:
         run: bash scripts/smoke_check_gate.sh
         shell: bash
 
-      # ── Fail the job iff check_thresholds reported a regression ──
+      # continue-on-error above permits diagnostics; these steps restore failure.
       - name: Fail on regression
         if: steps.check.outputs.rc == '1'
         run: |
@@ -234,8 +299,14 @@ jobs:
         shell: bash
 
       - name: Fail on validation error
-        if: steps.check.outputs.rc == '2'
+        if: always() && steps.check.outputs.rc != '0' && steps.check.outputs.rc != '1'
+        env:
+          CHECK_RC: ${{ steps.check.outputs.rc }}
         run: |
-          echo "::error::Quality gate hit a validation error — see the error lines above. Common causes: malformed dump, queries.yaml SHA mismatch (re-measure with scripts/measure_baseline_variance.py), or threshold expects a metric the dump lacks."
+          if [ -z "${CHECK_RC:-}" ]; then
+            echo "::error::Required quality validation did not complete; inspect earlier steps."
+          else
+            echo "::error::Quality gate hit a validation error — see the error lines above. Common causes: malformed dump, queries.yaml SHA mismatch (re-measure with scripts/measure_baseline_variance.py), or threshold expects a metric the dump lacks."
+          fi
           exit 1
         shell: bash

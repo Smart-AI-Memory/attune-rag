@@ -1,0 +1,45 @@
+{
+  "task_id": "3",
+  "status": "passed",
+  "mechanism": "Authorized Codex/local task review; separate Claude cross-review is advisory only",
+  "tests": {
+    "passed": 254,
+    "seconds": 5.64,
+    "junit": "task-3-tests.xml"
+  },
+  "checks": [
+    "Ruff passed",
+    "Black passed",
+    "git diff --check passed",
+    "201 checker/distribution/workflow consumer tests passed in preceding central run"
+  ],
+  "independent_review": {
+    "reviewer": "Codex retrieval_review",
+    "scope": "benchmark.py, check_thresholds.py, benchmark.yml",
+    "score": 96,
+    "score_type": "subjective code-quality/security judgment",
+    "actionable_findings": []
+  },
+  "behavior": [
+    "Retrieval evidence survives benchmark regression and provider failure",
+    "Completed primary faithfulness is preserved before secondary work",
+    "Only typed primary provider transport/rate-limit/server errors permit exit 3",
+    "Workflow retries at most once, requiring valid passing retrieval and explicit unavailable primary faithfulness",
+    "Invalid metrics, missing/corrupt/stale evidence, unclassified errors, and measured regressions fail",
+    "Existing variance-script stdout consumer passes"
+  ],
+  "limits": [
+    "Provider outcomes stubbed; no live faithfulness inference",
+    "Workflow shell replay is local, not remote GitHub execution",
+    "Thresholds and query lock unchanged"
+  ],
+  "advisory_cross_review": {
+    "status": "completed_and_triaged",
+    "auth_preflight": "Outside-sandbox read-only check verified claude.ai Max login with no API-key source; restricted child initially reported unavailable",
+    "execution": "Initial transmission rejected; subsequent user subscription command authorized the six-file review. Completed with 14 claims; full-code triage corrected F3/F6/F9, rejected seven current-defect claims, and retained four intentional behaviors.",
+    "api_fallback": "forbidden",
+    "affects_task_gate": false,
+    "raw_result": "task-3-cross-review-result.json",
+    "followup": "task-3-cross-review-followup.json"
+  }
+}

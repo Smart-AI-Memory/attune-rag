@@ -6,10 +6,10 @@ comment showing each metric's delta and a status verdict per axis.
 
 Exit codes
 ----------
-0 — all measured metrics are within the locked threshold (or
-    baseline file is missing → advisory pending verdict).
-1 — at least one metric exceeded its baseline threshold.
-2 — validation error (current file missing or malformed).
+0 — all gated metrics are within the locked threshold (or the
+    baseline is missing and no explicit gates were requested).
+1 — at least one gated metric exceeded its baseline threshold.
+2 — validation error (missing, malformed, or unreadable inputs/output).
 
 Verdict per metric is **current_mean vs baseline.threshold**
 (baseline.threshold = mean + sigma·stdev, the upper-bound gate
@@ -28,11 +28,59 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 COMMENT_MARKER = "<!-- attune-rag-perf-gate -->"
+
+
+def _read_metrics(
+    path: Path,
+    label: str,
+    gated_metrics: frozenset[str],
+    *,
+    require_threshold: bool = False,
+) -> dict[str, dict[str, float]]:
+    """Read the values used in a verdict without coercing invalid data."""
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{label} {path} is not valid JSON: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError(f"{label} {path} must contain a JSON object")
+    metrics = payload.get("metrics")
+    if not isinstance(metrics, dict):
+        raise ValueError(f"{label} {path}: metrics must be a JSON object")
+    missing = gated_metrics - metrics.keys()
+    if missing:
+        raise ValueError(f"{label} missing required gated metrics: {', '.join(sorted(missing))}")
+    fields = ("mean", "threshold") if require_threshold else ("mean",)
+    for name, metric in metrics.items():
+        if not isinstance(metric, dict):
+            raise ValueError(f"{label} metric {name!r} must be a JSON object")
+        for field in fields:
+            value = metric.get(field)
+            try:
+                valid = (
+                    isinstance(value, int | float)
+                    and not isinstance(value, bool)
+                    and math.isfinite(value)
+                    and value >= 0
+                )
+            except OverflowError:
+                valid = False
+            if not valid:
+                raise ValueError(
+                    f"{label} metric {name!r}: {field} must be a finite nonnegative number"
+                )
+    return metrics
+
+
+def _write_comment(path: Path, body: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(body, encoding="utf-8")
 
 
 @dataclass(frozen=True)
@@ -286,45 +334,43 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     args = parser.parse_args(argv)
-
-    if not args.current.exists():
-        print(f"error: current measurement file missing at {args.current}", file=sys.stderr)
-        return 2
-
-    try:
-        current = json.loads(args.current.read_text())
-    except json.JSONDecodeError as e:
-        print(f"error: {args.current} is not valid JSON: {e}", file=sys.stderr)
-        return 2
-
-    args.comment_out.parent.mkdir(parents=True, exist_ok=True)
-
-    if not args.baseline.exists():
-        # Baseline file not yet locked (W0.4 pending). Emit an
-        # advisory note and exit 0; the workflow stays green.
-        args.comment_out.write_text(render_baseline_pending_comment(), encoding="utf-8")
-        return 0
-
-    try:
-        baseline = json.loads(args.baseline.read_text())
-    except json.JSONDecodeError as e:
-        print(f"error: {args.baseline} is not valid JSON: {e}", file=sys.stderr)
-        return 2
-
-    comparisons = compare(
-        baseline.get("metrics", {}) or {},
-        current.get("metrics", {}) or {},
-    )
-
     gated_metrics = frozenset(args.gate_metric)
-    args.comment_out.write_text(
-        render_comparison_comment(
-            comparisons,
-            advisory=args.advisory,
-            gated_metrics=gated_metrics,
-        ),
-        encoding="utf-8",
-    )
+
+    try:
+        current = _read_metrics(args.current, "current", gated_metrics)
+        if not args.baseline.exists():
+            if gated_metrics:
+                raise ValueError(
+                    f"baseline file missing at {args.baseline}; required gated metrics: "
+                    f"{', '.join(sorted(gated_metrics))}"
+                )
+            # Preserve the historical pre-baseline advisory mode only
+            # when the caller hasn't selected required gates.
+            _write_comment(args.comment_out, render_baseline_pending_comment())
+            return 0
+
+        baseline = _read_metrics(args.baseline, "baseline", gated_metrics, require_threshold=True)
+        comparisons = compare(baseline, current)
+        _write_comment(
+            args.comment_out,
+            render_comparison_comment(
+                comparisons,
+                advisory=args.advisory,
+                gated_metrics=gated_metrics,
+            ),
+        )
+    except (OSError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        try:
+            _write_comment(
+                args.comment_out,
+                f"{COMMENT_MARKER}\n## Perf delta — validation error\n\n"
+                "No performance verdict is available. See the workflow log "
+                f"for the validation error.\n\n{COMMENT_MARKER}\n",
+            )
+        except OSError as comment_exc:
+            print(f"error: could not write validation comment: {comment_exc}", file=sys.stderr)
+        return 2
 
     if gated_metrics:
         has_gate_breach = any(
