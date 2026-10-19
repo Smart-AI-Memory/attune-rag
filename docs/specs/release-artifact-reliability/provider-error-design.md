@@ -22,8 +22,10 @@ actual CI connection failure.
   unknown wrapped exceptions fail validation.
 - Reject certificate-verification failures even when nested in network errors.
   Detect cause-chain cycles conservatively without rendering exception messages.
-- Emit only a fixed diagnostic category for rejected connection wrappers; never
-  include credential values, exception messages, or response content.
+- Emit only fixed diagnostic labels for rejected connection wrappers: invalid
+  request headers/protocol, unsupported or invalid endpoint, or certificate
+  verification failure when the cause chain identifies one. Never include
+  credential values, exception messages, or response content.
 - Exercise the benchmark boundary: preserve retrieval, return exit 2 and failed
   faithfulness for local errors, and preserve exit 3 for genuine transport errors.
   Re-run the real SDK offline probe and the serial suite. Prove the regression

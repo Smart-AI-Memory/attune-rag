@@ -1100,5 +1100,14 @@ def test_wrapped_local_errors_do_not_become_provider_outages(
     assert report["retrieval"] == cli_measurement.retrieval
     assert report["outcomes"]["faithfulness"] == ("unavailable" if exit_code == 3 else "failed")
     assert "faithfulness_legacy" not in report
+    expected_labels = {
+        "local_protocol": "invalid_request_header_or_protocol",
+        "unsupported_protocol": "unsupported_endpoint_protocol",
+        "invalid_url": "invalid_endpoint_url",
+        "certificate": "certificate_verification_failed",
+        "nested_certificate": "certificate_verification_failed",
+    }
+    if cause_kind in expected_labels:
+        assert report["outcomes"]["reason"].endswith(":" + expected_labels[cause_kind])
     assert sentinel not in raw + capsys.readouterr().err
     assert cli_measurement.scorer.await_count == 1

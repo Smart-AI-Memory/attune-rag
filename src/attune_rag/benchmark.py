@@ -732,6 +732,29 @@ def _transient_primary_provider_error(exc: Exception) -> bool:
     )
 
 
+def _primary_provider_error_reason(exc: Exception, *, transient: bool) -> str:
+    """Describe known local causes without exposing exception or request text."""
+    reason = f"primary_provider:{type(exc).__name__}"
+    if transient:
+        return reason
+    reason += ":non_transient_or_local"
+    labels = {
+        "LocalProtocolError": "invalid_request_header_or_protocol",
+        "UnsupportedProtocol": "unsupported_endpoint_protocol",
+        "InvalidURL": "invalid_endpoint_url",
+        "SSLCertVerificationError": "certificate_verification_failed",
+    }
+    cause = exc.__cause__
+    seen: set[int] = set()
+    while cause is not None and id(cause) not in seen:
+        label = labels.get(type(cause).__name__)
+        if label is not None:
+            return f"{reason}:{label}"
+        seen.add(id(cause))
+        cause = cause.__cause__
+    return reason
+
+
 def _save_progress(args: argparse.Namespace, payload: dict[str, Any]) -> None:
     if args.json is not None:
         _dump_json(args.json, payload)
@@ -1125,10 +1148,7 @@ def _run_faithfulness_passes(
         transient = _transient_primary_provider_error(exc)
         payload["outcomes"].update(
             faithfulness="unavailable" if transient else "failed",
-            reason=(
-                f"primary_provider:{type(exc).__name__}"
-                + ("" if transient else ":non_transient_or_local")
-            ),
+            reason=_primary_provider_error_reason(exc, transient=transient),
         )
         print(f"error: {payload['outcomes']['reason']}", file=sys.stderr)
         return 3 if transient else 2
