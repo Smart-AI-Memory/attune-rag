@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Raise optional dependency security floors for sentence-transformers, the Claude
+  Agent SDK, AnyIO, and PyJWT. Require compatible patched MCP, fsspec, urllib3,
+  and development virtualenv versions on their affected paths. The base install
+  retains its existing dependencies and Python 3.10 support.
+- Make `[all]` include every runtime feature extra, including the Claude
+  subscription SDK. Author and development tooling remain separate extras.
+
 ## [1.2.1] — 2026-10-19
 
 A reliability patch that ships the corpus data used by source retrieval and

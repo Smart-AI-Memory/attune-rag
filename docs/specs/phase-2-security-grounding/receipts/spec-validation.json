@@ -1,0 +1,61 @@
+{
+  "observed_at_utc": "2026-10-19T18:48:35.094043Z",
+  "code_sha": "0ebb72dd0727bf8261a762f472cfdcf38873ddac",
+  "scope": "Spec consistency and current-behavior replay validation only; no Phase 2 implementation or live model validation.",
+  "checks": {
+    "markdown_files": true,
+    "draft_banners": true,
+    "links_and_source_line_bounds": true,
+    "advisory_counts": true,
+    "baseline_sha": true,
+    "current_source_hashes": true,
+    "grounding_replay_matrix": true,
+    "historical_denominators": true,
+    "seven_requirements": true,
+    "five_tasks": true,
+    "implementation_remains_unapproved": true,
+    "documentation_scope": true,
+    "no_secret_like_values": true
+  },
+  "local_links_checked": 28,
+  "local_anchors_checked": 3,
+  "pinned_source_links_checked": 15,
+  "tracked_changes": [
+    "docs/specs/RELIABILITY_GOALS.md"
+  ],
+  "new_files": [
+    "docs/specs/phase-2-security-grounding/README.md",
+    "docs/specs/phase-2-security-grounding/completion-review.md",
+    "docs/specs/phase-2-security-grounding/decisions.md",
+    "docs/specs/phase-2-security-grounding/design.md",
+    "docs/specs/phase-2-security-grounding/evidence.md",
+    "docs/specs/phase-2-security-grounding/receipts/dependency-alerts.json",
+    "docs/specs/phase-2-security-grounding/receipts/grounding-current-state.json",
+    "docs/specs/phase-2-security-grounding/receipts/release-main-quality.json",
+    "docs/specs/phase-2-security-grounding/receipts/release-pr-quality.json",
+    "docs/specs/phase-2-security-grounding/receipts/spec-validation.json",
+    "docs/specs/phase-2-security-grounding/requirements.md",
+    "docs/specs/phase-2-security-grounding/risks.md",
+    "docs/specs/phase-2-security-grounding/tasks.md"
+  ],
+  "errors": [],
+  "passed": true,
+  "completion_review": "complete for planning only; R2/R3 scoped proposals remain unimplemented",
+  "document_sha256": {
+    "docs/specs/phase-2-security-grounding/README.md": "65a12ed5b8162f010b0f6dd1eabea74c3802b31d170bd26488ad6f1206032591",
+    "docs/specs/phase-2-security-grounding/completion-review.md": "7043cffec6edbf4778d69bea3c8a2dac88dbafb909d0e59f23c23ff3a3ba694d",
+    "docs/specs/phase-2-security-grounding/decisions.md": "ab71f3b019168216fc4b94ad4ca00a08b17dc313942d1ebd8bc3d7704fa405a4",
+    "docs/specs/phase-2-security-grounding/design.md": "13751f37c37dc281f52fbea92231bab5cef9535f1666a3f3d88b3ceafb858737",
+    "docs/specs/phase-2-security-grounding/evidence.md": "ae8c59354e8c9a4a8332a65212f50e731496fda1585a04f789988c55f03e0fa9",
+    "docs/specs/phase-2-security-grounding/requirements.md": "d1bcf5603b59c5af52fbf4e72c80ce332505ccf2c5f4724fc301ab9e042631da",
+    "docs/specs/phase-2-security-grounding/risks.md": "ff3babfce4839ea3a4f250f94e1d8822e4b5bb95d37abe4954f6eb5130978929",
+    "docs/specs/phase-2-security-grounding/tasks.md": "9a76b8ef5d62614d7ec4f3e73af3a1d6951f75e07cc10b28bfda283d6664e389",
+    "docs/specs/RELIABILITY_GOALS.md": "d005761206647d82062d467998293a98f2c1705c0c20147047be68fea261bcef"
+  },
+  "receipt_sha256": {
+    "receipts/dependency-alerts.json": "0a05ff789600d96bbb265b00a412f37774882780b19f319a88eb491935d51404",
+    "receipts/grounding-current-state.json": "389bd1ea6762028f1ea8cb374d16155cb525edc7fdc4eaa254c3495fc16e39f7",
+    "receipts/release-main-quality.json": "ac2a3b887575ede34ccc045021f41acd1d33c250b1538a16c459b6c64e27b2df",
+    "receipts/release-pr-quality.json": "1fc1e740d9513c155ff697a90b271de9b89286a13d847d3e4423d759024b9442"
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "observed_at_utc": "2026-10-19T18:45:51.368833Z",
+  "code_sha": "0ebb72dd0727bf8261a762f472cfdcf38873ddac",
+  "source_root": "managed worktree at the pinned code SHA; module origin asserted by the probe",
+  "method": "Original October 19 recording-provider probe replayed with only ROOT rebound to the pinned worktree. Socket connection entry points blocked. Existing Python 3.11 environment used for dependencies; imports forced to pinned src.",
+  "original_probe_sha256": "d2049680a129cdc9ba5eae40087d032d6afb7230d131823491cb00c1e1251cf9",
+  "scope": "Current-behavior counterexamples; not post-repair acceptance tests or live answer-quality measurements.",
+  "native_grounding_and_context": [
+    {
+      "variant": "baseline",
+      "system": null,
+      "native_document_chars": 25025,
+      "recorded_context_chars": 20000,
+      "wire_contains_tail_evidence": true,
+      "recorded_context_contains_tail_evidence": false
+    },
+    {
+      "variant": "strict",
+      "system": null,
+      "native_document_chars": 25025,
+      "recorded_context_chars": 20000,
+      "wire_contains_tail_evidence": true,
+      "recorded_context_contains_tail_evidence": false
+    },
+    {
+      "variant": "citation",
+      "system": null,
+      "native_document_chars": 25025,
+      "recorded_context_chars": 20000,
+      "wire_contains_tail_evidence": true,
+      "recorded_context_contains_tail_evidence": false
+    },
+    {
+      "variant": "anti_prior",
+      "system": null,
+      "native_document_chars": 25025,
+      "recorded_context_chars": 20000,
+      "wire_contains_tail_evidence": true,
+      "recorded_context_contains_tail_evidence": false
+    }
+  ],
+  "strict_empty_context": [
+    {
+      "native_requested": false,
+      "plain_generation_calls": 1,
+      "fallback_used": true,
+      "context_chars": 0,
+      "strict_only_facts_rule_forwarded": false,
+      "stub_answer_returned": "STUB_UNGROUNDED_ANSWER"
+    },
+    {
+      "native_requested": true,
+      "plain_generation_calls": 1,
+      "fallback_used": true,
+      "context_chars": 0,
+      "strict_only_facts_rule_forwarded": false,
+      "stub_answer_returned": "STUB_UNGROUNDED_ANSWER"
+    }
+  ],
+  "source_sha256": {
+    "src/attune_rag/pipeline.py": "d523def16dc02da8af008150d8fcd8a3070b279274761376f91d83c438e7e8e1",
+    "src/attune_rag/prompts.py": "3c35e8e0b30791a15e2c36afa2edf13ea407da219b38803d3325fc50b9980c18"
+  }
+}

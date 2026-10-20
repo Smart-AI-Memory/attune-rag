@@ -1,0 +1,20 @@
+{
+  "merge_sha": "0ebb72dd0727bf8261a762f472cfdcf38873ddac",
+  "run": 39300254562,
+  "faithfulness_outcome": "completed",
+  "query_count": 40,
+  "mean_faithfulness_displayed": 0.975,
+  "threshold": 0.9698,
+  "benchmark_exit": 0,
+  "threshold_exit": 0,
+  "unsupported_answer_rate": 0.275,
+  "unsupported_answer_count": 11,
+  "native_citations_enabled": false,
+  "native_citation_emit_rate": 0.0,
+  "log_sha256": "c8d0d15ca0d4ed6a56f6d1a1a01768633d408757e4223106dd3dcad042cccaf4",
+  "limits": [
+    "Stdout score rounded to three decimals; threshold validation consumed full report.",
+    "Per-query JSON and provider invoice/token usage were not uploaded.",
+    "Passing mean score does not imply every answer is fully grounded."
+  ]
+}

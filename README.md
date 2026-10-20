@@ -132,11 +132,14 @@ pip install 'attune-rag[attune-help]'       # + bundled help corpus
 pip install 'attune-rag[claude]'            # + Claude adapter
 pip install 'attune-rag[gemini]'            # + Gemini adapter
 # Convenience:
-pip install 'attune-rag[all]'               # every extra, incl. the transformer tier (pulls torch, ~GB)
+pip install 'attune-rag[all]'               # all runtime features, including transformers (~GB)
 ```
 
-Extras compose, e.g. `pip install 'attune-rag[embeddings,claude]'`. The base
-install stays dependency-light on purpose; only `[transformers]` (and
+`[all]` includes every runtime feature extra, including the Claude subscription
+SDK. `[author]` and `[dev]` are separate maintainer tools. Installing the Agent
+SDK enables the judge's existing auth auto-detection inside Claude Code;
+`ATTUNE_RAG_AUTH_MODE=api` explicitly selects the direct API adapter. Extras compose,
+e.g. `pip install 'attune-rag[embeddings,claude]'`. The base install stays dependency-light on purpose; only `[transformers]` (and
 therefore `[all]`) pulls torch.
 
 ## Authentication

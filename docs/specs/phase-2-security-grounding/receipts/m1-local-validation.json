@@ -1,0 +1,160 @@
+{
+  "observed_at_utc": "2026-10-19T19:01:52.949318Z",
+  "base_commit": "0ebb72dd0727bf8261a762f472cfdcf38873ddac",
+  "branch": "codex/phase2-critical-dependencies",
+  "status": "local checks passed; remote CI pending",
+  "src_changed": false,
+  "lock_changes": [
+    {
+      "package": "anyio",
+      "before": "4.13.0",
+      "after": "4.15.1"
+    },
+    {
+      "package": "claude-agent-sdk",
+      "before": "0.2.97",
+      "after": "0.2.168"
+    },
+    {
+      "package": "fsspec",
+      "before": "2026.4.0",
+      "after": "2026.9.0"
+    },
+    {
+      "package": "mcp",
+      "before": "1.29.0",
+      "after": "1.30.0"
+    },
+    {
+      "package": "packaging",
+      "before": "26.1",
+      "after": "26.3"
+    },
+    {
+      "package": "pyjwt",
+      "before": "2.13.0",
+      "after": "2.15.1"
+    },
+    {
+      "package": "python-discovery",
+      "before": "1.4.2",
+      "after": "1.6.4"
+    },
+    {
+      "package": "sentence-transformers",
+      "before": "5.5.1",
+      "after": "5.7.0"
+    },
+    {
+      "package": "typing-extensions",
+      "before": "4.15.0",
+      "after": "4.16.0"
+    },
+    {
+      "package": "urllib3",
+      "before": "2.7.0",
+      "after": "2.8.0"
+    },
+    {
+      "package": "virtualenv",
+      "before": "21.5.1",
+      "after": "21.14.11"
+    }
+  ],
+  "lock_tool": "uv 0.9.22 (CI pin); uv lock --check passed",
+  "install_cases": [
+    {
+      "case": "py310-minimum",
+      "install_exit": 0,
+      "pip_check_exit": 0
+    },
+    {
+      "case": "py313-current",
+      "install_exit": 0,
+      "pip_check_exit": 0
+    }
+  ],
+  "suites": {
+    "py310-minimum": {
+      "full_suite": {
+        "passed": 1558,
+        "xfail": 2,
+        "xpass": 78,
+        "failures": 0,
+        "log_sha256": "984c3bcf0fc49158d40ba375553bf8031fe541a1a0d82dd1a3790c1457348a09"
+      },
+      "final_contract_tests": {
+        "passed": 25,
+        "failures": 0,
+        "includes_real_sdk_types": true
+      },
+      "note": "The full suite preceded the final SDK-types test addition; the final 25 contract tests include it."
+    },
+    "py313-current": {
+      "full_suite": {
+        "passed": 1558,
+        "xfail": 2,
+        "xpass": 78,
+        "failures": 0,
+        "log_sha256": "d737390c7e51908ffa555c3882786617cd94b93c872e6f5316b0d47041368700"
+      },
+      "final_contract_tests": {
+        "passed": 25,
+        "failures": 0,
+        "includes_real_sdk_types": true
+      },
+      "note": "The full suite preceded the final SDK-types test addition; the final 25 contract tests include it."
+    }
+  },
+  "artifact": {
+    "status": "passed",
+    "source": {
+      "base_commit": "0ebb72dd0727bf8261a762f472cfdcf38873ddac",
+      "tracked_changes": true,
+      "snapshot_sha256": "bbb066608021c6c73263e096f4ac74b898af31aebc0d097d48d2c620e860902a"
+    },
+    "artifacts": {
+      "attune_rag-1.2.1.tar.gz": {
+        "sha256": "d52098b0d679635cd4ee71c92ec4b5d482c788a456e783a232387128981c714e"
+      },
+      "attune_rag-1.2.1-py3-none-any.whl": {
+        "sha256": "f97dc7f1aaec12f03f380e93f690450a4cff893fa58a411211ba88f31907e11c"
+      }
+    },
+    "resource_count": 45,
+    "queries": 40,
+    "source_retrieval": {
+      "precision_at_1": 1.0,
+      "recall_at_k": 1.0,
+      "k": 3
+    },
+    "wheel_retrieval": {
+      "precision_at_1": 1.0,
+      "recall_at_k": 1.0,
+      "k": 3
+    },
+    "ordered_results_identical": true,
+    "queries_sha256": "f47486df87c61e2391a4326f9ffe68659373f6837063cf70c5b990a639f2290c",
+    "faithfulness": "skipped: retrieval-only; no provider calls",
+    "raw_report_sha256": "81031f18414b7bdbc4fe4c170503ed049602703e7f363ecaa85ef363e9ad51d2"
+  },
+  "base_install": {
+    "installed_distribution_count": 15,
+    "keyword_query": "passed",
+    "optional_imports_absent": true,
+    "source_fallback_absent": true
+  },
+  "lint": {
+    "ruff": "passed; one preexisting invalid-noqa warning",
+    "black_changed_test_files": "passed"
+  },
+  "resolution_cases": 240,
+  "osv_lookups": 245,
+  "osv_findings": 0,
+  "limits": [
+    "Metadata resolution is not cross-platform execution; the 12-job CI matrix is pending.",
+    "No live model/provider calls or model downloads.",
+    "No exploit was executed; vulnerability lookup is database- and date-bounded.",
+    "Candidate archives retain source version 1.2.1 for validation only; no new release was published."
+  ]
+}

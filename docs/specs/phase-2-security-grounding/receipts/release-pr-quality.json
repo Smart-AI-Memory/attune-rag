@@ -1,0 +1,26 @@
+{
+  "candidate_sha": "ac81bbca89dfdec5d66e1788a9b109253741b8b0",
+  "run": 39294595323,
+  "attempt": 2,
+  "faithfulness_outcome": "completed",
+  "query_count": 40,
+  "mean_faithfulness_displayed": 0.983,
+  "required_threshold": 0.9698,
+  "retrieval": {
+    "precision_at_1": 1.0,
+    "recall_at_3": 1.0
+  },
+  "benchmark_exit": 0,
+  "threshold_exit": 0,
+  "unsupported_answer_count": 11,
+  "unsupported_answer_rate": 0.275,
+  "native_citation_emit_rate": 0.0,
+  "native_citations_enabled": false,
+  "log_sha256": "244c1078011377dbddc2bc822706de68492c9d1287d6691c3abb17a0312aa8ef",
+  "limits": [
+    "Score is stdout rounded to three decimal places; threshold validation consumed the full report.",
+    "Native citation metadata is disabled in the primary legacy pass; its zero rate is expected and does not measure inline citation presence.",
+    "Per-query report was written on the runner but this workflow does not upload it; individual unsupported claims are not available for independent review.",
+    "Provider invoice/token usage was not emitted; actual billed spend remains unavailable."
+  ]
+}

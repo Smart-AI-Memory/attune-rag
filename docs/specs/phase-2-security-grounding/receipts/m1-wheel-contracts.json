@@ -1,0 +1,284 @@
+{
+  "observed_at_utc": "2026-10-19T18:58:42.502928Z",
+  "wheel_sha256": "f97dc7f1aaec12f03f380e93f690450a4cff893fa58a411211ba88f31907e11c",
+  "published_control_sha256": "266480774019b90b367840590abd469013a8ae83600dc832969758cc6d2b0b4f",
+  "requires_dist": [
+    "structlog>=24.0",
+    "jinja2>=3.1.0",
+    "pyyaml>=6.0",
+    "rich>=13.0",
+    "jsonschema>=4.20",
+    "attune-help<0.14,>=0.13.0; extra == \"attune-help\"",
+    "anthropic<1.0,>=0.95; extra == \"claude\"",
+    "claude-agent-sdk>=0.2.121; extra == \"claude\"",
+    "anyio>=4.14.2; extra == \"claude\"",
+    "pyjwt>=2.15.0; extra == \"claude\"",
+    "mcp<2.0,>=1.30.0; extra == \"claude\"",
+    "google-genai<2.0,>=1.0; extra == \"gemini\"",
+    "anyio>=4.14.2; extra == \"gemini\"",
+    "urllib3>=2.8.0; extra == \"gemini\"",
+    "attune-author>=0.25.0; extra == \"author\"",
+    "model2vec<1.0,>=0.3; extra == \"embeddings\"",
+    "anyio>=4.14.2; extra == \"embeddings\"",
+    "fsspec>=2026.6.0; extra == \"embeddings\"",
+    "sentence-transformers<6.0,>=5.6.0; extra == \"transformers\"",
+    "anyio>=4.14.2; extra == \"transformers\"",
+    "fsspec>=2026.6.0; extra == \"transformers\"",
+    "attune-help<0.14,>=0.13.0; extra == \"all\"",
+    "anthropic<1.0,>=0.95; extra == \"all\"",
+    "google-genai<2.0,>=1.0; extra == \"all\"",
+    "model2vec<1.0,>=0.3; extra == \"all\"",
+    "sentence-transformers<6.0,>=5.6.0; extra == \"all\"",
+    "claude-agent-sdk>=0.2.121; extra == \"all\"",
+    "anyio>=4.14.2; extra == \"all\"",
+    "pyjwt>=2.15.0; extra == \"all\"",
+    "mcp<2.0,>=1.30.0; extra == \"all\"",
+    "fsspec>=2026.6.0; extra == \"all\"",
+    "urllib3>=2.8.0; extra == \"all\"",
+    "pytest>=8.0; extra == \"dev\"",
+    "pytest-asyncio>=0.23; extra == \"dev\"",
+    "pytest-cov>=4.0; extra == \"dev\"",
+    "ruff>=0.4.0; extra == \"dev\"",
+    "black>=24.0; extra == \"dev\"",
+    "pre-commit>=3.5; extra == \"dev\"",
+    "virtualenv>=21.7.13; extra == \"dev\"",
+    "anyio>=4.14.2; extra == \"dev\"",
+    "urllib3>=2.8.0; extra == \"dev\"",
+    "build>=1.0; extra == \"dev\"",
+    "twine>=5.0; extra == \"dev\"",
+    "attune-help<0.14,>=0.13.0; extra == \"dev\"",
+    "attune-author>=0.25.0; extra == \"dev\"",
+    "anthropic<1.0,>=0.95; extra == \"dev\"",
+    "google-genai<2.0,>=1.0; extra == \"dev\""
+  ],
+  "base_dependency_count": 5,
+  "affected_version_cases": [
+    {
+      "extra": "transformers",
+      "package": "sentence-transformers",
+      "requested_affected_version": "5.5.1",
+      "wheel": "repaired",
+      "exit": 1,
+      "expected_outcome": true,
+      "log": "transformers-sentence-transformers-repaired.log"
+    },
+    {
+      "extra": "transformers",
+      "package": "sentence-transformers",
+      "requested_affected_version": "5.5.1",
+      "wheel": "published-control",
+      "exit": 0,
+      "expected_outcome": true,
+      "log": "transformers-sentence-transformers-published-control.log"
+    },
+    {
+      "extra": "all",
+      "package": "sentence-transformers",
+      "requested_affected_version": "5.5.1",
+      "wheel": "repaired",
+      "exit": 1,
+      "expected_outcome": true,
+      "log": "all-sentence-transformers-repaired.log"
+    },
+    {
+      "extra": "all",
+      "package": "sentence-transformers",
+      "requested_affected_version": "5.5.1",
+      "wheel": "published-control",
+      "exit": 0,
+      "expected_outcome": true,
+      "log": "all-sentence-transformers-published-control.log"
+    },
+    {
+      "extra": "claude",
+      "package": "claude-agent-sdk",
+      "requested_affected_version": "0.2.97",
+      "wheel": "repaired",
+      "exit": 1,
+      "expected_outcome": true,
+      "log": "claude-claude-agent-sdk-repaired.log"
+    },
+    {
+      "extra": "claude",
+      "package": "claude-agent-sdk",
+      "requested_affected_version": "0.2.97",
+      "wheel": "published-control",
+      "exit": 0,
+      "expected_outcome": true,
+      "log": "claude-claude-agent-sdk-published-control.log"
+    },
+    {
+      "extra": "all",
+      "package": "claude-agent-sdk",
+      "requested_affected_version": "0.2.97",
+      "wheel": "repaired",
+      "exit": 1,
+      "expected_outcome": true,
+      "log": "all-claude-agent-sdk-repaired.log"
+    },
+    {
+      "extra": "all",
+      "package": "claude-agent-sdk",
+      "requested_affected_version": "0.2.97",
+      "wheel": "published-control",
+      "exit": 0,
+      "expected_outcome": true,
+      "log": "all-claude-agent-sdk-published-control.log"
+    },
+    {
+      "extra": "claude",
+      "package": "pyjwt",
+      "requested_affected_version": "2.13.0",
+      "wheel": "repaired",
+      "exit": 1,
+      "expected_outcome": true,
+      "log": "claude-pyjwt-repaired.log"
+    },
+    {
+      "extra": "claude",
+      "package": "pyjwt",
+      "requested_affected_version": "2.13.0",
+      "wheel": "published-control",
+      "exit": 0,
+      "expected_outcome": true,
+      "log": "claude-pyjwt-published-control.log"
+    },
+    {
+      "extra": "all",
+      "package": "pyjwt",
+      "requested_affected_version": "2.13.0",
+      "wheel": "repaired",
+      "exit": 1,
+      "expected_outcome": true,
+      "log": "all-pyjwt-repaired.log"
+    },
+    {
+      "extra": "all",
+      "package": "pyjwt",
+      "requested_affected_version": "2.13.0",
+      "wheel": "published-control",
+      "exit": 0,
+      "expected_outcome": true,
+      "log": "all-pyjwt-published-control.log"
+    },
+    {
+      "extra": "claude",
+      "package": "anyio",
+      "requested_affected_version": "4.13.0",
+      "wheel": "repaired",
+      "exit": 1,
+      "expected_outcome": true,
+      "log": "claude-anyio-repaired.log"
+    },
+    {
+      "extra": "claude",
+      "package": "anyio",
+      "requested_affected_version": "4.13.0",
+      "wheel": "published-control",
+      "exit": 0,
+      "expected_outcome": true,
+      "log": "claude-anyio-published-control.log"
+    },
+    {
+      "extra": "gemini",
+      "package": "anyio",
+      "requested_affected_version": "4.13.0",
+      "wheel": "repaired",
+      "exit": 1,
+      "expected_outcome": true,
+      "log": "gemini-anyio-repaired.log"
+    },
+    {
+      "extra": "gemini",
+      "package": "anyio",
+      "requested_affected_version": "4.13.0",
+      "wheel": "published-control",
+      "exit": 0,
+      "expected_outcome": true,
+      "log": "gemini-anyio-published-control.log"
+    },
+    {
+      "extra": "embeddings",
+      "package": "anyio",
+      "requested_affected_version": "4.13.0",
+      "wheel": "repaired",
+      "exit": 1,
+      "expected_outcome": true,
+      "log": "embeddings-anyio-repaired.log"
+    },
+    {
+      "extra": "embeddings",
+      "package": "anyio",
+      "requested_affected_version": "4.13.0",
+      "wheel": "published-control",
+      "exit": 0,
+      "expected_outcome": true,
+      "log": "embeddings-anyio-published-control.log"
+    },
+    {
+      "extra": "transformers",
+      "package": "anyio",
+      "requested_affected_version": "4.13.0",
+      "wheel": "repaired",
+      "exit": 1,
+      "expected_outcome": true,
+      "log": "transformers-anyio-repaired.log"
+    },
+    {
+      "extra": "transformers",
+      "package": "anyio",
+      "requested_affected_version": "4.13.0",
+      "wheel": "published-control",
+      "exit": 0,
+      "expected_outcome": true,
+      "log": "transformers-anyio-published-control.log"
+    },
+    {
+      "extra": "all",
+      "package": "anyio",
+      "requested_affected_version": "4.13.0",
+      "wheel": "repaired",
+      "exit": 1,
+      "expected_outcome": true,
+      "log": "all-anyio-repaired.log"
+    },
+    {
+      "extra": "all",
+      "package": "anyio",
+      "requested_affected_version": "4.13.0",
+      "wheel": "published-control",
+      "exit": 0,
+      "expected_outcome": true,
+      "log": "all-anyio-published-control.log"
+    },
+    {
+      "extra": "dev",
+      "package": "anyio",
+      "requested_affected_version": "4.13.0",
+      "wheel": "repaired",
+      "exit": 1,
+      "expected_outcome": true,
+      "log": "dev-anyio-repaired.log"
+    },
+    {
+      "extra": "dev",
+      "package": "anyio",
+      "requested_affected_version": "4.13.0",
+      "wheel": "published-control",
+      "exit": 0,
+      "expected_outcome": true,
+      "log": "dev-anyio-published-control.log"
+    }
+  ],
+  "secure_resolution_cases": [
+    {
+      "mode": "minimum-security",
+      "exit": 0
+    },
+    {
+      "mode": "current",
+      "exit": 0
+    }
+  ],
+  "passed": true
+}

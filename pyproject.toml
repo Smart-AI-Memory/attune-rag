@@ -47,11 +47,14 @@ attune-help = ["attune-help>=0.13.0,<0.14"]
 claude = [
     "anthropic>=0.95,<1.0",
     # Subscription-routed judge calls under Claude Code
-    # (attune_rag.auth). 0.1.63 floor = output_format /
-    # ResultMessage.structured_output support.
-    "claude-agent-sdk>=0.1.63",
+    # (attune_rag.auth). Security floors apply to the SDK and its
+    # network/auth dependencies, not the lightweight base install.
+    "claude-agent-sdk>=0.2.121",
+    "anyio>=4.14.2",
+    "pyjwt>=2.15.0",
+    "mcp>=1.30.0,<2.0",
 ]
-gemini = ["google-genai>=1.0,<2.0"]
+gemini = ["google-genai>=1.0,<2.0", "anyio>=4.14.2", "urllib3>=2.8.0"]
 # Maintainer tooling — the docs/help authoring CLI used to regenerate
 # .help/templates/<feature>/{concept,reference,task}.md with the polish
 # pass. 0.25.0 is the floor because earlier versions predate model tiers:
@@ -64,21 +67,28 @@ author = ["attune-author>=0.25.0"]
 # no torch, no GPU, offline, millisecond encode — keeps attune-rag
 # dependency-light while adding semantic recall for unstructured/unseen
 # corpora. Opt-in: KeywordRetriever remains the default.
-embeddings = ["model2vec>=0.3,<1.0"]
+embeddings = ["model2vec>=0.3,<1.0", "anyio>=4.14.2", "fsspec>=2026.6.0"]
 # Heavyweight opt-in dense retrieval: real transformer embeddings via
 # sentence-transformers (pulls torch, ~GB). For arbitrary corpora where
 # paraphrase recall matters and the torch-free static embeddings fall
 # short. Embedding-primary; never a default. See TransformerRetriever.
-transformers = ["sentence-transformers>=3.0,<6.0"]
-# `all` = every extra, including the heavyweight [transformers] tier
-# (pulls torch, ~GB). For a dependency-light install, choose extras
+transformers = ["sentence-transformers>=5.6.0,<6.0", "anyio>=4.14.2", "fsspec>=2026.6.0"]
+# `all` = every runtime feature extra, including [claude] and [transformers].
+# Maintainer-only [author] and [dev] tooling remain separate. Transformers
+# pull torch (~GB). For a dependency-light install, choose extras
 # explicitly rather than `[all]`.
 all = [
     "attune-help>=0.13.0,<0.14",
     "anthropic>=0.95,<1.0",
     "google-genai>=1.0,<2.0",
     "model2vec>=0.3,<1.0",
-    "sentence-transformers>=3.0,<6.0",
+    "sentence-transformers>=5.6.0,<6.0",
+    "claude-agent-sdk>=0.2.121",
+    "anyio>=4.14.2",
+    "pyjwt>=2.15.0",
+    "mcp>=1.30.0,<2.0",
+    "fsspec>=2026.6.0",
+    "urllib3>=2.8.0",
 ]
 dev = [
     "pytest>=8.0",
@@ -87,6 +97,9 @@ dev = [
     "ruff>=0.4.0",
     "black>=24.0",
     "pre-commit>=3.5",
+    "virtualenv>=21.7.13",
+    "anyio>=4.14.2",
+    "urllib3>=2.8.0",
     "build>=1.0",
     "twine>=5.0",
     "attune-help>=0.13.0,<0.14",
