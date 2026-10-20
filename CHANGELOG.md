@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Apply the selected grounding policy to native citations. Strict zero-hit
+  generation abstains locally without initializing an answer provider; other
+  variants retain their existing fallback. Validate query and variant early.
+- Preserve exact ordered native source documents and their uncapped evaluation
+  rendering. Add defaulted `abstained` and `generation_documents` result fields.
+- Retain per-answer and partial judge evidence, explicit metric denominators and
+  run provenance. Quality CI preserves each attempt and uploads only its fixed
+  public/synthetic benchmark reports with 14-day retention.
+
 - Raise optional dependency security floors for sentence-transformers, the Claude
   Agent SDK, AnyIO, and PyJWT. Require compatible patched MCP, fsspec, urllib3,
   and development virtualenv versions on their affected paths. The base install

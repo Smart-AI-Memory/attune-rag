@@ -37,6 +37,7 @@ jobs:
       THRESHOLDS_PATH: docs/specs/release-quality-baseline/thresholds.json
       DUMP_PATH: /tmp/benchmark-dump.json
       COMMENT_PATH: /tmp/gate-comment.md
+      REPORT_DIR: ${{ runner.temp }}/quality-reports
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -127,8 +128,17 @@ jobs:
 
           for attempt in 1 2; do
             rm -f "$DUMP_PATH"
+            export ATTUNE_BENCH_ATTEMPT="$attempt"
             python -m attune_rag.benchmark "${FLAGS[@]}"
             RC=$?
+            # This command uses only the fixed bundled public/synthetic inputs.
+            # Preserve each attempt before the existing retry removes DUMP_PATH.
+            python scripts/archive_benchmark_attempt.py --dump "$DUMP_PATH" \
+              --output "$REPORT_DIR" --attempt "$attempt" --exit-code "$RC"
+            if [ "$?" -ne 0 ]; then
+              echo "::error::Could not archive benchmark attempt $attempt."
+              exit 2
+            fi
             if [ "$RC" -ne 3 ] || [ "$MODE" != "full" ] || [ "$attempt" -eq 2 ]; then
               break
             fi
@@ -157,6 +167,17 @@ jobs:
           # The next step validates all independent evidence and this exit code.
           exit 0
         shell: bash
+
+      # Reports contain answers and full source passages. Only this workflow's
+      # fixed public/synthetic corpora may be uploaded automatically.
+      - name: Upload grounding evaluation evidence
+        if: always()
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.1
+        with:
+          name: grounding-evaluation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.REPORT_DIR }}
+          retention-days: 14
+          if-no-files-found: error
 
       # ── M3.1: check thresholds ────────────────────────────────────
       - name: Check thresholds

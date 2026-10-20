@@ -43,6 +43,8 @@ import math
 import os
 import sys
 import time
+from collections.abc import Callable
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -441,6 +443,7 @@ async def _score_faithfulness(
     use_thinking: bool = False,
     thinking_budget_tokens: int | None = None,
     auth_mode: str | None = None,
+    progress: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     """Run the default variant through run_and_generate + judge for each query.
 
@@ -459,7 +462,18 @@ async def _score_faithfulness(
     """
     from . import RagPipeline
     from .eval import FaithfulnessJudge
+    from .eval.reporting import corpus_provenance, summarize_answers
+    from .model_tiers import resolve_model
 
+    evidence_rows: list[dict[str, Any]] = []
+    evidence: dict[str, Any] = {"status": "running", "per_query": evidence_rows}
+
+    def save_evidence() -> None:
+        evidence["summary"] = summarize_answers(evidence_rows, len(queries))
+        if progress is not None:
+            progress(evidence)
+
+    save_evidence()
     pipeline = RagPipeline()
     judge = FaithfulnessJudge(auth_mode=auth_mode)
 
@@ -478,19 +492,74 @@ async def _score_faithfulness(
         query = entry["query"]
         print(f"  judging: {entry['id']} — {query!r}", file=sys.stderr)
         t0 = time.perf_counter()
-        answer, rag_result = await pipeline.run_and_generate(
-            query,
-            provider="claude",
-            k=k,
-            use_native_citations=use_native_citations,
-        )
-        latencies.append((time.perf_counter() - t0) * 1000.0)
-        verdict = await judge.score(
-            query=query,
-            answer=answer,
-            passages=rag_result.context,
-            **score_kwargs,
-        )
+        row: dict[str, Any] = {
+            "id": entry["id"],
+            "query": query,
+            "status": "generating",
+            "prompt_variant": "citation",
+            "provider": "claude",
+            "requested_model": resolve_model("capable"),
+            "actual_model": None,
+            "judge_provider": "anthropic",
+            "judge_requested_model": getattr(judge, "_model", None),
+            "judge_actual_model": None,
+            "native_citations_requested": use_native_citations,
+            "actual_model_status": "not_exposed_by_provider_interfaces",
+            "judge_auth_mode": getattr(judge, "_route", None),
+        }
+        evidence_rows.append(row)
+        save_evidence()
+        try:
+            answer, rag_result = await pipeline.run_and_generate(
+                query,
+                provider="claude",
+                k=k,
+                use_native_citations=use_native_citations,
+            )
+            latencies.append((time.perf_counter() - t0) * 1000.0)
+            corpus = getattr(pipeline, "corpus", None)
+            evidence["corpus"] = corpus_provenance(corpus)
+            row.update(
+                status="generated",
+                answer=answer,
+                context=rag_result.context,
+                generation_documents=[
+                    asdict(d) for d in getattr(rag_result, "generation_documents", ())
+                ],
+                retrieval_sources=(
+                    [asdict(h) for h in rag_result.citation.hits]
+                    if hasattr(rag_result, "citation")
+                    else None
+                ),
+                claim_citations=[asdict(c) for c in rag_result.claim_citations],
+                used_native_citations=rag_result.used_native_citations,
+                abstained=getattr(rag_result, "abstained", None),
+                fallback_used=getattr(rag_result, "fallback_used", None),
+                latency_ms=latencies[-1],
+            )
+            save_evidence()
+            verdict = await judge.score(
+                query=query, answer=answer, passages=rag_result.context, **score_kwargs
+            )
+            row.update(
+                status="completed",
+                score=verdict.score,
+                supported_claims=list(verdict.supported_claims),
+                unsupported_claims=list(verdict.unsupported_claims),
+                reasoning=verdict.reasoning,
+                judge_requested_model=getattr(verdict, "model", row["judge_requested_model"]),
+                thinking_used=verdict.thinking_used,
+            )
+            save_evidence()
+        except Exception as exc:  # noqa: BLE001 — preserve the original error for classification.
+            row.update(
+                status="failed",
+                failed_stage="judge" if "answer" in row else "generation",
+                error_type=type(exc).__name__,
+            )
+            evidence["status"] = "incomplete"
+            save_evidence()
+            raise
         scores.append(verdict.score)
         if verdict.total_claims == 0:
             refuse += 1
@@ -517,6 +586,8 @@ async def _score_faithfulness(
             }
         )
 
+    evidence["status"] = "completed"
+    save_evidence()
     n = len(scores)
     return {
         "mean_faithfulness": sum(scores) / n if n else 0.0,
@@ -963,6 +1034,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.json is not None:
             args.json.unlink(missing_ok=True)
+        from .eval.reporting import run_manifest
+
+        payload["manifest"] = run_manifest(args.queries)
         rc = _execute_benchmark(args, payload)
     except Exception as exc:  # noqa: BLE001 — CLI failures must leave current evidence, not pass.
         outcomes = payload["outcomes"]
@@ -1156,11 +1230,21 @@ def _run_faithfulness_passes(
     }
     if not args.compare_thinking:
         kwargs["thinking_budget_tokens"] = args.thinking_budget
+
+    def preserve_evidence(pass_key: str, evidence: dict[str, Any]) -> None:
+        payload.setdefault("evaluation", {})[pass_key] = evidence
+        _save_progress(args, payload)
+
+    kwargs["progress"] = lambda evidence: preserve_evidence(primary_key, evidence)
     print(f"\nRunning faithfulness pass ({primary_label})...", file=sys.stderr)
     try:
         primary = asyncio.run(_score_faithfulness(queries, **kwargs))
     except Exception as exc:  # noqa: BLE001 — classify only the primary provider boundary.
         transient = _transient_primary_provider_error(exc)
+        if primary_key in payload.get("evaluation", {}):
+            payload["evaluation"][primary_key].update(
+                status="incomplete", error_type=type(exc).__name__
+            )
         payload["outcomes"].update(
             faithfulness="unavailable" if transient else "failed",
             reason=_primary_provider_error_reason(exc, transient=transient),
@@ -1192,6 +1276,7 @@ def _run_faithfulness_passes(
             use_thinking=True if args.compare_thinking else args.thinking,
             thinking_budget_tokens=args.thinking_budget,
         )
+        kwargs["progress"] = lambda evidence: preserve_evidence(secondary_key, evidence)
         print(f"\nRunning faithfulness pass ({secondary_label})...", file=sys.stderr)
         # A failure here is a local hard failure: the primary result is
         # already complete and must never be erased by retrying the run.

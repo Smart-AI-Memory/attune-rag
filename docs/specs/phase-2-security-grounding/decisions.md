@@ -80,3 +80,19 @@ all, and dev paths. Critical bounds will be explicit on those affected extras.
 Compatible adjacent MCP, fsspec, urllib3, and virtualenv bounds are included to
 avoid retaining the same snapshot's high/medium affected versions on those paths;
 this does not authorize general dependency modernization.
+
+## D10 — Merge M1 and execute M2 (confirmed 2026-10-20)
+
+Patrick requested: “Looks good. Merge PR #224, then start Milestone 2.”
+PR #224 merged as `e95a3b50fff001f9e58238c6df2398d2bd694d19`; its tree
+`955d0f1876ad94ee1fe6365837a49aaf54d21c53` equals the green reviewed head.
+This authorizes T3–T5 implementation in a separate PR, not its merge or release.
+
+## D11 — Bounded CI allowance (confirmed 2026-10-20)
+
+Patrick approved a new $50 Anthropic allowance for the automatic post-M1-merge
+40-query benchmark and one Milestone 2 PR 40-query benchmark, each retaining
+the existing single classified transient retry. Use the existing Sonnet 5 answer
+and Fable 5.1 judge defaults, locked queries and thresholds. Planning estimate:
+$10–30 total before unusual retries; actual billing depends on tokens. No extra
+paid experiments, native comparison passes, or manual reruns are approved.

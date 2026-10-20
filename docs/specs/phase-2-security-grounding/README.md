@@ -1,4 +1,4 @@
-> **Status: Phase 2 approved 2026-10-19; Milestone 1 implemented for review in PR #224. Milestone 2 has not started.**
+> **Status: M1 merged in PR #224; M2 implementation complete locally, with candidate CI and review tracked separately.**
 
 # Phase 2 — Dependency security and grounding integrity
 
@@ -23,14 +23,13 @@ other prompt variants retain a documented generative fallback.** This decision
 applies to both generation paths. It does not change the default prompt variant,
 retriever, scoring, or corpus-specific abstention threshold.
 
-The fresh dependency snapshot contains 27 open lockfile alerts: 4 critical,
+The pre-M1 dependency snapshot contained 27 open lockfile alerts: 4 critical,
 11 high, and 12 medium. The reviewed critical packages are sentence-transformers,
-claude-agent-sdk, AnyIO, and PyJWT. These alerts are unresolved. Their exposure
+claude-agent-sdk, AnyIO, and PyJWT. M1 excludes those affected ranges on main; published 1.2.1 remains unchanged. Their exposure
 and the limits of lockfile evidence are recorded in [evidence](evidence.md).
 
-The native path currently omits the selected grounding instructions and can send
-more source text than it records for evaluation. Both strict empty-hit paths
-still call generation. Deterministic replay against the baseline confirms these
+The reviewed 1.2.1 native path omitted the selected grounding instructions and can send
+more source text than it records for evaluation. Both strict empty-hit paths called generation. Deterministic replay against the baseline confirms these
 behaviors; it does not measure live answer quality.
 
 ## Reading order
@@ -45,7 +44,7 @@ behaviors; it does not measure live answer quality.
 
 ## Session contract
 
-**Mode:** specification and planning. **Outcome:** a reviewable Phase 2 spec that
+**Original drafting mode:** specification and planning. **Outcome:** a reviewable Phase 2 spec that
 turns the dependency and grounding review into bounded, code-backed milestones.
 **Done when:** requirements trace to current code and saved evidence; each task
 has positive and negative acceptance cases; compatibility, uncertainty, product
@@ -79,3 +78,14 @@ remains historical.
 
 [Milestone 1 implementation and validation](m1-validation.md): local checks pass;
 [PR #224](https://github.com/Smart-AI-Memory/attune-rag/pull/224) tracks exact-head CI and review.
+
+## Milestone 2 execution contract — 2026-10-20
+
+Patrick authorized M1 merge and T3–T5 implementation, followed by the bounded
+CI allowance in D11. M1 is merged at `e95a3b5`, whose tree matches the reviewed
+candidate. M2 has a separate branch from that merge. Runtime policy/evidence,
+report capture, and offline examples are implemented; see
+[validation](m2-validation.md), [core design](m2-implementation-design.md), and
+[independent review](m2-review.md). Exact-head PR checks govern remote acceptance.
+No M2 merge, release, or publication is authorized. Completion review: pending
+for the candidate CI checkpoint; local implementation review is recorded below.

@@ -139,6 +139,7 @@ def _run_gate(
         "GATE_SLEEP_LOG": str(delays),
         "MODE": mode,
         "DUMP_PATH": str(dump),
+        "REPORT_DIR": str(tmp_path / "reports"),
         "THRESHOLDS_PATH": str(THRESHOLDS),
         "COMMENT_PATH": str(tmp_path / "comment.md"),
         "GITHUB_OUTPUT": str(bench_output),
@@ -338,3 +339,56 @@ def test_final_failure_distinguishes_incomplete_validation_from_invalid_evidence
         assert "Quality gate hit a validation error" in result.stdout
         assert "queries.yaml SHA mismatch" in result.stdout
         assert "did not complete" not in result.stdout
+
+
+@pytest.mark.parametrize(
+    "scenario", ["pass", "regression", "malformed-judge", "auth", "missing", "bad-json", "outage"]
+)
+def test_each_real_workflow_attempt_is_preserved_even_on_failure(
+    tmp_path: Path, scenario: str
+) -> None:
+    entries = {
+        "pass": [{"rc": 0, "dump": _dump()}],
+        "regression": [{"rc": 1, "dump": _dump(faith=0.5)}],
+        "malformed-judge": [
+            {
+                "rc": 2,
+                "dump": _dump(
+                    status="failed", reason="primary_provider:ValueError:non_transient_or_local"
+                ),
+            }
+        ],
+        "auth": [
+            {
+                "rc": 2,
+                "dump": _dump(
+                    status="failed",
+                    reason="primary_provider:AuthenticationError:non_transient_or_local",
+                ),
+            }
+        ],
+        "missing": [{"rc": 2}],
+        "bad-json": [{"rc": 2, "raw": "{"}],
+        "outage": [{"rc": 3, "dump": _dump(status="unavailable")}, {"rc": 0, "dump": _dump()}],
+    }[scenario]
+    result = _run_gate(tmp_path, entries)
+    directories = sorted((tmp_path / "reports").iterdir())
+    assert len(directories) == len(entries)
+    for index, (directory, entry) in enumerate(zip(directories, entries, strict=True), start=1):
+        receipt = json.loads((directory / "attempt.json").read_text())
+        assert receipt["attempt"] == index
+        assert receipt["benchmark_exit"] == entry["rc"]
+        assert receipt["report_present"] == ("dump" in entry or "raw" in entry)
+        if "dump" in entry:
+            assert json.loads((directory / "benchmark.json").read_text()) == entry["dump"]
+            assert receipt["valid_json_object"] is True
+        else:
+            assert receipt["valid_json_object"] is False
+    assert result.check.returncode == {"pass": 0, "outage": 0, "regression": 1}.get(scenario, 2)
+    upload = next(
+        step for step in _steps() if step.get("name") == "Upload grounding evaluation evidence"
+    )
+    assert upload["if"] == "always()"
+    assert upload["with"]["retention-days"] == 14
+    assert upload["with"]["if-no-files-found"] == "error"
+    assert upload["with"]["path"] == "${{ env.REPORT_DIR }}"

@@ -1,4 +1,4 @@
-> **Status: approved 2026-10-19; implementing Milestone 1 only.**
+> **Status: approved; M1 merged, M2 implemented locally pending candidate CI acceptance.**
 
 # Design
 
