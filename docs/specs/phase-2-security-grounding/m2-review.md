@@ -35,3 +35,10 @@ The repository-pinned linter required the equivalent `isinstance(score, int | fl
 form. The final one-line delta and all manifest hashes were independently reviewed;
 the reviewer approved V4 with no new findings. Thirteen report controls passed on
 Python 3.10 after that change, and the artifact receipt was regenerated.
+
+
+The later workflow-only startup repair also received independent delta review.
+The reviewer verified that only the workflow and regression test changed, runtime
+hashes held, and all 49 workflow tests passed. Verdict: “V5 review passes; no
+actionable findings in the bounded delta.” Live startup remained an acceptance
+check for the corrected CI run.

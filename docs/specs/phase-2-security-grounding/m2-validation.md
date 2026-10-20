@@ -45,3 +45,11 @@ The live gate uses unchanged mean faithfulness 0.9698 and the locked queries.
 Mean faithfulness, unsupported-answer rate, zero-claim/non-answer counts and
 refusals must be disclosed separately. Payload checks do not establish live model
 quality, useful refusals, or prompt-injection resistance.
+
+
+Workflow startup follow-up: GitHub rejected the initial quality definition before
+creating jobs because `runner` is unavailable in job-level `env`. Checksum-verified
+actionlint 1.7.12 reproduced the error. A literal Ubuntu `/tmp` report directory
+passes semantic validation; all 49 workflow shell/context controls pass. The
+rejected definition made zero provider calls; the authorized PR benchmark remains
+one actual paid run, with its original retry policy.

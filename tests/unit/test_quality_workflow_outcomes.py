@@ -392,3 +392,21 @@ def test_each_real_workflow_attempt_is_preserved_even_on_failure(
     assert upload["with"]["retention-days"] == 14
     assert upload["with"]["if-no-files-found"] == "error"
     assert upload["with"]["path"] == "${{ env.REPORT_DIR }}"
+
+
+def test_job_environment_uses_only_github_available_contexts() -> None:
+    """Job env is evaluated before a runner exists; step context rules differ.
+
+    Contract: https://docs.github.com/en/actions/reference/workflows-and-actions/contexts
+    The fixed report directory follows this Ubuntu job's existing /tmp dump paths.
+    """
+    import re
+
+    workflow = yaml.safe_load(
+        (REPO_ROOT / ".github/workflows/benchmark.yml").read_text(encoding="utf-8")
+    )
+    allowed = {"github", "needs", "strategy", "matrix", "vars", "secrets", "inputs"}
+    for value in workflow["jobs"]["gate"]["env"].values():
+        for expression in re.findall(r"\$\{\{(.*?)\}\}", str(value)):
+            contexts = set(re.findall(r"\b([A-Za-z_][A-Za-z_0-9]*)\.", expression))
+            assert contexts <= allowed, contexts - allowed

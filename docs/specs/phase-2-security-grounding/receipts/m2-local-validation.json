@@ -107,5 +107,12 @@
     "Cross-platform execution and exact-head quality acceptance remain CI work",
     "No M2 merge or publication"
   ],
-  "post_suite_pinned_lint_change": "Equivalent isinstance tuple-to-union form; 13 report controls pass on Python 3.10; final delta reviewed and artifact bytes revalidated."
+  "post_suite_pinned_lint_change": "Equivalent isinstance tuple-to-union form; 13 report controls pass on Python 3.10; final delta reviewed and artifact bytes revalidated.",
+  "workflow_semantics": {
+    "validator": "actionlint 1.7.12",
+    "result": "passed after reproducing invalid job-env context",
+    "workflow_controls_passed": 49,
+    "startup_failure_jobs": 0,
+    "startup_failure_provider_calls": 0
+  }
 }

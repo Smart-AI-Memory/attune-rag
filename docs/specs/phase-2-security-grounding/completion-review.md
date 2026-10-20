@@ -155,3 +155,20 @@ existing numerical-grounding opportunity rather than inventing a new target.
 maintainers then see explicit per-answer report denominators. Completion review:
 complete for the local implementation checkpoint; pending for the PR CI handoff.
 This record grants no additional implementation, spend, M2 merge, or publication.
+
+
+## Workflow-startup checkpoint — 2026-10-20
+
+**G1 update (review lens):** syntax-valid YAML and shell replay missed a GitHub
+expression-context restriction. A rejected definition created zero jobs and no
+provider calls. Actionlint reproduced the unsupported job-env context; the fixed
+Ubuntu temp path passes, and an explicit context-availability regression is now
+part of the 49 workflow controls. Runtime source remains unchanged.
+
+**Candidate follow-up:** scope pinned semantic Actions validation for changed
+workflows before dispatch, in addition to YAML and shell checks. Done when an
+invalid-context fixture fails locally without starting paid CI and a valid
+workflow passes. Owner: CI tooling; effort: small. This is an evidence-backed
+opportunity, not authority to add general tooling or expand this milestone.
+**First encounter:** a maintainer sees startup validation before any benchmark
+cost. Completion review: complete for this repair checkpoint; PR handoff pending.

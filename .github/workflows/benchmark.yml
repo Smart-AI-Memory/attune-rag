@@ -37,7 +37,7 @@ jobs:
       THRESHOLDS_PATH: docs/specs/release-quality-baseline/thresholds.json
       DUMP_PATH: /tmp/benchmark-dump.json
       COMMENT_PATH: /tmp/gate-comment.md
-      REPORT_DIR: ${{ runner.temp }}/quality-reports
+      REPORT_DIR: /tmp/quality-reports
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
