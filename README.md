@@ -65,6 +65,9 @@ measured in `docs/specs/transformer-retriever/`.</sub>
   Every rung is opt-in and fail-safe; the keyword default is
   unchanged.
 
+Read the [grounding policy and evidence guide](docs/grounding.md) for strict
+abstention, native source records, and inspectable CI reports in the Phase 2 candidate.
+
 ## Why attune-rag
 
 attune-rag publishes **measured quality thresholds** in the active

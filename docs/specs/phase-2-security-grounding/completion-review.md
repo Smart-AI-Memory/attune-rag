@@ -109,3 +109,66 @@ SDK test certifies account authentication or billing.
 strict fallback issues are still present. No grounding outcome is claimed here.
 **First user encounter:** the optional-feature install gains secure version
 bounds; maintainers encounter the dated audit-refresh follow-up next.
+
+## M1 merge checkpoint — 2026-10-20
+
+**Goal lens:** secure supported installations and inspectable grounded answers.
+PR #224 is merged as `e95a3b5`; the full tree equals the reviewed candidate
+`c2fbd85`. All 12 platform/Python checks passed before merge. The automatic
+post-merge quality gate is a separate, budgeted run, not a new release.
+
+**R2 update:** implementation is accepted on main; published 1.2.1 remains
+unchanged. The existing audit-refresh opportunity remains dated and open; no
+additional dependency work is inferred. **R3 next rung:** retain partial answer
+evidence before changing generation. This is already authorized T3, not a new
+opportunity. No distinct new opportunity was found at this merge checkpoint.
+A strict caller still encounters the known generation defects first; M2 addresses
+them. Completion review: complete for the merge checkpoint; pending for M2.
+
+## Milestone 2 local implementation checkpoint — 2026-10-20
+
+**Goal lens:** preserve measured retrieval and make grounded answers inspectable.
+The strict caller now receives predictable local abstention; the maintainer can
+trace an answer and unsupported claims to the evidence actually supplied. T3–T5
+local evidence and limitations are in [validation](m2-validation.md).
+
+**R3 update (requirements):** policy forwarding, no-provider strict abstention,
+exact native evidence, defaulted result fields, per-attempt partial reports and
+explicit denominators are implemented and pass local controls. Three mutations
+prove that removing the repaired boundaries fails the acceptance tests. The final
+minimum/current suites each pass 1,637 tests; source/distribution retrieval remains
+1.0/1.0 on the locked set. Exact-head remote acceptance remains pending.
+
+**Expert/review lens:** the independent review exposed a provenance class error:
+filesystem location alone cannot establish code ownership. Both installed-wheel
+and untracked-source counterexamples were reproduced before repair; unavailable
+Git provenance stays null. No additional analogous source helper was found in the
+bounded search. This closes the in-scope finding, not a new workstream.
+
+**Existing next decision update (ladder):** inspectable answer-level evidence now
+makes it possible to assess unsupported answers and zero-claim responses beyond
+the mean. A representative usefulness/error target still needs later scoping;
+local stub results provide no numerical live improvement claim. Retain the
+existing numerical-grounding opportunity rather than inventing a new target.
+
+**First user encounter:** strict callers see local refusal without an SDK/key;
+maintainers then see explicit per-answer report denominators. Completion review:
+complete for the local implementation checkpoint; pending for the PR CI handoff.
+This record grants no additional implementation, spend, M2 merge, or publication.
+
+
+## Workflow-startup checkpoint — 2026-10-20
+
+**G1 update (review lens):** syntax-valid YAML and shell replay missed a GitHub
+expression-context restriction. A rejected definition created zero jobs and no
+provider calls. Actionlint reproduced the unsupported job-env context; the fixed
+Ubuntu temp path passes, and an explicit context-availability regression is now
+part of the 49 workflow controls. Runtime source remains unchanged.
+
+**Candidate follow-up:** scope pinned semantic Actions validation for changed
+workflows before dispatch, in addition to YAML and shell checks. Done when an
+invalid-context fixture fails locally without starting paid CI and a valid
+workflow passes. Owner: CI tooling; effort: small. This is an evidence-backed
+opportunity, not authority to add general tooling or expand this milestone.
+**First encounter:** a maintainer sees startup validation before any benchmark
+cost. Completion review: complete for this repair checkpoint; PR handoff pending.
