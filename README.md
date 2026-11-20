@@ -66,7 +66,7 @@ measured in `docs/specs/transformer-retriever/`.</sub>
   unchanged.
 
 Read the [grounding policy and evidence guide](docs/grounding.md) for strict
-abstention, native source records, and inspectable CI reports in the Phase 2 candidate.
+abstention, native source records, and per-answer CI reports in 1.2.2.
 
 ## Why attune-rag
 

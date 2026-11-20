@@ -5,7 +5,7 @@ feature: pipeline
 depth: troubleshooting
 generated_at: 2026-05-20T03:20:40.533028+00:00
 source_hash: f5cc845ee3957a76674338c9a162ce4a86e404c42291f721ed77a3b4c3b27569
-status: generated
+status: verified
 ---
 
 # Troubleshoot pipeline
@@ -18,11 +18,11 @@ status: generated
 
 | If you observe | Check |
 |----------------|-------|
-| `RagResult.fallback_used` is `True` | The corpus returned no hits — verify `RagPipeline.corpus` is populated and that your query terms match indexed content. |
+| `RagResult.fallback_used` is `True` | The corpus returned no hits. A strict zero-hit query also sets `abstained=True`. Verify `RagPipeline.corpus` is populated and that your query terms match indexed content. |
 | `RagResult.confidence` is `0.0` or unexpectedly low | Inspect `RagResult.context` (the raw retrieved text). An empty string means retrieval returned nothing; a non-empty string means reranking or scoring is the issue. |
 | `augmented_prompt` contains the fallback template | `fallback_used` is `True`. The pipeline substituted `FALLBACK_PROMPT_TEMPLATE`, which instructs the LLM to answer without grounding. Check corpus ingestion. |
 | `run_and_generate()` raises on `provider` | The `provider` argument accepts an `LLMProvider` instance or a string name. Confirm the value matches a registered provider. |
-| `claim_citations` is an empty tuple | `used_native_citations` is `False` and no claim-level attribution was attempted, or the `prompt_variant` used does not produce claim citations. |
+| `claim_citations` is an empty tuple | `used_native_citations` is `False` and no claim-level attribution was attempted, or the native provider returned no claim citations. |
 | Intermittent retrieval differences | `QueryExpander` or `LLMReranker` are non-deterministic — check whether the same `k` and `prompt_variant` values were used across runs. |
 | `elapsed_ms` is unexpectedly high | The reranker (`LLMReranker`) makes an LLM call during retrieval. Remove it from the pipeline constructor to isolate retrieval latency from generation latency. |
 
@@ -80,14 +80,14 @@ status: generated
 ## Common fixes
 
 - **Corpus is empty or not attached.**
-  If `RagPipeline.corpus` was not passed to the constructor, `RagResult.fallback_used` will be `True` for every query. Pass a populated corpus at construction time:
+  If the corpus or query has no matching documents, retrieval can return zero hits. Pass a populated corpus at construction time:
 
   ```python
   pipeline = RagPipeline(corpus=DirectoryCorpus("path/to/docs"))
   ```
 
 - **Wrong `prompt_variant`.**
-  `run()` and `run_and_generate()` accept a `prompt_variant` argument (default `'citation'`). Passing an unrecognized variant can produce unexpected prompts. Check the allowed values in `PROMPT_VARIANTS`:
+  `run()` and `run_and_generate()` accept a `prompt_variant` argument (default `'citation'`). An unrecognized variant raises `ValueError` before retrieval. Check the allowed values in `PROMPT_VARIANTS`:
 
   ```python
   from attune_rag import PROMPT_VARIANTS
@@ -105,16 +105,10 @@ status: generated
   If documents were added to the corpus but retrieval still misses them, the corpus index may be stale. Re-instantiate `DirectoryCorpus` (or your custom `CorpusProtocol` implementation) to force re-indexing.
 
 - **Dependency version mismatch.**
-  This module is version `0.1.19`. If behavior changed after an update, confirm the installed version:
+  If behavior changed after an update, check the installed version:
 
   ```bash
   pip show attune-rag
-  ```
-
-  Pin to `0.1.19` if a newer version introduced a regression:
-
-  ```bash
-  pip install "attune-rag==0.1.19"
   ```
 
 - **`use_native_citations` not set.**

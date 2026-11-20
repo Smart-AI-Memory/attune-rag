@@ -2,7 +2,7 @@ version: 1
 
 features:
   pipeline:
-    description: Orchestrate retrieval, prompt assembly, and LLM generation in a single RagPipeline.run() call — returns RagResult with the answer and CitationRecord provenance
+    description: RagPipeline.run() retrieves sources and assembles a prompt. Use run_and_generate() for an answer with its retrieval and generation evidence.
     files:
       - src/attune_rag/pipeline.py
       - src/attune_rag/__init__.py
@@ -24,7 +24,7 @@ features:
     tags: [corpus, loader, markdown, attune-help]
 
   prompts:
-    description: Prompt assembly — build_augmented_prompt injects retrieved passages as grounding context; PROMPT_VARIANTS selects citation, grounded, or default prompt styles
+    description: Prompt assembly — build_augmented_prompt injects retrieved passages as grounding context; PROMPT_VARIANTS defines baseline, strict, citation, and anti_prior policies
     files:
       - src/attune_rag/prompts.py
     tags: [prompts, templates, augmentation, citation]

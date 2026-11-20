@@ -5,7 +5,7 @@ feature: pipeline
 depth: faq
 generated_at: 2026-05-20T03:20:40.535683+00:00
 source_hash: f5cc845ee3957a76674338c9a162ce4a86e404c42291f721ed77a3b4c3b27569
-status: generated
+status: verified
 ---
 
 # Pipeline FAQ
@@ -16,7 +16,7 @@ The pipeline feature provides a lightweight, LLM-agnostic RAG pipeline that wire
 
 ## What's the difference between `run()` and `run_and_generate()`?
 
-`run()` assembles the augmented prompt and retrieval metadata but does not call an LLM — you get back a `RagResult` and can pass the prompt to any model yourself. `run_and_generate()` does the same retrieval and prompt assembly, then calls the LLM provider you specify and returns both the generated text and the `RagResult`.
+`run()` assembles the augmented prompt and retrieval metadata without calling the answer provider — you get back a `RagResult` and can pass the prompt to any model yourself. `run_and_generate()` does the same retrieval and prompt assembly, then returns an answer and its `RagResult`. Strict zero-hit queries return a local refusal.
 
 ## What does `RagResult` contain?
 
@@ -24,18 +24,20 @@ The pipeline feature provides a lightweight, LLM-agnostic RAG pipeline that wire
 
 | Field | Type | Description |
 |---|---|---|
-| `augmented_prompt` | `str` | The fully assembled prompt sent to the LLM. |
+| `augmented_prompt` | `str` | Assembled legacy prompt. Empty for native generation. |
 | `citation` | `CitationRecord` | Provenance record for retrieved sources. |
 | `confidence` | `float` | Confidence score for the retrieval. |
-| `fallback_used` | `bool` | `True` if no grounding context was found and the fallback prompt was used. |
+| `fallback_used` | `bool` | `True` when retrieval returned zero hits. |
 | `elapsed_ms` | `float` | Total pipeline time in milliseconds. |
 | `context` | `str` | Retrieved context text (empty string if none). |
 | `claim_citations` | `tuple[ClaimCitation, ...]` | Per-claim citation records when using claim-level attribution. |
 | `used_native_citations` | `bool` | `True` if the LLM's native citation mechanism was used. |
+| `abstained` | `bool` | The pipeline enforced a strict zero-hit refusal. |
+| `generation_documents` | `tuple[CitationDocument, ...]` | Ordered titles and texts supplied for native generation. |
 
 ## What happens when the corpus returns no results?
 
-When no grounding context is found, `RagPipeline` substitutes a fallback prompt that instructs the LLM to answer honestly and avoid fabricating APIs, workflow names, or CLI commands. `RagResult.fallback_used` will be `True` in this case.
+With zero retrieval hits, `run()` and `run_and_generate()` set `fallback_used=True`. With `prompt_variant="strict"`, they also set `abstained=True`, and `run_and_generate()` returns `The provided context does not cover this question.` locally. Other variants use the plain fallback prompt.
 
 ## Which prompt variants are available?
 
@@ -51,7 +53,7 @@ Pass a `QueryExpander` instance as `expander` and an `LLMReranker` instance as `
 
 ## How do I debug a pipeline that isn't behaving as expected?
 
-Start by checking `RagResult.fallback_used`, `RagResult.confidence`, and `RagResult.context` — these tell you immediately whether retrieval found anything useful. If retrieval looks correct but generation is wrong, inspect `RagResult.augmented_prompt` to see exactly what was sent to the LLM. To run the pipeline tests, use `pytest -k "pipeline" -v`.
+Start by checking `RagResult.fallback_used`, `RagResult.confidence`, and `RagResult.context` — these tell you immediately whether retrieval found anything useful. If retrieval looks correct but generation is wrong, inspect `augmented_prompt` for legacy generation or `generation_documents` for the ordered native evidence. To run the pipeline tests, use `pytest -k "pipeline" -v`.
 
 ## Where are the source files?
 

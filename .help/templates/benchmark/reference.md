@@ -47,6 +47,8 @@ Successful `--calibrate-abstention` writes `calibration`, marks both benchmark s
 
 `--queries PATH` accepts UTF-8 YAML with a nonempty `queries` list. Rows require unique nonempty string `id` values and nonempty string `query` values. If supplied, `expected_in_top_3` must be a list of nonempty path strings; these paths define successful retrieval. Invalid YAML, duplicate IDs, and malformed rows are local failures. The default golden files are in the repository's `tests/golden/`, not the wheel.
 
+Inspect `evaluation` for partial per-query records, including answers saved before judging. Completed measurements have separate `faithfulness_*` keys. The pass summary counts requested, generated, scored, and unscored answers.
+
 ## Source files
 
 - `src/attune_rag/benchmark.py`

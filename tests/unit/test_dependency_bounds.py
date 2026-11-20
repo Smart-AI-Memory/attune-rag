@@ -31,6 +31,12 @@ def _requirements(extra: str = "") -> dict[str, Requirement]:
         ("claude-agent-sdk", "0.2.97", "0.2.121", ("claude", "all")),
         ("pyjwt", "2.13.0", "2.15.0", ("claude", "all")),
         (
+            "certifi",
+            "2026.2.25",
+            "2026.10.18",
+            ("claude", "gemini", "embeddings", "transformers", "all", "dev"),
+        ),
+        (
             "anyio",
             "4.13.0",
             "4.14.2",

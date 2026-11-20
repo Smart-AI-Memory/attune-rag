@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.2] — 2026-11-20
+
+Strict queries now abstain locally when retrieval finds no sources. The benchmark
+records the evidence behind each answer, including results from interrupted runs.
+This release also updates dependency requirements for optional integrations.
+
 ### Fixed
 
 - Apply the selected grounding policy to native citations. Strict zero-hit
@@ -23,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   retains its existing dependencies and Python 3.10 support.
 - Make `[all]` include every runtime feature extra, including the Claude
   subscription SDK. Author and development tooling remain separate extras.
+- Require `certifi>=2026.10.18` for extras that use its CA bundle and update
+  the lockfile to `2026.10.23`.
 
 ## [1.2.1] — 2026-10-19
 

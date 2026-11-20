@@ -1,16 +1,14 @@
 # Grounding policy and evaluation evidence
 
-This guide describes the Phase 2 candidate. These changes are not in the published
-1.2.1 package. Install the candidate wheel for verification; publication is separate.
+Use `attune-rag` 1.2.2 or later to select a grounding policy and inspect the
+evidence supplied to the answer provider.
 
 ## Run the offline example
 
-From a clone containing this change, build and install its wheel:
+From a checkout of the 1.2.2 release, install the package and run the example:
 
 ```bash
-python -m pip install build
-python -m build --wheel
-python -m pip install --force-reinstall dist/attune_rag-*.whl
+python -m pip install "attune-rag==1.2.2"
 python examples/grounding_evidence.py
 ```
 
