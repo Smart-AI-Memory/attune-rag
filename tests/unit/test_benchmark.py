@@ -3,8 +3,8 @@
 Targets the highest coverage gap identified in the test-strategy audit:
 ``benchmark.py`` was at 10% line coverage. These tests exercise the pure
 helpers (`_percentile`, `_load_queries`) and the CLI happy + error paths
-without spending API tokens (`--with-faithfulness` is gated behind a
-real ANTHROPIC_API_KEY check we don't satisfy here).
+without spending API tokens. Provider and judge stubs let the CLI, real
+scoring loop, and report persistence execute offline.
 """
 
 from __future__ import annotations
@@ -1149,3 +1149,214 @@ def test_local_header_diagnostic_never_reports_header_values(
     assert report["outcomes"]["faithfulness"] == "failed"
     assert "faithfulness_legacy" not in report
     assert header_value not in raw + capsys.readouterr().err
+
+
+@pytest.fixture
+def evidence_cli(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
+    """Run the real CLI, pipeline, scoring, and journal over controlled retrieval hits."""
+    import attune_rag
+    from attune_rag import benchmark, eval, providers
+    from attune_rag.eval.faithfulness import FaithfulnessResult
+    from attune_rag.prompts import STRICT_ABSTENTION
+    from attune_rag.providers.base import CitedResponse
+    from tests.unit.test_grounding_contracts import entry, pipeline
+
+    fact = "The scanner inspects files."
+    pipe, _ = pipeline([entry(fact)])
+    queries = [
+        {"id": "q1", "query": "scanner", "expected_in_top_3": ["concepts/tool.md"]},
+        {"id": "q2", "query": "scanner details", "expected_in_top_3": ["concepts/tool.md"]},
+    ]
+    path = _write_queries(tmp_path / "queries.yaml", queries)
+    output = tmp_path / "benchmark.json"
+    state = SimpleNamespace(
+        args=["--queries", str(path), "--json", str(output), "--with-faithfulness"],
+        output=output,
+        fact=fact,
+        snapshots=[],
+        fail_at=None,
+        error=None,
+    )
+    provider = SimpleNamespace(
+        name="offline-provider",
+        supports_native_citations=True,
+        generate=AsyncMock(side_effect=[fact, STRICT_ABSTENTION] * 2),
+        generate_with_citations=AsyncMock(
+            side_effect=[CitedResponse(fact, ()), CitedResponse(STRICT_ABSTENTION, ())]
+        ),
+    )
+
+    async def judge_score(*, answer: str, use_thinking: bool, **kwargs):
+        # Observe the persisted file before judging, not the callback's live dict.
+        checkpoint = json.loads(output.read_text(encoding="utf-8"))
+        # JSON sorts keys; choose the pass whose current row is still generated.
+        active = [
+            (key, evidence)
+            for key, evidence in checkpoint["evaluation"].items()
+            if evidence["status"] == "running"
+        ]
+        assert len(active) == 1
+        active_key, evidence = active[0]
+        current = evidence["per_query"][-1]
+        assert current["status"] == "generated"
+        assert current["answer"] == answer
+        assert current["context"] == kwargs["passages"]
+        assert state.fact in current["context"]
+        if current["id"] == "q2":
+            # An interruption during q2 must not lose q1's completed evidence.
+            assert len(evidence["per_query"]) == 2
+            first = evidence["per_query"][0]
+            assert first["id"] == "q1" and first["status"] == "completed"
+            assert first["answer"] == state.fact and first["score"] == 1.0
+        assert "score" not in current
+        assert active_key not in checkpoint
+        state.snapshots.append(checkpoint)
+        if len(state.snapshots) == state.fail_at:
+            raise state.error
+        return FaithfulnessResult(
+            score=1.0,
+            supported_claims=[state.fact] if answer == state.fact else [],
+            unsupported_claims=[],
+            reasoning="Synthetic verdict; no provider request.",
+            model="offline-judge",
+            thinking_used=use_thinking,
+        )
+
+    state.provider = provider
+    state.judge = SimpleNamespace(
+        _model="offline-judge", _route="api", score=AsyncMock(side_effect=judge_score)
+    )
+    monkeypatch.setattr(attune_rag, "RagPipeline", lambda **kwargs: pipe)
+    monkeypatch.setattr(providers, "get_provider", lambda name: provider)
+    monkeypatch.setattr(eval, "FaithfulnessJudge", lambda **kwargs: state.judge)
+    for name in ("_default_negatives_path", "_default_extended_path", "_default_corpus_b_path"):
+        monkeypatch.setattr(benchmark, name, lambda: tmp_path / "unused-advisory-input")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "unused-test-key")
+    return state
+
+
+@pytest.mark.parametrize(
+    ("comparison", "pass_keys"),
+    [
+        (None, ["faithfulness_legacy"]),
+        ("--native-citations", ["faithfulness_legacy", "faithfulness_native"]),
+        ("--compare-thinking", ["faithfulness_thinking_off", "faithfulness_thinking_on"]),
+    ],
+)
+def test_cli_persists_real_scoring_progress_for_each_pass(evidence_cli, comparison, pass_keys):
+    args = evidence_cli.args + ([comparison] if comparison else [])
+
+    assert main(args) == 0
+
+    report = json.loads(evidence_cli.output.read_text())
+    assert report["outcomes"] == {"retrieval": "completed", "faithfulness": "completed"}
+    assert set(report["evaluation"]) == set(pass_keys)
+    assert len(evidence_cli.snapshots) == 2 * len(pass_keys)
+    for key in pass_keys:
+        evidence = report["evaluation"][key]
+        assert evidence["status"] == "completed"
+        assert [row["id"] for row in evidence["per_query"]] == ["q1", "q2"]
+        assert evidence["summary"]["complete"] is True
+        assert evidence["summary"]["scored_answers"] == 2
+        assert evidence["summary"]["zero_claim_answers"] == 1
+        assert evidence["summary"]["pipeline_abstentions"] == 0
+        assert evidence["summary"]["unscored_answers"] == 0
+        native = key == "faithfulness_native"
+        assert all(row["used_native_citations"] is native for row in evidence["per_query"])
+        assert all(bool(row["generation_documents"]) is native for row in evidence["per_query"])
+        assert report[key]["mean_faithfulness"] == 1.0
+        assert report[key]["refusal_rate"] == 0.5
+        assert report[key]["per_query"][1]["answer"] == evidence["per_query"][1]["answer"]
+        assert all(
+            row["thinking_used"] == (key == "faithfulness_thinking_on")
+            for row in evidence["per_query"]
+        )
+    assert evidence_cli.provider.generate_with_citations.await_count == (
+        2 if comparison == "--native-citations" else 0
+    )
+    assert evidence_cli.provider.generate.await_count == (
+        4 if comparison == "--compare-thinking" else 2
+    )
+    if len(pass_keys) == 2:
+        # The primary result is already durable before secondary judging begins.
+        secondary_checkpoint = evidence_cli.snapshots[2]
+        assert secondary_checkpoint["outcomes"]["faithfulness"] == "completed"
+        assert secondary_checkpoint[pass_keys[0]] == report[pass_keys[0]]
+
+
+@pytest.mark.parametrize("stage", ["generation", "judge"])
+@pytest.mark.parametrize(
+    ("kind", "exit_code", "outcome"),
+    [("valueerror", 2, "failed"), ("401", 2, "failed"), ("429", 3, "unavailable")],
+)
+def test_cli_retains_partial_evidence_and_classifies_actual_loop_failure(
+    evidence_cli, capsys, stage, kind, exit_code, outcome
+):
+    error = _provider_exception(kind)
+    if stage == "generation":
+        evidence_cli.provider.generate.side_effect = [evidence_cli.fact, error]
+    else:
+        evidence_cli.fail_at = 2
+        evidence_cli.error = error
+
+    assert main(evidence_cli.args) == exit_code
+
+    raw = evidence_cli.output.read_text()
+    report = json.loads(raw)
+    assert report["outcomes"]["retrieval"] == "completed"
+    assert report["outcomes"]["faithfulness"] == outcome
+    assert "faithfulness_legacy" not in report
+    evidence = report["evaluation"]["faithfulness_legacy"]
+    assert evidence["status"] == "incomplete"
+    assert evidence["error_type"] == type(error).__name__
+    assert evidence["summary"]["complete"] is False
+    assert evidence["summary"]["scored_answers"] == 1
+    assert evidence["summary"]["unscored_answers"] == 1
+    assert evidence["summary"]["generated_answers"] == (1 if stage == "generation" else 2)
+    first, failed = evidence["per_query"]
+    assert first["id"] == "q1" and first["status"] == "completed" and first["score"] == 1.0
+    assert failed["id"] == "q2" and failed["status"] == "failed"
+    assert failed["failed_stage"] == stage
+    assert "score" not in failed
+    assert ("answer" in failed) == (stage == "judge")
+    assert evidence_cli.provider.generate.await_count == 2
+    assert evidence_cli.judge.score.await_count == (1 if stage == "generation" else 2)
+    assert "SENSITIVE_PROVIDER_PAYLOAD" not in raw + capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    ("comparison", "primary_key", "secondary_key"),
+    [
+        ("--native-citations", "faithfulness_legacy", "faithfulness_native"),
+        ("--compare-thinking", "faithfulness_thinking_off", "faithfulness_thinking_on"),
+    ],
+)
+def test_cli_keeps_complete_primary_when_real_secondary_judging_fails(
+    evidence_cli, comparison, primary_key, secondary_key
+):
+    evidence_cli.fail_at = 3
+    evidence_cli.error = _provider_exception("429")
+
+    assert main([*evidence_cli.args, comparison]) == 2
+
+    report = json.loads(evidence_cli.output.read_text())
+    assert report["outcomes"]["faithfulness"] == "completed"
+    assert report["outcomes"]["reason"].startswith("secondary_failed:")
+    assert report[primary_key]["mean_faithfulness"] == 1.0
+    assert report["evaluation"][primary_key]["status"] == "completed"
+    assert secondary_key not in report
+    secondary = report["evaluation"][secondary_key]
+    assert secondary["status"] == "incomplete"
+    assert secondary["summary"]["scored_answers"] == 0
+    assert secondary["per_query"][0]["failed_stage"] == "judge"
+    assert evidence_cli.snapshots[-1][primary_key] == report[primary_key]
+    assert evidence_cli.judge.score.await_count == 3
+    assert secondary["per_query"][0]["used_native_citations"] is (
+        comparison == "--native-citations"
+    )
+    assert evidence_cli.provider.generate_with_citations.await_count == (
+        1 if comparison == "--native-citations" else 0
+    )
+    assert evidence_cli.provider.generate.await_count == (
+        2 if comparison == "--native-citations" else 3
+    )

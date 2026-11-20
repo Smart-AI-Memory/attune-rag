@@ -266,3 +266,28 @@ def test_source_layout_requires_reporter_in_reported_git_revision(tmp_path, monk
     assert result["code_sha"] is None and result["tracked_changes"] is None
     assert result["code_sha_status"] == "unavailable_or_unverified_source_revision"
     assert any("cat-file" in args for args in calls)
+
+
+def test_source_layout_rejects_mismatched_git_root(tmp_path, monkeypatch):
+    import hashlib
+    from unittest.mock import Mock
+
+    from attune_rag.eval import reporting
+
+    source = tmp_path / "source/src/attune_rag/eval/reporting.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("# synthetic source-layout reporter")
+    (source.parents[3] / ".git").mkdir()
+    monkeypatch.setattr(reporting, "__file__", str(source))
+    unrelated_git = Mock(return_value=SimpleNamespace(stdout=str(tmp_path)))
+    monkeypatch.setattr(reporting.subprocess, "run", unrelated_git)
+    queries = tmp_path / "queries.yaml"
+    queries.write_bytes(b"synthetic query bytes\n")
+
+    manifest = reporting.run_manifest(queries)
+
+    assert manifest["code_sha"] is None and manifest["tracked_changes"] is None
+    assert manifest["code_sha_status"] == "unavailable_or_unverified_source_revision"
+    assert manifest["queries_sha256"] == hashlib.sha256(queries.read_bytes()).hexdigest()
+    assert unrelated_git.call_count == 1
+    assert unrelated_git.call_args.args[0] == ["git", "rev-parse", "--show-toplevel"]
