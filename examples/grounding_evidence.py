@@ -1,6 +1,6 @@
 """Offline grounding journey using a temporary synthetic corpus and a stub provider.
 
-Run after installing the candidate wheel: python examples/grounding_evidence.py
+Run after installing attune-rag: python examples/grounding_evidence.py
 No API credentials, provider SDK, network calls, or model downloads are needed.
 """
 

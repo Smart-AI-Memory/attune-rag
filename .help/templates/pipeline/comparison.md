@@ -5,7 +5,7 @@ feature: pipeline
 depth: comparison
 generated_at: 2026-05-20T03:20:40.545203+00:00
 source_hash: f5cc845ee3957a76674338c9a162ce4a86e404c42291f721ed77a3b4c3b27569
-status: generated
+status: verified
 ---
 
 # Comparison: Pipeline orchestration approaches
@@ -14,8 +14,8 @@ status: generated
 
 `RagPipeline` wires together four concerns — corpus retrieval, optional query expansion and reranking, prompt assembly, and LLM generation — into two callable entry points:
 
-- **`run()`** — returns a `RagResult` with a fully assembled prompt and `CitationRecord` provenance, but does **not** call an LLM. You supply the LLM call yourself.
-- **`run_and_generate()`** — does everything `run()` does, then calls an `LLMProvider` and returns the generated text alongside the `RagResult`.
+- **`run()`** — returns a `RagResult` with a fully assembled prompt and `CitationRecord` provenance, but does **not** call the answer provider. You supply the LLM call yourself.
+- **`run_and_generate()`** — returns an answer and a `RagResult`. Strict zero-hit queries return a local refusal. Other queries use an answer provider.
 
 The sections below compare these two approaches and describe the narrower alternatives they replace.
 
@@ -30,7 +30,7 @@ The sections below compare these two approaches and describe the narrower altern
 | Reranks hits via `LLMReranker` | ✓ (if configured) | ✓ (if configured) |
 | Assembles augmented prompt | ✓ | ✓ |
 | Returns `CitationRecord` provenance | ✓ | ✓ |
-| Returns per-claim citations (`claim_citations`) | ✓ | ✓ |
+| Returns per-claim citations (`claim_citations`) | ✗ | With native citations |
 | Records elapsed time (`elapsed_ms`) | ✓ | ✓ |
 | Signals fallback when no grounding found (`fallback_used`) | ✓ | ✓ |
 | Calls an LLM and returns generated text | ✗ | ✓ |
@@ -42,7 +42,7 @@ The sections below compare these two approaches and describe the narrower altern
 
 ## Fallback behaviour
 
-When no grounding context is found in the corpus, both entry points substitute a fallback prompt that instructs the model to answer honestly and avoid inventing APIs, workflow names, or CLI commands. `RagResult.fallback_used` is set to `True` so you can detect this condition downstream.
+With zero retrieval hits, `run()` and `run_and_generate()` set `fallback_used=True`. With `prompt_variant="strict"`, they also set `abstained=True`, and `run_and_generate()` returns `The provided context does not cover this question.` locally. Other variants use the plain fallback prompt.
 
 ---
 

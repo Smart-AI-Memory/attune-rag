@@ -51,6 +51,8 @@ The CLI defaults are precision@1 ≥ `0.70` and optional primary faithfulness �
 
 Completed retrieval and primary faithfulness are checkpointed before later work. Inspect `outcomes.retrieval`, `outcomes.faithfulness`, and `outcomes.reason`; controlled local errors may add `outcomes.detail`. A primary provider outage leaves retrieval available, while a failed optional comparison preserves the completed primary result.
 
+Inspect `evaluation` for partial per-query records, including answers saved before judging. Completed measurements have separate `faithfulness_*` keys. The pass summary counts requested, generated, scored, and unscored answers.
+
 ## Where is the source?
 
 `src/attune_rag/benchmark.py` — the public entry point is `attune_rag.benchmark.main(argv: list[str] | None = None) -> int`.

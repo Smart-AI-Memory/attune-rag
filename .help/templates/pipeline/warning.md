@@ -5,7 +5,7 @@ feature: pipeline
 depth: warning
 generated_at: 2026-05-20T03:20:40.530529+00:00
 source_hash: f5cc845ee3957a76674338c9a162ce4a86e404c42291f721ed77a3b4c3b27569
-status: generated
+status: verified
 ---
 
 # Pipeline cautions
@@ -18,27 +18,27 @@ status: generated
 
 ### Silent fallback when no context is retrieved
 
-If `RagPipeline.run()` finds no matching documents for a query, it switches to `FALLBACK_PROMPT_TEMPLATE` and sets `RagResult.fallback_used = True`. The pipeline does not raise an exception. If you don't check `fallback_used` in your calling code, you may silently serve a fallback response — one that explicitly tells the LLM to admit ignorance — as if it were a grounded answer.
+With zero retrieval hits, `run()` and `run_and_generate()` set `fallback_used=True`. With `prompt_variant="strict"`, they also set `abstained=True`, and `run_and_generate()` returns `The provided context does not cover this question.` locally. Other variants use the plain fallback prompt.
 
 **Mitigation:** Always inspect `result.fallback_used` after `run()` or `run_and_generate()` and handle fallback responses separately in your application logic.
 
 ### `confidence` and `elapsed_ms` are informational, not guaranteed
 
-`RagResult.confidence` reflects a retrieval-time signal, not a post-generation quality score. Treating it as a reliability guarantee for the LLM's answer will lead to over-trusting low-quality generations. Similarly, `elapsed_ms` covers pipeline execution time and does not include network latency from the LLM provider.
+`RagResult.confidence` reflects a retrieval-time signal, not a post-generation quality score. Treating it as a reliability guarantee for the LLM's answer will lead to over-trusting low-quality generations. Legacy generation records `elapsed_ms` before the answer-provider call. Native generation records it after the call.
 
 **Mitigation:** Use `confidence` only for relative ranking or logging, not as a quality gate for user-facing output.
 
 ### Native citations change the `RagResult` shape
 
-When you call `run_and_generate()` with `use_native_citations=True`, the pipeline populates `RagResult.claim_citations` and sets `used_native_citations = True`. When `use_native_citations=False` (the default), `claim_citations` is an empty tuple. Code that iterates over `claim_citations` unconditionally will behave differently depending on this flag, with no error to signal the difference.
+With `use_native_citations=True`, a supporting provider and nonempty retrieval, the pipeline records `generation_documents`, sets `used_native_citations=True`, and returns any claim citations supplied by the provider. When `use_native_citations=False` (the default), `claim_citations` is an empty tuple. Code that iterates over `claim_citations` unconditionally will behave differently depending on this flag, with no error to signal the difference.
 
 **Mitigation:** Gate any `claim_citations` processing on `result.used_native_citations` rather than assuming it is always populated.
 
 ### The prompt cache splits on a sentinel string
 
-Internally, the pipeline uses `_CACHE_SPLIT = '\n### USER REQUEST\n'` to delimit cached prompt sections. If your query text or corpus content contains this exact string, cache reconstruction will produce a malformed prompt.
+Internally, the pipeline uses `_CACHE_SPLIT = '\n### USER REQUEST\n'` to delimit cached prompt sections. A match in the legacy prompt determines the optional cache prefix when the prefix is long enough.
 
-**Mitigation:** Sanitize or reject inputs that contain `\n### USER REQUEST\n` before passing them to `run()` or `run_and_generate()`.
+**Mitigation:** Treat prefix selection as an implementation detail when inspecting the prompt.
 
 ### `corpus` is a read-only property after construction
 
@@ -52,7 +52,7 @@ Internally, the pipeline uses `_CACHE_SPLIT = '\n### USER REQUEST\n'` to delimit
 
 2. **Depend only on the public API.** `_CACHE_SPLIT` and other underscore-prefixed names are implementation details that can change between versions without notice. Depend on the names listed in `__all__` only.
 
-3. **Pin or test against the installed version.** The module exposes `__version__ = '0.1.19'`. If your application has version-specific behavior, assert the version in your test suite so upgrades are caught explicitly.
+3. **Pin or test against the installed version.** If your application has version-specific behavior, assert the version in your test suite so upgrades are caught explicitly.
 
 4. **Isolate environment state between tests.** Module-level configuration and LLM provider settings resolved at import time can make pipeline behavior differ between local and CI environments. Prefer explicit dependency injection over environment variables where possible.
 
