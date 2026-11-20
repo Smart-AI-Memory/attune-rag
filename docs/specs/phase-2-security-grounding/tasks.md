@@ -1,10 +1,12 @@
-> **Status: approved 2026-10-19; T1–T2 implemented for review in PR #224. T3–T5 have not started.**
+> **Status: M1 merged in PR #224; T3–T5 implemented and locally validated, pending exact-head remote acceptance.**
 
 # Tasks and milestone acceptance
 
 Order: T1 → T2 → M1 acceptance; then T3 → T4 → T5 → M2 acceptance.
 M1 can ship independently. T3's report work precedes live evaluation of T4.
-T1–T2 are implemented and locally validated. Candidate acceptance follows PR #224 CI and review. T3–T5 remain **not started**.
+T1–T2 are merged after PR #224 checks and human approval. T3–T5 are implemented;
+local and independent-review evidence is in [M2 validation](m2-validation.md).
+The separate M2 PR retains exact-head CI and human review before acceptance.
 
 | Task | Deliverable | Requirements | Evidence required |
 |---|---|---|---|
@@ -112,3 +114,15 @@ by completion of this planning session.
   inventories, metadata controls, and milestone completion review are saved.
   Exact-head remote checks and Patrick's review govern candidate acceptance;
   no merge or publication is implied.
+
+- 2026-10-20: PR #224 merged with exact-tree verification. T1–T2 accepted;
+  M2 starts at T3 on a fresh branch from merged main. T4–T5 pending.
+  See [implementation design](m2-implementation-design.md) written before source
+  changes and D10–D11 for scope/spend authorization. Completion review: pending.
+
+- 2026-10-20: T3 partial/full report capture and workflow controls pass. T4 policy,
+  strict abstention, and exact native evidence pass, including three must-fail
+  mutation controls. T5 adds an executed offline example, two supported Python
+  environments, and source/distribution checks. Different-model review found and
+  closed one provenance defect. Remote candidate checks and completion checkpoint
+  remain pending; no M2 merge or release is implied.

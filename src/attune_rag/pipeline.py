@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 import structlog
 
 from .prompts import (
+    STRICT_ABSTENTION,
     build_augmented_prompt,
+    build_native_system,
     join_context,
     join_context_numbered,
+    render_generation_documents,
+    validate_prompt_input,
 )
 from .provenance import CitationRecord, ClaimCitation, build_citation_record
 from .retrieval import KeywordRetriever, RetrieverProtocol
@@ -20,7 +24,7 @@ from .retrieval import KeywordRetriever, RetrieverProtocol
 if TYPE_CHECKING:
     from .corpus.base import CorpusProtocol
     from .expander import QueryExpander
-    from .providers.base import LLMProvider
+    from .providers.base import CitationDocument, LLMProvider
     from .reranker import LLMReranker
 
 logger = structlog.get_logger(__name__)
@@ -68,11 +72,15 @@ the corpus's scope, say so."""
 class RagResult:
     """Output of ``RagPipeline.run``.
 
-    ``context`` is the rendered passage block that was
-    inserted into the prompt, preserved so evaluators
-    (e.g. faithfulness judges) can score answers against
-    the exact same text the generator saw. Empty string
-    when ``fallback_used`` is True.
+    ``context`` is the exact rendered legacy passage block, or an uncapped
+    evaluation rendering of the native ``generation_documents``. The native
+    documents preserve the exact ordered titles/text supplied to the provider.
+    Empty evidence is recorded on fallback and local abstention.
+
+    ``abstained`` identifies strict empty-hit abstention enforced locally, not
+    a model-generated refusal. ``generation_documents`` is excluded from repr;
+    explicit dataclass serialization includes its full source text. Handle it
+    with the same privacy care as ``context`` and ``augmented_prompt``.
 
     ``claim_citations`` is populated only on the native-citations
     code path (when ``run_and_generate`` is called with
@@ -101,6 +109,8 @@ class RagResult:
     context: str = ""
     claim_citations: tuple[ClaimCitation, ...] = ()
     used_native_citations: bool = False
+    abstained: bool = False
+    generation_documents: tuple[CitationDocument, ...] = field(default=(), repr=False)
 
 
 class RagPipeline:
@@ -321,11 +331,16 @@ class RagPipeline:
                 keeping retrieval quality identical. See
                 ``docs/rag/faithfulness-decision-2026-04-19.md``.
         """
+        validate_prompt_input(query, prompt_variant)
         start = time.perf_counter()
         now = datetime.now(timezone.utc)
-
         hits = self._retrieve(query, k)
+        return self._assemble_result(query, hits, prompt_variant, start, now)
 
+    def _assemble_result(
+        self, query: str, hits: list, prompt_variant: str, start: float, now: datetime
+    ) -> RagResult:
+        """Assemble once from the same retrieval used to choose generation mode."""
         citation = build_citation_record(
             query=query,
             hits=hits,
@@ -334,7 +349,11 @@ class RagPipeline:
         )
 
         if not hits:
-            augmented_prompt = FALLBACK_PROMPT_TEMPLATE.format(query=query.strip())
+            augmented_prompt = (
+                build_augmented_prompt(query, "", variant="strict")
+                if prompt_variant == "strict"
+                else FALLBACK_PROMPT_TEMPLATE.format(query=query.strip())
+            )
             context = ""
             confidence = 0.0
             fallback_used = True
@@ -370,6 +389,7 @@ class RagPipeline:
             fallback_used=fallback_used,
             elapsed_ms=elapsed_ms,
             context=context,
+            abstained=not hits and prompt_variant == "strict",
         )
 
     async def run_and_generate(
@@ -406,16 +426,22 @@ class RagPipeline:
           path. Returned ``RagResult.claim_citations == ()``.
         - ``use_native_citations=True`` and provider supports it
           and hits exist → native citations path.
-        - ``use_native_citations=True`` and provider supports it
-          but hits are empty → fallback prompt (no docs to cite);
-          ``used_native_citations=False`` because the citations
-          API was never called.
+        - Empty strict retrieval → exact local abstention, without initializing
+          or calling the answer provider. Other variants keep plain fallback.
+          Both cases record ``used_native_citations=False`` and empty evidence.
         - ``use_native_citations=True`` and provider does NOT
           support native citations → log warning, run existing
           prompt-assembly path; ``used_native_citations=False``.
 
         Returns ``(response_text, rag_result)``.
         """
+        validate_prompt_input(query, prompt_variant)
+        start = time.perf_counter()
+        now = datetime.now(timezone.utc)
+        hits = self._retrieve(query, k)
+        if not hits and prompt_variant == "strict":
+            return STRICT_ABSTENTION, self._assemble_result(query, hits, prompt_variant, start, now)
+
         if isinstance(provider, str):
             from .providers import get_provider
 
@@ -429,8 +455,8 @@ class RagPipeline:
             )
             use_native_citations = False
 
-        if not use_native_citations:
-            rag_result = self.run(query, k=k, prompt_variant=prompt_variant)
+        if not use_native_citations or not hits:
+            rag_result = self._assemble_result(query, hits, prompt_variant, start, now)
             prompt = rag_result.augmented_prompt
             cached_prefix: str | None = None
             split_idx = prompt.find(_CACHE_SPLIT)
@@ -444,13 +470,13 @@ class RagPipeline:
             )
             return response, rag_result
 
-        # Native citations path. We need the actual hit objects (full
-        # content) to build the document payload, so we run retrieval
-        # here instead of calling self.run().
+        # Native generation consumes the same single retrieval, with full text.
         return await self._run_native_citations(
             query=query,
             provider=provider,
-            k=k,
+            hits=hits,
+            start=start,
+            now=now,
             model=model,
             max_tokens=max_tokens,
             prompt_variant=prompt_variant,
@@ -460,28 +486,16 @@ class RagPipeline:
         self,
         query: str,
         provider: LLMProvider,
-        k: int,
+        hits: list,
+        start: float,
+        now: datetime,
         model: str | None,
         max_tokens: int,
         prompt_variant: str,
     ) -> tuple[str, RagResult]:
-        """Native citations path. Internal — see
-        :meth:`run_and_generate` for the public entry point.
-
-        Retrieval is run identically to :meth:`run`. When hits
-        exist we send them as ``CitationDocument``s through the
-        provider's citations API; the response is parsed back
-        into ``claim_citations`` on the returned ``RagResult``.
-        When hits are empty we delegate to :meth:`run` for the
-        fallback prompt and a plain ``provider.generate`` call —
-        ``used_native_citations`` stays ``False`` because the
-        citations API was never engaged.
-        """
+        """Generate from already retrieved nonempty hits with exact native evidence."""
         from .providers.base import CitationDocument
 
-        start = time.perf_counter()
-        now = datetime.now(timezone.utc)
-        hits = self._retrieve(query, k)
         citation = build_citation_record(
             query=query,
             hits=hits,
@@ -489,54 +503,13 @@ class RagPipeline:
             retrieved_at=now,
         )
 
-        if not hits:
-            # No documents to cite — fall back to the legacy fallback
-            # prompt path. Note: we still report use_native_citations=False
-            # because no citations call was made.
-            augmented_prompt = FALLBACK_PROMPT_TEMPLATE.format(query=query.strip())
-            response = await provider.generate(
-                augmented_prompt,
-                model=model,
-                max_tokens=max_tokens,
-                cached_prefix=None,
-            )
-            elapsed_ms = (time.perf_counter() - start) * 1000.0
-            logger.info(
-                "rag.run",
-                query=query,
-                hit_count=0,
-                fallback_used=True,
-                confidence=0.0,
-                elapsed_ms=round(elapsed_ms, 2),
-                corpus=self.corpus.name,
-                retriever=type(self.retriever).__name__,
-                prompt_variant=prompt_variant,
-                native_citations_requested=True,
-                native_citations_used=False,
-            )
-            rag_result = RagResult(
-                augmented_prompt=augmented_prompt,
-                citation=citation,
-                confidence=0.0,
-                fallback_used=True,
-                elapsed_ms=elapsed_ms,
-                context="",
-                claim_citations=(),
-                used_native_citations=False,
-            )
-            return response, rag_result
-
-        documents = [CitationDocument(title=h.entry.path, text=h.entry.content) for h in hits]
-        # Render context too, for parity with the legacy path so callers
-        # that inspect rag_result.context for evals see the same input.
-        if prompt_variant == "citation":
-            context = join_context_numbered(hits)
-        else:
-            context = join_context(hits)
+        documents = tuple(CitationDocument(title=h.entry.path, text=h.entry.content) for h in hits)
+        context = render_generation_documents(documents, numbered=prompt_variant == "citation")
 
         cited = await provider.generate_with_citations(
-            documents=documents,
+            documents=list(documents),
             query=query,
+            system=build_native_system(prompt_variant),
             model=model,
             max_tokens=max_tokens,
         )
@@ -574,5 +547,6 @@ class RagPipeline:
             context=context,
             claim_citations=cited.claim_citations,
             used_native_citations=True,
+            generation_documents=documents,
         )
         return cited.text, rag_result

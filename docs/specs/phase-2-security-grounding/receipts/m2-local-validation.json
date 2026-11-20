@@ -1,0 +1,118 @@
+{
+  "recorded_utc": "2026-10-20",
+  "status": "local_validation_passed_remote_acceptance_pending",
+  "base_commit": "e95a3b50fff001f9e58238c6df2398d2bd694d19",
+  "source_sha256": {
+    "src/attune_rag/pipeline.py": "08d077745c6e6af8259a2aef5dc8a23c9be14294d9bb73febc1603aac2608cf0",
+    "src/attune_rag/prompts.py": "a0b8c7b7f96210f57ef93ec372477bc38364c35fae6ee5b6bff28ab99fd08cf8",
+    "src/attune_rag/benchmark.py": "48a385f00c0b9162b96d315a5db25a3498acfea770391f9da246ece2d47d39ed",
+    "src/attune_rag/eval/reporting.py": "3c6bbe1ace9e71b091e0bb7c4f6ae7cd168a23dbc23aa54cd80ad56bcd30c23b"
+  },
+  "suites": {
+    "minimum": {
+      "tests": 1717,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2,
+      "passed": 1637,
+      "advisory_xpassed": 78,
+      "expected_xfailed": 2
+    },
+    "current": {
+      "tests": 1717,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2,
+      "passed": 1637,
+      "advisory_xpassed": 78,
+      "expected_xfailed": 2
+    }
+  },
+  "python_versions": {
+    "minimum": "3.10.11",
+    "current": "3.13.14"
+  },
+  "artifact_parity": "passed: source, sdist and wheel; ordered 40-query retrieval unchanged",
+  "artifact_hashes": {
+    "attune_rag-1.2.1.tar.gz": "b098c3716c91fb667d980b1160472d526df976c965aa7e108fe56b775dde93bb",
+    "attune_rag-1.2.1-py3-none-any.whl": "80e33c3071c1a4fcf873101060b28fe6c8213f451a3409d4c9444c04b9c4d279"
+  },
+  "query_sha256": "f47486df87c61e2391a4326f9ffe68659373f6837063cf70c5b990a639f2290c",
+  "mutation_controls": [
+    {
+      "mutation": "unmodified",
+      "tests": 57,
+      "failures": 0,
+      "errors": 0,
+      "exit": 0,
+      "expected_failures": 0
+    },
+    {
+      "mutation": "missing_native_policy",
+      "tests": 12,
+      "failures": 4,
+      "errors": 0,
+      "exit": 1,
+      "expected_failures": 4
+    },
+    {
+      "mutation": "missing_strict_short_circuit",
+      "tests": 6,
+      "failures": 6,
+      "errors": 0,
+      "exit": 1,
+      "expected_failures": 6
+    },
+    {
+      "mutation": "truncated_native_evidence",
+      "tests": 16,
+      "failures": 16,
+      "errors": 0,
+      "exit": 1,
+      "expected_failures": 16
+    }
+  ],
+  "base_wheel": {
+    "python": "3.10.11",
+    "distribution_count": 15,
+    "optional_sdks_present": {
+      "anthropic": false,
+      "claude_agent_sdk": false,
+      "torch": false,
+      "sentence_transformers": false,
+      "model2vec": false
+    },
+    "strict_named_provider_without_sdk": {
+      "answer": "The provided context does not cover this question.",
+      "abstained": true,
+      "fallback_used": true,
+      "context": ""
+    },
+    "stub_calls": {
+      "plain": 1,
+      "native": 1
+    },
+    "example_passed": true
+  },
+  "review": {
+    "requested_model": "gpt-6-astra",
+    "runtime_model_identity": null,
+    "verdict": "no remaining actionable findings in final delta",
+    "findings_closed": 1,
+    "final_report_tests_passed": 13
+  },
+  "limits": [
+    "No live M2 measurement in this local receipt",
+    "No numerical grounding improvement or injection-resistance claim",
+    "Cross-platform execution and exact-head quality acceptance remain CI work",
+    "No M2 merge or publication"
+  ],
+  "post_suite_pinned_lint_change": "Equivalent isinstance tuple-to-union form; 13 report controls pass on Python 3.10; final delta reviewed and artifact bytes revalidated.",
+  "workflow_semantics": {
+    "validator": "actionlint 1.7.12",
+    "result": "passed after reproducing invalid job-env context",
+    "workflow_controls_passed": 49,
+    "startup_failure_jobs": 0,
+    "startup_failure_provider_calls": 0
+  }
+}
